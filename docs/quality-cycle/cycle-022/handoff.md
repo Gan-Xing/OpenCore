@@ -4,7 +4,7 @@ Date: 2026-06-23
 Repository: `Gan-Xing/OpenCore`  
 Branch: `main`  
 Target track: `Cycle-022 / Tenant Foundation`  
-Status: **In progress; T2 server-side host tenant resolution is closed, T6 Admin control plane is closed, and T7e ReportDefinition tenant isolation is deployed and publicly smoke-verified**
+Status: **In progress; T3f tenant-plan menu surface scope, T6 Admin control plane, and T7e ReportDefinition tenant isolation are deployed and publicly smoke-verified**
 
 ## 0. Current Round Snapshot
 
@@ -12,7 +12,7 @@ Updated: 2026-06-23
 
 Current completed slice count: **6 full slices**
 
-This working tree has advanced Cycle-022 through six full deployable tenant foundation slices plus T2 server-side host tenant resolution, T4a online-session tenant isolation, T4b login-log tenant isolation, T4c operation-audit tenant isolation, T4d dictionary tenant isolation, T4e system config tenant isolation, T4f file asset tenant isolation, T4g system notice tenant isolation, T5a scheduler tenant propagation, T5b Redis cache namespace isolation, T5c WebSocket runtime tenant scope, T5d BullMQ monitor queue namespace isolation, T5e Integration provider/outbox/OAuth tenant scope, T5f runtime parity audit, T6a Tenant Plan control-plane CRUD, T6b Tenant lifecycle control-plane CRUD, T6c Tenant Member lifecycle/invitation control-plane CRUD, T6d Admin tenant switcher, T6e platform visit mode, T6f platform visit audit, T7a Collaboration Message tenant isolation, T7b Collaboration Notice tenant isolation, T7c Collaboration Todo tenant isolation, T7d Collaboration Approval Lite tenant isolation, and T7e ReportDefinition tenant isolation:
+This working tree has advanced Cycle-022 through six full deployable tenant foundation slices plus T2 server-side host tenant resolution, T3f tenant-plan menu surface scope, T4a online-session tenant isolation, T4b login-log tenant isolation, T4c operation-audit tenant isolation, T4d dictionary tenant isolation, T4e system config tenant isolation, T4f file asset tenant isolation, T4g system notice tenant isolation, T5a scheduler tenant propagation, T5b Redis cache namespace isolation, T5c WebSocket runtime tenant scope, T5d BullMQ monitor queue namespace isolation, T5e Integration provider/outbox/OAuth tenant scope, T5f runtime parity audit, T6a Tenant Plan control-plane CRUD, T6b Tenant lifecycle control-plane CRUD, T6c Tenant Member lifecycle/invitation control-plane CRUD, T6d Admin tenant switcher, T6e platform visit mode, T6f platform visit audit, T7a Collaboration Message tenant isolation, T7b Collaboration Notice tenant isolation, T7c Collaboration Todo tenant isolation, T7d Collaboration Approval Lite tenant isolation, and T7e ReportDefinition tenant isolation:
 
 - Prisma models for `TenantPlan`, `TenantPlanModule`, `Tenant`, `TenantMembership`, `TenantMembershipRole`, `TenantMembershipPost`, `PlatformRole`, `UserPlatformRole`, and `PlatformRolePermission`.
 - Migration `20260622223000_tenant_foundation` creates the `root` tenant, root `system.full` plan, root memberships for existing users, and transitional root copies of `UserRole` and `UserPost`.
@@ -32,6 +32,7 @@ This working tree has advanced Cycle-022 through six full deployable tenant foun
 - Refreshed deploy completed on API `39172` and Admin `39174`; tenant foundation/auth smokes passed against local and public API.
 - Active authenticated users now prefer `TenantMembershipRole` and `TenantMembershipPost` over legacy `UserRole`/`UserPost`.
 - Tenant membership permissions are clipped by the active tenant plan's enabled module codes.
+- Readable Menu surfaces and role-menu assignment are clipped by the active tenant plan's enabled module codes while `Menu` remains global product metadata.
 - Security data-scope resolution now uses the active membership id, so member department and member role data scope drive protected user queries.
 - Auth responses and SDK types expose membership-derived `postCodes`.
 - `pnpm guard:tenant-rbac` and `pnpm smoke:core-tenant-rbac` were added for this T3a closure.
@@ -174,6 +175,7 @@ This working tree has advanced Cycle-022 through six full deployable tenant foun
 - Refreshed deploy completed on API `39172` and Admin `39174`; local deploy smoke and public API ReportDefinition tenant isolation smoke passed for T7e.
 - T2 host/domain login hardening removes public `tenantHost` from Login DTO/OpenAPI/SDK, derives the value only from server-observed `X-Forwarded-Host`/`Host`, and extends `smoke:core-tenancy-auth` plus `guard:tenant-auth` to prove a host-derived login signs a token for the matching tenant slug.
 - Refreshed deploy completed on API `39172` and Admin `39174`; public `smoke:core-tenancy-auth` passed against `http://144.217.243.161:39172` for the T2b host/domain login closure.
+- T3f tenant-plan menu surface scope filters `/core/menus`, menu detail/export, and role-menu assignment by the active token's `enabledModuleCodes`; refreshed deploy completed on API `39172` and Admin `39174`, and public `smoke:core-menu` proves a tenant without `core.user` cannot see, detail, or assign `system.users`.
 
 Still not complete:
 

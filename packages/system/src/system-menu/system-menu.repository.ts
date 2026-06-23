@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { createApiErrorBody } from '@opencore/common';
+import { listModules } from '@opencore/module-registry';
 import {
   MENU_STATUSES,
   MENU_TYPES,
@@ -22,6 +23,10 @@ export type SystemMenuExportPreview = {
   columns: readonly string[];
   rowCount: number;
   generatedAt: string;
+};
+
+export type SystemMenuPlanScope = {
+  enabledModuleCodes?: readonly string[];
 };
 
 export type NormalizedSystemMenuCreateInput = {
@@ -93,6 +98,25 @@ export function createSystemMenuExportPreview(
     rowCount: rows.length,
     generatedAt: new Date().toISOString(),
   };
+}
+
+export function filterSystemMenusByPlanScope(
+  rows: readonly SystemMenuRecord[],
+  scope: SystemMenuPlanScope = {},
+): SystemMenuRecord[] {
+  if (!scope.enabledModuleCodes) {
+    return [...rows];
+  }
+
+  const enabledModuleCodes = new Set(scope.enabledModuleCodes);
+
+  return rows.filter((menu) => {
+    const moduleCode = menu.permissionCode
+      ? menuModuleCodeByPermissionCode.get(menu.permissionCode)
+      : undefined;
+
+    return !moduleCode || enabledModuleCodes.has(moduleCode);
+  });
 }
 
 export function normalizeCreateSystemMenuInput(
@@ -302,6 +326,15 @@ function normalizeNullablePermissionCode(value: string | null): string | null {
   const normalized = value.trim();
   return normalized ? normalized : null;
 }
+
+const menuModuleCodeByPermissionCode = new Map(
+  listModules().flatMap((moduleDefinition) =>
+    moduleDefinition.permissions.map((permission): [string, string] => [
+      permission.code,
+      moduleDefinition.code,
+    ]),
+  ),
+);
 
 function normalizeBoolean(
   value: boolean | undefined,

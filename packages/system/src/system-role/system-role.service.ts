@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { SystemMenuRecord } from '../system-menu/system-menu.records';
 import { SystemMenuService } from '../system-menu/system-menu.service';
+import type { SystemMenuPlanScope } from '../system-menu/system-menu.repository';
 import type {
   AssignRoleMenusDto,
   CreateRoleDto,
@@ -47,10 +48,13 @@ export class SystemRoleService {
     return this.repository.updateRole(code, normalizeSetRoleStatusInput(body));
   }
 
-  async getRoleMenuAssignment(code: string): Promise<RoleMenuAssignmentDto> {
+  async getRoleMenuAssignment(
+    code: string,
+    scope: SystemMenuPlanScope = {},
+  ): Promise<RoleMenuAssignmentDto> {
     const [role, menus] = await Promise.all([
       this.repository.getRole(code),
-      this.menus.listMenus(),
+      this.menus.listMenus(scope),
     ]);
 
     return createRoleMenuAssignment(role, menus);
@@ -59,10 +63,11 @@ export class SystemRoleService {
   async assignRoleMenus(
     code: string,
     body: AssignRoleMenusDto,
+    scope: SystemMenuPlanScope = {},
   ): Promise<RoleMenuAssignmentDto> {
     const [role, menus] = await Promise.all([
       this.repository.getRole(code),
-      this.menus.listMenus(),
+      this.menus.listMenus(scope),
     ]);
     const menuKeys = normalizeRoleMenuKeys(body?.menuKeys);
     const menusByKey = new Map(menus.map((menu) => [menu.key, menu]));

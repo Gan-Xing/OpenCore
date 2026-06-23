@@ -109,6 +109,16 @@ These remain below the productization waterline and cannot be described as compl
 | Smoke/guard                                      | Done    | Added `smoke:core-tenant-member` and `guard:tenant-member-assignment`, both wired into local/deploy smoke scripts.          |
 | Tenant Member CRUD/invitation and switcher Admin | Pending | T3e is assignment only; full Tenant Member lifecycle and tenant switcher remain T6.                                         |
 
+## T3f Audit
+
+| Requirement                           | Status | Notes                                                                                                                                |
+| ------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Menu surfaces follow tenant plan      | Done   | `SystemMenuService` filters global Menu metadata by the authenticated user's `enabledModuleCodes` before list/detail/export results. |
+| Role-menu assignment follows plan     | Done   | `SystemRoleService` uses the same filtered menu list, so disabled-module menu keys cannot be assigned through role-menu APIs.        |
+| No Menu tenant row ownership          | Done   | `Menu` remains global product metadata; tenant isolation is enforced by plan/module filtering rather than duplicating menu rows.      |
+| Admin consistency                     | Done   | Admin menu and role-menu pages already consume live APIs, so their visible menu options are clipped by the tenant-bound token.        |
+| Smoke/guard                           | Done   | `smoke:core-menu` covers a limited tenant plan that excludes `core.user`; `guard:tenant-rbac` locks the filter markers.              |
+
 ## T6a Tenant Plan Control Plane
 
 | Requirement                   | Status  | Notes                                                                                                                                     |

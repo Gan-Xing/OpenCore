@@ -1467,3 +1467,43 @@ Passed Prisma validation/generation, seed and typed-smoke checks, OpenAPI/SDK dr
 - No schema or migration was required; `Tenant.slug` already supports host/subdomain matching.
 - No frontend fake tenant switch was added.
 - No data API accepts a client-supplied tenant selector.
+
+## Round 34: T3f Tenant-Plan Menu Surface Scope
+
+### Completed
+
+- Kept `Menu` and `Permission` as global product metadata instead of adding tenant row ownership.
+- Added tenant plan filtering for readable menu surfaces:
+  - `/core/menus`;
+  - `/core/menus/:key`;
+  - `/core/menus/export`.
+- Routed role-menu assignment through the same filtered menu set:
+  - `GET /core/roles/:code/menus`;
+  - `PATCH /core/roles/:code/menus`.
+- The filter maps menu `permissionCode` back to the module registry and keeps a menu only when its module is enabled in the authenticated user's active tenant plan.
+- Extended `smoke:core-menu` with a limited plan fixture:
+  - enables `core.menu` and `core.role`;
+  - excludes `core.user`;
+  - proves `system.users` is hidden from list/detail and cannot be assigned to a tenant role.
+- Extended `guard:tenant-rbac` with menu plan-scope markers.
+
+### Verification Log
+
+Passed locally:
+
+- Tenant RBAC guard, typed smoke compile, focused system-menu test, System/API typechecks, Prisma validation/generation/seed checks, OpenAPI/SDK drift checks, Admin/SDK typechecks, full repository typecheck, test, and lint.
+
+Passed after deploy:
+
+- Refreshed deploy completed on API `39172` and Admin `39174`, with the deploy smoke suite passing.
+- Public API menu smoke passed against `http://144.217.243.161:39172`, including `core.menu.plan-scope-list`, `core.menu.plan-scope-detail`, and `core.role.menu-plan-scope`.
+
+### Remaining Product Debt
+
+- T4 remains partial until every remaining System/core repository is reviewed or explicitly closed.
+- T7 remains partial for future CRM/ERP/Mall/AI business domains.
+
+### Deliberate Non-Goals
+
+- No Menu tenant table or migration was added; duplicating product navigation per tenant is unnecessary while module-plan filtering covers visibility and assignment.
+- No frontend fake filtering was added; Admin receives the filtered live API result under the tenant-bound token.

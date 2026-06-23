@@ -7,6 +7,7 @@ import {
   assertString,
   createTypedSmokeRuntime,
 } from './runtime';
+import { disconnectSmokePrisma, getSmokePrisma } from './prisma';
 
 const smoke = createTypedSmokeRuntime();
 const { apiPrefix, baseUrl, checkDocs, clients, request } = smoke;
@@ -14,12 +15,19 @@ const { apiPrefix, baseUrl, checkDocs, clients, request } = smoke;
 const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const parentKey = `system.smoke-menu-${runId}`;
 const childKey = `${parentKey}.child`;
+const limitedPlanCode = `smoke.menu.plan.${runId}`;
+const limitedTenantCode = `smoke.menu.${runId}`;
+const limitedTenantSlug = `smoke-menu-${runId}`;
+const limitedUsername = `smoke_menu_${runId.replace(/[^a-z0-9]/g, '_')}`;
+const limitedPassword = 'SmokeMenuPlan1!';
+const limitedRoleCode = `smoke_menu_role_${runId.replace(/[^a-z0-9]/g, '_')}`;
 const createdKeys: string[] = [];
 
 async function main() {
   let token: string | undefined;
 
   try {
+    await cleanupPlanScopeFixture();
     await request('/health/live', { expected: [200] });
     await request('/health/ready', { expected: [200] });
 
@@ -124,7 +132,9 @@ async function main() {
     assertIncludes(exportPreview.columns, 'component', 'menu export component');
     assertIncludes(exportPreview.columns, 'status', 'menu export status');
 
+    await assertTenantPlanMenuScope(token);
     await cleanupCreatedMenus(token);
+    await cleanupPlanScopeFixture();
 
     console.log(
       JSON.stringify({
@@ -144,13 +154,19 @@ async function main() {
           'core.menu.detail',
           'core.menu.update',
           'core.menu.export',
+          'core.menu.plan-scope-list',
+          'core.menu.plan-scope-detail',
+          'core.role.menu-plan-scope',
           'core.menu.delete',
         ],
       }),
     );
   } catch (error) {
     await cleanupCreatedMenus(token).catch(() => undefined);
+    await cleanupPlanScopeFixture().catch(() => undefined);
     throw error;
+  } finally {
+    await disconnectSmokePrisma().catch(() => undefined);
   }
 }
 
@@ -170,12 +186,143 @@ async function cleanupCreatedMenus(token: string | undefined) {
   createdKeys.length = 0;
 }
 
+async function assertTenantPlanMenuScope(rootToken: string): Promise<void> {
+  const plan = await clients.tenancy.createTenantPlan(rootToken, {
+    code: limitedPlanCode,
+    moduleCodes: ['core.menu', 'core.role'],
+    name: 'Smoke Menu Scoped Plan',
+  });
+  const tenant = await clients.tenancy.createTenant(rootToken, {
+    code: limitedTenantCode,
+    name: 'Smoke Menu Scoped Tenant',
+    planCode: limitedPlanCode,
+    slug: limitedTenantSlug,
+  });
+  await seedLimitedMenuRole(tenant.id);
+  await clients.tenancy.createTenantMember(rootToken, tenant.id, {
+    displayName: 'Smoke Menu User',
+    isOwner: true,
+    password: limitedPassword,
+    roleCodes: [limitedRoleCode],
+    status: 'active',
+    username: limitedUsername,
+  });
+
+  const limitedLogin = await clients.rbac.login({
+    password: limitedPassword,
+    tenantCode: limitedTenantCode,
+    username: limitedUsername,
+  });
+
+  if (limitedLogin.status !== 'authenticated') {
+    throw new Error('Expected limited menu user to authenticate.');
+  }
+
+  const limitedToken = assertString(
+    limitedLogin.accessToken,
+    'limited menu token',
+  );
+  const limitedMenus = await clients.rbac.listMenus(limitedToken);
+  findMenu(limitedMenus, 'system.menus');
+  findMenu(limitedMenus, 'system.roles');
+  assertNoMenu(limitedMenus, 'system.users');
+
+  await smoke.apiRequest('/core/menus/system.users', {
+    expected: [404],
+    token: limitedToken,
+  });
+
+  const assignment = await clients.rbac.getRoleMenuAssignment(
+    limitedToken,
+    limitedRoleCode,
+  );
+  findMenu(assignment.menus, 'system.menus');
+  assertNoMenu(assignment.menus, 'system.users');
+
+  const rejected = await smoke.apiRequest<unknown>(
+    `/core/roles/${encodeURIComponent(limitedRoleCode)}/menus`,
+    {
+      body: { menuKeys: ['system.users'] },
+      expected: [400],
+      method: 'PATCH',
+      token: limitedToken,
+    },
+  );
+  assertEqual(
+    getApiErrorCode(rejected),
+    'SYSTEM_ROLE_MENU_NOT_FOUND',
+    'disabled-module role menu assignment guard',
+  );
+  assertEqual(plan.code, limitedPlanCode, 'limited plan code');
+}
+
+async function seedLimitedMenuRole(tenantId: string): Promise<void> {
+  const client = getSmokePrisma();
+  await client.role.create({
+    data: {
+      code: limitedRoleCode,
+      name: 'Smoke Menu Scoped Role',
+      permissions: {
+        create: [
+          'core:menu:read',
+          'core:role:read',
+          'core:role:update',
+        ].map((code) => ({
+          permission: { connect: { code } },
+        })),
+      },
+      tenantId,
+    },
+  });
+}
+
+async function cleanupPlanScopeFixture(): Promise<void> {
+  const client = getSmokePrisma();
+  await client.tenant.deleteMany({
+    where: { code: limitedTenantCode },
+  });
+  await client.user.deleteMany({
+    where: { username: limitedUsername },
+  });
+  await client.tenantPlan.deleteMany({
+    where: { code: limitedPlanCode },
+  });
+}
+
 function findMenu(menus: readonly MenuSummary[], key: string) {
   const menu = menus.find((candidate) => candidate.key === key);
   if (!menu) {
     throw new Error(`Expected menu list to include ${key}`);
   }
   return menu;
+}
+
+function assertNoMenu(menus: readonly MenuSummary[], key: string): void {
+  if (menus.some((candidate) => candidate.key === key)) {
+    throw new Error(`Expected menu list to exclude ${key}`);
+  }
+}
+
+function getApiErrorCode(value: unknown): string | undefined {
+  if (!value || typeof value !== 'object') {
+    return undefined;
+  }
+
+  if ('code' in value && typeof value.code === 'string') {
+    return value.code;
+  }
+
+  if (
+    'error' in value &&
+    value.error &&
+    typeof value.error === 'object' &&
+    'code' in value.error &&
+    typeof value.error.code === 'string'
+  ) {
+    return value.error.code;
+  }
+
+  return undefined;
 }
 
 main().catch((error: unknown) => {

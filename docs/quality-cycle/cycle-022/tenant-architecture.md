@@ -26,6 +26,7 @@ Both modes use the same Tenant/TenantPlan/TenantMembership data model.
 - `RequestContext` stores actor, tenant, membership, and access mode after guard authentication.
 - Authenticated tenant users derive effective role codes and post codes from the active membership.
 - Authenticated tenant permissions are derived from active membership roles and clipped by the active tenant plan's enabled module codes.
+- Global menu metadata is clipped by the active tenant plan's enabled module codes before it is returned or assigned through role-menu APIs.
 - Security data scope resolves from the active membership's department and roles when a membership id is present.
 
 ## Boundary Rules

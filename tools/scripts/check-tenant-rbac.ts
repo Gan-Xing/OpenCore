@@ -38,8 +38,36 @@ const checks: Array<{
     ],
   },
   {
+    file: 'apps/api/src/modules/core/rbac/rbac.controller.ts',
+    markers: [
+      'getMenuPlanScope(request)',
+      'enabledModuleCodes: getAuthenticatedUser(request).enabledModuleCodes',
+    ],
+  },
+  {
+    file: 'packages/system/src/system-menu/system-menu.repository.ts',
+    markers: [
+      'filterSystemMenusByPlanScope',
+      'menuModuleCodeByPermissionCode',
+      'listModules()',
+    ],
+  },
+  {
+    file: 'packages/system/src/system-role/system-role.service.ts',
+    markers: ['SystemMenuPlanScope', 'this.menus.listMenus(scope)'],
+  },
+  {
     file: 'tools/smoke/smoke-core-tenant-rbac.ts',
     markers: ['postCodes', 'permissionCodes', 'activeMembership'],
+  },
+  {
+    file: 'tools/smoke/smoke-core-menu.ts',
+    markers: [
+      'core.menu.plan-scope-list',
+      'core.menu.plan-scope-detail',
+      'core.role.menu-plan-scope',
+      'assertNoMenu(limitedMenus,',
+    ],
   },
   {
     file: 'package.json',

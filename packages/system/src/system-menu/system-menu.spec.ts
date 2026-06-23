@@ -163,6 +163,34 @@ describe('@opencore/system system-menu', () => {
     );
   });
 
+  it('filters readable menus by enabled tenant plan modules', async () => {
+    const service = new SystemMenuService(new SeedSystemMenuRepository());
+    const menus = await service.listMenus({
+      enabledModuleCodes: ['core.menu'],
+    });
+
+    expect(menus).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          key: 'system.menus',
+          permissionCode: 'core:menu:read',
+        }),
+      ]),
+    );
+    expect(menus).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          key: 'system.users',
+          permissionCode: 'core:user:read',
+        }),
+      ]),
+    );
+    await expectHttpExceptionCode(
+      service.getMenu('system.users', { enabledModuleCodes: ['core.menu'] }),
+      'SYSTEM_MENU_NOT_FOUND',
+    );
+  });
+
   describe('PrismaSystemMenuRepository integration', () => {
     const prisma = new PrismaService();
     const service = new SystemMenuService(

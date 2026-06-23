@@ -96,11 +96,7 @@ import {
 } from './permissions.decorator';
 import { RbacRepository } from './rbac.repository';
 
-type RequestWithUser = SecurityRequestWithDataScope & {
-  user?: {
-    id: string;
-  };
-};
+type RequestWithUser = SecurityRequestWithDataScope;
 
 type AvatarResponse = {
   send(body: Buffer): void;
@@ -668,8 +664,9 @@ export class RbacController {
   @ApiOkResponse({ type: RoleMenuAssignmentDto })
   getRoleMenuAssignment(
     @Param('code') code: string,
+    @Req() request: RequestWithUser,
   ): Promise<RoleMenuAssignmentDto> {
-    return this.roles.getRoleMenuAssignment(code);
+    return this.roles.getRoleMenuAssignment(code, getMenuPlanScope(request));
   }
 
   @Patch('roles/:code/menus')
@@ -679,8 +676,13 @@ export class RbacController {
   async assignRoleMenus(
     @Param('code') code: string,
     @Body() body: AssignRoleMenusDto,
+    @Req() request: RequestWithUser,
   ): Promise<RoleMenuAssignmentDto> {
-    const assignment = await this.roles.assignRoleMenus(code, body);
+    const assignment = await this.roles.assignRoleMenus(
+      code,
+      body,
+      getMenuPlanScope(request),
+    );
     const revokedSessionCount = await this.revokeActiveSessionsForRole(
       code,
       'rbac.role-menu-assignment',
@@ -861,24 +863,27 @@ export class RbacController {
   @ApiTags('Core Menus')
   @RequirePermission('core:menu:read')
   @ApiOkResponse({ type: [MenuSummaryDto] })
-  listMenus(): Promise<MenuSummaryDto[]> {
-    return this.menus.listMenus();
+  listMenus(@Req() request: RequestWithUser): Promise<MenuSummaryDto[]> {
+    return this.menus.listMenus(getMenuPlanScope(request));
   }
 
   @Get('menus/export')
   @ApiTags('Core Menus')
   @RequirePermission('core:menu:export')
   @ApiOkResponse({ type: RbacExportPreviewDto })
-  exportMenus(): Promise<RbacExportPreviewDto> {
-    return this.menus.createExportPreview();
+  exportMenus(@Req() request: RequestWithUser): Promise<RbacExportPreviewDto> {
+    return this.menus.createExportPreview(getMenuPlanScope(request));
   }
 
   @Get('menus/:key')
   @ApiTags('Core Menus')
   @RequirePermission('core:menu:read')
   @ApiOkResponse({ type: MenuSummaryDto })
-  getMenu(@Param('key') key: string): Promise<MenuSummaryDto> {
-    return this.menus.getMenu(key);
+  getMenu(
+    @Param('key') key: string,
+    @Req() request: RequestWithUser,
+  ): Promise<MenuSummaryDto> {
+    return this.menus.getMenu(key, getMenuPlanScope(request));
   }
 
   @Post('menus')
@@ -1050,6 +1055,14 @@ function getAuthenticatedUserId(request: RequestWithUser): string {
   }
 
   return userId;
+}
+
+function getMenuPlanScope(request: RequestWithUser): {
+  enabledModuleCodes: readonly string[];
+} {
+  return {
+    enabledModuleCodes: getAuthenticatedUser(request).enabledModuleCodes,
+  };
 }
 
 function getAuthorizationHeader(
