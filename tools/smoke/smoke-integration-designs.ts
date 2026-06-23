@@ -12,6 +12,8 @@ import {
 
 const smoke = createTypedSmokeRuntime();
 const { apiPrefix, baseUrl, checkDocs, clients, request } = smoke;
+const ROOT_TENANT_ID = 'tenant_root';
+const ROOT_RUNTIME_ROOM = `tenant:${ROOT_TENANT_ID}:integration.diagnostics`;
 
 async function main() {
   await request('/health/live', { expected: [200] });
@@ -94,6 +96,16 @@ async function main() {
       'delivered',
       'WebSocket runtime event delivery status',
     );
+    assertEqual(
+      published.tenantId,
+      ROOT_TENANT_ID,
+      'WebSocket runtime event tenant',
+    );
+    assertEqual(
+      published.room,
+      ROOT_RUNTIME_ROOM,
+      'WebSocket runtime tenant room',
+    );
     assertAtLeast(
       published.deliveredCount,
       1,
@@ -112,6 +124,27 @@ async function main() {
       'typed-smoke-websocket-runtime',
       'WebSocket runtime stream trace',
     );
+
+    const rewritten = await clients.integration.publishWebSocketRuntimeEvent(
+      token,
+      {
+        room: 'tenant:tenant_foreign_smoke:integration.diagnostics',
+        traceId: 'typed-smoke-websocket-runtime-tenant-room',
+        type: 'diagnostic.ping',
+      },
+    );
+    assertEqual(
+      rewritten.tenantId,
+      ROOT_TENANT_ID,
+      'WebSocket runtime rewritten tenant',
+    );
+    assertEqual(
+      rewritten.room,
+      ROOT_RUNTIME_ROOM,
+      'WebSocket runtime rewritten room',
+    );
+
+    await stream.readUntil('typed-smoke-websocket-runtime-tenant-room');
 
     const rejected = await request(
       `${apiPrefix}/integrations/websocket/runtime/events`,
@@ -147,6 +180,24 @@ async function main() {
     'typed-smoke-websocket-runtime',
     'WebSocket runtime persisted event trace',
   );
+  const persistedSmokeEvent = afterDiagnostics.events.find(
+    (event) => event.traceId === 'typed-smoke-websocket-runtime',
+  );
+  if (!persistedSmokeEvent) {
+    throw new Error(
+      'Expected WebSocket runtime diagnostics to include smoke event',
+    );
+  }
+  assertEqual(
+    persistedSmokeEvent.tenantId,
+    ROOT_TENANT_ID,
+    'WebSocket runtime persisted event tenant',
+  );
+  assertEqual(
+    persistedSmokeEvent.room,
+    ROOT_RUNTIME_ROOM,
+    'WebSocket runtime persisted event room',
+  );
   assertNoSecretLeak(afterDiagnostics);
 
   const summary = await clients.integration.getSummary(token);
@@ -174,6 +225,7 @@ async function main() {
         'integration.designs.websocket',
         'integration.websocket-runtime.stream-connect',
         'integration.websocket-runtime.publish-diagnostic',
+        'integration.websocket-runtime.tenant-room',
         'integration.websocket-runtime.reject-non-diagnostic',
         'integration.websocket-runtime.diagnostics',
         'integration.websocket-runtime.persisted-events',

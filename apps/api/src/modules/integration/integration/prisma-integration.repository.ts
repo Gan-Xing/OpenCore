@@ -101,6 +101,7 @@ import {
   normalizeProviderType,
   normalizeOptionalBoolean,
   normalizeProcessOutboxLimit,
+  resolveIntegrationRequestTenantId,
   redactProviderConfig,
   renderTemplate,
   requireRecord,
@@ -224,6 +225,7 @@ type OAuthCallbackAuditRow = {
 
 type WebSocketRuntimeEventRow = {
   id: string;
+  tenantId: string;
   room: string;
   type: string;
   payloadPreview: unknown;
@@ -1380,9 +1382,11 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
   }
 
   async getWebSocketRuntimeDiagnostics() {
-    const live = this.websocketRuntime.getDiagnostics();
+    const tenantId = resolveIntegrationRequestTenantId();
+    const live = this.websocketRuntime.getDiagnostics(tenantId);
     const persistedEvents =
       await this.prisma.integrationWebSocketRuntimeEvent.findMany({
+        where: { tenantId },
         orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
         take: 100,
       });
@@ -1401,10 +1405,12 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
   }
 
   async publishWebSocketRuntimeEvent(body: PublishWebSocketRuntimeEventDto) {
-    const event = this.websocketRuntime.publish(body);
+    const tenantId = resolveIntegrationRequestTenantId();
+    const event = this.websocketRuntime.publish({ ...body, tenantId });
     await this.prisma.integrationWebSocketRuntimeEvent.create({
       data: {
         id: event.id,
+        tenantId: event.tenantId,
         room: event.room,
         type: event.type,
         payloadPreview: toInputJson(event.payloadPreview),
@@ -1423,7 +1429,10 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
     query?: WebSocketRuntimeStreamQueryDto;
     emit: WebSocketRuntimeSink;
   }) {
-    return this.websocketRuntime.openConnection(input);
+    return this.websocketRuntime.openConnection({
+      ...input,
+      tenantId: resolveIntegrationRequestTenantId(),
+    });
   }
 
   private async createOAuthCallbackAudit(input: {
@@ -1709,6 +1718,7 @@ function toWebSocketRuntimeEventRecord(
 ): WebSocketRuntimeEventRecord {
   return {
     id: row.id,
+    tenantId: row.tenantId,
     room: row.room,
     type: row.type,
     payloadPreview: normalizeRecord(row.payloadPreview) ?? {},

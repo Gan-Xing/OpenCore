@@ -508,6 +508,7 @@ export type WebSocketRuntimeEventDeliveryStatus =
 
 export type WebSocketRuntimeConnectionSummary = {
   id: string;
+  tenantId: string;
   subjectId: string;
   transport: 'sse';
   status: WebSocketRuntimeConnectionStatus;
@@ -520,6 +521,7 @@ export type WebSocketRuntimeConnectionSummary = {
 
 export type WebSocketRuntimeSubscriptionSummary = {
   id: string;
+  tenantId: string;
   connectionId: string;
   room: string;
   eventTypes: readonly string[];
@@ -530,6 +532,7 @@ export type WebSocketRuntimeSubscriptionSummary = {
 
 export type WebSocketRuntimeEventSummary = {
   id: string;
+  tenantId: string;
   room: string;
   type: string;
   payloadPreview: Record<string, unknown>;

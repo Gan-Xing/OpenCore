@@ -12147,6 +12147,7 @@
         "type": "object",
         "properties": {
           "id": { "type": "string" },
+          "tenantId": { "type": "string" },
           "subjectId": { "type": "string" },
           "transport": { "type": "string", "enum": ["sse"] },
           "status": { "type": "string", "enum": ["closed", "connected"] },
@@ -12158,6 +12159,7 @@
         },
         "required": [
           "id",
+          "tenantId",
           "subjectId",
           "transport",
           "status",
@@ -12170,6 +12172,7 @@
         "type": "object",
         "properties": {
           "id": { "type": "string" },
+          "tenantId": { "type": "string" },
           "connectionId": { "type": "string" },
           "room": { "type": "string" },
           "eventTypes": { "type": "array", "items": { "type": "string" } },
@@ -12179,6 +12182,7 @@
         },
         "required": [
           "id",
+          "tenantId",
           "connectionId",
           "room",
           "eventTypes",
@@ -12190,6 +12194,7 @@
         "type": "object",
         "properties": {
           "id": { "type": "string" },
+          "tenantId": { "type": "string" },
           "room": { "type": "string" },
           "type": { "type": "string" },
           "payloadPreview": { "type": "object" },
@@ -12203,6 +12208,7 @@
         },
         "required": [
           "id",
+          "tenantId",
           "room",
           "type",
           "payloadPreview",

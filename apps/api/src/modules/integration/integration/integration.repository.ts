@@ -1,5 +1,6 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { createApiErrorBody } from '@opencore/common';
+import { getRequestContext } from '@opencore/core';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import type {
   CreateIntegrationProviderDto,
@@ -126,6 +127,8 @@ export type WebSocketRuntimeConnectionHandle = {
 };
 
 export type WebSocketRuntimeSink = (event: WebSocketRuntimeEventRecord) => void;
+
+export const ROOT_TENANT_ID = 'tenant_root';
 
 export abstract class IntegrationRepository {
   abstract getSummary(): Promise<IntegrationSummaryDto>;
@@ -1348,14 +1351,27 @@ export class IntegrationWebSocketRuntimeStore {
   private events: WebSocketRuntimeEventRecord[] = [];
   private sequence = 0;
 
-  getDiagnostics(): WebSocketRuntimeDiagnosticsDto {
-    const connections = [...this.connections.values()].sort(
-      compareConnectedDesc,
-    );
-    const subscriptions = [...this.subscriptions.values()].sort(
-      compareSubscribedDesc,
-    );
-    const events = [...this.events].sort(compareCreatedDesc);
+  getDiagnostics(tenantId?: string): WebSocketRuntimeDiagnosticsDto {
+    const normalizedTenantId = tenantId
+      ? normalizeWebSocketRuntimeTenantId(tenantId)
+      : undefined;
+    const connections = [...this.connections.values()]
+      .filter(
+        (connection) =>
+          !normalizedTenantId || connection.tenantId === normalizedTenantId,
+      )
+      .sort(compareConnectedDesc);
+    const subscriptions = [...this.subscriptions.values()]
+      .filter(
+        (subscription) =>
+          !normalizedTenantId || subscription.tenantId === normalizedTenantId,
+      )
+      .sort(compareSubscribedDesc);
+    const events = [...this.events]
+      .filter(
+        (event) => !normalizedTenantId || event.tenantId === normalizedTenantId,
+      )
+      .sort(compareCreatedDesc);
 
     return {
       summary: {
@@ -1377,17 +1393,20 @@ export class IntegrationWebSocketRuntimeStore {
   }
 
   openConnection(input: {
+    tenantId: string;
     subjectId: string;
     query?: WebSocketRuntimeStreamQueryDto;
     emit: WebSocketRuntimeSink;
   }): WebSocketRuntimeConnectionHandle {
     const now = new Date().toISOString();
-    const room = normalizeWebSocketRuntimeRoom(input.query?.room);
+    const tenantId = normalizeWebSocketRuntimeTenantId(input.tenantId);
+    const room = createTenantWebSocketRuntimeRoom(tenantId, input.query?.room);
     const eventTypes = normalizeWebSocketRuntimeEventTypes(
       input.query?.eventTypes,
     );
     const connection: WebSocketRuntimeConnectionRecord = {
       id: this.nextId('ws_conn'),
+      tenantId,
       subjectId: normalizeRequiredString(
         input.subjectId,
         'WebSocket runtime subjectId is required.',
@@ -1400,6 +1419,7 @@ export class IntegrationWebSocketRuntimeStore {
     };
     const subscription: WebSocketRuntimeSubscriptionRecord = {
       id: this.nextId('ws_sub'),
+      tenantId,
       connectionId: connection.id,
       room,
       eventTypes,
@@ -1422,11 +1442,15 @@ export class IntegrationWebSocketRuntimeStore {
     };
   }
 
-  publish(body: PublishWebSocketRuntimeEventDto): WebSocketRuntimeEventRecord {
-    const room = normalizeWebSocketRuntimeRoom(body.room);
+  publish(
+    body: PublishWebSocketRuntimeEventDto & { tenantId: string },
+  ): WebSocketRuntimeEventRecord {
+    const tenantId = normalizeWebSocketRuntimeTenantId(body.tenantId);
+    const room = createTenantWebSocketRuntimeRoom(tenantId, body.room);
     const type = normalizeWebSocketRuntimePublishEventType(body.type);
     const event: WebSocketRuntimeEventRecord = {
       id: this.nextId('ws_evt'),
+      tenantId,
       room,
       type,
       payloadPreview: redactWebSocketRuntimePayload(body.payload ?? {}),
@@ -1963,6 +1987,48 @@ function normalizeOAuthExpiresInSeconds(value: unknown): number | null {
   }
 
   return parsed;
+}
+
+export function resolveIntegrationRequestTenantId(): string {
+  return normalizeWebSocketRuntimeTenantId(
+    getRequestContext()?.tenantId ?? ROOT_TENANT_ID,
+  );
+}
+
+export function createTenantWebSocketRuntimeRoom(
+  tenantId: string,
+  value: unknown,
+): string {
+  const normalizedTenantId = normalizeWebSocketRuntimeTenantId(tenantId);
+  const rawRoom = normalizeOptionalText(value);
+  const room = normalizeWebSocketRuntimeRoom(stripTenantRuntimeRoom(rawRoom));
+
+  return `tenant:${normalizedTenantId}:${room}`;
+}
+
+function stripTenantRuntimeRoom(value: string | undefined): string | undefined {
+  if (!value?.startsWith('tenant:')) {
+    return value;
+  }
+
+  const match = /^tenant:([^:]+):(.+)$/.exec(value);
+  return match?.[2] ?? value;
+}
+
+function normalizeWebSocketRuntimeTenantId(value: unknown): string {
+  const tenantId = normalizeRequiredString(
+    value,
+    'WebSocket runtime tenantId is required.',
+  );
+  if (tenantId.length > 120 || !/^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/.test(tenantId)) {
+    throw integrationBadRequest(
+      'INTEGRATION_WEBSOCKET_TENANT_INVALID',
+      'WebSocket runtime tenantId must be a safe tenant identifier.',
+      { tenantId },
+    );
+  }
+
+  return tenantId;
 }
 
 function normalizeWebSocketRuntimeRoom(value: unknown): string {

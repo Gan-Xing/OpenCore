@@ -63,39 +63,40 @@ model TenantPlanModule {
 }
 
 model Tenant {
-  id               String                    @id @default(cuid())
-  code             String                    @unique
-  slug             String                    @unique
-  name             String
-  status           String                    @default("active")
-  planId           String?
-  plan             TenantPlan?               @relation(fields: [planId], references: [id], onDelete: SetNull)
-  contactName      String?
-  contactMobile    String?
-  accountLimit     Int?
-  expiresAt        DateTime?
-  createdByUserId  String?
-  createdBy        User?                     @relation("TenantCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
-  memberships      TenantMembership[]
-  membershipRoles  TenantMembershipRole[]
-  membershipPosts  TenantMembershipPost[]
-  roles            Role[]
-  systemConfigs    SystemConfig[]
-  dictTypes        DictType[]
-  depts            SystemDept[]
-  posts            SystemPost[]
-  fileAssets       FileAsset[]
-  systemNotices    SystemNotice[]
-  noticeTemplates  SystemNoticeTemplate[]
-  noticeReceipts   SystemNoticeReadReceipt[]
-  noticeDeliveries SystemNoticeDelivery[]
-  schedulerJobs    JobDefinition[]
-  schedulerRuns    JobRunLog[]
-  auditLogs        AuditLog[]
-  loginLogs        LoginLog[]
-  onlineSessions   OnlineUserSession[]
-  createdAt        DateTime                  @default(now())
-  updatedAt        DateTime                  @updatedAt
+  id                     String                             @id @default(cuid())
+  code                   String                             @unique
+  slug                   String                             @unique
+  name                   String
+  status                 String                             @default("active")
+  planId                 String?
+  plan                   TenantPlan?                        @relation(fields: [planId], references: [id], onDelete: SetNull)
+  contactName            String?
+  contactMobile          String?
+  accountLimit           Int?
+  expiresAt              DateTime?
+  createdByUserId        String?
+  createdBy              User?                              @relation("TenantCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  memberships            TenantMembership[]
+  membershipRoles        TenantMembershipRole[]
+  membershipPosts        TenantMembershipPost[]
+  roles                  Role[]
+  systemConfigs          SystemConfig[]
+  dictTypes              DictType[]
+  depts                  SystemDept[]
+  posts                  SystemPost[]
+  fileAssets             FileAsset[]
+  systemNotices          SystemNotice[]
+  noticeTemplates        SystemNoticeTemplate[]
+  noticeReceipts         SystemNoticeReadReceipt[]
+  noticeDeliveries       SystemNoticeDelivery[]
+  schedulerJobs          JobDefinition[]
+  schedulerRuns          JobRunLog[]
+  webSocketRuntimeEvents IntegrationWebSocketRuntimeEvent[]
+  auditLogs              AuditLog[]
+  loginLogs              LoginLog[]
+  onlineSessions         OnlineUserSession[]
+  createdAt              DateTime                           @default(now())
+  updatedAt              DateTime                           @updatedAt
 
   @@index([planId])
   @@index([status, expiresAt])
@@ -870,6 +871,8 @@ model IntegrationOAuthCallbackAudit {
 
 model IntegrationWebSocketRuntimeEvent {
   id             String   @id
+  tenantId       String   @default("tenant_root")
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   room           String
   type           String
   payloadPreview Json
@@ -878,10 +881,10 @@ model IntegrationWebSocketRuntimeEvent {
   status         String
   createdAt      DateTime @default(now())
 
-  @@index([room, createdAt])
-  @@index([type, createdAt])
+  @@index([tenantId, room, createdAt])
+  @@index([tenantId, type, createdAt])
   @@index([traceId])
-  @@index([createdAt])
+  @@index([tenantId, createdAt])
 }
 
 model AreaDatasetVersion {

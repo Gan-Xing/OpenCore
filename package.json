@@ -138,6 +138,7 @@
     "guard:tenant-rbac": "pnpm scripts:ts tools/scripts/check-tenant-rbac.ts",
     "guard:tenant-redis-scope": "pnpm scripts:ts tools/scripts/check-tenant-redis-scope.ts",
     "guard:tenant-scheduler-scope": "pnpm scripts:ts tools/scripts/check-tenant-scheduler-scope.ts",
+    "guard:tenant-websocket-scope": "pnpm scripts:ts tools/scripts/check-tenant-websocket-scope.ts",
     "nx": "NX_DAEMON=false nx"
   },
   "devDependencies": {

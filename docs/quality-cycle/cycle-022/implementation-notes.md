@@ -823,3 +823,46 @@ Passed after deploy:
 - No platform-admin global Redis cache browser in T5b; platform visit/control-plane behavior belongs with T6.
 - No BullMQ queue-name namespace rewrite in T5b.
 - No Integration provider/outbox/OAuth/WebSocket tenant migration in this sub-slice.
+
+## Round 17: T5c WebSocket Runtime Tenant Scope
+
+### Completed
+
+- Made WebSocket runtime events tenant-owned:
+  - added `IntegrationWebSocketRuntimeEvent.tenantId` with root default, tenant FK, and tenant-leading room/type/created indexes;
+  - exposed `tenantId` through WebSocket runtime connection, subscription, and event DTOs plus SDK summaries.
+- Scoped WebSocket runtime operations:
+  - diagnostics resolve `RequestContext.tenantId` and return only live/persisted records for the active tenant;
+  - SSE subscriptions normalize rooms to `tenant:{tenantId}:integration.*`;
+  - diagnostic publishes ignore client-supplied `tenant:*:` prefixes and rewrite rooms to the active tenant namespace before delivery/persistence.
+- Added tenant-scope verification:
+  - seed repository test checks root tenant rooms/events and forged foreign room rewrites;
+  - Prisma integration test creates a foreign tenant and proves root and foreign diagnostics cannot see each other’s persisted runtime events;
+  - `smoke:integration-designs` checks root tenant room metadata and public API foreign-prefix rewrite behavior.
+- Added `guard:tenant-websocket-scope`.
+
+### Verification Log
+
+Passed before deploy:
+
+- Prisma validation, client generation, migration deploy, and seed passed.
+- Focused seed and Prisma integration repository tests passed.
+- Tenant WebSocket guard, typed smoke compilation, SDK contract, Admin i18n, quality docs, OpenAPI export/drift, and registry tag checks passed.
+- Full repository typecheck, lint, and test suites passed.
+
+Passed after deploy:
+
+- OpenCore deploy rebuilt API/Admin, applied migrations, reseeded, restarted API `39172` and Admin `39174`, and passed deploy smoke including local `integration.websocket-runtime.tenant-room`.
+- Public API integration-designs smoke passed against `http://144.217.243.161:39172` with `integration.websocket-runtime.tenant-room`.
+
+### Remaining Product Debt
+
+- Complete broader BullMQ queue namespace/payload handling, Integration/outbox/OAuth tenant propagation, and broader runtime review.
+- Complete T4 System/core tenant data isolation for other unreviewed non-org data.
+- Complete T6 Tenant Plan CRUD, Tenant Member CRUD/invitation, Admin switcher, platform visit mode, and platform visit audit.
+
+### Deliberate Non-Goals
+
+- No general-purpose application WebSocket channel implementation in T5c; this slice only scopes the existing integration diagnostics runtime.
+- No Integration provider/outbox/OAuth tenant migration in this sub-slice.
+- No platform-admin global WebSocket diagnostics view; platform visit/control-plane behavior belongs with T6.

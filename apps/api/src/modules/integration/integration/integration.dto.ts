@@ -1201,6 +1201,9 @@ export class WebSocketRuntimeConnectionDto {
   id!: string;
 
   @ApiProperty()
+  tenantId!: string;
+
+  @ApiProperty()
   subjectId!: string;
 
   @ApiProperty({ enum: ['sse'] })
@@ -1230,6 +1233,9 @@ export class WebSocketRuntimeSubscriptionDto {
   id!: string;
 
   @ApiProperty()
+  tenantId!: string;
+
+  @ApiProperty()
   connectionId!: string;
 
   @ApiProperty()
@@ -1251,6 +1257,9 @@ export class WebSocketRuntimeSubscriptionDto {
 export class WebSocketRuntimeEventDto {
   @ApiProperty()
   id!: string;
+
+  @ApiProperty()
+  tenantId!: string;
 
   @ApiProperty()
   room!: string;

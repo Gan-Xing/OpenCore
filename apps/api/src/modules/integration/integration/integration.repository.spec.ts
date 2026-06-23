@@ -1945,6 +1945,7 @@ describe('IntegrationRepository', () => {
           id: handle.connection.id,
           status: 'connected',
           subjectId: 'user_admin',
+          tenantId: 'tenant_root',
           transport: 'sse',
         }),
       ],
@@ -1952,8 +1953,9 @@ describe('IntegrationRepository', () => {
         expect.objectContaining({
           connectionId: handle.connection.id,
           eventTypes: ['diagnostic.ping'],
-          room: 'integration.diagnostics',
+          room: 'tenant:tenant_root:integration.diagnostics',
           status: 'active',
+          tenantId: 'tenant_root',
         }),
       ],
     });
@@ -1974,9 +1976,11 @@ describe('IntegrationRepository', () => {
         message: 'runtime smoke',
       },
       status: 'delivered',
+      tenantId: 'tenant_root',
       traceId: 'trace-websocket-runtime',
       type: 'diagnostic.ping',
     });
+    expect(event.room).toBe('tenant:tenant_root:integration.diagnostics');
     expect(delivered).toHaveLength(1);
     expect(
       JSON.stringify(await repository.getWebSocketRuntimeDiagnostics()),
@@ -2000,9 +2004,10 @@ describe('IntegrationRepository', () => {
       ],
     });
     const skipped = await repository.publishWebSocketRuntimeEvent({
-      room: 'integration.diagnostics',
+      room: 'tenant:tenant_foreign:integration.diagnostics',
       type: 'diagnostic.ping',
     });
+    expect(skipped.room).toBe('tenant:tenant_root:integration.diagnostics');
     expect(skipped.status).toBe('no_subscribers');
     expect(delivered).toHaveLength(1);
 

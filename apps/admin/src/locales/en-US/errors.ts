@@ -382,6 +382,8 @@ export default {
   'error.INTEGRATION_WEBSOCKET_PUBLISH_EVENT_TYPE_INVALID':
     'The WebSocket publish event type is invalid.',
   'error.INTEGRATION_WEBSOCKET_ROOM_INVALID': 'The WebSocket room is invalid.',
+  'error.INTEGRATION_WEBSOCKET_TENANT_INVALID':
+    'The WebSocket tenant identifier is invalid.',
   'error.COLLABORATION_MESSAGE_DELETED':
     'The message has already been deleted.',
   'error.COLLABORATION_MESSAGE_NOT_FOUND': 'The message does not exist.',

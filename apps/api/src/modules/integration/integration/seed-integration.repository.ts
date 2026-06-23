@@ -97,6 +97,7 @@ import {
   normalizeProviderSecretRefStatus,
   normalizeProviderTestStatus,
   parseConfigSecretRef,
+  resolveIntegrationRequestTenantId,
   resolveProviderSecretValue,
   normalizeProcessOutboxLimit,
   redactProviderConfig,
@@ -1054,11 +1055,16 @@ export class SeedIntegrationRepository extends IntegrationRepository {
   }
 
   async getWebSocketRuntimeDiagnostics() {
-    return this.websocketRuntime.getDiagnostics();
+    return this.websocketRuntime.getDiagnostics(
+      resolveIntegrationRequestTenantId(),
+    );
   }
 
   async publishWebSocketRuntimeEvent(body: PublishWebSocketRuntimeEventDto) {
-    return this.websocketRuntime.publish(body);
+    return this.websocketRuntime.publish({
+      ...body,
+      tenantId: resolveIntegrationRequestTenantId(),
+    });
   }
 
   openWebSocketRuntimeConnection(input: {
@@ -1066,7 +1072,10 @@ export class SeedIntegrationRepository extends IntegrationRepository {
     query?: WebSocketRuntimeStreamQueryDto;
     emit: WebSocketRuntimeSink;
   }) {
-    return this.websocketRuntime.openConnection(input);
+    return this.websocketRuntime.openConnection({
+      ...input,
+      tenantId: resolveIntegrationRequestTenantId(),
+    });
   }
 
   private updateProviderConfig(
