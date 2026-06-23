@@ -35,10 +35,11 @@ These remain below the productization waterline and cannot be described as compl
 | Bearer request validates tenant/member/session status | Done   | Auth rejects missing/mismatched tenant context and inactive tenant/member state before returning the user.  |
 | Request context enrichment                            | Done   | Guards write actor, tenant, membership, and access mode into `AsyncLocalStorage`.                           |
 | Select/switch APIs                                    | Done   | Login can return tenant-selection ticket; select/switch reissue tenant-bound tokens; switch revokes old.    |
+| Tenant code/domain login resolution                   | Done   | Login accepts optional `tenantCode` and derives host/domain selection from server-observed `X-Forwarded-Host` or `Host`, not from a public body `tenantHost`. |
 | Single-mode compatibility                             | Done   | System user creation/update syncs root membership bridges; seed resolves root membership by username.       |
-| OpenAPI/SDK/Admin                                     | Done   | Auth DTO/OpenAPI updated; SDK has select/switch; Admin login accepts optional tenant code.                  |
-| Smoke                                                 | Done   | Tenant auth smoke validates token claims, request context, header tamper resistance, and switch revocation. |
-| Guard                                                 | Done   | Static tenant auth guard checks schema/token/session/context/API/smoke markers.                             |
+| OpenAPI/SDK/Admin                                     | Done   | Auth DTO/OpenAPI and SDK remove public `tenantHost`; Admin login accepts optional tenant code.              |
+| Smoke                                                 | Done   | Tenant auth smoke validates token claims, request context, header tamper resistance, host-derived login, and switch revocation. |
+| Guard                                                 | Done   | Static tenant auth guard checks schema/token/session/context/API/smoke markers and forbids public `tenantHost` body selectors. |
 
 ## T3a Audit
 

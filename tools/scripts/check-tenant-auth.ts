@@ -4,6 +4,7 @@ import { join } from 'node:path';
 const root = process.cwd();
 
 const checks: Array<{
+  forbiddenMarkers?: readonly string[];
   file: string;
   markers: readonly string[];
 }> = [
@@ -42,11 +43,34 @@ const checks: Array<{
   },
   {
     file: 'apps/api/src/modules/core/rbac/auth.controller.ts',
-    markers: ["@Post('select-tenant')", "@Post('switch-tenant')"],
+    markers: [
+      "tenantHost: getTenantHost(request.headers)",
+      'x-forwarded-host',
+      "getHeaderValue(headers, 'host')",
+      "@Post('select-tenant')",
+      "@Post('switch-tenant')",
+    ],
+  },
+  {
+    file: 'apps/api/src/modules/core/rbac/rbac.dto.ts',
+    forbiddenMarkers: ['tenantHost?: string'],
+    markers: ['tenantCode?: string'],
+  },
+  {
+    file: 'packages/sdk/src/rbac-types.ts',
+    forbiddenMarkers: ['tenantHost?: string'],
+    markers: ['tenantCode?: string'],
   },
   {
     file: 'tools/smoke/smoke-core-tenancy-auth.ts',
-    markers: ['decodeTokenPayload', 'switchTenant', 'tenant_forged'],
+    markers: [
+      'decodeTokenPayload',
+      'switchTenant',
+      'tenant_forged',
+      'loginWithHost',
+      'x-forwarded-host',
+      'host login token tenant id',
+    ],
   },
   {
     file: 'package.json',
@@ -61,6 +85,16 @@ for (const check of checks) {
   if (missing.length > 0) {
     throw new Error(
       `${check.file} is missing tenant auth marker(s): ${missing.join(', ')}`,
+    );
+  }
+
+  const forbidden = (check.forbiddenMarkers ?? []).filter((marker) =>
+    content.includes(marker),
+  );
+
+  if (forbidden.length > 0) {
+    throw new Error(
+      `${check.file} still contains forbidden tenant auth marker(s): ${forbidden.join(', ')}`,
     );
   }
 }

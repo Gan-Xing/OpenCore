@@ -37,7 +37,6 @@ export type LoginRequest = {
   username: string;
   password: string;
   tenantCode?: string;
-  tenantHost?: string;
 };
 
 export type LoginResponse = {

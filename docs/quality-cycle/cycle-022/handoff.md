@@ -4,7 +4,7 @@ Date: 2026-06-23
 Repository: `Gan-Xing/OpenCore`  
 Branch: `main`  
 Target track: `Cycle-022 / Tenant Foundation`  
-Status: **In progress; T6 Admin control plane is closed and T7e ReportDefinition tenant isolation is deployed and publicly smoke-verified**
+Status: **In progress; T2 server-side host tenant resolution is closed, T6 Admin control plane is closed, and T7e ReportDefinition tenant isolation is deployed and publicly smoke-verified**
 
 ## 0. Current Round Snapshot
 
@@ -12,7 +12,7 @@ Updated: 2026-06-23
 
 Current completed slice count: **6 full slices**
 
-This working tree has advanced Cycle-022 through six full deployable tenant foundation slices plus T4a online-session tenant isolation, T4b login-log tenant isolation, T4c operation-audit tenant isolation, T4d dictionary tenant isolation, T4e system config tenant isolation, T4f file asset tenant isolation, T4g system notice tenant isolation, T5a scheduler tenant propagation, T5b Redis cache namespace isolation, T5c WebSocket runtime tenant scope, T5d BullMQ monitor queue namespace isolation, T5e Integration provider/outbox/OAuth tenant scope, T5f runtime parity audit, T6a Tenant Plan control-plane CRUD, T6b Tenant lifecycle control-plane CRUD, T6c Tenant Member lifecycle/invitation control-plane CRUD, T6d Admin tenant switcher, T6e platform visit mode, T6f platform visit audit, T7a Collaboration Message tenant isolation, T7b Collaboration Notice tenant isolation, T7c Collaboration Todo tenant isolation, T7d Collaboration Approval Lite tenant isolation, and T7e ReportDefinition tenant isolation:
+This working tree has advanced Cycle-022 through six full deployable tenant foundation slices plus T2 server-side host tenant resolution, T4a online-session tenant isolation, T4b login-log tenant isolation, T4c operation-audit tenant isolation, T4d dictionary tenant isolation, T4e system config tenant isolation, T4f file asset tenant isolation, T4g system notice tenant isolation, T5a scheduler tenant propagation, T5b Redis cache namespace isolation, T5c WebSocket runtime tenant scope, T5d BullMQ monitor queue namespace isolation, T5e Integration provider/outbox/OAuth tenant scope, T5f runtime parity audit, T6a Tenant Plan control-plane CRUD, T6b Tenant lifecycle control-plane CRUD, T6c Tenant Member lifecycle/invitation control-plane CRUD, T6d Admin tenant switcher, T6e platform visit mode, T6f platform visit audit, T7a Collaboration Message tenant isolation, T7b Collaboration Notice tenant isolation, T7c Collaboration Todo tenant isolation, T7d Collaboration Approval Lite tenant isolation, and T7e ReportDefinition tenant isolation:
 
 - Prisma models for `TenantPlan`, `TenantPlanModule`, `Tenant`, `TenantMembership`, `TenantMembershipRole`, `TenantMembershipPost`, `PlatformRole`, `UserPlatformRole`, and `PlatformRolePermission`.
 - Migration `20260622223000_tenant_foundation` creates the `root` tenant, root `system.full` plan, root memberships for existing users, and transitional root copies of `UserRole` and `UserPost`.
@@ -25,9 +25,10 @@ This working tree has advanced Cycle-022 through six full deployable tenant foun
 - Access tokens now carry tenant id, membership id, and access mode; authenticated sessions are registered with the same context.
 - `SecurityAuthService` validates token/session tenant context, tenant status, and membership status on each bearer request.
 - `/api/auth/select-tenant` and `/api/auth/switch-tenant` reissue tenant-bound sessions; switch revokes the previous token.
+- `/api/auth/login` now derives tenant host/domain selection from server-side `X-Forwarded-Host` or `Host`, while public Login DTO/OpenAPI/SDK no longer expose a client-supplied `tenantHost` body field.
 - `RequestContext` now carries actor, tenant, membership, and access mode populated by authenticated guards.
 - Admin login accepts an optional tenant code and no longer stores a token unless the login response is authenticated.
-- `pnpm guard:tenant-auth` and `pnpm smoke:core-tenancy-auth` were added.
+- `pnpm guard:tenant-auth` and `pnpm smoke:core-tenancy-auth` now cover token claims, header tamper resistance, server-side host tenant login, and switch revocation.
 - Refreshed deploy completed on API `39172` and Admin `39174`; tenant foundation/auth smokes passed against local and public API.
 - Active authenticated users now prefer `TenantMembershipRole` and `TenantMembershipPost` over legacy `UserRole`/`UserPost`.
 - Tenant membership permissions are clipped by the active tenant plan's enabled module codes.
@@ -171,6 +172,8 @@ This working tree has advanced Cycle-022 through six full deployable tenant foun
 - ReportDefinition seed records, OpenAPI DTO, SDK summary fixture, and Admin Reports now expose `tenantId`.
 - `smoke:core-operations-reports` seeds a foreign tenant report and proves root-scope list/detail do not cross tenants; `guard:tenant-report-definition-scope` locks the slice markers.
 - Refreshed deploy completed on API `39172` and Admin `39174`; local deploy smoke and public API ReportDefinition tenant isolation smoke passed for T7e.
+- T2 host/domain login hardening removes public `tenantHost` from Login DTO/OpenAPI/SDK, derives the value only from server-observed `X-Forwarded-Host`/`Host`, and extends `smoke:core-tenancy-auth` plus `guard:tenant-auth` to prove a host-derived login signs a token for the matching tenant slug.
+- Refreshed deploy completed on API `39172` and Admin `39174`; public `smoke:core-tenancy-auth` passed against `http://144.217.243.161:39172` for the T2b host/domain login closure.
 
 Still not complete:
 
@@ -698,16 +701,17 @@ AreaDatasetVersion.version
 
 ```text
 POST /auth/login
-  输入 username/password
+  输入 username/password，可选 tenantCode
+  服务端可从 X-Forwarded-Host / Host 推导 tenant slug/code
   校验全局 User
   查询 active TenantMembership
 
   0 个成员：拒绝或只允许 platform operator 登录
-  1 个成员：直接为该成员签发 tenant-bound token
-  多个成员：返回短时 loginTicket + tenant options
+  1 个成员或 tenantCode/Host 唯一命中成员：直接为该成员签发 tenant-bound token
+  多个成员且没有服务端/显式选择：返回短时 loginTicket + tenant options
 
 POST /auth/select-tenant
-  输入 loginTicket + tenantId
+  输入 loginTicket + tenantId/tenantCode/membershipId
   校验 membership、tenant status、expiry
   签发 tenant-bound token
 ```

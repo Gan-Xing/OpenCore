@@ -1433,3 +1433,37 @@ Passed Prisma validation/generation, seed and typed-smoke checks, OpenAPI/SDK dr
 
 - No client-supplied tenant selector was added.
 - No report designer or async report execution behavior was added in T7e; this round only closes row ownership and access isolation.
+
+## Round 32: T2b Server-Side Host Tenant Resolution
+
+### Completed
+
+- Updated `/api/auth/login` so the auth context derives `tenantHost` only from server-observed request headers:
+  - `X-Forwarded-Host` is preferred for proxy deployments;
+  - `Host` is the fallback;
+  - public request body `tenantHost` is no longer read.
+- Removed public `tenantHost` from:
+  - `LoginRequestDto`;
+  - generated OpenAPI contract;
+  - SDK `LoginRequest`.
+- Added focused controller coverage for forwarded-host precedence and host fallback.
+- Extended `smoke:core-tenancy-auth`:
+  - creates a temporary tenant and admin membership fixture;
+  - logs in with `X-Forwarded-Host: <tenant-slug>.opencore.test`;
+  - verifies token `tid/mid/am` and `activeTenant.code` match the host-derived tenant.
+- Extended `guard:tenant-auth` to require server-side host resolution markers and forbid public body `tenantHost` markers.
+
+### Verification Log
+
+- Passed focused controller spec, tenant auth guard, typed smoke check, Prisma validation/generation, seed check, OpenAPI export/check, SDK check, registry tag check, API/Admin/SDK/full typechecks, lint, full tests, refreshed deploy, and public `smoke:core-tenancy-auth` against `http://144.217.243.161:39172`.
+
+### Remaining Product Debt
+
+- T4 remains partial until every remaining System/core repository is reviewed or explicitly closed.
+- T7 remains partial for future CRM/ERP/Mall/AI business domains.
+
+### Deliberate Non-Goals
+
+- No schema or migration was required; `Tenant.slug` already supports host/subdomain matching.
+- No frontend fake tenant switch was added.
+- No data API accepts a client-supplied tenant selector.

@@ -65,7 +65,7 @@ export class AuthController {
     return this.authService.login(body.username, body.password, {
       ip: request.ip,
       tenantCode: body.tenantCode,
-      tenantHost: body.tenantHost,
+      tenantHost: getTenantHost(request.headers),
       userAgent: getHeaderValue(request.headers, 'user-agent'),
       requestId: getRequestContext()?.requestId,
     });
@@ -273,6 +273,21 @@ function getHeaderValue(
   }
 
   return value;
+}
+
+export function getTenantHost(
+  headers: RequestWithUser['headers'],
+): string | undefined {
+  return (
+    getForwardedHost(getHeaderValue(headers, 'x-forwarded-host')) ??
+    getHeaderValue(headers, 'host')
+  );
+}
+
+function getForwardedHost(value: string | undefined): string | undefined {
+  const forwardedHost = value?.split(',')[0]?.trim();
+
+  return forwardedHost || undefined;
 }
 
 function authUnauthorized(

@@ -10645,8 +10645,7 @@
         "properties": {
           "username": { "type": "string", "example": "admin" },
           "password": { "type": "string", "example": "admin123" },
-          "tenantCode": { "type": "string", "example": "root" },
-          "tenantHost": { "type": "string", "example": "root.opencore.local" }
+          "tenantCode": { "type": "string", "example": "root" }
         },
         "required": ["username", "password"]
       },

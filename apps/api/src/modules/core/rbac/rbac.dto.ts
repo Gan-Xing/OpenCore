@@ -49,9 +49,6 @@ export class LoginRequestDto {
 
   @ApiProperty({ required: false, example: 'root' })
   tenantCode?: string;
-
-  @ApiProperty({ required: false, example: 'root.opencore.local' })
-  tenantHost?: string;
 }
 
 export class SelectTenantRequestDto {

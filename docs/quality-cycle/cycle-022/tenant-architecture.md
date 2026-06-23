@@ -33,6 +33,7 @@ Both modes use the same Tenant/TenantPlan/TenantMembership data model.
 - Ordinary APIs must not trust body/query/header `tenantId`.
 - Tenant switching must be a server endpoint that reissues token/session state.
 - Tenant selection uses a short-lived login ticket, not an authenticated access token.
+- Login tenant discovery may use optional `tenantCode` or server-observed `X-Forwarded-Host`/`Host`; public login bodies must not expose a client-supplied `tenantHost`.
 - Bearer authentication must reject token/session tenant mismatches and inactive tenant/member state.
 - Tenant-owned repositories must eventually use tenant-scoped access or explicit tenant predicates.
 - Permission guards must use effective tenant membership permissions, not global user role permissions.
