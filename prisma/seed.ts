@@ -907,7 +907,12 @@ async function seedRoles(): Promise<number> {
 
   for (const roleDefinition of roles) {
     const role = await prisma.role.upsert({
-      where: { code: roleDefinition.code },
+      where: {
+        tenantId_code: {
+          tenantId: ROOT_TENANT_ID,
+          code: roleDefinition.code,
+        },
+      },
       update: {
         name: roleDefinition.name,
         enabled: roleDefinition.enabled,
@@ -918,6 +923,7 @@ async function seedRoles(): Promise<number> {
         ] as Prisma.InputJsonValue,
       },
       create: {
+        tenantId: ROOT_TENANT_ID,
         code: roleDefinition.code,
         name: roleDefinition.name,
         enabled: roleDefinition.enabled,
@@ -993,7 +999,10 @@ async function seedUsers(bootstrapPassword: string): Promise<number> {
       },
     });
     const roles = await prisma.role.findMany({
-      where: { code: { in: [...userDefinition.roleCodes] } },
+      where: {
+        tenantId: ROOT_TENANT_ID,
+        code: { in: [...userDefinition.roleCodes] },
+      },
       select: { id: true, code: true },
     });
     const knownRoleCodes = new Set(roles.map((role) => role.code));

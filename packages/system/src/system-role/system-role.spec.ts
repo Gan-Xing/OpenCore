@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { runWithRequestContext } from '@opencore/core';
 import { PrismaService } from '@opencore/database';
 import { PrismaSystemMenuRepository } from '../system-menu/system-menu.prisma-repository';
 import { SeedSystemMenuRepository } from '../system-menu/system-menu.seed-repository';
@@ -189,6 +190,7 @@ describe('@opencore/system system-role', () => {
     );
     const testRunId = randomUUID().slice(0, 8);
     const code = `role_${testRunId}`;
+    const tenantId = `tenant_role_${testRunId}`;
     const username = `role_user_${testRunId}`;
 
     beforeEach(async () => {
@@ -276,7 +278,12 @@ describe('@opencore/system system-role', () => {
       });
 
       const persistedRole = await prisma.role.findUniqueOrThrow({
-        where: { code },
+        where: {
+          tenantId_code: {
+            tenantId: 'tenant_root',
+            code,
+          },
+        },
       });
       const user = await prisma.user.create({
         data: {
@@ -328,6 +335,82 @@ describe('@opencore/system system-role', () => {
       });
     });
 
+    it('scopes role codes to the active tenant context', async () => {
+      await prisma.tenant.create({
+        data: {
+          id: tenantId,
+          code: tenantId,
+          slug: tenantId,
+          name: 'Tenant Role Scope Test',
+        },
+      });
+      await service.createRole({
+        code,
+        name: 'Root Scoped Role',
+        permissionCodes: ['core:role:read'],
+        dataScope: 'self',
+      });
+      await runInTenant(tenantId, () =>
+        service.createRole({
+          code,
+          name: 'Tenant Scoped Role',
+          permissionCodes: ['core:dashboard:read'],
+          dataScope: 'self',
+        }),
+      );
+
+      await expect(service.getRole(code)).resolves.toMatchObject({
+        code,
+        name: 'Root Scoped Role',
+        permissionCodes: ['core:role:read'],
+      });
+      await expect(
+        runInTenant(tenantId, () => service.getRole(code)),
+      ).resolves.toMatchObject({
+        code,
+        name: 'Tenant Scoped Role',
+        permissionCodes: ['core:dashboard:read'],
+      });
+      await expect(
+        runInTenant(tenantId, () => service.listRoles()),
+      ).resolves.toEqual([
+        expect.objectContaining({
+          code,
+          name: 'Tenant Scoped Role',
+        }),
+      ]);
+      await expectHttpExceptionCode(
+        service.createRole({
+          code,
+          name: 'Duplicate Root Scoped Role',
+          permissionCodes: [],
+        }),
+        'SYSTEM_ROLE_ALREADY_EXISTS',
+      );
+      await expectHttpExceptionCode(
+        runInTenant(tenantId, () =>
+          service.createRole({
+            code,
+            name: 'Duplicate Tenant Scoped Role',
+            permissionCodes: [],
+          }),
+        ),
+        'SYSTEM_ROLE_ALREADY_EXISTS',
+      );
+      await expect(
+        prisma.role.findMany({
+          where: { code },
+          select: { tenantId: true, name: true },
+          orderBy: { tenantId: 'asc' },
+        }),
+      ).resolves.toEqual(
+        expect.arrayContaining([
+          { tenantId: 'tenant_root', name: 'Root Scoped Role' },
+          { tenantId, name: 'Tenant Scoped Role' },
+        ]),
+      );
+    });
+
     it('protects seeded system roles in PostgreSQL', async () => {
       await expectHttpExceptionCode(
         service.deleteRole('admin'),
@@ -359,9 +442,23 @@ describe('@opencore/system system-role', () => {
       await prisma.role.deleteMany({
         where: { code },
       });
+      await prisma.tenant.deleteMany({
+        where: { id: tenantId },
+      });
     }
   });
 });
+
+function runInTenant<T>(tenantId: string, callback: () => T): T {
+  return runWithRequestContext(
+    {
+      requestId: `test-${tenantId}`,
+      traceId: `test-${tenantId}`,
+      tenantId,
+    },
+    callback,
+  );
+}
 
 function createSeedRoleService(): SystemRoleService {
   return new SystemRoleService(

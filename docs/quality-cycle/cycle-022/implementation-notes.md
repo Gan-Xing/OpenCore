@@ -190,3 +190,63 @@ Passed after deploy:
 - No Tenant Plan CRUD API in T3a; plan-clipping is proven through repository integration tests because the control-plane CRUD surface is T6.
 - No front-end tenant switcher yet.
 - No Redis/file/queue/WebSocket/Integration tenant propagation yet.
+
+## Round 4: T3b Tenant-Scoped Role Catalog
+
+### Completed
+
+- Added migration `20260623093000_tenant_scoped_roles`:
+  - adds `Role.tenantId`;
+  - backfills existing roles to `tenant_root`;
+  - replaces global `Role.code` uniqueness with `(tenantId, code)`;
+  - adds `(tenantId, id)` so membership role bindings can enforce role ownership;
+  - changes `TenantMembershipRole(tenantId, roleId)` to reference `Role(tenantId, id)`.
+- Updated Prisma schema:
+  - `Tenant.roles`;
+  - required `Role.tenant`;
+  - tenant indexes and composite uniqueness.
+- Updated Role repository:
+  - resolves active tenant through `RequestContext`;
+  - scopes role list/get/create/update/delete to the active tenant;
+  - reports duplicate role codes per tenant.
+- Updated root compatibility:
+  - `SystemUser` legacy `UserRole` create/update/filter/assignment paths connect roles by `(tenant_root, code)`;
+  - seed upserts roles by `(tenant_root, code)` and seeded users attach root roles only.
+- Updated RBAC integration fixture:
+  - non-root tenant authz tests now create tenant-owned `admin` roles instead of attaching root roles across tenants.
+- Added verification:
+  - tenant role scope guard;
+  - tenant role smoke;
+  - integration test proves the same role code can exist in root and a non-root tenant while resolving by request context.
+
+### Verification Log
+
+Passed before deploy:
+
+- Prisma schema validation, client generation, migration deploy, and seed.
+- `pnpm prisma:seed:check`, `pnpm guard:tenant-role-scope`, `pnpm smoke:typed:check`.
+- OpenAPI export and SDK contract check.
+- Focused System Role, System User, and API RBAC integration tests.
+- Tenant foundation/auth/RBAC/role guards.
+- Full repository lint, typecheck, and test suites.
+
+Passed after deploy:
+
+- Refreshed deploy on API `39172` and Admin `39174`.
+- Local and public API smokes for tenant foundation, tenant auth, tenant RBAC, and tenant role scope.
+- Public Admin route and bundle checks from the deploy script.
+
+### Remaining Product Debt
+
+- Complete tenant-owned Department and Post repositories plus code uniqueness rewrites.
+- Add non-root Tenant Member role/post assignment APIs/Admin surface.
+- Complete T4 System/core tenant data isolation.
+- Complete T5 Redis/file/queue/WebSocket/Integration/OAuth/audit runtime propagation.
+- Complete T6 live Tenant Plan/Member CRUD, Admin switcher, and platform visit audit.
+
+### Deliberate Non-Goals
+
+- No Department/Post tenantization in T3b.
+- No public Role DTO shape change; active tenant is derived from authenticated request context.
+- No Tenant Plan CRUD or Member CRUD API in T3b.
+- No Redis/file/queue/WebSocket/Integration tenant propagation yet.

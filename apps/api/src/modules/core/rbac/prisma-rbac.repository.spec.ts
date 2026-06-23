@@ -147,10 +147,6 @@ describe('PrismaRbacRepository integration', () => {
       where: { username: 'admin' },
       select: { id: true },
     });
-    const adminRole = await prisma.role.findUniqueOrThrow({
-      where: { code: 'admin' },
-      select: { id: true },
-    });
     const engineerPost = await prisma.systemPost.findUniqueOrThrow({
       where: { code: 'engineer' },
       select: { id: true },
@@ -173,24 +169,45 @@ describe('PrismaRbacRepository integration', () => {
         slug: tenantAuthzCode,
         name: 'Authz Smoke Tenant',
         planId: tenantAuthzPlanId,
-        memberships: {
+      },
+    });
+    const adminRole = await prisma.role.create({
+      data: {
+        tenantId: tenantAuthzId,
+        code: 'admin',
+        name: 'Tenant Authz Admin',
+        system: true,
+        dataScope: 'all',
+        dataScopeDeptIds: [],
+        permissions: {
           create: {
-            id: tenantAuthzMembershipId,
-            userId: admin.id,
-            deptId: 'dept_operations',
-            status: 'active',
-            roles: {
-              create: {
-                roleId: adminRole.id,
-                tenantId: tenantAuthzId,
+            permission: {
+              connect: {
+                code: 'core:dashboard:read',
               },
             },
-            posts: {
-              create: {
-                postId: engineerPost.id,
-                tenantId: tenantAuthzId,
-              },
-            },
+          },
+        },
+      },
+      select: { id: true },
+    });
+    await prisma.tenantMembership.create({
+      data: {
+        id: tenantAuthzMembershipId,
+        tenantId: tenantAuthzId,
+        userId: admin.id,
+        deptId: 'dept_operations',
+        status: 'active',
+        roles: {
+          create: {
+            roleId: adminRole.id,
+            tenantId: tenantAuthzId,
+          },
+        },
+        posts: {
+          create: {
+            postId: engineerPost.id,
+            tenantId: tenantAuthzId,
           },
         },
       },

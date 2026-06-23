@@ -204,7 +204,14 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
         enabled: input.enabled,
         roles: {
           create: input.roleCodes.map((roleCode) => ({
-            role: { connect: { code: roleCode } },
+            role: {
+              connect: {
+                tenantId_code: {
+                  tenantId: ROOT_TENANT_ID,
+                  code: roleCode,
+                },
+              },
+            },
           })),
         },
         posts: {
@@ -275,7 +282,14 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
               roles: {
                 deleteMany: {},
                 create: input.roleCodes.map((roleCode) => ({
-                  role: { connect: { code: roleCode } },
+                  role: {
+                    connect: {
+                      tenantId_code: {
+                        tenantId: ROOT_TENANT_ID,
+                        code: roleCode,
+                      },
+                    },
+                  },
                 })),
               },
             }),
@@ -519,7 +533,14 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
         roles: {
           deleteMany: {},
           create: roleCodes.map((roleCode) => ({
-            role: { connect: { code: roleCode } },
+            role: {
+              connect: {
+                tenantId_code: {
+                  tenantId: ROOT_TENANT_ID,
+                  code: roleCode,
+                },
+              },
+            },
           })),
         },
       },
@@ -709,7 +730,12 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
 
   private async findRoleIdByCode(code: string): Promise<string> {
     const role = await this.prisma.role.findUnique({
-      where: { code },
+      where: {
+        tenantId_code: {
+          tenantId: ROOT_TENANT_ID,
+          code,
+        },
+      },
       select: { id: true },
     });
 
@@ -833,7 +859,10 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
 
   private async assertRolesExist(roleCodes: readonly string[]): Promise<void> {
     const roles = await this.prisma.role.findMany({
-      where: { code: { in: [...roleCodes] } },
+      where: {
+        tenantId: ROOT_TENANT_ID,
+        code: { in: [...roleCodes] },
+      },
       select: { code: true },
     });
     const existing = new Set(roles.map((role) => role.code));
@@ -950,7 +979,16 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
         : {},
       filters.enabled === undefined ? {} : { enabled: filters.enabled },
       filters.roleCode
-        ? { roles: { some: { role: { code: filters.roleCode } } } }
+        ? {
+            roles: {
+              some: {
+                role: {
+                  tenantId: ROOT_TENANT_ID,
+                  code: filters.roleCode,
+                },
+              },
+            },
+          }
         : {},
       filters.postCode
         ? { posts: { some: { post: { code: filters.postCode } } } }

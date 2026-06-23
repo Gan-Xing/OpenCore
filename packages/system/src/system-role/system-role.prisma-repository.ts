@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { getRequestContext } from '@opencore/core';
 import { PrismaService } from '@opencore/database';
 import type { CreateRoleDto, UpdateRoleDto } from './system-role.dto';
 import type { SystemRoleRecord } from './system-role.records';
@@ -14,6 +15,7 @@ import {
 
 type PrismaRoleWithPermissions = {
   id: string;
+  tenantId: string;
   code: string;
   name: string;
   enabled: boolean;
@@ -23,6 +25,8 @@ type PrismaRoleWithPermissions = {
   permissions: Array<{ permission: { code: string } }>;
 };
 
+const ROOT_TENANT_ID = 'tenant_root';
+
 @Injectable()
 export class PrismaSystemRoleRepository extends SystemRoleRepository {
   constructor(private readonly prisma: PrismaService) {
@@ -30,7 +34,9 @@ export class PrismaSystemRoleRepository extends SystemRoleRepository {
   }
 
   async listRoles(): Promise<SystemRoleRecord[]> {
+    const tenantId = resolveCurrentTenantId();
     const roles = await this.prisma.role.findMany({
+      where: { tenantId },
       include: {
         permissions: {
           include: {
@@ -50,12 +56,22 @@ export class PrismaSystemRoleRepository extends SystemRoleRepository {
 
   async createRole(body: CreateRoleDto): Promise<SystemRoleRecord> {
     const input = normalizeCreateSystemRoleInput(body);
+    const tenantId = resolveCurrentTenantId();
 
-    if (await this.prisma.role.findUnique({ where: { code: input.code } })) {
+    if (
+      await this.prisma.role.findUnique({
+        where: {
+          tenantId_code: {
+            tenantId,
+            code: input.code,
+          },
+        },
+      })
+    ) {
       throw systemRoleConflict(
         'SYSTEM_ROLE_ALREADY_EXISTS',
         'Role already exists.',
-        { code: input.code },
+        { code: input.code, tenantId },
       );
     }
 
@@ -63,6 +79,7 @@ export class PrismaSystemRoleRepository extends SystemRoleRepository {
     await this.assertDeptIdsExist(input.dataScopeDeptIds);
     const role = await this.prisma.role.create({
       data: {
+        tenantId,
         code: input.code,
         name: input.name,
         enabled: input.enabled,
@@ -91,7 +108,8 @@ export class PrismaSystemRoleRepository extends SystemRoleRepository {
     code: string,
     body: UpdateRoleDto,
   ): Promise<SystemRoleRecord> {
-    const existing = toSystemRoleRecord(await this.findRoleEntityByCode(code));
+    const existingEntity = await this.findRoleEntityByCode(code);
+    const existing = toSystemRoleRecord(existingEntity);
     const input = normalizeUpdateSystemRoleInput(existing, body);
 
     if (input.permissionCodes !== undefined) {
@@ -100,7 +118,12 @@ export class PrismaSystemRoleRepository extends SystemRoleRepository {
     await this.assertDeptIdsExist(input.dataScopeDeptIds);
 
     const role = await this.prisma.role.update({
-      where: { code },
+      where: {
+        tenantId_code: {
+          tenantId: existingEntity.tenantId,
+          code,
+        },
+      },
       data: {
         name: input.name,
         enabled: input.enabled,
@@ -145,15 +168,21 @@ export class PrismaSystemRoleRepository extends SystemRoleRepository {
       where: { roleId: role.id },
     });
     await this.prisma.userRole.deleteMany({ where: { roleId: role.id } });
-    await this.prisma.role.delete({ where: { code } });
+    await this.prisma.role.delete({ where: { id: role.id } });
     return { deleted: true };
   }
 
   private async findRoleEntityByCode(
     code: string,
   ): Promise<PrismaRoleWithPermissions> {
+    const tenantId = resolveCurrentTenantId();
     const role = await this.prisma.role.findUnique({
-      where: { code },
+      where: {
+        tenantId_code: {
+          tenantId,
+          code,
+        },
+      },
       include: {
         permissions: {
           include: {
@@ -166,6 +195,7 @@ export class PrismaSystemRoleRepository extends SystemRoleRepository {
     if (!role) {
       throw systemRoleNotFound('SYSTEM_ROLE_NOT_FOUND', 'Role not found.', {
         code,
+        tenantId,
       });
     }
 
@@ -228,6 +258,10 @@ function toSystemRoleRecord(role: PrismaRoleWithPermissions): SystemRoleRecord {
     dataScope: normalizeDataScope(role.dataScope),
     dataScopeDeptIds: normalizeStoredDeptIds(role.dataScopeDeptIds),
   };
+}
+
+function resolveCurrentTenantId(): string {
+  return getRequestContext()?.tenantId ?? ROOT_TENANT_ID;
 }
 
 function normalizeStoredDeptIds(value: unknown): readonly string[] {

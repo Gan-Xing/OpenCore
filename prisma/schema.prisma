@@ -79,6 +79,7 @@ model Tenant {
   memberships     TenantMembership[]
   membershipRoles TenantMembershipRole[]
   membershipPosts TenantMembershipPost[]
+  roles           Role[]
   onlineSessions  OnlineUserSession[]
   createdAt       DateTime               @default(now())
   updatedAt       DateTime               @updatedAt
@@ -174,7 +175,9 @@ model PlatformRolePermission {
 
 model Role {
   id                String                 @id @default(cuid())
-  code              String                 @unique
+  tenantId          String                 @default("tenant_root")
+  tenant            Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  code              String
   name              String
   enabled           Boolean                @default(true)
   system            Boolean                @default(false)
@@ -185,6 +188,10 @@ model Role {
   permissions       RolePermission[]
   createdAt         DateTime               @default(now())
   updatedAt         DateTime               @updatedAt
+
+  @@unique([tenantId, code])
+  @@unique([tenantId, id])
+  @@index([tenantId])
 }
 
 model Permission {
