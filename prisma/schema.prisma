@@ -106,6 +106,7 @@ model Tenant {
   reportDefinitions      ReportDefinition[]
   auditLogs              AuditLog[]
   loginLogs              LoginLog[]
+  loginLockouts          LoginLockout[]
   onlineSessions         OnlineUserSession[]
   createdAt              DateTime                           @default(now())
   updatedAt              DateTime                           @updatedAt
@@ -590,12 +591,17 @@ model LoginLog {
 
 model LoginLockout {
   id             String    @id @default(cuid())
-  username       String    @unique
+  tenantId       String    @default("tenant_root")
+  tenant         Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  username       String
   failedAttempts Int       @default(0)
   lockedUntil    DateTime?
   lastFailedAt   DateTime?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+
+  @@unique([tenantId, username])
+  @@index([tenantId, updatedAt])
 }
 
 model CollaborationMessage {

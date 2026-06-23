@@ -4,7 +4,7 @@ Date: 2026-06-23
 Repository: `Gan-Xing/OpenCore`  
 Branch: `main`  
 Target track: `Cycle-022 / Tenant Foundation`  
-Status: **In progress; T3f tenant-plan menu surface scope, T6 Admin control plane, and T7e ReportDefinition tenant isolation are deployed and publicly smoke-verified**
+Status: **In progress; T3f tenant-plan menu surface scope, T4h login lockout isolation, T6 Admin control plane, and T7e ReportDefinition tenant isolation are deployed and smoke-verified**
 
 ## 0. Current Round Snapshot
 
@@ -12,7 +12,7 @@ Updated: 2026-06-23
 
 Current completed slice count: **6 full slices**
 
-This working tree has advanced Cycle-022 through six full deployable tenant foundation slices plus T2 server-side host tenant resolution, T3f tenant-plan menu surface scope, T4a online-session tenant isolation, T4b login-log tenant isolation, T4c operation-audit tenant isolation, T4d dictionary tenant isolation, T4e system config tenant isolation, T4f file asset tenant isolation, T4g system notice tenant isolation, T5a scheduler tenant propagation, T5b Redis cache namespace isolation, T5c WebSocket runtime tenant scope, T5d BullMQ monitor queue namespace isolation, T5e Integration provider/outbox/OAuth tenant scope, T5f runtime parity audit, T6a Tenant Plan control-plane CRUD, T6b Tenant lifecycle control-plane CRUD, T6c Tenant Member lifecycle/invitation control-plane CRUD, T6d Admin tenant switcher, T6e platform visit mode, T6f platform visit audit, T7a Collaboration Message tenant isolation, T7b Collaboration Notice tenant isolation, T7c Collaboration Todo tenant isolation, T7d Collaboration Approval Lite tenant isolation, and T7e ReportDefinition tenant isolation:
+This working tree has advanced Cycle-022 through six full deployable tenant foundation slices plus T2 server-side host tenant resolution, T3f tenant-plan menu surface scope, T4a online-session tenant isolation, T4b login-log tenant isolation, T4c operation-audit tenant isolation, T4d dictionary tenant isolation, T4e system config tenant isolation, T4f file asset tenant isolation, T4g system notice tenant isolation, T4h login lockout tenant isolation, T5a scheduler tenant propagation, T5b Redis cache namespace isolation, T5c WebSocket runtime tenant scope, T5d BullMQ monitor queue namespace isolation, T5e Integration provider/outbox/OAuth tenant scope, T5f runtime parity audit, T6a Tenant Plan control-plane CRUD, T6b Tenant lifecycle control-plane CRUD, T6c Tenant Member lifecycle/invitation control-plane CRUD, T6d Admin tenant switcher, T6e platform visit mode, T6f platform visit audit, T7a Collaboration Message tenant isolation, T7b Collaboration Notice tenant isolation, T7c Collaboration Todo tenant isolation, T7d Collaboration Approval Lite tenant isolation, and T7e ReportDefinition tenant isolation:
 
 - Prisma models for `TenantPlan`, `TenantPlanModule`, `Tenant`, `TenantMembership`, `TenantMembershipRole`, `TenantMembershipPost`, `PlatformRole`, `UserPlatformRole`, and `PlatformRolePermission`.
 - Migration `20260622223000_tenant_foundation` creates the `root` tenant, root `system.full` plan, root memberships for existing users, and transitional root copies of `UserRole` and `UserPost`.
@@ -66,6 +66,8 @@ This working tree has advanced Cycle-022 through six full deployable tenant foun
 - Refreshed deploy completed on API `39172` and Admin `39174`; tenant foundation/auth/RBAC/role/post/dept/member and online-user smokes passed against local and public API.
 - Migration `20260623163000_tenant_scoped_login_logs` makes `LoginLog` tenant-owned with root backfill, tenant/date indexes, and a tenant FK.
 - `PrismaAuditLoginLogRepository` now resolves the active tenant from `RequestContext`, scopes list/detail/export/delete/clean operations, and records new login attempts under the selected session tenant or root fallback.
+- Migration `20260624073000_tenant_scoped_login_lockouts` makes `LoginLockout` tenant-owned with root backfill and `(tenantId, username)` uniqueness.
+- Username lockout checks and writes resolve tenant from the server-side login selector, and `/core/login-logs/unlock` clears only the authenticated bearer tenant's lockout.
 - Login-log seed records, OpenAPI DTO, SDK summary fixture, and Admin Login Logs now expose `tenantId`.
 - `smoke:core-login-log` seeds a foreign tenant login log and proves root-scope list/detail/delete/clean do not cross tenants.
 - `pnpm guard:tenant-login-log-scope` was added for the T4b Login Log isolation closure.
@@ -176,6 +178,7 @@ This working tree has advanced Cycle-022 through six full deployable tenant foun
 - T2 host/domain login hardening removes public `tenantHost` from Login DTO/OpenAPI/SDK, derives the value only from server-observed `X-Forwarded-Host`/`Host`, and extends `smoke:core-tenancy-auth` plus `guard:tenant-auth` to prove a host-derived login signs a token for the matching tenant slug.
 - Refreshed deploy completed on API `39172` and Admin `39174`; public `smoke:core-tenancy-auth` passed against `http://144.217.243.161:39172` for the T2b host/domain login closure.
 - T3f tenant-plan menu surface scope filters `/core/menus`, menu detail/export, and role-menu assignment by the active token's `enabledModuleCodes`; refreshed deploy completed on API `39172` and Admin `39174`, and public `smoke:core-menu` proves a tenant without `core.user` cannot see, detail, or assign `system.users`.
+- T4h tenant-scoped login lockouts key failed username counters by `(tenantId, username)`, treat localhost/IP platform hosts as no tenant selector for root fallback, and keep root unlock/login from clearing tenant-specific lockouts; refreshed deploy completed on API `39172` and Admin `39174`, and public `smoke:core-login-log` passed against `http://144.217.243.161:39172`.
 
 Still not complete:
 
@@ -618,7 +621,7 @@ integration.provider
 | `FileAsset`                        | Tenant-owned                                  | 增加 `tenantId`，对象 key 加 tenant prefix                                                       |
 | `AuditLog`                         | Tenant-owned operation audit                  | Done T4c: 增加 `tenantId`，list/detail/export/delete/retention clean 按 active tenant 查询       |
 | `LoginLog`                         | Tenant-owned login audit                      | Done T4b: 增加 `tenantId`，登录/登出记录和 list/detail/export/delete/clean 按 active tenant 查询 |
-| `LoginLockout`                     | Global credential security                    | V1 保持全局；用户名锁定不依赖前端租户                                                            |
+| `LoginLockout`                     | Tenant-owned credential security              | Done T4h: 增加 `tenantId`，唯一键改为 `(tenantId, username)`，登录锁定和解锁按服务端解析租户隔离 |
 | `CollaborationMessage`             | Tenant-owned                                  | Done T7a: 增加 `tenantId` 并按 active tenant 查询；sender/recipient member/user identity 后续细化 |
 | `CollaborationNotice`              | Tenant-owned                                  | Done T7b: 增加 `tenantId` 并按 active tenant 查询                                                |
 | `CollaborationTodo`                | Tenant-owned                                  | Done T7c: 增加 `tenantId` 并按 active tenant 查询                                                |

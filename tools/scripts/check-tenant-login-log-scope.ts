@@ -10,9 +10,11 @@ const checks: Array<{
   {
     file: 'prisma/schema.prisma',
     markers: [
-      'loginLogs       LoginLog[]',
+      'loginLogs',
+      'loginLockouts          LoginLockout[]',
       'tenantId      String   @default("tenant_root")',
       '@@index([tenantId, createdAt])',
+      '@@unique([tenantId, username])',
     ],
   },
   {
@@ -21,6 +23,14 @@ const checks: Array<{
       'UPDATE "LoginLog"',
       'LoginLog_tenantId_createdAt_idx',
       'LoginLog_tenantId_fkey',
+    ],
+  },
+  {
+    file: 'prisma/migrations/20260624073000_tenant_scoped_login_lockouts/migration.sql',
+    markers: [
+      'ALTER TABLE "LoginLockout" ADD COLUMN "tenantId"',
+      'LoginLockout_tenantId_username_key',
+      'LoginLockout_tenantId_fkey',
     ],
   },
   {
@@ -42,9 +52,35 @@ const checks: Array<{
     ],
   },
   {
+    file: 'apps/api/src/modules/core/login-security/prisma-security-login-lockout.repository.ts',
+    markers: [
+      'tenantId_username',
+      'normalizeLockoutTenantId',
+      'record.tenantId',
+    ],
+  },
+  {
+    file: 'packages/security/src/security-auth/security-auth.service.ts',
+    markers: [
+      'resolveLoginLockoutTenantId',
+      'findTenantForVisit(context)',
+      'tenantId,',
+    ],
+  },
+  {
+    file: 'apps/api/src/modules/core/system-management/system-management.controller.ts',
+    markers: [
+      'getAuthenticatedTenantId(request)',
+      'clearLoginLockout({',
+    ],
+  },
+  {
     file: 'tools/smoke/smoke-core-login-log.ts',
     markers: [
       'FOREIGN_TENANT_ID',
+      'lockoutTenantId',
+      'assertTenantLockoutExists',
+      'auth.login-lockout.tenant-scope-root',
       'assertForeignTenantHidden',
       'assertForeignLoginLogPreserved',
       'foreign tenant login log',
@@ -55,8 +91,12 @@ const checks: Array<{
     markers: ['pages.security.loginLogs.fields.tenantId'],
   },
   {
+    file: 'apps/api/src/modules/core/system-management/system-management.dto.ts',
+    markers: ['tenantId!: string;', 'LoginUnlockResultDto'],
+  },
+  {
     file: 'packages/sdk/src/system-management-types.ts',
-    markers: ['tenantId: string'],
+    markers: ['tenantId: string', 'LoginUnlockSummary'],
   },
   {
     file: 'package.json',

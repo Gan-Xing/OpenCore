@@ -1,7 +1,9 @@
 import { UnauthorizedException } from '@nestjs/common';
 import {
+  normalizeLoginLockoutLookupInput,
   SecurityLoginLockoutRepository,
   type SecurityLoginLockoutAttemptInput,
+  type SecurityLoginLockoutLookupInput,
   type SecurityLoginLockoutRecord,
   type SecurityLoginPolicy,
   SecurityLoginPolicyProvider,
@@ -333,15 +335,17 @@ describe('@opencore/security security-auth', () => {
       loginLockouts,
     );
 
-    await expect(service.login('admin', 'wrong')).rejects.toThrow(
+    const platformHost = { tenantHost: '127.0.0.1:39172' };
+
+    await expect(service.login('admin', 'wrong', platformHost)).rejects.toThrow(
       UnauthorizedException,
     );
-    await expect(service.login('admin', 'still-wrong')).rejects.toThrow(
-      UnauthorizedException,
-    );
-    await expect(service.login('admin', 'admin123')).rejects.toThrow(
-      UnauthorizedException,
-    );
+    await expect(
+      service.login('admin', 'still-wrong', platformHost),
+    ).rejects.toThrow(UnauthorizedException);
+    await expect(
+      service.login('admin', 'admin123', platformHost),
+    ).rejects.toThrow(UnauthorizedException);
 
     expect(loginAttempts.records).toEqual([
       expect.objectContaining({
@@ -545,15 +549,16 @@ class InMemorySecurityLoginLockoutRepository extends SecurityLoginLockoutReposit
   private readonly records = new Map<string, SecurityLoginLockoutRecord>();
 
   async getLoginLockout(
-    username: string,
+    input: SecurityLoginLockoutLookupInput,
   ): Promise<SecurityLoginLockoutRecord | undefined> {
-    return this.clone(this.records.get(username));
+    return this.clone(this.records.get(this.key(input)));
   }
 
   async recordFailedLoginAttempt(
     input: SecurityLoginLockoutAttemptInput,
   ): Promise<SecurityLoginLockoutRecord> {
-    const current = this.records.get(input.username);
+    const key = this.key(input);
+    const current = this.records.get(key);
     const now = new Date();
     const failedAttempts = (current?.failedAttempts ?? 0) + 1;
     const lockedUntil =
@@ -561,25 +566,35 @@ class InMemorySecurityLoginLockoutRepository extends SecurityLoginLockoutReposit
         ? new Date(now.getTime() + input.lockoutMinutes * 60_000).toISOString()
         : undefined;
     const record: SecurityLoginLockoutRecord = {
+      tenantId: input.tenantId,
       username: input.username,
       failedAttempts,
       lockedUntil,
       lastFailedAt: now.toISOString(),
     };
 
-    this.records.set(input.username, record);
+    this.records.set(key, record);
     return { ...record };
   }
 
-  async clearLoginLockout(username: string) {
-    const current = this.records.get(username);
-    this.records.delete(username);
+  async clearLoginLockout(input: SecurityLoginLockoutLookupInput) {
+    const lookup = normalizeLoginLockoutLookupInput(input);
+    const key = this.key(lookup);
+    const current = this.records.get(key);
+    this.records.delete(key);
     return {
-      username,
+      tenantId: lookup.tenantId ?? 'tenant_root',
+      username: lookup.username,
       unlocked: Boolean(current),
       failedAttempts: current?.failedAttempts ?? 0,
       lockedUntil: current?.lockedUntil,
     };
+  }
+
+  private key(input: SecurityLoginLockoutLookupInput): string {
+    const lookup = normalizeLoginLockoutLookupInput(input);
+
+    return `${lookup.tenantId ?? 'tenant_root'}:${lookup.username}`;
   }
 
   private clone(

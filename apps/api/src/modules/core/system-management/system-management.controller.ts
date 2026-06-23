@@ -1335,8 +1335,12 @@ export class SystemManagementController {
   @ApiOkResponse({ type: LoginUnlockResultDto })
   unlockLoginUser(
     @Body() body: UnlockLoginUserDto,
+    @Req() request: RequestWithUser,
   ): Promise<LoginUnlockResultDto> {
-    return this.loginLockouts.clearLoginLockout(body.username);
+    return this.loginLockouts.clearLoginLockout({
+      username: body.username,
+      tenantId: getAuthenticatedTenantId(request),
+    });
   }
 
   @Get('login-logs/:id')
@@ -1359,6 +1363,19 @@ function getAuthenticatedUserId(request: RequestWithUser): string {
   }
 
   return userId;
+}
+
+function getAuthenticatedTenantId(request: RequestWithUser): string {
+  const tenantId = request.user?.activeTenant?.id;
+
+  if (!tenantId) {
+    throw systemManagementUnauthorized(
+      'SYSTEM_AUTH_TENANT_REQUIRED',
+      'Missing authenticated tenant.',
+    );
+  }
+
+  return tenantId;
 }
 
 function writeSseEvent(

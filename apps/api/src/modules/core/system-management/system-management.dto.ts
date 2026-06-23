@@ -132,6 +132,9 @@ export class UnlockLoginUserDto {
 
 export class LoginUnlockResultDto {
   @ApiProperty()
+  tenantId!: string;
+
+  @ApiProperty()
   username!: string;
 
   @ApiProperty()

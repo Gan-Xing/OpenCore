@@ -27,6 +27,12 @@ const failedUsername = `opencore-smoke-login-${runId}`;
 const logoutUsername = `opencore-smoke-logout-${runId}`;
 const lockoutUsername = `opencore-smoke-lockout-${runId}`;
 const postCleanUsername = `opencore-smoke-login-clean-${runId}`;
+const lockoutTenantId = `tenant_login_lockout_${runId.replace(/[^a-z0-9]/g, '_')}`;
+const lockoutTenantCode = `login-lockout-${runId}`;
+const lockoutTenantMembershipId = `membership_login_lockout_${runId.replace(
+  /[^a-z0-9]/g,
+  '_',
+)}`;
 const logoutPassword = `Logout-${runId}-A1`;
 const lockoutPassword = `Lockout-${runId}-A1`;
 const smokeLoginMaxFailedAttempts = 3;
@@ -39,6 +45,7 @@ let lockoutUserId;
 let originalLoginMaxFailedAttempts;
 let loginMaxFailedAttemptsMutated = false;
 let foreignTenantSeeded = false;
+let lockoutTenantSeeded = false;
 
 async function main() {
   try {
@@ -426,6 +433,8 @@ async function main() {
       createdLockoutUser.id,
       'created lockout smoke user id',
     );
+    await seedLockoutTenantMembership(lockoutUserId);
+    lockoutTenantSeeded = true;
 
     const emptyUnlockResult = await apiRequest('/core/login-logs/unlock', {
       method: 'POST',
@@ -457,6 +466,34 @@ async function main() {
         password: lockoutPassword,
       },
     });
+
+    const tenantLoginWhileRootLocked = await request(`${apiPrefix}/auth/login`, {
+      method: 'POST',
+      expected: [200, 201],
+      body: {
+        username: lockoutUsername,
+        password: lockoutPassword,
+        tenantCode: lockoutTenantCode,
+      },
+    });
+    assertEqual(
+      tenantLoginWhileRootLocked.user?.activeTenant?.id,
+      lockoutTenantId,
+      'tenant login active tenant while root lockout exists',
+    );
+
+    for (let attempt = 0; attempt < smokeLoginMaxFailedAttempts; attempt += 1) {
+      await request(`${apiPrefix}/auth/login`, {
+        method: 'POST',
+        expected: [401, 403],
+        body: {
+          username: lockoutUsername,
+          password: `tenant-wrong-${attempt}`,
+          tenantCode: lockoutTenantCode,
+        },
+      });
+    }
+    await assertTenantLockoutExists();
 
     const lockedLog = await waitForAccountLockedLoginLog();
     assertEqual(
@@ -493,6 +530,7 @@ async function main() {
       'unlock failed attempt count',
     );
     assertString(unlockResult.lockedUntil, 'unlock lockedUntil');
+    await assertTenantLockoutExists();
 
     const restoredLogin = await request(`${apiPrefix}/auth/login`, {
       method: 'POST',
@@ -500,17 +538,26 @@ async function main() {
       body: {
         username: lockoutUsername,
         password: lockoutPassword,
+        tenantCode: 'root',
       },
     });
     assertString(
       restoredLogin.accessToken,
       'restored lockout user accessToken',
     );
+    assertEqual(
+      restoredLogin.user?.activeTenant?.id,
+      'tenant_root',
+      'restored lockout user active root tenant',
+    );
+    await assertTenantLockoutExists();
 
     await apiRequest(`/core/users/${encodeURIComponent(lockoutUserId)}`, {
       method: 'DELETE',
     });
     lockoutUserId = undefined;
+    await cleanupLockoutTenantMembership();
+    lockoutTenantSeeded = false;
     await restoreLoginMaxFailedAttempts();
 
     const cleanResult = await apiRequest('/core/login-logs/clean', {
@@ -601,6 +648,8 @@ async function main() {
           'core.login-log.unlock-empty',
           'auth.login-lockout.enforced',
           'auth.login-lockout.configurable-attempt-limit',
+          'auth.login-lockout.tenant-scope-root',
+          'auth.login-lockout.tenant-scope-unlock',
           'core.login-log.account-locked-filter',
           'core.login-log.unlock-restores-login',
           'core.login-log.clean-all',
@@ -612,6 +661,7 @@ async function main() {
   } catch (error) {
     await cleanupSmokeUser(logoutUserId).catch(() => undefined);
     await cleanupSmokeUser(lockoutUserId).catch(() => undefined);
+    await cleanupLockoutTenantMembership().catch(() => undefined);
     await restoreLoginMaxFailedAttempts().catch(() => undefined);
     console.error(
       JSON.stringify({
@@ -625,6 +675,9 @@ async function main() {
   } finally {
     if (foreignTenantSeeded) {
       await cleanupForeignTenantLoginLog().catch(() => undefined);
+    }
+    if (lockoutTenantSeeded) {
+      await cleanupLockoutTenantMembership().catch(() => undefined);
     }
     await disconnectSmokePrisma();
   }
@@ -658,6 +711,60 @@ async function cleanupSmokeUser(userId) {
   await apiRequest(`/core/users/${encodeURIComponent(userId)}`, {
     method: 'DELETE',
   });
+}
+
+async function seedLockoutTenantMembership(userId) {
+  const prisma = getSmokePrisma();
+
+  await cleanupLockoutTenantMembership();
+  await prisma.tenant.create({
+    data: {
+      id: lockoutTenantId,
+      code: lockoutTenantCode,
+      slug: lockoutTenantCode,
+      name: 'Login Lockout Tenant Scope Smoke',
+      status: 'active',
+    },
+  });
+  await prisma.tenantMembership.create({
+    data: {
+      id: lockoutTenantMembershipId,
+      tenantId: lockoutTenantId,
+      userId,
+      status: 'active',
+      isOwner: true,
+      joinedAt: new Date(),
+    },
+  });
+}
+
+async function cleanupLockoutTenantMembership() {
+  const prisma = getSmokePrisma();
+
+  await prisma.loginLockout.deleteMany({
+    where: { username: lockoutUsername },
+  });
+  await prisma.tenantMembership.deleteMany({
+    where: { id: lockoutTenantMembershipId },
+  });
+  await prisma.tenant.deleteMany({
+    where: { id: lockoutTenantId },
+  });
+}
+
+async function assertTenantLockoutExists() {
+  const record = await getSmokePrisma().loginLockout.findUnique({
+    where: {
+      tenantId_username: {
+        tenantId: lockoutTenantId,
+        username: lockoutUsername,
+      },
+    },
+  });
+
+  if (!record || record.failedAttempts < smokeLoginMaxFailedAttempts) {
+    throw new Error('Expected tenant-scoped login lockout to remain isolated');
+  }
 }
 
 async function waitForFailedLoginLog() {

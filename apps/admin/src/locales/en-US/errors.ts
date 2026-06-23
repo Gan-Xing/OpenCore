@@ -95,6 +95,8 @@ export default {
     'The storage object key must be a relative path.',
   'error.SYSTEM_AUTH_USER_REQUIRED':
     'The current signed-in user is missing. Please sign in again.',
+  'error.SYSTEM_AUTH_TENANT_REQUIRED':
+    'The current tenant context is missing. Please sign in again.',
   'error.SYSTEM_FILE_ASSET_EXISTS': 'The file asset already exists.',
   'error.SYSTEM_FILE_ASSET_NOT_FOUND': 'The file asset does not exist.',
   'error.SYSTEM_FILE_CONTENT_BASE64_INVALID':

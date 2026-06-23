@@ -14882,12 +14882,13 @@
       "LoginUnlockResultDto": {
         "type": "object",
         "properties": {
+          "tenantId": { "type": "string" },
           "username": { "type": "string" },
           "unlocked": { "type": "boolean" },
           "failedAttempts": { "type": "number" },
           "lockedUntil": { "type": "string" }
         },
-        "required": ["username", "unlocked", "failedAttempts"]
+        "required": ["tenantId", "username", "unlocked", "failedAttempts"]
       },
       "CollaborationMessageSummaryDto": {
         "type": "object",

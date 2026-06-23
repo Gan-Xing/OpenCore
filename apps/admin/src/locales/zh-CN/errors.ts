@@ -62,6 +62,7 @@ export default {
   'error.FILE_SIZE_INVALID': '文件大小必须为正数。',
   'error.FILE_STORAGE_KEY_INVALID': '存储对象 key 必须是相对路径。',
   'error.SYSTEM_AUTH_USER_REQUIRED': '缺少当前登录用户信息，请重新登录。',
+  'error.SYSTEM_AUTH_TENANT_REQUIRED': '缺少当前租户上下文，请重新登录。',
   'error.SYSTEM_FILE_ASSET_EXISTS': '文件资产已存在。',
   'error.SYSTEM_FILE_ASSET_NOT_FOUND': '文件资产不存在。',
   'error.SYSTEM_FILE_CONTENT_BASE64_INVALID': '文件内容必须是有效的 base64。',

@@ -2,18 +2,23 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { createApiErrorBody } from '@opencore/common';
 import { PrismaService } from '@opencore/database';
 import {
+  normalizeLoginLockoutLookupInput,
   SecurityLoginLockoutRepository,
   type SecurityLoginLockoutAttemptInput,
+  type SecurityLoginLockoutLookupInput,
   type SecurityLoginLockoutRecord,
   type SecurityLoginUnlockResult,
 } from '@opencore/security';
 
 type PrismaLoginLockout = {
+  tenantId: string;
   username: string;
   failedAttempts: number;
   lockedUntil: Date | null;
   lastFailedAt: Date | null;
 };
+
+const ROOT_TENANT_ID = 'tenant_root';
 
 @Injectable()
 export class PrismaSecurityLoginLockoutRepository extends SecurityLoginLockoutRepository {
@@ -22,11 +27,16 @@ export class PrismaSecurityLoginLockoutRepository extends SecurityLoginLockoutRe
   }
 
   async getLoginLockout(
-    username: string,
+    input: SecurityLoginLockoutLookupInput,
   ): Promise<SecurityLoginLockoutRecord | undefined> {
-    const normalizedUsername = normalizeLockoutUsername(username);
+    const lookup = normalizeLockoutLookup(input);
     const record = await this.prisma.loginLockout.findUnique({
-      where: { username: normalizedUsername },
+      where: {
+        tenantId_username: {
+          tenantId: lookup.tenantId,
+          username: lookup.username,
+        },
+      },
     });
 
     return record ? toSecurityLoginLockoutRecord(record) : undefined;
@@ -36,6 +46,7 @@ export class PrismaSecurityLoginLockoutRepository extends SecurityLoginLockoutRe
     input: SecurityLoginLockoutAttemptInput,
   ): Promise<SecurityLoginLockoutRecord> {
     const username = normalizeLockoutUsername(input.username);
+    const tenantId = normalizeLockoutTenantId(input.tenantId);
     const maxFailedAttempts = normalizePositiveInteger(
       input.maxFailedAttempts,
       'maxFailedAttempts',
@@ -46,7 +57,12 @@ export class PrismaSecurityLoginLockoutRepository extends SecurityLoginLockoutRe
     );
     const occurredAt = normalizeDate(input.occurredAt);
     const existing = await this.prisma.loginLockout.findUnique({
-      where: { username },
+      where: {
+        tenantId_username: {
+          tenantId,
+          username,
+        },
+      },
     });
     const windowStart = new Date(
       occurredAt.getTime() - lockoutMinutes * 60_000,
@@ -61,13 +77,19 @@ export class PrismaSecurityLoginLockoutRepository extends SecurityLoginLockoutRe
         ? new Date(occurredAt.getTime() + lockoutMinutes * 60_000)
         : null;
     const record = await this.prisma.loginLockout.upsert({
-      where: { username },
+      where: {
+        tenantId_username: {
+          tenantId,
+          username,
+        },
+      },
       update: {
         failedAttempts,
         lastFailedAt: occurredAt,
         lockedUntil,
       },
       create: {
+        tenantId,
         username,
         failedAttempts,
         lastFailedAt: occurredAt,
@@ -79,32 +101,62 @@ export class PrismaSecurityLoginLockoutRepository extends SecurityLoginLockoutRe
   }
 
   async clearLoginLockout(
-    username: string,
+    input: SecurityLoginLockoutLookupInput,
   ): Promise<SecurityLoginUnlockResult> {
-    const normalizedUsername = normalizeLockoutUsername(username);
+    const lookup = normalizeLockoutLookup(input);
     const existing = await this.prisma.loginLockout.findUnique({
-      where: { username: normalizedUsername },
+      where: {
+        tenantId_username: {
+          tenantId: lookup.tenantId,
+          username: lookup.username,
+        },
+      },
     });
 
     if (!existing) {
       return {
-        username: normalizedUsername,
+        tenantId: lookup.tenantId,
+        username: lookup.username,
         unlocked: false,
         failedAttempts: 0,
       };
     }
 
     await this.prisma.loginLockout.delete({
-      where: { username: normalizedUsername },
+      where: {
+        tenantId_username: {
+          tenantId: lookup.tenantId,
+          username: lookup.username,
+        },
+      },
     });
 
     return {
-      username: normalizedUsername,
+      tenantId: lookup.tenantId,
+      username: lookup.username,
       unlocked: existing.failedAttempts > 0 || existing.lockedUntil !== null,
       failedAttempts: existing.failedAttempts,
       lockedUntil: existing.lockedUntil?.toISOString(),
     };
   }
+}
+
+function normalizeLockoutLookup(input: SecurityLoginLockoutLookupInput): {
+  tenantId: string;
+  username: string;
+} {
+  const lookup = normalizeLoginLockoutLookupInput(input);
+
+  return {
+    tenantId: normalizeLockoutTenantId(lookup.tenantId),
+    username: normalizeLockoutUsername(lookup.username),
+  };
+}
+
+function normalizeLockoutTenantId(tenantId: string | undefined): string {
+  const normalized = tenantId?.trim();
+
+  return normalized || ROOT_TENANT_ID;
 }
 
 function normalizeLockoutUsername(username: string): string {
@@ -165,6 +217,7 @@ function toSecurityLoginLockoutRecord(
   record: PrismaLoginLockout,
 ): SecurityLoginLockoutRecord {
   return {
+    tenantId: record.tenantId,
     username: record.username,
     failedAttempts: record.failedAttempts,
     lockedUntil: record.lockedUntil?.toISOString(),

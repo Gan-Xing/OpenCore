@@ -103,6 +103,8 @@ export type LogoutResponse = {
   loggedOut: true;
 };
 
+const ROOT_TENANT_ID = 'tenant_root';
+
 @Injectable()
 export class SecurityAuthService {
   constructor(
@@ -125,7 +127,12 @@ export class SecurityAuthService {
       context,
     );
     const tenant = await this.resolveTenantMembershipForLogin(user.id, context);
-    await this.loginLockouts.clearLoginLockout(normalizedUsername);
+    const loginTenantId =
+      tenant.status === 'selected' ? tenant.membership.tenantId : ROOT_TENANT_ID;
+    await this.loginLockouts.clearLoginLockout({
+      username: normalizedUsername,
+      tenantId: loginTenantId,
+    });
     await this.recordLoginAttempt(
       normalizedUsername,
       'success',
@@ -156,7 +163,11 @@ export class SecurityAuthService {
       password,
       context,
     );
-    await this.loginLockouts.clearLoginLockout(normalizedUsername);
+    await this.loginLockouts.clearLoginLockout({
+      username: normalizedUsername,
+      tenantId:
+        (await this.resolveLoginLockoutTenantId(context)) ?? ROOT_TENANT_ID,
+    });
     return this.toAuthenticatedUser(user.id);
   }
 
@@ -642,8 +653,11 @@ export class SecurityAuthService {
     }
 
     const policy = await this.loginPolicy.getLoginPolicy();
-    const existingLockout =
-      await this.loginLockouts.getLoginLockout(normalizedUsername);
+    const tenantId = await this.resolveLoginLockoutTenantId(context);
+    const existingLockout = await this.loginLockouts.getLoginLockout({
+      username: normalizedUsername,
+      tenantId,
+    });
 
     if (isActiveLoginLockout(existingLockout)) {
       await this.recordLoginAttempt(
@@ -651,6 +665,8 @@ export class SecurityAuthService {
         'account_locked',
         'account-locked',
         context,
+        'login.username',
+        { tenantId },
       );
       throw invalidCredentialsError();
     }
@@ -658,12 +674,22 @@ export class SecurityAuthService {
     const user = await this.repository.findUserByUsername(normalizedUsername);
 
     if (!user) {
-      await this.recordFailedLoginAttempt(normalizedUsername, policy, context);
+      await this.recordFailedLoginAttempt(
+        normalizedUsername,
+        policy,
+        context,
+        tenantId,
+      );
       throw invalidCredentialsError();
     }
 
     if (!verifySecurityPassword(password, user.passwordHash)) {
-      await this.recordFailedLoginAttempt(normalizedUsername, policy, context);
+      await this.recordFailedLoginAttempt(
+        normalizedUsername,
+        policy,
+        context,
+        tenantId,
+      );
       throw invalidCredentialsError();
     }
 
@@ -718,12 +744,16 @@ export class SecurityAuthService {
     username: string,
     policy: Awaited<ReturnType<SecurityLoginPolicyProvider['getLoginPolicy']>>,
     context: LoginContext,
+    tenantId: string | undefined,
   ): Promise<void> {
-    const lockout = await this.loginLockouts.recordFailedLoginAttempt({
-      username,
-      maxFailedAttempts: policy.maxFailedAttempts,
-      lockoutMinutes: policy.lockoutMinutes,
-    });
+    const lockout = tenantId
+      ? await this.loginLockouts.recordFailedLoginAttempt({
+          username,
+          tenantId,
+          maxFailedAttempts: policy.maxFailedAttempts,
+          lockoutMinutes: policy.lockoutMinutes,
+        })
+      : undefined;
     const locked = isActiveLoginLockout(lockout);
 
     await this.recordLoginAttempt(
@@ -731,7 +761,19 @@ export class SecurityAuthService {
       locked ? 'account_locked' : 'bad_credentials',
       locked ? 'account-locked' : 'invalid-credentials',
       context,
+      'login.username',
+      { tenantId },
     );
+  }
+
+  private async resolveLoginLockoutTenantId(
+    context: LoginContext,
+  ): Promise<string | undefined> {
+    if (!hasTenantSelection(context)) {
+      return ROOT_TENANT_ID;
+    }
+
+    return (await this.repository.findTenantForVisit(context))?.id;
   }
 }
 
@@ -771,9 +813,23 @@ function hasTenantSelection(
   return Boolean(
     selection.membershipId ||
     selection.tenantCode ||
-    selection.tenantHost ||
+    normalizeTenantHostCode(selection.tenantHost) ||
     selection.tenantId,
   );
+}
+
+function normalizeTenantHostCode(value: string | undefined): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const host = value.split(':')[0]?.trim().toLowerCase();
+
+  if (!host || host === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/u.test(host)) {
+    return undefined;
+  }
+
+  return host.split('.')[0];
 }
 
 function isUsableTenantMembership(

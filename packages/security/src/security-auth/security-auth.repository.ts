@@ -80,18 +80,28 @@ export type SecurityLoginPolicy = {
 };
 
 export type SecurityLoginLockoutRecord = {
+  tenantId?: string;
   username: string;
   failedAttempts: number;
   lockedUntil?: string;
   lastFailedAt?: string;
 };
 
+export type SecurityLoginLockoutLookupInput =
+  | string
+  | {
+      tenantId?: string;
+      username: string;
+    };
+
 export type SecurityLoginLockoutAttemptInput = SecurityLoginPolicy & {
+  tenantId?: string;
   username: string;
   occurredAt?: string;
 };
 
 export type SecurityLoginUnlockResult = {
+  tenantId: string;
   username: string;
   unlocked: boolean;
   failedAttempts: number;
@@ -148,7 +158,7 @@ export class DefaultSecurityLoginPolicyProvider extends SecurityLoginPolicyProvi
 
 export abstract class SecurityLoginLockoutRepository {
   abstract getLoginLockout(
-    username: string,
+    input: SecurityLoginLockoutLookupInput,
   ): Promise<SecurityLoginLockoutRecord | undefined>;
 
   abstract recordFailedLoginAttempt(
@@ -156,7 +166,7 @@ export abstract class SecurityLoginLockoutRepository {
   ): Promise<SecurityLoginLockoutRecord>;
 
   abstract clearLoginLockout(
-    username: string,
+    input: SecurityLoginLockoutLookupInput,
   ): Promise<SecurityLoginUnlockResult>;
 }
 
@@ -169,6 +179,7 @@ export class NoopSecurityLoginLockoutRepository extends SecurityLoginLockoutRepo
     input: SecurityLoginLockoutAttemptInput,
   ): Promise<SecurityLoginLockoutRecord> {
     return {
+      tenantId: input.tenantId,
       username: input.username,
       failedAttempts: 1,
       lastFailedAt: input.occurredAt ?? new Date().toISOString(),
@@ -176,14 +187,23 @@ export class NoopSecurityLoginLockoutRepository extends SecurityLoginLockoutRepo
   }
 
   async clearLoginLockout(
-    username: string,
+    input: SecurityLoginLockoutLookupInput,
   ): Promise<SecurityLoginUnlockResult> {
+    const lookup = normalizeLoginLockoutLookupInput(input);
+
     return {
-      username,
+      tenantId: lookup.tenantId ?? 'tenant_root',
+      username: lookup.username,
       unlocked: false,
       failedAttempts: 0,
     };
   }
+}
+
+export function normalizeLoginLockoutLookupInput(
+  input: SecurityLoginLockoutLookupInput,
+): { tenantId?: string; username: string } {
+  return typeof input === 'string' ? { username: input } : input;
 }
 
 export abstract class SecurityAuthSessionRepository {

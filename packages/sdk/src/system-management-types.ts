@@ -963,6 +963,7 @@ export type UnlockLoginUserRequest = {
 };
 
 export type LoginUnlockSummary = {
+  tenantId: string;
   username: string;
   unlocked: boolean;
   failedAttempts: number;

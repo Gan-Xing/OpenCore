@@ -1507,3 +1507,39 @@ Passed after deploy:
 
 - No Menu tenant table or migration was added; duplicating product navigation per tenant is unnecessary while module-plan filtering covers visibility and assignment.
 - No frontend fake filtering was added; Admin receives the filtered live API result under the tenant-bound token.
+
+## Round 35: T4h Tenant-Scoped Login Lockouts
+
+### Completed
+
+- Added `LoginLockout.tenantId` with root backfill, tenant FK, `(tenantId, username)` uniqueness, and tenant/update index.
+- Updated login lockout read/write/clear paths so username lockouts are scoped by resolved tenant:
+  - no login tenant selector falls back to `tenant_root`;
+  - `tenantCode`, server-derived host, or explicit internal tenant id resolve through the auth repository;
+  - unresolved tenant selectors do not write a root lockout.
+- Updated login success and credential verification to clear only the selected tenant's lockout record.
+- Updated `/core/login-logs/unlock` to clear the current authenticated bearer tenant's username lockout instead of a global username record.
+- Extended unlock DTO/SDK summary with `tenantId`.
+- Extended `smoke:core-login-log` to prove root and tenant username lockouts do not block or clear each other.
+- Extended `guard:tenant-login-log-scope` with LoginLockout tenant-scope markers.
+
+### Verification Log
+
+Passed before deploy:
+
+- Prisma validation/generation/migration, tenant login-log scope guard, typed smoke compile, focused security/API lockout tests, security/API typechecks, OpenAPI export/check, SDK check, registry tag check, and full lint/test/typecheck coverage from this T4h working tree.
+
+Passed after deploy:
+
+- Refreshed deploy completed on API `39172` and Admin `39174`, with the deploy smoke suite passing.
+- Public API login-log smoke passed against `http://144.217.243.161:39172`, including `auth.login-lockout.tenant-scope-root` and `auth.login-lockout.tenant-scope-unlock`.
+
+### Remaining Product Debt
+
+- T4 remains partial until every remaining System/core repository is reviewed or explicitly closed.
+- T7 remains partial for future CRM/ERP/Mall/AI business domains.
+
+### Deliberate Non-Goals
+
+- No client-supplied tenant id was added to unlock or ordinary login-log APIs.
+- No new Admin UI was added; existing unlock action now operates under the bearer tenant context.

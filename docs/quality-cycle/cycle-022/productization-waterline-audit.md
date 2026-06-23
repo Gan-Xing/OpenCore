@@ -271,7 +271,19 @@ These remain below the productization waterline and cannot be described as compl
 | Cross-tenant API rejection     | Done    | Prisma integration test and smoke prove foreign-tenant login logs are hidden, cannot be detailed/deleted, and survive root clean. |
 | Seed/OpenAPI/SDK/Admin         | Done    | Seed login logs, DTO, SDK summary fixture, and Admin Login Logs expose `tenantId`.                                                |
 | Smoke/guard                    | Done    | Added `guard:tenant-login-log-scope`; `smoke:core-login-log` now covers foreign-tenant login-log isolation.                       |
-| Remaining log scope            | Pending | Platform visit/impersonation audit remains pending.                                                                               |
+| Remaining log scope            | Done    | Platform visit audit was completed in T6f; username lockout scope was completed in T4h.                                             |
+
+## T4h Login Lockouts
+
+| Check                              | Status | Evidence                                                                                                                                 |
+| ---------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| LoginLockout tenant ownership      | Done   | `LoginLockout.tenantId` is backfilled to `tenant_root`, required, indexed, and constrained to `Tenant`.                                  |
+| Tenant-local username lockout key  | Done   | Failed-login counters are unique by `(tenantId, username)`, so the same global user can be locked in one tenant without locking another. |
+| Server-resolved tenant selector    | Done   | Login lockout resolution uses the server-side auth repository tenant lookup for `tenantCode`/host/id selectors and root fallback only when no selector is present. |
+| Current-tenant unlock              | Done   | `/core/login-logs/unlock` clears only the authenticated bearer tenant's lockout record for the username.                                 |
+| OpenAPI/SDK                        | Done   | Unlock result DTO and SDK summary expose `tenantId`.                                                                                     |
+| Smoke/guard                        | Done   | Local deploy and public `smoke:core-login-log` cover root-vs-tenant lockout isolation; `guard:tenant-login-log-scope` locks schema, repository, smoke, and SDK markers. |
+| Remaining T4 data scope            | Pending | Other unreviewed non-org data remains pending.                                                                                          |
 
 ## T4c Audit
 
