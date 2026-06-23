@@ -91,6 +91,13 @@ model Tenant {
   noticeDeliveries       SystemNoticeDelivery[]
   schedulerJobs          JobDefinition[]
   schedulerRuns          JobRunLog[]
+  integrationProviders   IntegrationProvider[]
+  integrationAuditLogs   IntegrationProviderAuditLog[]
+  integrationTemplates   IntegrationTemplate[]
+  integrationOutbox      IntegrationOutbox[]
+  integrationOAuthTokens IntegrationOAuthToken[]
+  integrationOAuthFlows  IntegrationOAuthFlow[]
+  integrationOAuthAudits IntegrationOAuthCallbackAudit[]
   webSocketRuntimeEvents IntegrationWebSocketRuntimeEvent[]
   auditLogs              AuditLog[]
   loginLogs              LoginLog[]
@@ -740,7 +747,9 @@ model ReportDefinition {
 
 model IntegrationProvider {
   id              String    @id @default(cuid())
-  code            String    @unique
+  tenantId        String    @default("tenant_root")
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  code            String
   type            String
   name            String
   enabled         Boolean   @default(false)
@@ -755,10 +764,16 @@ model IntegrationProvider {
   lastTestedAt    DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+
+  @@unique([tenantId, code])
+  @@index([tenantId, type, code])
+  @@index([tenantId, healthStatus])
 }
 
 model IntegrationProviderAuditLog {
   id                    String   @id @default(cuid())
+  tenantId              String   @default("tenant_root")
+  tenant                Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   providerCode          String
   action                String
   actor                 String   @default("admin")
@@ -772,13 +787,15 @@ model IntegrationProviderAuditLog {
   summary               Json?
   createdAt             DateTime @default(now())
 
-  @@index([providerCode, createdAt])
-  @@index([action])
+  @@index([tenantId, providerCode, createdAt])
+  @@index([tenantId, action])
 }
 
 model IntegrationTemplate {
   id        String   @id @default(cuid())
-  code      String   @unique
+  tenantId  String   @default("tenant_root")
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  code      String
   channel   String
   name      String
   subject   String?
@@ -786,10 +803,15 @@ model IntegrationTemplate {
   enabled   Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, code])
+  @@index([tenantId, channel, code])
 }
 
 model IntegrationOutbox {
   id           String    @id @default(cuid())
+  tenantId     String    @default("tenant_root")
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   channel      String
   providerCode String
   templateCode String?
@@ -804,10 +826,15 @@ model IntegrationOutbox {
   sentAt       DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+
+  @@index([tenantId, channel, status])
+  @@index([tenantId, providerCode, status])
 }
 
 model IntegrationOAuthToken {
   id                String    @id @default(cuid())
+  tenantId          String    @default("tenant_root")
+  tenant            Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   providerCode      String
   subjectType       String
   subjectId         String
@@ -824,13 +851,16 @@ model IntegrationOAuthToken {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
-  @@unique([providerCode, subjectId, providerAccountId])
-  @@index([providerCode])
-  @@index([status])
+  @@unique([tenantId, providerCode, subjectId, providerAccountId])
+  @@index([tenantId, providerCode])
+  @@index([tenantId, status])
+  @@index([tenantId, subjectType, subjectId])
 }
 
 model IntegrationOAuthFlow {
   id               String    @id @default(cuid())
+  tenantId         String    @default("tenant_root")
+  tenant           Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   providerCode     String
   state            String    @unique
   subjectType      String
@@ -847,12 +877,14 @@ model IntegrationOAuthFlow {
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
-  @@index([providerCode, status])
-  @@index([subjectId, createdAt])
+  @@index([tenantId, providerCode, status])
+  @@index([tenantId, subjectId, createdAt])
 }
 
 model IntegrationOAuthCallbackAudit {
   id                String   @id @default(cuid())
+  tenantId          String   @default("tenant_root")
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   providerCode      String
   flowId            String?
   state             String
@@ -864,9 +896,9 @@ model IntegrationOAuthCallbackAudit {
   tokenId           String?
   createdAt         DateTime @default(now())
 
-  @@index([providerCode, createdAt])
-  @@index([state])
-  @@index([status])
+  @@index([tenantId, providerCode, createdAt])
+  @@index([tenantId, state])
+  @@index([tenantId, status])
 }
 
 model IntegrationWebSocketRuntimeEvent {

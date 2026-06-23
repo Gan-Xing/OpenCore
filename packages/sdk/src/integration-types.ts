@@ -2,6 +2,12 @@ import type { PageRequest, PageResponse } from './system-management-types';
 
 export type { PageRequest, PageResponse };
 
+const ROOT_TENANT_ID = 'tenant_root';
+
+function withRootTenant<T extends object>(record: T): T & { tenantId: string } {
+  return { tenantId: ROOT_TENANT_ID, ...record };
+}
+
 export type IntegrationProviderType =
   | 'mail'
   | 'oauth'
@@ -39,6 +45,7 @@ export type IntegrationMailSmtpTlsMode =
 
 export type IntegrationProviderSummary = {
   id: string;
+  tenantId: string;
   code: string;
   type: IntegrationProviderType;
   name: string;
@@ -64,6 +71,7 @@ export type IntegrationProviderTestResult = {
 
 export type IntegrationProviderAuditLogSummary = {
   id: string;
+  tenantId: string;
   providerCode: string;
   action: IntegrationProviderAuditAction;
   actor: string;
@@ -133,6 +141,7 @@ export type IntegrationProviderHealthAuditSummary = {
 
 export type IntegrationTemplateSummary = {
   id: string;
+  tenantId: string;
   code: string;
   channel: 'mail' | 'sms';
   name: string;
@@ -150,6 +159,7 @@ export type IntegrationOutboxAttachmentSummary = {
 
 export type IntegrationOutboxSummary = {
   id: string;
+  tenantId: string;
   channel: 'mail' | 'sms';
   providerCode: string;
   templateCode?: string;
@@ -193,6 +203,7 @@ export type OAuthProfileBindingIssue =
 
 export type OAuthFlowSummary = {
   id: string;
+  tenantId: string;
   providerCode: string;
   state: string;
   subjectType: string;
@@ -211,6 +222,7 @@ export type OAuthFlowSummary = {
 
 export type OAuthCallbackAuditSummary = {
   id: string;
+  tenantId: string;
   providerCode: string;
   flowId?: string;
   state: string;
@@ -227,6 +239,7 @@ export type OAuthTokenStatus = 'active' | 'expired' | 'revoked';
 
 export type OAuthTokenSummary = {
   id: string;
+  tenantId: string;
   providerCode: string;
   subjectType: string;
   subjectId: string;
@@ -300,6 +313,7 @@ export type CreateIntegrationProviderRequest = Omit<
   | 'lastTestStatus'
   | 'lastTestedAt'
   | 'secretRefStatus'
+  | 'tenantId'
 > & {
   enabled?: boolean;
 };
@@ -314,7 +328,7 @@ export type TestIntegrationProviderRequest = {
 
 export type CreateIntegrationTemplateRequest = Omit<
   IntegrationTemplateSummary,
-  'channel' | 'enabled' | 'id'
+  'channel' | 'enabled' | 'id' | 'tenantId'
 > & {
   enabled?: boolean;
 };
@@ -582,176 +596,184 @@ export type IntegrationFixtures = {
 };
 
 export function createIntegrationFixtures(): IntegrationFixtures {
-  const providers: readonly IntegrationProviderSummary[] = [
-    {
-      id: 'provider_mail_sandbox',
-      code: 'mail.sandbox',
-      type: 'mail',
-      name: 'Mail Sandbox',
-      enabled: false,
-      secretRef: 'secret://integration/mail/sandbox',
-      secretRefStatus: 'unchecked',
-      configVersion: 1,
-      config: {
-        adapter: 'sandbox',
-        host: 'smtp.example.test',
-        clientSecret: '[REDACTED]',
+  const providers: readonly IntegrationProviderSummary[] = (
+    [
+      {
+        id: 'provider_mail_sandbox',
+        code: 'mail.sandbox',
+        type: 'mail',
+        name: 'Mail Sandbox',
+        enabled: false,
+        secretRef: 'secret://integration/mail/sandbox',
+        secretRefStatus: 'unchecked',
+        configVersion: 1,
+        config: {
+          adapter: 'sandbox',
+          host: 'smtp.example.test',
+          clientSecret: '[REDACTED]',
+        },
+        healthStatus: 'disabled',
       },
-      healthStatus: 'disabled',
-    },
-    {
-      id: 'provider_mail_smtp',
-      code: 'mail.smtp',
-      type: 'mail',
-      name: 'Mail SMTP',
-      enabled: false,
-      secretRef: 'secret://config/integration.mail.smtp.password.secret',
-      secretRefStatus: 'unchecked',
-      configVersion: 1,
-      config: {
-        adapter: 'smtp',
-        authMethod: 'PLAIN',
-        from: 'no-reply@opencore.test',
-        host: 'smtp.example.test',
-        port: 587,
-        tlsMode: 'starttls-required',
-        timeoutMs: 10000,
-        username: 'smtp-user',
+      {
+        id: 'provider_mail_smtp',
+        code: 'mail.smtp',
+        type: 'mail',
+        name: 'Mail SMTP',
+        enabled: false,
+        secretRef: 'secret://config/integration.mail.smtp.password.secret',
+        secretRefStatus: 'unchecked',
+        configVersion: 1,
+        config: {
+          adapter: 'smtp',
+          authMethod: 'PLAIN',
+          from: 'no-reply@opencore.test',
+          host: 'smtp.example.test',
+          port: 587,
+          tlsMode: 'starttls-required',
+          timeoutMs: 10000,
+          username: 'smtp-user',
+        },
+        healthStatus: 'disabled',
       },
-      healthStatus: 'disabled',
-    },
-    {
-      id: 'provider_sms_sandbox',
-      code: 'sms.sandbox',
-      type: 'sms',
-      name: 'SMS Sandbox',
-      enabled: false,
-      secretRef: 'secret://integration/sms/sandbox',
-      secretRefStatus: 'unchecked',
-      configVersion: 1,
-      config: {
-        adapter: 'sandbox',
-        endpoint: 'https://sms.example.test',
-        token: '[REDACTED]',
+      {
+        id: 'provider_sms_sandbox',
+        code: 'sms.sandbox',
+        type: 'sms',
+        name: 'SMS Sandbox',
+        enabled: false,
+        secretRef: 'secret://integration/sms/sandbox',
+        secretRefStatus: 'unchecked',
+        configVersion: 1,
+        config: {
+          adapter: 'sandbox',
+          endpoint: 'https://sms.example.test',
+          token: '[REDACTED]',
+        },
+        healthStatus: 'disabled',
       },
-      healthStatus: 'disabled',
-    },
-    {
-      id: 'provider_sms_http',
-      code: 'sms.http',
-      type: 'sms',
-      name: 'SMS HTTP',
-      enabled: false,
-      secretRef: 'secret://config/integration.sms.http.api-key.secret',
-      secretRefStatus: 'unchecked',
-      configVersion: 1,
-      config: {
-        adapter: 'http',
-        allowedHosts: ['sms.example.test'],
-        endpoint: 'https://sms.example.test/send',
-        method: 'POST',
-        secretInjections: [
+      {
+        id: 'provider_sms_http',
+        code: 'sms.http',
+        type: 'sms',
+        name: 'SMS HTTP',
+        enabled: false,
+        secretRef: 'secret://config/integration.sms.http.api-key.secret',
+        secretRefStatus: 'unchecked',
+        configVersion: 1,
+        config: {
+          adapter: 'http',
+          allowedHosts: ['sms.example.test'],
+          endpoint: 'https://sms.example.test/send',
+          method: 'POST',
+          secretInjections: [
+            {
+              target: 'header',
+              name: 'Authorization',
+              secretRef: 'secret://config/integration.sms.http.api-key.secret',
+              prefix: 'Bearer ',
+            },
+            {
+              target: 'query',
+              name: 'api_key',
+              secretRef: 'secret://config/integration.sms.http.api-key.secret',
+            },
+            {
+              target: 'body',
+              name: 'apiToken',
+              secretRef: 'secret://config/integration.sms.http.api-key.secret',
+            },
+          ],
+          successStatus: 202,
+          timeoutMs: 5000,
+        },
+        healthStatus: 'disabled',
+      },
+      {
+        id: 'provider_oauth_github',
+        code: 'oauth.github',
+        type: 'oauth',
+        name: 'GitHub OAuth',
+        enabled: true,
+        secretRef:
+          'secret://config/integration.oauth.github.client-secret.secret',
+        secretRefStatus: 'unchecked',
+        configVersion: 1,
+        config: {
+          adapter: 'oauth2',
+          authorizationUrl: 'https://github.com/login/oauth/authorize',
+          callbackPath: '/api/integrations/oauth/callback/github',
+          clientId: 'opencore-github',
+          clientSecret: '[REDACTED]',
+          scopes: ['read:user', 'user:email'],
+          tokenUrl: 'https://github.com/login/oauth/access_token',
+        },
+        healthStatus: 'unknown',
+      },
+    ] satisfies readonly Omit<IntegrationProviderSummary, 'tenantId'>[]
+  ).map(withRootTenant);
+  const mailTemplates: readonly IntegrationTemplateSummary[] = (
+    [
+      {
+        id: 'template_mail_welcome',
+        code: 'mail.welcome',
+        channel: 'mail',
+        name: 'Welcome Mail',
+        subject: 'Welcome {{name}}',
+        body: 'Hello {{name}}, welcome to OpenCore.',
+        enabled: true,
+      },
+    ] satisfies readonly Omit<IntegrationTemplateSummary, 'tenantId'>[]
+  ).map(withRootTenant);
+  const smsTemplates: readonly IntegrationTemplateSummary[] = (
+    [
+      {
+        id: 'template_sms_otp',
+        code: 'sms.otp',
+        channel: 'sms',
+        name: 'OTP SMS',
+        body: 'Your verification code is {{code}}.',
+        enabled: true,
+      },
+    ] satisfies readonly Omit<IntegrationTemplateSummary, 'tenantId'>[]
+  ).map(withRootTenant);
+  const outbox: readonly IntegrationOutboxSummary[] = (
+    [
+      {
+        id: 'outbox_mail_1',
+        channel: 'mail',
+        providerCode: 'mail.sandbox',
+        templateCode: 'mail.welcome',
+        recipient: 'admin@example.test',
+        subject: 'Welcome Admin',
+        payload: { name: 'Admin' },
+        attachments: [
           {
-            target: 'header',
-            name: 'Authorization',
-            secretRef: 'secret://config/integration.sms.http.api-key.secret',
-            prefix: 'Bearer ',
-          },
-          {
-            target: 'query',
-            name: 'api_key',
-            secretRef: 'secret://config/integration.sms.http.api-key.secret',
-          },
-          {
-            target: 'body',
-            name: 'apiToken',
-            secretRef: 'secret://config/integration.sms.http.api-key.secret',
+            filename: 'welcome.txt',
+            contentType: 'text/plain',
+            contentBase64: 'T3BlbkNvcmUgYXR0YWNobWVudCBmaXh0dXJlCg==',
+            sizeBytes: 28,
           },
         ],
-        successStatus: 202,
-        timeoutMs: 5000,
+        status: 'queued',
+        retryCount: 0,
+        preview: 'Hello Admin, welcome to OpenCore.',
+        createdAt: '2026-06-10T00:00:00.000Z',
       },
-      healthStatus: 'disabled',
-    },
-    {
-      id: 'provider_oauth_github',
-      code: 'oauth.github',
-      type: 'oauth',
-      name: 'GitHub OAuth',
-      enabled: true,
-      secretRef:
-        'secret://config/integration.oauth.github.client-secret.secret',
-      secretRefStatus: 'unchecked',
-      configVersion: 1,
-      config: {
-        adapter: 'oauth2',
-        authorizationUrl: 'https://github.com/login/oauth/authorize',
-        callbackPath: '/api/integrations/oauth/callback/github',
-        clientId: 'opencore-github',
-        clientSecret: '[REDACTED]',
-        scopes: ['read:user', 'user:email'],
-        tokenUrl: 'https://github.com/login/oauth/access_token',
+      {
+        id: 'outbox_sms_otp_1',
+        channel: 'sms',
+        providerCode: 'sms.sandbox',
+        templateCode: 'sms.otp',
+        recipient: '+15551234567',
+        payload: { code: '123456' },
+        status: 'sent',
+        retryCount: 0,
+        preview: 'Your verification code is 123456.',
+        sentAt: '2026-06-10T00:05:00.000Z',
+        createdAt: '2026-06-10T00:00:00.000Z',
       },
-      healthStatus: 'unknown',
-    },
-  ];
-  const mailTemplates: readonly IntegrationTemplateSummary[] = [
-    {
-      id: 'template_mail_welcome',
-      code: 'mail.welcome',
-      channel: 'mail',
-      name: 'Welcome Mail',
-      subject: 'Welcome {{name}}',
-      body: 'Hello {{name}}, welcome to OpenCore.',
-      enabled: true,
-    },
-  ];
-  const smsTemplates: readonly IntegrationTemplateSummary[] = [
-    {
-      id: 'template_sms_otp',
-      code: 'sms.otp',
-      channel: 'sms',
-      name: 'OTP SMS',
-      body: 'Your verification code is {{code}}.',
-      enabled: true,
-    },
-  ];
-  const outbox: readonly IntegrationOutboxSummary[] = [
-    {
-      id: 'outbox_mail_1',
-      channel: 'mail',
-      providerCode: 'mail.sandbox',
-      templateCode: 'mail.welcome',
-      recipient: 'admin@example.test',
-      subject: 'Welcome Admin',
-      payload: { name: 'Admin' },
-      attachments: [
-        {
-          filename: 'welcome.txt',
-          contentType: 'text/plain',
-          contentBase64: 'T3BlbkNvcmUgYXR0YWNobWVudCBmaXh0dXJlCg==',
-          sizeBytes: 28,
-        },
-      ],
-      status: 'queued',
-      retryCount: 0,
-      preview: 'Hello Admin, welcome to OpenCore.',
-      createdAt: '2026-06-10T00:00:00.000Z',
-    },
-    {
-      id: 'outbox_sms_otp_1',
-      channel: 'sms',
-      providerCode: 'sms.sandbox',
-      templateCode: 'sms.otp',
-      recipient: '+15551234567',
-      payload: { code: '123456' },
-      status: 'sent',
-      retryCount: 0,
-      preview: 'Your verification code is 123456.',
-      sentAt: '2026-06-10T00:05:00.000Z',
-      createdAt: '2026-06-10T00:00:00.000Z',
-    },
-  ];
+    ] satisfies readonly Omit<IntegrationOutboxSummary, 'tenantId'>[]
+  ).map(withRootTenant);
   const oauthContract: OAuthCallbackContractSummary = {
     callbackPath: '/api/integrations/oauth/callback/:providerCode',
     stateTtlSeconds: 300,
@@ -759,103 +781,109 @@ export function createIntegrationFixtures(): IntegrationFixtures {
     accountBinding: ['user id', 'provider code', 'provider account id'],
     auditAction: 'integration.oauth.callback',
   };
-  const oauthFlows: readonly OAuthFlowSummary[] = [
-    {
-      id: 'oauth_flow_github_admin_pending',
-      providerCode: 'oauth.github',
-      state: 'seeded-oauth-state',
-      subjectType: 'system-user',
-      subjectId: 'user_admin',
-      scopes: ['read:user', 'user:email'],
-      authorizationUrl:
-        'https://github.com/login/oauth/authorize?response_type=code&client_id=opencore-github&state=seeded-oauth-state',
-      status: 'pending',
-      expiresAt: '2099-01-01T00:00:00.000Z',
-      createdAt: '2026-06-10T00:00:00.000Z',
-    },
-  ];
-  const oauthCallbackAudits: readonly OAuthCallbackAuditSummary[] = [
-    {
-      id: 'oauth_callback_audit_github_admin',
-      providerCode: 'oauth.github',
-      flowId: 'oauth_flow_github_admin_pending',
-      state: 'seeded-oauth-state',
-      status: 'accepted',
-      reason: 'Seeded OAuth callback audit.',
-      callbackCodeHash:
-        'f4f0df3a19be88c307f6a234a45c206ef18ac66d93f8feee56a2a97d3ef82f5f',
-      providerAccountId: 'github:opencore-admin',
-      tokenId: 'oauth_token_github_admin_active',
-      createdAt: '2026-06-10T00:00:00.000Z',
-    },
-  ];
-  const oauthTokens: readonly OAuthTokenSummary[] = [
-    {
-      id: 'oauth_token_github_admin_active',
-      providerCode: 'oauth.github',
-      subjectType: 'system-user',
-      subjectId: 'user_admin',
-      providerAccountId: 'github:opencore-admin',
-      scopes: ['read:user', 'user:email'],
-      accessTokenRef:
-        'secret://config/integration.oauth.github.admin.access-token',
-      refreshTokenRef:
-        'secret://config/integration.oauth.github.admin.refresh-token',
-      status: 'active',
-      expiresAt: '2099-01-01T00:00:00.000Z',
-      lastRotatedAt: '2026-06-10T00:00:00.000Z',
-      createdAt: '2026-06-10T00:00:00.000Z',
-    },
-    {
-      id: 'oauth_token_github_ops_expired',
-      providerCode: 'oauth.github',
-      subjectType: 'system-user',
-      subjectId: 'user_ops',
-      providerAccountId: 'github:opencore-ops',
-      scopes: ['read:user'],
-      accessTokenRef:
-        'secret://config/integration.oauth.github.ops.access-token',
-      refreshTokenRef:
-        'secret://config/integration.oauth.github.ops.refresh-token',
-      status: 'expired',
-      expiresAt: '2026-01-01T00:00:00.000Z',
-      lastRotatedAt: '2025-12-01T00:00:00.000Z',
-      createdAt: '2025-12-01T00:00:00.000Z',
-    },
-    {
-      id: 'oauth_token_github_smoke_revoke',
-      providerCode: 'oauth.github',
-      subjectType: 'system-user',
-      subjectId: 'user_smoke',
-      providerAccountId: 'github:opencore-smoke',
-      scopes: ['read:user'],
-      accessTokenRef:
-        'secret://config/integration.oauth.github.smoke.access-token',
-      refreshTokenRef:
-        'secret://config/integration.oauth.github.smoke.refresh-token',
-      status: 'active',
-      expiresAt: '2099-01-01T00:00:00.000Z',
-      lastRotatedAt: '2026-06-10T00:00:00.000Z',
-      createdAt: '2026-06-10T00:00:00.000Z',
-    },
-    {
-      id: 'oauth_token_github_auditor_revoked',
-      providerCode: 'oauth.github',
-      subjectType: 'system-user',
-      subjectId: 'user_auditor',
-      providerAccountId: 'github:opencore-auditor',
-      scopes: ['read:user'],
-      accessTokenRef:
-        'secret://config/integration.oauth.github.auditor.access-token',
-      status: 'revoked',
-      expiresAt: '2099-01-01T00:00:00.000Z',
-      lastRotatedAt: '2026-06-01T00:00:00.000Z',
-      revokedAt: '2026-06-12T00:00:00.000Z',
-      revokedBy: 'admin',
-      revokeReason: 'Seeded revoked OAuth token',
-      createdAt: '2026-06-01T00:00:00.000Z',
-    },
-  ];
+  const oauthFlows: readonly OAuthFlowSummary[] = (
+    [
+      {
+        id: 'oauth_flow_github_admin_pending',
+        providerCode: 'oauth.github',
+        state: 'seeded-oauth-state',
+        subjectType: 'system-user',
+        subjectId: 'user_admin',
+        scopes: ['read:user', 'user:email'],
+        authorizationUrl:
+          'https://github.com/login/oauth/authorize?response_type=code&client_id=opencore-github&state=seeded-oauth-state',
+        status: 'pending',
+        expiresAt: '2099-01-01T00:00:00.000Z',
+        createdAt: '2026-06-10T00:00:00.000Z',
+      },
+    ] satisfies readonly Omit<OAuthFlowSummary, 'tenantId'>[]
+  ).map(withRootTenant);
+  const oauthCallbackAudits: readonly OAuthCallbackAuditSummary[] = (
+    [
+      {
+        id: 'oauth_callback_audit_github_admin',
+        providerCode: 'oauth.github',
+        flowId: 'oauth_flow_github_admin_pending',
+        state: 'seeded-oauth-state',
+        status: 'accepted',
+        reason: 'Seeded OAuth callback audit.',
+        callbackCodeHash:
+          'f4f0df3a19be88c307f6a234a45c206ef18ac66d93f8feee56a2a97d3ef82f5f',
+        providerAccountId: 'github:opencore-admin',
+        tokenId: 'oauth_token_github_admin_active',
+        createdAt: '2026-06-10T00:00:00.000Z',
+      },
+    ] satisfies readonly Omit<OAuthCallbackAuditSummary, 'tenantId'>[]
+  ).map(withRootTenant);
+  const oauthTokens: readonly OAuthTokenSummary[] = (
+    [
+      {
+        id: 'oauth_token_github_admin_active',
+        providerCode: 'oauth.github',
+        subjectType: 'system-user',
+        subjectId: 'user_admin',
+        providerAccountId: 'github:opencore-admin',
+        scopes: ['read:user', 'user:email'],
+        accessTokenRef:
+          'secret://config/integration.oauth.github.admin.access-token',
+        refreshTokenRef:
+          'secret://config/integration.oauth.github.admin.refresh-token',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00.000Z',
+        lastRotatedAt: '2026-06-10T00:00:00.000Z',
+        createdAt: '2026-06-10T00:00:00.000Z',
+      },
+      {
+        id: 'oauth_token_github_ops_expired',
+        providerCode: 'oauth.github',
+        subjectType: 'system-user',
+        subjectId: 'user_ops',
+        providerAccountId: 'github:opencore-ops',
+        scopes: ['read:user'],
+        accessTokenRef:
+          'secret://config/integration.oauth.github.ops.access-token',
+        refreshTokenRef:
+          'secret://config/integration.oauth.github.ops.refresh-token',
+        status: 'expired',
+        expiresAt: '2026-01-01T00:00:00.000Z',
+        lastRotatedAt: '2025-12-01T00:00:00.000Z',
+        createdAt: '2025-12-01T00:00:00.000Z',
+      },
+      {
+        id: 'oauth_token_github_smoke_revoke',
+        providerCode: 'oauth.github',
+        subjectType: 'system-user',
+        subjectId: 'user_smoke',
+        providerAccountId: 'github:opencore-smoke',
+        scopes: ['read:user'],
+        accessTokenRef:
+          'secret://config/integration.oauth.github.smoke.access-token',
+        refreshTokenRef:
+          'secret://config/integration.oauth.github.smoke.refresh-token',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00.000Z',
+        lastRotatedAt: '2026-06-10T00:00:00.000Z',
+        createdAt: '2026-06-10T00:00:00.000Z',
+      },
+      {
+        id: 'oauth_token_github_auditor_revoked',
+        providerCode: 'oauth.github',
+        subjectType: 'system-user',
+        subjectId: 'user_auditor',
+        providerAccountId: 'github:opencore-auditor',
+        scopes: ['read:user'],
+        accessTokenRef:
+          'secret://config/integration.oauth.github.auditor.access-token',
+        status: 'revoked',
+        expiresAt: '2099-01-01T00:00:00.000Z',
+        lastRotatedAt: '2026-06-01T00:00:00.000Z',
+        revokedAt: '2026-06-12T00:00:00.000Z',
+        revokedBy: 'admin',
+        revokeReason: 'Seeded revoked OAuth token',
+        createdAt: '2026-06-01T00:00:00.000Z',
+      },
+    ] satisfies readonly Omit<OAuthTokenSummary, 'tenantId'>[]
+  ).map(withRootTenant);
   const oauthTokenSummary = buildOAuthTokenInventorySummaryFixture(oauthTokens);
   const designs: readonly IntegrationDesignSummary[] = [
     {

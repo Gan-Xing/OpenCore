@@ -115,6 +115,7 @@ import {
 
 type ProviderRow = {
   id: string;
+  tenantId: string;
   code: string;
   type: string;
   name: string;
@@ -132,6 +133,7 @@ type ProviderRow = {
 
 type ProviderAuditLogRow = {
   id: string;
+  tenantId: string;
   providerCode: string;
   action: string;
   actor: string;
@@ -148,6 +150,7 @@ type ProviderAuditLogRow = {
 
 type TemplateRow = {
   id: string;
+  tenantId: string;
   code: string;
   channel: string;
   name: string;
@@ -158,6 +161,7 @@ type TemplateRow = {
 
 type OutboxRow = {
   id: string;
+  tenantId: string;
   channel: string;
   providerCode: string;
   templateCode: string | null;
@@ -175,6 +179,7 @@ type OutboxRow = {
 
 type OAuthTokenRow = {
   id: string;
+  tenantId: string;
   providerCode: string;
   subjectType: string;
   subjectId: string;
@@ -193,6 +198,7 @@ type OAuthTokenRow = {
 
 type OAuthFlowRow = {
   id: string;
+  tenantId: string;
   providerCode: string;
   state: string;
   subjectType: string;
@@ -211,6 +217,7 @@ type OAuthFlowRow = {
 
 type OAuthCallbackAuditRow = {
   id: string;
+  tenantId: string;
   providerCode: string;
   flowId: string | null;
   state: string;
@@ -255,10 +262,11 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
   };
 
   async getSummary() {
+    const tenantId = resolveIntegrationRequestTenantId();
     const [providers, outbox, oauthTokens] = await Promise.all([
-      this.prisma.integrationProvider.findMany(),
-      this.prisma.integrationOutbox.findMany(),
-      this.prisma.integrationOAuthToken.findMany(),
+      this.prisma.integrationProvider.findMany({ where: { tenantId } }),
+      this.prisma.integrationOutbox.findMany({ where: { tenantId } }),
+      this.prisma.integrationOAuthToken.findMany({ where: { tenantId } }),
     ]);
 
     return buildIntegrationSummary({
@@ -272,9 +280,11 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
   async listProviders(
     query: IntegrationProviderQueryDto = {},
   ): Promise<PageResult<IntegrationProviderRecord>> {
+    const tenantId = resolveIntegrationRequestTenantId();
     const enabled = normalizeOptionalBoolean(query.enabled);
     const rows = await this.prisma.integrationProvider.findMany({
       where: {
+        tenantId,
         type: query.type,
         enabled,
         healthStatus: query.healthStatus,
@@ -288,10 +298,12 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
   async createProvider(
     body: CreateIntegrationProviderDto,
   ): Promise<IntegrationProviderRecord> {
+    const tenantId = resolveIntegrationRequestTenantId();
     assertSecretRef(body.secretRef);
     const provider = await this.prisma.$transaction(async (tx) => {
       const created = await tx.integrationProvider.create({
         data: {
+          tenantId,
           code: body.code,
           type: body.type,
           name: body.name,
@@ -304,6 +316,7 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
         },
       });
       await createProviderAuditLog(tx, {
+        tenantId,
         providerCode: created.code,
         action: 'created',
         afterConfigVersion: created.configVersion,
@@ -348,18 +361,20 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
 
   async checkProviderHealth(code: string): Promise<IntegrationProviderRecord> {
     const existing = await this.findProvider(code);
+    const tenantId = existing.tenantId;
     const health = await evaluateProviderDeliveryHealth(existing, {
       secretResolver: this.resolveProviderSecret,
     });
     const provider = await this.prisma.$transaction(async (tx) => {
       const updated = await tx.integrationProvider.update({
-        where: { code },
+        where: { tenantId_code: { tenantId, code } },
         data: {
           healthStatus: health.status,
           lastCheckedAt: new Date(),
         },
       });
       await createProviderAuditLog(tx, {
+        tenantId,
         providerCode: code,
         action: 'health_checked',
         beforeConfigVersion: existing.configVersion,
@@ -383,6 +398,7 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
     body: TestIntegrationProviderDto = {},
   ): Promise<ProviderTestResult> {
     const existing = await this.findProvider(code);
+    const tenantId = existing.tenantId;
     const [secret, adapter] = await Promise.all([
       validateProviderSecretRef(existing.secretRef, this.resolveProviderSecret),
       evaluateProviderDeliveryHealth(
@@ -399,7 +415,7 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
     });
     const provider = await this.prisma.$transaction(async (tx) => {
       const updated = await tx.integrationProvider.update({
-        where: { code },
+        where: { tenantId_code: { tenantId, code } },
         data: {
           secretRefStatus: result.secretRefStatus,
           lastTestStatus: result.status,
@@ -408,6 +424,7 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
         },
       });
       await createProviderAuditLog(tx, {
+        tenantId,
         providerCode: code,
         action: 'tested',
         reason: normalizeOptionalWhereText(body.reason),
@@ -436,9 +453,9 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
     code: string,
     query: PageQueryDto = {},
   ): Promise<PageResult<IntegrationProviderAuditLogRecord>> {
-    await this.findProvider(code);
+    const provider = await this.findProvider(code);
     const rows = await this.prisma.integrationProviderAuditLog.findMany({
-      where: { providerCode: code },
+      where: { tenantId: provider.tenantId, providerCode: code },
       orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
     });
 
@@ -451,6 +468,7 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
     action: IntegrationProviderAuditAction,
   ): Promise<IntegrationProviderRecord> {
     const existing = await this.findProvider(code);
+    const tenantId = existing.tenantId;
     if (body.secretRef) {
       assertSecretRef(body.secretRef);
     }
@@ -462,7 +480,7 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
         : existing.configVersion;
     const provider = await this.prisma.$transaction(async (tx) => {
       const updated = await tx.integrationProvider.update({
-        where: { code },
+        where: { tenantId_code: { tenantId, code } },
         data: {
           name: body.name ?? existing.name,
           enabled: body.enabled ?? existing.enabled,
@@ -478,6 +496,7 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
         },
       });
       await createProviderAuditLog(tx, {
+        tenantId,
         providerCode: code,
         action,
         beforeConfigVersion: existing.configVersion,
@@ -497,7 +516,7 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
   async getProviderDiagnostics(code: string) {
     const provider = await this.findProvider(code);
     const outbox = await this.prisma.integrationOutbox.findMany({
-      where: { providerCode: code },
+      where: { tenantId: provider.tenantId, providerCode: code },
       orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
     });
 
@@ -508,11 +527,14 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
   }
 
   async getProviderHealthAudit() {
+    const tenantId = resolveIntegrationRequestTenantId();
     const [providers, outbox] = await Promise.all([
       this.prisma.integrationProvider.findMany({
+        where: { tenantId },
         orderBy: [{ type: 'asc' }, { code: 'asc' }],
       }),
       this.prisma.integrationOutbox.findMany({
+        where: { tenantId },
         orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
       }),
     ]);
@@ -527,9 +549,10 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
     channel: 'mail' | 'sms',
     query: IntegrationTemplateQueryDto = {},
   ): Promise<PageResult<IntegrationTemplateRecord>> {
+    const tenantId = resolveIntegrationRequestTenantId();
     const enabled = normalizeOptionalBoolean(query.enabled);
     const rows = await this.prisma.integrationTemplate.findMany({
-      where: { channel, enabled },
+      where: { tenantId, channel, enabled },
       orderBy: [{ code: 'asc' }],
     });
 
@@ -540,8 +563,10 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
     channel: 'mail' | 'sms',
     body: CreateIntegrationTemplateDto,
   ): Promise<IntegrationTemplateRecord> {
+    const tenantId = resolveIntegrationRequestTenantId();
     const template = await this.prisma.integrationTemplate.create({
       data: {
+        tenantId,
         code: body.code,
         channel,
         name: body.name,
@@ -577,6 +602,7 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
     channel: 'mail' | 'sms',
     body: CreateOutboxMessageDto,
   ): Promise<IntegrationOutboxRecord> {
+    const tenantId = resolveIntegrationRequestTenantId();
     const provider = await this.findProvider(body.providerCode);
     assertProviderReadyForOutbox({
       code: provider.code,
@@ -605,6 +631,7 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
     const attachments = normalizeOutboxAttachments(channel, body.attachments);
     const message = await this.prisma.integrationOutbox.create({
       data: {
+        tenantId,
         channel,
         providerCode: body.providerCode,
         templateCode: body.templateCode,
@@ -651,8 +678,10 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
     channel: 'mail' | 'sms',
     query: IntegrationOutboxQueryDto = {},
   ): Promise<PageResult<IntegrationOutboxRecord>> {
+    const tenantId = resolveIntegrationRequestTenantId();
     const rows = await this.prisma.integrationOutbox.findMany({
       where: {
+        tenantId,
         channel,
         status: query.status,
         providerCode: query.providerCode,
@@ -667,9 +696,10 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
     channel: 'mail' | 'sms',
     id: string,
   ): Promise<IntegrationOutboxRecord> {
+    const tenantId = resolveIntegrationRequestTenantId();
     return requireRecord(
       await this.prisma.integrationOutbox
-        .findFirst({ where: { id, channel } })
+        .findFirst({ where: { tenantId, id, channel } })
         .then((message) => (message ? toOutboxRecord(message) : undefined)),
       'Integration outbox message',
       id,
@@ -780,10 +810,11 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
   }
 
   async processOutbox(channel: 'mail' | 'sms', body: ProcessOutboxDto = {}) {
+    const tenantId = resolveIntegrationRequestTenantId();
     const limit = normalizeProcessOutboxLimit(body.limit);
     const providerCode = normalizeOptionalProviderCode(body.providerCode);
     const queuedRows = await this.prisma.integrationOutbox.findMany({
-      where: { channel, status: 'queued', providerCode },
+      where: { tenantId, channel, status: 'queued', providerCode },
       orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
       take: limit,
     });
@@ -796,7 +827,11 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
         sentCount: 0,
         failedCount: 0,
         skippedCount: 0,
-        queuedCount: await this.countQueuedOutbox(channel, providerCode),
+        queuedCount: await this.countQueuedOutbox(
+          tenantId,
+          channel,
+          providerCode,
+        ),
       };
     }
 
@@ -874,7 +909,11 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
       sentCount: updatedRows.filter((row) => row.status === 'sent').length,
       failedCount: updatedRows.filter((row) => row.status === 'failed').length,
       skippedCount: 0,
-      queuedCount: await this.countQueuedOutbox(channel, providerCode),
+      queuedCount: await this.countQueuedOutbox(
+        tenantId,
+        channel,
+        providerCode,
+      ),
     };
   }
 
@@ -934,9 +973,15 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
   async listOAuthProviders(
     query: IntegrationProviderQueryDto = {},
   ): Promise<PageResult<IntegrationProviderRecord>> {
+    const tenantId = resolveIntegrationRequestTenantId();
     const enabled = normalizeOptionalBoolean(query.enabled);
     const rows = await this.prisma.integrationProvider.findMany({
-      where: { type: 'oauth', enabled, healthStatus: query.healthStatus },
+      where: {
+        tenantId,
+        type: 'oauth',
+        enabled,
+        healthStatus: query.healthStatus,
+      },
       orderBy: [{ code: 'asc' }],
     });
 
@@ -944,8 +989,9 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
   }
 
   async listProfileOAuthProviders() {
+    const tenantId = resolveIntegrationRequestTenantId();
     const rows = await this.prisma.integrationProvider.findMany({
-      where: { type: 'oauth', enabled: true },
+      where: { tenantId, type: 'oauth', enabled: true },
       orderBy: [{ code: 'asc' }],
     });
 
@@ -957,8 +1003,10 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
   }
 
   async startOAuthFlow(body: StartOAuthFlowDto): Promise<OAuthFlowRecord> {
+    const tenantId = resolveIntegrationRequestTenantId();
     const provider = await this.findProvider(
       normalizeOAuthProviderCode(body.providerCode),
+      tenantId,
     );
     const start = normalizeOAuthStartFlow(body, provider);
     const state = randomBytes(24).toString('base64url');
@@ -973,6 +1021,7 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
 
     const flow = await this.prisma.integrationOAuthFlow.create({
       data: {
+        tenantId,
         providerCode: start.providerCode,
         state,
         subjectType: start.subjectType,
@@ -991,8 +1040,10 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
   async listOAuthFlows(
     query: OAuthFlowQueryDto = {},
   ): Promise<PageResult<OAuthFlowRecord>> {
+    const tenantId = resolveIntegrationRequestTenantId();
     const rows = await this.prisma.integrationOAuthFlow.findMany({
       where: {
+        tenantId,
         providerCode: normalizeOptionalWhereText(query.providerCode),
         subjectId: normalizeOptionalWhereText(query.subjectId),
       },
@@ -1013,13 +1064,18 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
     body: OAuthProviderCallbackDto,
   ) {
     const callback = normalizeOAuthCallback(providerCode, body);
-    const provider = await this.findProvider(callback.providerCode);
+    const flow = await this.prisma.integrationOAuthFlow.findUnique({
+      where: { state: callback.state },
+    });
+    const tenantId = flow?.tenantId ?? resolveIntegrationRequestTenantId();
+    const provider = await this.findProvider(callback.providerCode, tenantId);
     if (provider.type !== 'oauth' || !provider.enabled) {
       const reason =
         provider.type !== 'oauth'
           ? `Provider ${provider.code} is not an OAuth provider.`
           : `OAuth provider ${provider.code} is disabled.`;
       const audit = await this.createOAuthCallbackAudit({
+        tenantId,
         providerCode: callback.providerCode,
         state: callback.state,
         status: 'rejected',
@@ -1035,12 +1091,10 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
     }
 
     const now = new Date();
-    const flow = await this.prisma.integrationOAuthFlow.findUnique({
-      where: { state: callback.state },
-    });
 
     if (!flow || flow.providerCode !== callback.providerCode) {
       const audit = await this.createOAuthCallbackAudit({
+        tenantId,
         providerCode: callback.providerCode,
         state: callback.state,
         status: 'rejected',
@@ -1058,6 +1112,7 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
     const normalizedFlow = normalizeOAuthFlowRecord(toOAuthFlowRecord(flow));
     if (normalizedFlow.status !== 'pending') {
       const audit = await this.createOAuthCallbackAudit({
+        tenantId,
         providerCode: callback.providerCode,
         flowId: flow.id,
         state: callback.state,
@@ -1088,6 +1143,7 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
         });
         const audit = await tx.integrationOAuthCallbackAudit.create({
           data: {
+            tenantId,
             providerCode: callback.providerCode,
             flowId: flow.id,
             state: callback.state,
@@ -1137,7 +1193,8 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
     const result = await this.prisma.$transaction(async (tx) => {
       const token = await tx.integrationOAuthToken.upsert({
         where: {
-          providerCode_subjectId_providerAccountId: {
+          tenantId_providerCode_subjectId_providerAccountId: {
+            tenantId,
             providerCode: callback.providerCode,
             subjectId: flow.subjectId,
             providerAccountId,
@@ -1149,6 +1206,7 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
             subjectId: flow.subjectId,
             providerAccountId,
           }),
+          tenantId,
           providerCode: callback.providerCode,
           subjectType: flow.subjectType,
           subjectId: flow.subjectId,
@@ -1185,6 +1243,7 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
       });
       const audit = await tx.integrationOAuthCallbackAudit.create({
         data: {
+          tenantId,
           providerCode: callback.providerCode,
           flowId: flow.id,
           state: callback.state,
@@ -1216,8 +1275,10 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
   async listOAuthCallbackAudits(
     query: OAuthCallbackAuditQueryDto = {},
   ): Promise<PageResult<OAuthCallbackAuditRecord>> {
+    const tenantId = resolveIntegrationRequestTenantId();
     const rows = await this.prisma.integrationOAuthCallbackAudit.findMany({
       where: {
+        tenantId,
         providerCode: normalizeOptionalWhereText(query.providerCode),
         status: normalizeOptionalWhereText(query.status),
       },
@@ -1233,7 +1294,9 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
   }
 
   async getOAuthTokenSummary() {
+    const tenantId = resolveIntegrationRequestTenantId();
     const rows = await this.prisma.integrationOAuthToken.findMany({
+      where: { tenantId },
       orderBy: [{ providerCode: 'asc' }, { subjectId: 'asc' }],
     });
 
@@ -1243,8 +1306,10 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
   async listOAuthTokens(
     query: OAuthTokenQueryDto = {},
   ): Promise<PageResult<OAuthTokenRecord>> {
+    const tenantId = resolveIntegrationRequestTenantId();
     const rows = await this.prisma.integrationOAuthToken.findMany({
       where: {
+        tenantId,
         providerCode: normalizeOptionalWhereText(query.providerCode),
         subjectId: normalizeOptionalWhereText(query.subjectId),
       },
@@ -1261,10 +1326,11 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
   }
 
   async getOAuthToken(id: string): Promise<OAuthTokenRecord> {
+    const tenantId = resolveIntegrationRequestTenantId();
     return normalizeOAuthTokenRecord(
       requireRecord(
         await this.prisma.integrationOAuthToken
-          .findUnique({ where: { id } })
+          .findFirst({ where: { tenantId, id } })
           .then((token) => (token ? toOAuthTokenRecord(token) : undefined)),
         'OAuth token',
         id,
@@ -1296,8 +1362,9 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
   }
 
   async listProfileOAuthAccounts(subjectId: string) {
+    const tenantId = resolveIntegrationRequestTenantId();
     const rows = await this.prisma.integrationOAuthToken.findMany({
-      where: { subjectType: 'user', subjectId },
+      where: { tenantId, subjectType: 'user', subjectId },
       orderBy: [{ providerCode: 'asc' }, { createdAt: 'desc' }],
     });
     const tokens = rows
@@ -1310,6 +1377,7 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
       );
     const providers = await this.prisma.integrationProvider.findMany({
       where: {
+        tenantId,
         code: { in: [...new Set(tokens.map((token) => token.providerCode))] },
       },
       select: { code: true, name: true },
@@ -1346,6 +1414,7 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
     actor: string,
     body: RevokeOAuthTokenDto = {},
   ) {
+    const tenantId = resolveIntegrationRequestTenantId();
     const existing = await this.getOAuthToken(id);
     assertOAuthTokenBelongsToSubject({ subjectId, token: existing });
 
@@ -1366,7 +1435,9 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
             }),
           );
     const provider = await this.prisma.integrationProvider.findUnique({
-      where: { code: token.providerCode },
+      where: {
+        tenantId_code: { tenantId, code: token.providerCode },
+      },
       select: { code: true, name: true },
     });
 
@@ -1436,6 +1507,7 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
   }
 
   private async createOAuthCallbackAudit(input: {
+    tenantId?: string;
     providerCode: string;
     flowId?: string;
     state: string;
@@ -1448,6 +1520,7 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
   }): Promise<OAuthCallbackAuditRecord> {
     const audit = await this.prisma.integrationOAuthCallbackAudit.create({
       data: {
+        tenantId: input.tenantId ?? resolveIntegrationRequestTenantId(),
         providerCode: input.providerCode,
         flowId: input.flowId,
         state: input.state,
@@ -1463,10 +1536,13 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
     return toOAuthCallbackAuditRecord(audit);
   }
 
-  private async findProvider(code: string): Promise<IntegrationProviderRecord> {
+  private async findProvider(
+    code: string,
+    tenantId = resolveIntegrationRequestTenantId(),
+  ): Promise<IntegrationProviderRecord> {
     return requireRecord(
       await this.prisma.integrationProvider
-        .findUnique({ where: { code } })
+        .findUnique({ where: { tenantId_code: { tenantId, code } } })
         .then((provider) =>
           provider ? toProviderRecord(provider) : undefined,
         ),
@@ -1478,10 +1554,11 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
   private async findTemplate(
     channel: 'mail' | 'sms',
     code: string,
+    tenantId = resolveIntegrationRequestTenantId(),
   ): Promise<IntegrationTemplateRecord> {
     return requireRecord(
       await this.prisma.integrationTemplate
-        .findUnique({ where: { code } })
+        .findUnique({ where: { tenantId_code: { tenantId, code } } })
         .then((template) =>
           template && template.channel === channel
             ? toTemplateRecord(template)
@@ -1495,10 +1572,11 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
   private async findOutboxRow(
     channel: 'mail' | 'sms',
     id: string,
+    tenantId = resolveIntegrationRequestTenantId(),
   ): Promise<OutboxRow> {
     return requireRecord(
       await this.prisma.integrationOutbox.findFirst({
-        where: { id, channel },
+        where: { tenantId, id, channel },
       }),
       'Integration outbox message',
       id,
@@ -1506,11 +1584,12 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
   }
 
   private countQueuedOutbox(
+    tenantId: string,
     channel: 'mail' | 'sms',
     providerCode?: string,
   ): Promise<number> {
     return this.prisma.integrationOutbox.count({
-      where: { channel, providerCode, status: 'queued' },
+      where: { tenantId, channel, providerCode, status: 'queued' },
     });
   }
 
@@ -1531,8 +1610,10 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
     channel: 'mail' | 'sms',
     schedule: ReturnType<typeof normalizeOutboxSchedule>,
   ): Promise<number> {
+    const tenantId = resolveIntegrationRequestTenantId();
     const failedRows = await this.prisma.integrationOutbox.findMany({
       where: {
+        tenantId,
         channel,
         status: 'failed',
         providerCode: schedule.providerCode,
@@ -1576,6 +1657,7 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
 function toProviderRecord(row: ProviderRow): IntegrationProviderRecord {
   return {
     id: row.id,
+    tenantId: row.tenantId,
     code: row.code,
     type: normalizeProviderType(row.type),
     name: row.name,
@@ -1597,6 +1679,7 @@ function toProviderAuditLogRecord(
 ): IntegrationProviderAuditLogRecord {
   return {
     id: row.id,
+    tenantId: row.tenantId,
     providerCode: row.providerCode,
     action: normalizeProviderAuditAction(row.action),
     actor: row.actor,
@@ -1619,6 +1702,7 @@ function toProviderAuditLogRecord(
 function toTemplateRecord(row: TemplateRow): IntegrationTemplateRecord {
   return {
     id: row.id,
+    tenantId: row.tenantId,
     code: row.code,
     channel: row.channel === 'sms' ? 'sms' : 'mail',
     name: row.name,
@@ -1631,6 +1715,7 @@ function toTemplateRecord(row: TemplateRow): IntegrationTemplateRecord {
 function toOutboxRecord(row: OutboxRow): IntegrationOutboxRecord {
   return {
     id: row.id,
+    tenantId: row.tenantId,
     channel: row.channel === 'sms' ? 'sms' : 'mail',
     providerCode: row.providerCode,
     templateCode: row.templateCode ?? undefined,
@@ -1653,6 +1738,7 @@ function toOutboxRecord(row: OutboxRow): IntegrationOutboxRecord {
 function toOAuthTokenRecord(row: OAuthTokenRow): OAuthTokenRecord {
   return {
     id: row.id,
+    tenantId: row.tenantId,
     providerCode: row.providerCode,
     subjectType: row.subjectType,
     subjectId: row.subjectId,
@@ -1673,6 +1759,7 @@ function toOAuthTokenRecord(row: OAuthTokenRow): OAuthTokenRecord {
 function toOAuthFlowRecord(row: OAuthFlowRow): OAuthFlowRecord {
   return {
     id: row.id,
+    tenantId: row.tenantId,
     providerCode: row.providerCode,
     state: row.state,
     subjectType: row.subjectType,
@@ -1700,6 +1787,7 @@ function toOAuthCallbackAuditRecord(
 ): OAuthCallbackAuditRecord {
   return {
     id: row.id,
+    tenantId: row.tenantId,
     providerCode: row.providerCode,
     flowId: row.flowId ?? undefined,
     state: row.state,
@@ -1794,6 +1882,7 @@ function listProviderChangedFields(
 async function createProviderAuditLog(
   tx: PrismaTransactionClient,
   input: {
+    tenantId: string;
     providerCode: string;
     action: IntegrationProviderAuditAction;
     actor?: string;
@@ -1809,6 +1898,7 @@ async function createProviderAuditLog(
 ): Promise<void> {
   await tx.integrationProviderAuditLog.create({
     data: {
+      tenantId: input.tenantId,
       providerCode: input.providerCode,
       action: input.action,
       actor: input.actor ?? 'admin',
@@ -1844,7 +1934,11 @@ async function syncNoticeDeliveryFromOutbox(
   const attemptedNow = input.previousOutboxStatus !== input.status;
   if (input.status === 'sent') {
     await tx.systemNoticeDelivery.updateMany({
-      where: { id: deliveryId, providerMessageId: outbox.id },
+      where: {
+        tenantId: outbox.tenantId,
+        id: deliveryId,
+        providerMessageId: outbox.id,
+      },
       data: {
         providerStatus: 'sent',
         lastAttemptAt: input.now,
@@ -1858,7 +1952,11 @@ async function syncNoticeDeliveryFromOutbox(
 
   if (input.status === 'failed') {
     await tx.systemNoticeDelivery.updateMany({
-      where: { id: deliveryId, providerMessageId: outbox.id },
+      where: {
+        tenantId: outbox.tenantId,
+        id: deliveryId,
+        providerMessageId: outbox.id,
+      },
       data: {
         providerStatus: 'failed',
         lastAttemptAt: input.now,
@@ -1871,7 +1969,11 @@ async function syncNoticeDeliveryFromOutbox(
   }
 
   await tx.systemNoticeDelivery.updateMany({
-    where: { id: deliveryId, providerMessageId: outbox.id },
+    where: {
+      tenantId: outbox.tenantId,
+      id: deliveryId,
+      providerMessageId: outbox.id,
+    },
     data: {
       providerStatus: 'pending',
       sentAt: null,

@@ -806,7 +806,11 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
   ): Promise<SystemNoticeDeliveryExecutionResult> {
     const provider = getSystemNoticeDeliveryProvider(channel);
     if (channel !== 'in_app') {
-      await this.assertIntegrationProviderReady(provider, channel);
+      await this.assertIntegrationProviderReady(
+        notice.tenantId,
+        provider,
+        channel,
+      );
     }
 
     const executableRows = await this.prisma.systemNoticeDelivery.findMany({
@@ -903,12 +907,13 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
   }
 
   private async assertIntegrationProviderReady(
+    tenantId: string,
     provider: SystemNoticeDeliveryProvider,
     channel: Exclude<SystemNoticeDeliveryChannel, 'in_app'>,
   ): Promise<void> {
     const integrationProvider =
       await this.prisma.integrationProvider.findUnique({
-        where: { code: provider },
+        where: { tenantId_code: { tenantId, code: provider } },
         select: { code: true, enabled: true, type: true },
       });
 
@@ -916,7 +921,7 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
       throw systemNoticeBadRequest(
         'SYSTEM_NOTICE_INTEGRATION_PROVIDER_NOT_CONFIGURED',
         `Integration provider is not configured for notice delivery: ${provider}`,
-        { channel, provider },
+        { channel, provider, tenantId },
       );
     }
 
@@ -924,7 +929,7 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
       throw systemNoticeBadRequest(
         'SYSTEM_NOTICE_INTEGRATION_PROVIDER_TYPE_INVALID',
         `Integration provider ${provider} is not a ${channel} provider.`,
-        { actualType: integrationProvider.type, channel, provider },
+        { actualType: integrationProvider.type, channel, provider, tenantId },
       );
     }
 
@@ -932,7 +937,7 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
       throw systemNoticeBadRequest(
         'SYSTEM_NOTICE_INTEGRATION_PROVIDER_DISABLED',
         `Integration provider ${provider} must be enabled before notice delivery execution.`,
-        { channel, provider },
+        { channel, provider, tenantId },
       );
     }
   }
@@ -965,6 +970,7 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
 
       const outbox = await this.prisma.integrationOutbox.create({
         data: {
+          tenantId: notice.tenantId,
           channel,
           providerCode: provider,
           templateCode: null,
@@ -1006,9 +1012,7 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
 
   private async findNoticeRecipients(
     tenantId: string,
-  ): Promise<
-    readonly PrismaNoticeDeliveryRecipient[]
-  > {
+  ): Promise<readonly PrismaNoticeDeliveryRecipient[]> {
     const memberships = await this.prisma.tenantMembership.findMany({
       where: {
         tenantId,

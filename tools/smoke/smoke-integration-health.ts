@@ -1,8 +1,10 @@
 import type { IntegrationProviderDiagnosticsSummary } from '@opencore/sdk';
 
+import { disconnectSmokePrisma, getSmokePrisma } from './prisma';
 import {
   assertArray,
   assertAtLeast,
+  assertDefined,
   assertEqual,
   assertIncludes,
   assertNumber,
@@ -13,8 +15,14 @@ import {
 
 const smoke = createTypedSmokeRuntime();
 const { apiPrefix, baseUrl, checkDocs, clients, request } = smoke;
+const ROOT_TENANT_ID = 'tenant_root';
+const FOREIGN_TENANT_ID = 'tenant_integration_health_smoke';
+const FOREIGN_OUTBOX_ID = 'outbox_integration_health_foreign_smoke';
 
 async function main() {
+  await cleanupForeignIntegrationRows();
+  await seedForeignIntegrationRows();
+
   await request('/health/live', { expected: [200] });
   await request('/health/ready', { expected: [200] });
 
@@ -50,6 +58,11 @@ async function main() {
   const smsSandbox = assertProvider(byCode, 'sms.sandbox');
   const smsHttp = assertProvider(byCode, 'sms.http');
 
+  assertEqual(
+    mailSandbox.provider.tenantId,
+    ROOT_TENANT_ID,
+    'mail sandbox provider tenant',
+  );
   assertNumber(
     mailSandbox.provider.configVersion,
     'mail sandbox config version',
@@ -88,6 +101,11 @@ async function main() {
     'mail.sandbox',
   );
   assertEqual(
+    diagnostics.provider.tenantId,
+    ROOT_TENANT_ID,
+    'mail diagnostics provider tenant',
+  );
+  assertEqual(
     diagnostics.readiness,
     mailSandbox.readiness,
     'mail diagnostics readiness parity',
@@ -111,6 +129,11 @@ async function main() {
     'mail sandbox provider test secretRefStatus',
   );
   assertString(providerTest.testedAt, 'mail sandbox provider test testedAt');
+  assertEqual(
+    providerTest.provider.tenantId,
+    ROOT_TENANT_ID,
+    'mail sandbox provider test tenant',
+  );
   assertString(
     providerTest.provider.lastTestedAt,
     'mail sandbox provider lastTestedAt',
@@ -126,6 +149,26 @@ async function main() {
     auditLogs.items.map((log) => log.action),
     'tested',
     'mail sandbox provider audit action',
+  );
+  for (const log of auditLogs.items) {
+    assertEqual(log.tenantId, ROOT_TENANT_ID, 'provider audit log tenant');
+  }
+
+  await request(`${apiPrefix}/integrations/mail/outbox/${FOREIGN_OUTBOX_ID}`, {
+    expected: [404],
+    token,
+  });
+  const forgedTenantProvider = await request<{ tenantId: string }>(
+    `${apiPrefix}/integrations/providers/mail.sandbox`,
+    {
+      headers: { 'tenant-id': FOREIGN_TENANT_ID },
+      token,
+    },
+  );
+  assertEqual(
+    forgedTenantProvider.tenantId,
+    ROOT_TENANT_ID,
+    'forged tenant provider lookup',
   );
 
   const mailProviderBefore = await clients.integration.getProvider(
@@ -149,6 +192,11 @@ async function main() {
     'mail test-send outbox status',
   );
   assertString(mailTestSend.message.sentAt, 'mail test-send sentAt');
+  assertEqual(
+    mailTestSend.message.tenantId,
+    ROOT_TENANT_ID,
+    'mail test-send message tenant',
+  );
   if (!mailProviderBefore.enabled) {
     await clients.integration.disableProvider(token, 'mail.sandbox');
   }
@@ -174,6 +222,11 @@ async function main() {
     'SMS test-send outbox status',
   );
   assertString(smsTestSend.message.sentAt, 'SMS test-send sentAt');
+  assertEqual(
+    smsTestSend.message.tenantId,
+    ROOT_TENANT_ID,
+    'SMS test-send message tenant',
+  );
   if (!smsProviderBefore.enabled) {
     await clients.integration.disableProvider(token, 'sms.sandbox');
   }
@@ -183,6 +236,9 @@ async function main() {
   assertNoSecretLeak(auditLogs);
   assertNoSecretLeak(mailTestSend);
   assertNoSecretLeak(smsTestSend);
+  await assertForeignIntegrationRowsPreserved();
+  await cleanupForeignIntegrationRows();
+  await disconnectSmokePrisma();
 
   console.log(
     JSON.stringify({
@@ -199,11 +255,15 @@ async function main() {
         ...(checkDocs ? ['openapi.integration-sms-test-send'] : []),
         'auth.login',
         'integration.provider-health-audit',
+        'integration.provider.tenant-field',
         'integration.provider-diagnostics-parity',
         'integration.provider-credential-test',
         'integration.provider-audit-logs',
+        'integration.provider.forged-tenant-ignored',
+        'integration.outbox.foreign-hidden',
         'integration.mail-test-send',
         'integration.sms-test-send',
+        'integration.foreign-tenant-preserved',
         'integration.config-vault-audit',
         'integration.failure-history',
         'integration.secret-leak-guard',
@@ -238,7 +298,106 @@ function assertNoSecretLeak(value: unknown) {
   }
 }
 
+async function seedForeignIntegrationRows() {
+  const prisma = getSmokePrisma();
+  await prisma.tenant.upsert({
+    where: { id: FOREIGN_TENANT_ID },
+    update: { status: 'active' },
+    create: {
+      id: FOREIGN_TENANT_ID,
+      code: FOREIGN_TENANT_ID,
+      slug: FOREIGN_TENANT_ID,
+      name: 'Integration Health Smoke Foreign Tenant',
+      status: 'active',
+    },
+  });
+  await prisma.integrationProvider.upsert({
+    where: {
+      tenantId_code: {
+        tenantId: FOREIGN_TENANT_ID,
+        code: 'mail.sandbox',
+      },
+    },
+    update: {
+      enabled: true,
+      healthStatus: 'healthy',
+    },
+    create: {
+      id: 'provider_mail_sandbox_foreign_smoke',
+      tenantId: FOREIGN_TENANT_ID,
+      code: 'mail.sandbox',
+      type: 'mail',
+      name: 'Foreign Mail Sandbox',
+      enabled: true,
+      secretRef: 'secret://integration/mail/foreign-sandbox',
+      secretRefStatus: 'unchecked',
+      config: { adapter: 'sandbox' },
+      configVersion: 1,
+      healthStatus: 'healthy',
+    },
+  });
+  await prisma.integrationOutbox.upsert({
+    where: { id: FOREIGN_OUTBOX_ID },
+    update: {
+      status: 'queued',
+      tenantId: FOREIGN_TENANT_ID,
+    },
+    create: {
+      id: FOREIGN_OUTBOX_ID,
+      tenantId: FOREIGN_TENANT_ID,
+      channel: 'mail',
+      providerCode: 'mail.sandbox',
+      recipient: 'foreign@example.test',
+      subject: 'Foreign integration smoke',
+      payload: { name: 'Foreign tenant' },
+      status: 'queued',
+      retryCount: 0,
+      preview: 'Foreign integration smoke',
+    },
+  });
+}
+
+async function assertForeignIntegrationRowsPreserved() {
+  const prisma = getSmokePrisma();
+  const provider = await prisma.integrationProvider.findUnique({
+    where: {
+      tenantId_code: {
+        tenantId: FOREIGN_TENANT_ID,
+        code: 'mail.sandbox',
+      },
+    },
+  });
+  assertDefined(provider, 'foreign integration provider preserved');
+  const outbox = await prisma.integrationOutbox.findUnique({
+    where: { id: FOREIGN_OUTBOX_ID },
+  });
+  assertEqual(
+    outbox?.tenantId,
+    FOREIGN_TENANT_ID,
+    'foreign integration outbox preserved',
+  );
+}
+
+async function cleanupForeignIntegrationRows() {
+  const prisma = getSmokePrisma();
+  await prisma.integrationOutbox.deleteMany({
+    where: { id: FOREIGN_OUTBOX_ID },
+  });
+  await prisma.integrationProvider.deleteMany({
+    where: {
+      tenantId: FOREIGN_TENANT_ID,
+      code: 'mail.sandbox',
+    },
+  });
+  await prisma.tenant.deleteMany({ where: { id: FOREIGN_TENANT_ID } });
+}
+
 main().catch((error: unknown) => {
+  void cleanupForeignIntegrationRows()
+    .catch(() => undefined)
+    .finally(() => {
+      void disconnectSmokePrisma().catch(() => undefined);
+    });
   console.error(
     JSON.stringify({
       status: 'fail',

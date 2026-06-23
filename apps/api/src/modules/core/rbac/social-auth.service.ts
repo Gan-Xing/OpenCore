@@ -28,6 +28,7 @@ import type {
 
 type OAuthTokenRow = {
   id: string;
+  tenantId: string;
   providerCode: string;
   subjectType: string;
   subjectId: string;
@@ -166,7 +167,7 @@ export class SocialAuthService {
       );
     }
 
-    await this.revokeTemporaryToken(state.token.id, 'social login completed');
+    await this.revokeTemporaryToken(state.token, 'social login completed');
     const session = await this.authService.createSocialSessionForUser(
       bindings[0].subjectId,
       context,
@@ -209,7 +210,7 @@ export class SocialAuthService {
     }
 
     await this.bindTokenToUser(state.token, user.id);
-    await this.revokeTemporaryToken(state.token.id, 'social login bound');
+    await this.revokeTemporaryToken(state.token, 'social login bound');
     const session = await this.authService.createSocialSessionForUser(
       user.id,
       context,
@@ -493,6 +494,7 @@ export class SocialAuthService {
   ): Promise<readonly OAuthTokenRow[]> {
     const rows = await this.prisma.integrationOAuthToken.findMany({
       where: {
+        tenantId: token.tenantId,
         providerAccountId: token.providerAccountId,
         providerCode: token.providerCode,
         status: 'active',
@@ -513,10 +515,11 @@ export class SocialAuthService {
 
     await this.prisma.integrationOAuthToken.upsert({
       where: {
-        providerCode_subjectId_providerAccountId: {
+        tenantId_providerCode_subjectId_providerAccountId: {
           providerAccountId: token.providerAccountId,
           providerCode: token.providerCode,
           subjectId: userId,
+          tenantId: token.tenantId,
         },
       },
       create: {
@@ -535,6 +538,7 @@ export class SocialAuthService {
         status: 'active',
         subjectId: userId,
         subjectType: 'user',
+        tenantId: token.tenantId,
       },
       update: {
         accessTokenRef: refs.accessTokenRef,
@@ -551,9 +555,14 @@ export class SocialAuthService {
     });
   }
 
-  private async revokeTemporaryToken(id: string, reason: string) {
+  private async revokeTemporaryToken(token: OAuthTokenRow, reason: string) {
     await this.prisma.integrationOAuthToken.updateMany({
-      where: { id, subjectType: SOCIAL_LOGIN_SUBJECT_TYPE, status: 'active' },
+      where: {
+        id: token.id,
+        subjectType: SOCIAL_LOGIN_SUBJECT_TYPE,
+        status: 'active',
+        tenantId: token.tenantId,
+      },
       data: {
         revokedAt: new Date(),
         revokedBy: 'social-auth',

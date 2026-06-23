@@ -393,8 +393,11 @@ async function seedIntegrations(): Promise<{
     const provider = applyRuntimeIntegrationProviderEnv(seedProvider);
 
     await prisma.integrationProvider.upsert({
-      where: { code: provider.code },
+      where: {
+        tenantId_code: { tenantId: ROOT_TENANT_ID, code: provider.code },
+      },
       update: {
+        tenantId: ROOT_TENANT_ID,
         type: provider.type,
         name: provider.name,
         enabled: provider.enabled,
@@ -414,6 +417,7 @@ async function seedIntegrations(): Promise<{
       },
       create: {
         id: provider.id,
+        tenantId: ROOT_TENANT_ID,
         code: provider.code,
         type: provider.type,
         name: provider.name,
@@ -437,8 +441,11 @@ async function seedIntegrations(): Promise<{
 
   for (const template of seedIntegrationTemplates) {
     await prisma.integrationTemplate.upsert({
-      where: { code: template.code },
+      where: {
+        tenantId_code: { tenantId: ROOT_TENANT_ID, code: template.code },
+      },
       update: {
+        tenantId: ROOT_TENANT_ID,
         channel: template.channel,
         name: template.name,
         subject: template.subject ?? null,
@@ -447,6 +454,7 @@ async function seedIntegrations(): Promise<{
       },
       create: {
         id: template.id,
+        tenantId: ROOT_TENANT_ID,
         code: template.code,
         channel: template.channel,
         name: template.name,
@@ -465,6 +473,7 @@ async function seedIntegrations(): Promise<{
     await prisma.integrationOutbox.upsert({
       where: { id: message.id },
       update: {
+        tenantId: ROOT_TENANT_ID,
         channel: message.channel,
         providerCode: message.providerCode,
         templateCode: message.templateCode ?? null,
@@ -481,6 +490,7 @@ async function seedIntegrations(): Promise<{
       },
       create: {
         id: message.id,
+        tenantId: ROOT_TENANT_ID,
         channel: message.channel,
         providerCode: message.providerCode,
         templateCode: message.templateCode ?? null,
@@ -502,6 +512,7 @@ async function seedIntegrations(): Promise<{
     await prisma.integrationOAuthToken.upsert({
       where: { id: token.id },
       update: {
+        tenantId: ROOT_TENANT_ID,
         providerCode: token.providerCode,
         subjectType: token.subjectType,
         subjectId: token.subjectId,
@@ -521,6 +532,7 @@ async function seedIntegrations(): Promise<{
       },
       create: {
         id: token.id,
+        tenantId: ROOT_TENANT_ID,
         providerCode: token.providerCode,
         subjectType: token.subjectType,
         subjectId: token.subjectId,

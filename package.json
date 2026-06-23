@@ -126,6 +126,7 @@
     "guard:tenant-config-scope": "pnpm scripts:ts tools/scripts/check-tenant-config-scope.ts",
     "guard:tenant-file-scope": "pnpm scripts:ts tools/scripts/check-tenant-file-scope.ts",
     "guard:tenant-foundation": "pnpm scripts:ts tools/scripts/check-tenant-foundation.ts",
+    "guard:tenant-integration-scope": "pnpm scripts:ts tools/scripts/check-tenant-integration-scope.ts",
     "guard:tenant-login-log-scope": "pnpm scripts:ts tools/scripts/check-tenant-login-log-scope.ts",
     "guard:tenant-dept-scope": "pnpm scripts:ts tools/scripts/check-tenant-dept-scope.ts",
     "guard:tenant-dict-scope": "pnpm scripts:ts tools/scripts/check-tenant-dict-scope.ts",

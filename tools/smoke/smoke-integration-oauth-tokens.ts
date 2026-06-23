@@ -16,6 +16,9 @@ import {
 const smoke = createTypedSmokeRuntime();
 const { apiPrefix, baseUrl, checkDocs, clients, request } = smoke;
 
+const ROOT_TENANT_ID = 'tenant_root';
+const FOREIGN_TENANT_ID = 'tenant_integration_oauth_smoke';
+const FOREIGN_TOKEN_ID = 'oauth_token_foreign_smoke_hidden';
 const SMOKE_TOKEN_ID = 'oauth_token_github_smoke_revoke';
 const SMOKE_FLOW_SUBJECT_ID = 'user_smoke_oauth_flow';
 const SMOKE_FLOW_PROVIDER_ACCOUNT_ID = 'github:opencore-smoke-flow';
@@ -27,6 +30,7 @@ const SMOKE_TOKEN_SEED = assertDefined(
 async function main() {
   await resetSmokeOAuthToken();
   await resetSmokeOAuthFlow();
+  await seedForeignOAuthRows();
   let checks: string[] = [];
 
   try {
@@ -74,6 +78,7 @@ async function main() {
       scopes: ['read:user'],
     });
     assertEqual(flow.providerCode, 'oauth.github', 'OAuth flow provider');
+    assertEqual(flow.tenantId, ROOT_TENANT_ID, 'OAuth flow tenant');
     assertEqual(flow.status, 'pending', 'OAuth flow initial status');
     assertString(flow.state, 'OAuth flow state');
     assertEqual(
@@ -94,7 +99,17 @@ async function main() {
     );
     assertEqual(callbackResult.status, 'accepted', 'OAuth callback status');
     assertEqual(callbackResult.flowId, flow.id, 'OAuth callback flow binding');
+    assertEqual(
+      callbackResult.audit.tenantId,
+      ROOT_TENANT_ID,
+      'OAuth callback audit tenant',
+    );
     assertDefined(callbackResult.token, 'OAuth callback archived token');
+    assertEqual(
+      callbackResult.token?.tenantId,
+      ROOT_TENANT_ID,
+      'OAuth callback token tenant',
+    );
     assertEqual(
       callbackResult.token?.subjectId,
       SMOKE_FLOW_SUBJECT_ID,
@@ -119,6 +134,13 @@ async function main() {
       flow.id,
       'completed OAuth flow list',
     );
+    for (const completedFlow of completedFlows.items) {
+      assertEqual(
+        completedFlow.tenantId,
+        ROOT_TENANT_ID,
+        'completed OAuth flow tenant',
+      );
+    }
 
     const acceptedAudits = await clients.integration.listOAuthCallbackAudits(
       token,
@@ -132,6 +154,13 @@ async function main() {
       flow.id,
       'accepted OAuth callback audit list',
     );
+    for (const audit of acceptedAudits.items) {
+      assertEqual(
+        audit.tenantId,
+        ROOT_TENANT_ID,
+        'OAuth callback audit list tenant',
+      );
+    }
 
     const repeatedCallback = await clients.integration.callbackOAuthProvider(
       'oauth.github',
@@ -164,6 +193,11 @@ async function main() {
       'active OAuth smoke token',
     );
     assertString(activeToken.id, 'active OAuth token id');
+    assertEqual(
+      activeToken.tenantId,
+      ROOT_TENANT_ID,
+      'active OAuth token tenant',
+    );
     assertEqual(activeToken.status, 'active', 'active OAuth token status');
     assertString(activeToken.accessTokenRef, 'active OAuth token ref');
 
@@ -172,7 +206,16 @@ async function main() {
       activeToken.id,
     );
     assertEqual(detail.id, activeToken.id, 'OAuth token detail id');
+    assertEqual(detail.tenantId, ROOT_TENANT_ID, 'OAuth token detail tenant');
     assertEqual(detail.status, 'active', 'OAuth token detail status');
+    await request(
+      `${apiPrefix}/integrations/oauth/tokens/${FOREIGN_TOKEN_ID}`,
+      {
+        expected: [404],
+        token,
+      },
+    );
+    await assertForeignOAuthRowsPreserved();
 
     const reason = `OpenCore OAuth token smoke revoke ${Date.now()}`;
     const revoked = await clients.integration.revokeOAuthToken(
@@ -181,6 +224,7 @@ async function main() {
       { reason },
     );
     assertEqual(revoked.id, activeToken.id, 'revoked OAuth token id');
+    assertEqual(revoked.tenantId, ROOT_TENANT_ID, 'revoked OAuth token tenant');
     assertEqual(revoked.status, 'revoked', 'revoked OAuth token status');
     assertEqual(revoked.revokeReason, reason, 'revoked OAuth token reason');
     assertString(revoked.revokedAt, 'revoked OAuth token revokedAt');
@@ -238,13 +282,17 @@ async function main() {
       'integration.oauth-flow-start',
       'integration.oauth-callback-accept',
       'integration.oauth-callback-audit',
+      'integration.oauth-tenant-fields',
       'integration.oauth-callback-reject-repeat',
       'integration.oauth-token-list-detail',
+      'integration.oauth-token.foreign-hidden',
+      'integration.oauth-foreign-preserved',
       'integration.oauth-token-revoke',
       'integration.oauth-token-revoke-idempotent',
       'integration.oauth-token-secret-leak-guard',
     ];
   } finally {
+    await cleanupForeignOAuthRows();
     await resetSmokeOAuthFlow();
     await resetSmokeOAuthToken();
     await disconnectSmokePrisma();
@@ -286,6 +334,60 @@ async function resetSmokeOAuthToken() {
       ...toPrismaOAuthToken(SMOKE_TOKEN_SEED),
     },
   });
+}
+
+async function seedForeignOAuthRows() {
+  const db = getSmokePrisma();
+  await cleanupForeignOAuthRows();
+  await db.tenant.upsert({
+    where: { id: FOREIGN_TENANT_ID },
+    update: { status: 'active' },
+    create: {
+      id: FOREIGN_TENANT_ID,
+      code: FOREIGN_TENANT_ID,
+      slug: FOREIGN_TENANT_ID,
+      name: 'Integration OAuth Smoke Foreign Tenant',
+      status: 'active',
+    },
+  });
+  await db.integrationOAuthToken.create({
+    data: {
+      id: FOREIGN_TOKEN_ID,
+      tenantId: FOREIGN_TENANT_ID,
+      providerCode: 'oauth.github',
+      subjectType: 'system-user',
+      subjectId: 'foreign_oauth_smoke_subject',
+      providerAccountId: 'github:foreign-oauth-smoke',
+      scopes: ['read:user'],
+      accessTokenRef:
+        'secret://config/foreign.integration.oauth.github.access-token',
+      refreshTokenRef:
+        'secret://config/foreign.integration.oauth.github.refresh-token',
+      status: 'active',
+      expiresAt: new Date('2099-01-01T00:00:00.000Z'),
+      lastRotatedAt: new Date(),
+    },
+  });
+}
+
+async function assertForeignOAuthRowsPreserved() {
+  const db = getSmokePrisma();
+  const token = await db.integrationOAuthToken.findUnique({
+    where: { id: FOREIGN_TOKEN_ID },
+  });
+  assertEqual(
+    token?.tenantId,
+    FOREIGN_TENANT_ID,
+    'foreign OAuth token preserved',
+  );
+}
+
+async function cleanupForeignOAuthRows() {
+  const db = getSmokePrisma();
+  await db.integrationOAuthToken.deleteMany({
+    where: { id: FOREIGN_TOKEN_ID },
+  });
+  await db.tenant.deleteMany({ where: { id: FOREIGN_TENANT_ID } });
 }
 
 async function findOAuthTokenById(
@@ -359,6 +461,7 @@ function toPrismaOAuthToken(token: OAuthTokenSummary) {
     status: token.status,
     subjectId: token.subjectId,
     subjectType: token.subjectType,
+    tenantId: token.tenantId,
   };
 }
 
@@ -379,6 +482,11 @@ function assertNoSecretLeak(value: unknown) {
 }
 
 main().catch((error: unknown) => {
+  void cleanupForeignOAuthRows()
+    .catch(() => undefined)
+    .finally(() => {
+      void disconnectSmokePrisma().catch(() => undefined);
+    });
   console.error(
     JSON.stringify({
       status: 'fail',

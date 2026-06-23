@@ -905,3 +905,48 @@ Passed after deploy:
 - No new BullMQ worker/enqueue implementation in T5d; this slice scopes the existing monitor queue probe/control runtime.
 - No scheduler job definition field rename; public queue filters remain logical names.
 - No Integration provider/outbox/OAuth tenant migration in this sub-slice.
+
+## Round 19: T5e Integration Provider/Outbox/OAuth Tenant Scope
+
+### Completed
+
+- Made Integration persistent runtime tables tenant-owned:
+  - added `tenantId` to Integration providers, provider audit logs, templates, outbox messages, OAuth tokens, OAuth flows, and OAuth callback audits;
+  - replaced global provider/template code uniqueness with tenant-local `(tenantId, code)` uniqueness;
+  - replaced OAuth token uniqueness with `(tenantId, providerCode, subjectId, providerAccountId)`.
+- Scoped Prisma Integration repository operations:
+  - provider, template, outbox, OAuth list/detail/mutation paths resolve active tenant from request context;
+  - provider diagnostics and health audit only read active-tenant outbox rows;
+  - outbox-to-notice delivery sync includes `tenantId` in the delivery update predicate;
+  - OAuth callbacks use the globally unique flow `state` to recover the flow tenant before provider validation, token upsert, flow update, and callback audit creation.
+- Exposed `tenantId` through Integration provider, provider audit, template, outbox, OAuth flow, OAuth callback audit, and OAuth token DTOs plus SDK summaries/fixtures.
+- Added tenant-scope verification:
+  - Prisma integration test creates root and foreign Integration rows with duplicate provider/template/OAuth identities and proves root cannot see foreign outbox/token data;
+  - callback test proves a root-context callback for a foreign flow writes OAuth token/audit rows into the flow tenant;
+  - Integration health and OAuth smokes check tenant fields, foreign-row hiding, forged `tenant-id` header resistance, and foreign row preservation.
+- Added `guard:tenant-integration-scope`.
+
+### Verification Log
+
+Passed before deploy:
+
+- Prisma validation, client generation, migration deploy, and seed/seed typecheck passed.
+- Focused Integration repository tests passed, including tenant-scoped Prisma and in-memory repositories.
+- T5e tenant Integration guard, typed smoke compilation, SDK contract, OpenAPI export/drift, registry tag, quality docs, full typecheck, full lint, and full test suites passed.
+
+Passed after deploy:
+
+- OpenCore deploy rebuilt API/Admin, applied migrations, reseeded, restarted API `39172` and Admin `39174`, and passed deploy smoke including local Integration health/OAuth tenant checks.
+- Public API Integration health and OAuth token smokes passed against `http://144.217.243.161:39172`.
+
+### Remaining Product Debt
+
+- Complete broader runtime tenant propagation review.
+- Complete T4 System/core tenant data isolation for other unreviewed non-org data.
+- Complete T6 Tenant Plan CRUD, Tenant Member CRUD/invitation, Admin switcher, platform visit mode, and platform visit audit.
+
+### Deliberate Non-Goals
+
+- No platform-admin global Integration control-plane view in T5e; platform visit/control-plane behavior belongs with T6.
+- No real external provider credential exchange/storage implementation beyond the existing callback/token-reference simulation.
+- No business-domain Integration workflows beyond the existing mail/SMS/OAuth/WebSocket surfaces.

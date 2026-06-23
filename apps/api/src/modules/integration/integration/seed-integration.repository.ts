@@ -135,10 +135,15 @@ export class SeedIntegrationRepository extends IntegrationRepository {
     seedIntegrationOAuthTokens.map(cloneOAuthToken);
 
   async getSummary() {
+    const tenantId = resolveIntegrationRequestTenantId();
     return buildIntegrationSummary({
-      providers: this.providers,
-      outbox: this.outbox,
-      oauthTokens: this.oauthTokens,
+      providers: this.providers.filter(
+        (provider) => provider.tenantId === tenantId,
+      ),
+      outbox: this.outbox.filter((message) => message.tenantId === tenantId),
+      oauthTokens: this.oauthTokens.filter(
+        (token) => token.tenantId === tenantId,
+      ),
       designs: integrationDesigns,
     });
   }
@@ -146,11 +151,13 @@ export class SeedIntegrationRepository extends IntegrationRepository {
   async listProviders(
     query: IntegrationProviderQueryDto = {},
   ): Promise<PageResult<IntegrationProviderRecord>> {
+    const tenantId = resolveIntegrationRequestTenantId();
     const enabled = normalizeOptionalBoolean(query.enabled);
     return createPage(
       this.providers
         .filter(
           (provider) =>
+            provider.tenantId === tenantId &&
             matchesOptional(provider.type, query.type) &&
             matchesOptional(provider.enabled, enabled) &&
             matchesOptional(provider.healthStatus, query.healthStatus),
@@ -163,9 +170,11 @@ export class SeedIntegrationRepository extends IntegrationRepository {
   async createProvider(
     body: CreateIntegrationProviderDto,
   ): Promise<IntegrationProviderRecord> {
+    const tenantId = resolveIntegrationRequestTenantId();
     assertSecretRef(body.secretRef);
     const provider: IntegrationProviderRecord = {
       id: `provider_${body.code.replace(/[^a-zA-Z0-9]+/g, '_')}`,
+      tenantId,
       code: body.code,
       type: body.type,
       name: body.name,
@@ -178,6 +187,7 @@ export class SeedIntegrationRepository extends IntegrationRepository {
     };
     this.providers = [provider, ...this.providers];
     this.addProviderAuditLog({
+      tenantId,
       providerCode: provider.code,
       action: 'created',
       afterConfigVersion: provider.configVersion,
@@ -294,14 +304,19 @@ export class SeedIntegrationRepository extends IntegrationRepository {
 
     return buildProviderDiagnostics({
       provider,
-      outbox: this.outbox,
+      outbox: this.outbox.filter(
+        (message) => message.tenantId === provider.tenantId,
+      ),
     });
   }
 
   async getProviderHealthAudit() {
+    const tenantId = resolveIntegrationRequestTenantId();
     return buildProviderHealthAudit({
-      providers: this.providers,
-      outbox: this.outbox,
+      providers: this.providers.filter(
+        (provider) => provider.tenantId === tenantId,
+      ),
+      outbox: this.outbox.filter((message) => message.tenantId === tenantId),
     });
   }
 
@@ -309,9 +324,12 @@ export class SeedIntegrationRepository extends IntegrationRepository {
     code: string,
     query: PageQueryDto = {},
   ): Promise<PageResult<IntegrationProviderAuditLogRecord>> {
-    this.findProvider(code);
+    const provider = this.findProvider(code);
     return createPage(
-      this.providerAuditLogs.filter((log) => log.providerCode === code),
+      this.providerAuditLogs.filter(
+        (log) =>
+          log.tenantId === provider.tenantId && log.providerCode === code,
+      ),
       query,
     );
   }
@@ -320,10 +338,12 @@ export class SeedIntegrationRepository extends IntegrationRepository {
     channel: 'mail' | 'sms',
     query: IntegrationTemplateQueryDto = {},
   ): Promise<PageResult<IntegrationTemplateRecord>> {
+    const tenantId = resolveIntegrationRequestTenantId();
     const enabled = normalizeOptionalBoolean(query.enabled);
     return createPage(
       this.templates.filter(
         (template) =>
+          template.tenantId === tenantId &&
           template.channel === channel &&
           matchesOptional(template.enabled, enabled),
       ),
@@ -337,6 +357,7 @@ export class SeedIntegrationRepository extends IntegrationRepository {
   ): Promise<IntegrationTemplateRecord> {
     const template: IntegrationTemplateRecord = {
       id: `template_${body.code.replace(/[^a-zA-Z0-9]+/g, '_')}`,
+      tenantId: resolveIntegrationRequestTenantId(),
       code: body.code,
       channel,
       name: body.name,
@@ -371,6 +392,7 @@ export class SeedIntegrationRepository extends IntegrationRepository {
     channel: 'mail' | 'sms',
     body: CreateOutboxMessageDto,
   ): Promise<IntegrationOutboxRecord> {
+    const tenantId = resolveIntegrationRequestTenantId();
     const provider = this.findProvider(body.providerCode);
     assertProviderReadyForOutbox({
       code: provider.code,
@@ -399,6 +421,7 @@ export class SeedIntegrationRepository extends IntegrationRepository {
     const attachments = normalizeOutboxAttachments(channel, body.attachments);
     const message: IntegrationOutboxRecord = {
       id: `outbox_${this.outbox.length + 1}`,
+      tenantId,
       channel,
       providerCode: body.providerCode,
       templateCode: body.templateCode,
@@ -457,9 +480,11 @@ export class SeedIntegrationRepository extends IntegrationRepository {
     channel: 'mail' | 'sms',
     query: IntegrationOutboxQueryDto = {},
   ): Promise<PageResult<IntegrationOutboxRecord>> {
+    const tenantId = resolveIntegrationRequestTenantId();
     return createPage(
       this.outbox.filter(
         (message) =>
+          message.tenantId === tenantId &&
           message.channel === channel &&
           matchesOptional(message.status, query.status) &&
           matchesOptional(message.providerCode, query.providerCode),
@@ -545,11 +570,13 @@ export class SeedIntegrationRepository extends IntegrationRepository {
   }
 
   async processOutbox(channel: 'mail' | 'sms', body: ProcessOutboxDto = {}) {
+    const tenantId = resolveIntegrationRequestTenantId();
     const limit = normalizeProcessOutboxLimit(body.limit);
     const providerCode = normalizeOptionalProviderCode(body.providerCode);
     const queued = this.outbox
       .filter(
         (message) =>
+          message.tenantId === tenantId &&
           message.channel === channel &&
           message.status === 'queued' &&
           matchesOptional(message.providerCode, providerCode),
@@ -658,15 +685,20 @@ export class SeedIntegrationRepository extends IntegrationRepository {
     channel: 'mail' | 'sms',
     body: IntegrationOutboxCallbackDto,
   ): Promise<IntegrationOutboxRecord> {
+    const tenantId = resolveIntegrationRequestTenantId();
     const callback = normalizeOutboxCallback(channel, body);
-    const provider = this.findProvider(callback.providerCode);
+    const provider = this.findProvider(callback.providerCode, tenantId);
     assertProviderReadyForOutbox({
       code: provider.code,
       type: provider.type,
       enabled: provider.enabled,
       channel,
     });
-    const message = this.findOutboxMessage(channel, callback.messageId);
+    const message = this.findOutboxMessage(
+      channel,
+      callback.messageId,
+      tenantId,
+    );
     assertOutboxCallbackProviderMatch({
       expectedProviderCode: callback.providerCode,
       actualProviderCode: message.providerCode,
@@ -684,11 +716,13 @@ export class SeedIntegrationRepository extends IntegrationRepository {
   async listOAuthProviders(
     query: IntegrationProviderQueryDto = {},
   ): Promise<PageResult<IntegrationProviderRecord>> {
+    const tenantId = resolveIntegrationRequestTenantId();
     const enabled = normalizeOptionalBoolean(query.enabled);
     return createPage(
       this.providers
         .filter(
           (provider) =>
+            provider.tenantId === tenantId &&
             provider.type === 'oauth' &&
             matchesOptional(provider.enabled, enabled) &&
             matchesOptional(provider.healthStatus, query.healthStatus),
@@ -699,8 +733,14 @@ export class SeedIntegrationRepository extends IntegrationRepository {
   }
 
   async listProfileOAuthProviders() {
+    const tenantId = resolveIntegrationRequestTenantId();
     return this.providers
-      .filter((provider) => provider.type === 'oauth' && provider.enabled)
+      .filter(
+        (provider) =>
+          provider.tenantId === tenantId &&
+          provider.type === 'oauth' &&
+          provider.enabled,
+      )
       .map(toOAuthProfileProviderDto);
   }
 
@@ -709,6 +749,7 @@ export class SeedIntegrationRepository extends IntegrationRepository {
   }
 
   async startOAuthFlow(body: StartOAuthFlowDto): Promise<OAuthFlowRecord> {
+    const tenantId = resolveIntegrationRequestTenantId();
     const provider = this.findProvider(
       normalizeOAuthProviderCode(body.providerCode),
     );
@@ -719,6 +760,7 @@ export class SeedIntegrationRepository extends IntegrationRepository {
     ).toISOString();
     const flow: OAuthFlowRecord = {
       id: `oauth_flow_${state}`,
+      tenantId,
       providerCode: start.providerCode,
       state,
       subjectType: start.subjectType,
@@ -742,8 +784,10 @@ export class SeedIntegrationRepository extends IntegrationRepository {
   async listOAuthFlows(
     query: OAuthFlowQueryDto = {},
   ): Promise<PageResult<OAuthFlowRecord>> {
+    const tenantId = resolveIntegrationRequestTenantId();
     return createPage(
       this.oauthFlows
+        .filter((flow) => flow.tenantId === tenantId)
         .map((flow) => normalizeOAuthFlowRecord(flow))
         .filter((flow) => matchesOAuthFlowQuery(flow, query)),
       query,
@@ -755,6 +799,8 @@ export class SeedIntegrationRepository extends IntegrationRepository {
     body: OAuthProviderCallbackDto,
   ) {
     const callback = normalizeOAuthCallback(providerCode, body);
+    const flow = this.oauthFlows.find((item) => item.state === callback.state);
+    const tenantId = flow?.tenantId ?? resolveIntegrationRequestTenantId();
     const provider = this.findProvider(callback.providerCode);
     if (provider.type !== 'oauth' || !provider.enabled) {
       const reason =
@@ -762,6 +808,7 @@ export class SeedIntegrationRepository extends IntegrationRepository {
           ? `Provider ${provider.code} is not an OAuth provider.`
           : `OAuth provider ${provider.code} is disabled.`;
       const audit = this.addOAuthCallbackAudit({
+        tenantId,
         providerCode: callback.providerCode,
         state: callback.state,
         status: 'rejected',
@@ -776,9 +823,9 @@ export class SeedIntegrationRepository extends IntegrationRepository {
       };
     }
 
-    const flow = this.oauthFlows.find((item) => item.state === callback.state);
     if (!flow || flow.providerCode !== callback.providerCode) {
       const audit = this.addOAuthCallbackAudit({
+        tenantId,
         providerCode: callback.providerCode,
         state: callback.state,
         status: 'rejected',
@@ -796,6 +843,7 @@ export class SeedIntegrationRepository extends IntegrationRepository {
     const normalizedFlow = normalizeOAuthFlowRecord(flow);
     if (normalizedFlow.status !== 'pending') {
       const audit = this.addOAuthCallbackAudit({
+        tenantId,
         providerCode: callback.providerCode,
         flowId: flow.id,
         state: callback.state,
@@ -822,6 +870,7 @@ export class SeedIntegrationRepository extends IntegrationRepository {
         completedAt,
       });
       const audit = this.addOAuthCallbackAudit({
+        tenantId,
         providerCode: callback.providerCode,
         flowId: flow.id,
         state: callback.state,
@@ -864,6 +913,7 @@ export class SeedIntegrationRepository extends IntegrationRepository {
         : new Date(Date.now() + callback.expiresInSeconds * 1000).toISOString();
     const token: OAuthTokenRecord = {
       id: tokenId,
+      tenantId,
       providerCode: callback.providerCode,
       subjectType: flow.subjectType,
       subjectId: flow.subjectId,
@@ -881,6 +931,7 @@ export class SeedIntegrationRepository extends IntegrationRepository {
     };
     const existingIndex = this.oauthTokens.findIndex(
       (item) =>
+        item.tenantId === tenantId &&
         item.providerCode === token.providerCode &&
         item.subjectId === token.subjectId &&
         item.providerAccountId === token.providerAccountId,
@@ -908,6 +959,7 @@ export class SeedIntegrationRepository extends IntegrationRepository {
       completedAt,
     });
     const audit = this.addOAuthCallbackAudit({
+      tenantId,
       providerCode: callback.providerCode,
       flowId: flow.id,
       state: callback.state,
@@ -934,23 +986,29 @@ export class SeedIntegrationRepository extends IntegrationRepository {
   async listOAuthCallbackAudits(
     query: OAuthCallbackAuditQueryDto = {},
   ): Promise<PageResult<OAuthCallbackAuditRecord>> {
+    const tenantId = resolveIntegrationRequestTenantId();
     return createPage(
-      this.oauthCallbackAudits.filter((audit) =>
-        matchesOAuthCallbackAuditQuery(audit, query),
-      ),
+      this.oauthCallbackAudits
+        .filter((audit) => audit.tenantId === tenantId)
+        .filter((audit) => matchesOAuthCallbackAuditQuery(audit, query)),
       query,
     );
   }
 
   async getOAuthTokenSummary() {
-    return buildOAuthTokenSummary(this.oauthTokens);
+    const tenantId = resolveIntegrationRequestTenantId();
+    return buildOAuthTokenSummary(
+      this.oauthTokens.filter((token) => token.tenantId === tenantId),
+    );
   }
 
   async listOAuthTokens(
     query: OAuthTokenQueryDto = {},
   ): Promise<PageResult<OAuthTokenRecord>> {
+    const tenantId = resolveIntegrationRequestTenantId();
     return createPage(
       this.oauthTokens
+        .filter((token) => token.tenantId === tenantId)
         .map((token) => normalizeOAuthTokenRecord(token))
         .filter((token) => matchesOAuthTokenQuery(token, query)),
       query,
@@ -982,7 +1040,9 @@ export class SeedIntegrationRepository extends IntegrationRepository {
   }
 
   async listProfileOAuthAccounts(subjectId: string) {
+    const tenantId = resolveIntegrationRequestTenantId();
     return this.oauthTokens
+      .filter((token) => token.tenantId === tenantId)
       .map((token) => normalizeOAuthTokenRecord(token))
       .filter(
         (token) =>
@@ -997,7 +1057,9 @@ export class SeedIntegrationRepository extends IntegrationRepository {
         toOAuthProfileAccountDto(
           token,
           this.providers.find(
-            (provider) => provider.code === token.providerCode,
+            (provider) =>
+              provider.tenantId === tenantId &&
+              provider.code === token.providerCode,
           ),
         ),
       );
@@ -1026,6 +1088,7 @@ export class SeedIntegrationRepository extends IntegrationRepository {
     actor: string,
     body: RevokeOAuthTokenDto = {},
   ) {
+    const tenantId = resolveIntegrationRequestTenantId();
     const token = this.findOAuthToken(id);
     assertOAuthTokenBelongsToSubject({ subjectId, token });
 
@@ -1042,7 +1105,11 @@ export class SeedIntegrationRepository extends IntegrationRepository {
 
     return toOAuthProfileAccountDto(
       token,
-      this.providers.find((provider) => provider.code === token.providerCode),
+      this.providers.find(
+        (provider) =>
+          provider.tenantId === tenantId &&
+          provider.code === token.providerCode,
+      ),
     );
   }
 
@@ -1112,6 +1179,7 @@ export class SeedIntegrationRepository extends IntegrationRepository {
         body.secretRef || body.config ? undefined : provider.lastTestedAt,
     });
     this.addProviderAuditLog({
+      tenantId: provider.tenantId,
       providerCode: provider.code,
       action,
       beforeConfigVersion: before.configVersion,
@@ -1126,6 +1194,7 @@ export class SeedIntegrationRepository extends IntegrationRepository {
   }
 
   private addProviderAuditLog(input: {
+    tenantId?: string;
     providerCode: string;
     action: IntegrationProviderAuditAction;
     actor?: string;
@@ -1141,6 +1210,7 @@ export class SeedIntegrationRepository extends IntegrationRepository {
     this.providerAuditLogs = [
       {
         id: `provider_audit_${this.providerAuditLogs.length + 1}`,
+        tenantId: input.tenantId ?? resolveIntegrationRequestTenantId(),
         providerCode: input.providerCode,
         action: input.action,
         actor: input.actor ?? 'admin',
@@ -1163,6 +1233,7 @@ export class SeedIntegrationRepository extends IntegrationRepository {
   }
 
   private addOAuthCallbackAudit(input: {
+    tenantId?: string;
     providerCode: string;
     flowId?: string;
     state: string;
@@ -1175,6 +1246,7 @@ export class SeedIntegrationRepository extends IntegrationRepository {
   }): OAuthCallbackAuditRecord {
     const entry: OAuthCallbackAuditRecord = {
       id: `oauth_callback_audit_${this.oauthCallbackAudits.length + 1}`,
+      tenantId: input.tenantId ?? resolveIntegrationRequestTenantId(),
       providerCode: input.providerCode,
       flowId: input.flowId,
       state: input.state,
@@ -1190,9 +1262,14 @@ export class SeedIntegrationRepository extends IntegrationRepository {
     return entry;
   }
 
-  private findProvider(code: string): IntegrationProviderRecord {
+  private findProvider(
+    code: string,
+    tenantId = resolveIntegrationRequestTenantId(),
+  ): IntegrationProviderRecord {
     return requireRecord(
-      this.providers.find((provider) => provider.code === code),
+      this.providers.find(
+        (provider) => provider.tenantId === tenantId && provider.code === code,
+      ),
       'Integration provider',
       code,
     );
@@ -1201,10 +1278,14 @@ export class SeedIntegrationRepository extends IntegrationRepository {
   private findTemplate(
     channel: 'mail' | 'sms',
     code: string,
+    tenantId = resolveIntegrationRequestTenantId(),
   ): IntegrationTemplateRecord {
     return requireRecord(
       this.templates.find(
-        (template) => template.channel === channel && template.code === code,
+        (template) =>
+          template.tenantId === tenantId &&
+          template.channel === channel &&
+          template.code === code,
       ),
       'Integration template',
       code,
@@ -1214,19 +1295,28 @@ export class SeedIntegrationRepository extends IntegrationRepository {
   private findOutboxMessage(
     channel: 'mail' | 'sms',
     id: string,
+    tenantId = resolveIntegrationRequestTenantId(),
   ): IntegrationOutboxRecord {
     return requireRecord(
       this.outbox.find(
-        (message) => message.channel === channel && message.id === id,
+        (message) =>
+          message.tenantId === tenantId &&
+          message.channel === channel &&
+          message.id === id,
       ),
       'Integration outbox message',
       id,
     );
   }
 
-  private findOAuthToken(id: string): OAuthTokenRecord {
+  private findOAuthToken(
+    id: string,
+    tenantId = resolveIntegrationRequestTenantId(),
+  ): OAuthTokenRecord {
     return requireRecord(
-      this.oauthTokens.find((token) => token.id === id),
+      this.oauthTokens.find(
+        (token) => token.tenantId === tenantId && token.id === id,
+      ),
       'OAuth token',
       id,
     );
@@ -1235,9 +1325,11 @@ export class SeedIntegrationRepository extends IntegrationRepository {
   private countQueuedOutbox(
     channel: 'mail' | 'sms',
     providerCode?: string,
+    tenantId = resolveIntegrationRequestTenantId(),
   ): number {
     return this.outbox.filter(
       (message) =>
+        message.tenantId === tenantId &&
         message.channel === channel &&
         message.status === 'queued' &&
         matchesOptional(message.providerCode, providerCode),

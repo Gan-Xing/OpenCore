@@ -37,6 +37,9 @@ export class IntegrationProviderDto {
   id!: string;
 
   @ApiProperty()
+  tenantId!: string;
+
+  @ApiProperty()
   code!: string;
 
   @ApiProperty({ enum: ['mail', 'oauth', 'pay', 'sms', 'websocket', 'wechat'] })
@@ -340,6 +343,9 @@ export class IntegrationProviderAuditLogDto {
   id!: string;
 
   @ApiProperty()
+  tenantId!: string;
+
+  @ApiProperty()
   providerCode!: string;
 
   @ApiProperty({
@@ -414,6 +420,9 @@ export class IntegrationProviderAuditLogPageDto {
 export class IntegrationTemplateDto {
   @ApiProperty()
   id!: string;
+
+  @ApiProperty()
+  tenantId!: string;
 
   @ApiProperty()
   code!: string;
@@ -501,6 +510,9 @@ export class CreateIntegrationOutboxAttachmentDto {
 export class IntegrationOutboxDto {
   @ApiProperty()
   id!: string;
+
+  @ApiProperty()
+  tenantId!: string;
 
   @ApiProperty({ enum: ['mail', 'sms'] })
   channel!: 'mail' | 'sms';
@@ -857,6 +869,9 @@ export class OAuthFlowDto {
   id!: string;
 
   @ApiProperty()
+  tenantId!: string;
+
+  @ApiProperty()
   providerCode!: string;
 
   @ApiProperty()
@@ -958,6 +973,9 @@ export class OAuthCallbackAuditDto {
   id!: string;
 
   @ApiProperty()
+  tenantId!: string;
+
+  @ApiProperty()
   providerCode!: string;
 
   @ApiProperty({ required: false })
@@ -1021,6 +1039,9 @@ export type OAuthTokenStatus = 'active' | 'expired' | 'revoked';
 export class OAuthTokenDto {
   @ApiProperty()
   id!: string;
+
+  @ApiProperty()
+  tenantId!: string;
 
   @ApiProperty()
   providerCode!: string;
