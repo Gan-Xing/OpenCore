@@ -781,3 +781,45 @@ Passed after deploy:
 - No Redis key namespace or BullMQ queue-name namespace rewrite in T5a.
 - No Integration provider/outbox/OAuth/WebSocket tenant migration in this sub-slice.
 - No platform-admin global scheduler view; platform visit/control-plane behavior belongs with T6.
+
+## Round 16: T5b Redis Cache Tenant Namespace
+
+### Completed
+
+- Added tenant-aware Redis key helpers:
+  - `createTenantRedisKey`/`createTenantRedisKeyFactory` build `tenant:{tenantId}` Redis namespaces;
+  - `RedisService.tenantKey()` exposes the same helper to runtime modules.
+- Scoped monitor cache operations:
+  - cache summary/list/name/value/delete/clear resolve the active tenant from `RequestContext`;
+  - Redis scans always run under `tenant:{tenantId}` and never scan the raw global Redis keyspace;
+  - full foreign tenant keys passed through query/body are normalized into the current tenant namespace, so they behave as misses and do not read/delete foreign keys.
+- Exposed `tenantId` through cache key/name DTOs, SDK summaries/fixtures, OpenAPI, and Admin Cache key/name tables.
+- Added tenant-scope verification:
+  - Operations repository test seeds root and foreign Redis keys and proves root context cannot read/delete/clear the foreign key while the foreign context can still read it;
+  - `smoke:core-monitor-jobs` seeds a foreign tenant Redis key and proves root-scope monitor cache APIs hide and preserve it.
+- Added `guard:tenant-redis-scope`.
+
+### Verification Log
+
+Passed before deploy:
+
+- Focused Redis package test and focused operations repository test passed.
+- Tenant Redis guard, typed smoke compilation, SDK contract, Admin i18n, quality docs, OpenAPI export/drift, and registry tag checks passed.
+- Full repository typecheck, lint, and test suites passed.
+
+Passed after deploy:
+
+- OpenCore deploy rebuilt API/Admin, applied migrations, reseeded, restarted API `39172` and Admin `39174`, and passed deploy smoke including local monitor-jobs cache tenant checks.
+- Public API monitor-jobs smoke passed against `http://144.217.243.161:39172` with `monitor.cache.foreign-tenant-hidden`.
+
+### Remaining Product Debt
+
+- Complete broader BullMQ queue namespace/payload handling, WebSocket, Integration/outbox/OAuth, and broader runtime tenant propagation.
+- Complete T4 System/core tenant data isolation for other unreviewed non-org data.
+- Complete T6 Tenant Plan CRUD, Tenant Member CRUD/invitation, Admin switcher, platform visit mode, and platform visit audit.
+
+### Deliberate Non-Goals
+
+- No platform-admin global Redis cache browser in T5b; platform visit/control-plane behavior belongs with T6.
+- No BullMQ queue-name namespace rewrite in T5b.
+- No Integration provider/outbox/OAuth/WebSocket tenant migration in this sub-slice.

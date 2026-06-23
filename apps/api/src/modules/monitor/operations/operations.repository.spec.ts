@@ -2,9 +2,13 @@ import {
   OnlineUserService,
   SeedOnlineUserRepository,
 } from '@opencore/online-user';
+import { runWithRequestContext } from '@opencore/core';
 import { SchedulerService, SeedSchedulerRepository } from '@opencore/scheduler';
 import { PrismaOperationsRepository } from './prisma-operations.repository';
 import { SeedOperationsRepository } from './seed-operations.repository';
+
+const ROOT_TENANT_ID = 'tenant_root';
+const FOREIGN_TENANT_ID = 'tenant_foreign';
 
 describe('OperationsRepository', () => {
   it('builds a bounded operations center summary', async () => {
@@ -33,14 +37,17 @@ describe('OperationsRepository', () => {
     const repository = new SeedOperationsRepository();
 
     await expect(
-      repository.listCacheKeys({ prefix: 'opencore:admin' }),
+      repository.listCacheKeys({
+        prefix: 'opencore:tenant:tenant_root:admin',
+      }),
     ).resolves.toMatchObject({
       total: 1,
       scanComplete: true,
       items: [
         expect.objectContaining({
-          key: 'opencore:admin:shell',
-          name: 'opencore:admin',
+          tenantId: ROOT_TENANT_ID,
+          key: 'opencore:tenant:tenant_root:admin:shell',
+          name: 'admin',
           type: 'string',
         }),
       ],
@@ -49,16 +56,18 @@ describe('OperationsRepository', () => {
       total: 2,
       items: expect.arrayContaining([
         expect.objectContaining({
-          name: 'opencore:admin',
+          tenantId: ROOT_TENANT_ID,
+          name: 'admin',
           keyCount: 1,
-          sampleKey: 'opencore:admin:shell',
+          sampleKey: 'opencore:tenant:tenant_root:admin:shell',
         }),
       ]),
     });
     await expect(
-      repository.getCacheValue('opencore:admin:shell'),
+      repository.getCacheValue('opencore:tenant:tenant_root:admin:shell'),
     ).resolves.toMatchObject({
-      key: 'opencore:admin:shell',
+      tenantId: ROOT_TENANT_ID,
+      key: 'opencore:tenant:tenant_root:admin:shell',
       valuePreview: expect.stringContaining('fixture'),
       sensitive: false,
       truncated: false,
@@ -72,14 +81,20 @@ describe('OperationsRepository', () => {
     const repository = new SeedOperationsRepository();
 
     await expect(
-      repository.clearCache({ prefix: 'opencore:admin', dryRun: true }),
+      repository.clearCache({
+        prefix: 'opencore:tenant:tenant_root:admin',
+        dryRun: true,
+      }),
     ).resolves.toMatchObject({
       dryRun: true,
       matchedKeys: 1,
       clearedKeys: 0,
     });
     await expectHttpExceptionCode(
-      repository.clearCache({ prefix: 'opencore:admin', dryRun: false }),
+      repository.clearCache({
+        prefix: 'opencore:tenant:tenant_root:admin',
+        dryRun: false,
+      }),
       'MONITOR_OPERATIONS_CACHE_CLEAR_CONFIRMATION_REQUIRED',
     );
     await expectHttpExceptionCode(
@@ -88,7 +103,7 @@ describe('OperationsRepository', () => {
     );
     await expect(
       repository.clearCache({
-        prefix: 'opencore:admin',
+        prefix: 'opencore:tenant:tenant_root:admin',
         dryRun: false,
         confirmed: true,
       }),
@@ -98,7 +113,7 @@ describe('OperationsRepository', () => {
     });
     await expect(
       repository.deleteCacheKey({
-        key: 'opencore:openapi:snapshot',
+        key: 'opencore:tenant:tenant_root:openapi:snapshot',
         dryRun: true,
       }),
     ).resolves.toMatchObject({
@@ -107,14 +122,14 @@ describe('OperationsRepository', () => {
     });
     await expectHttpExceptionCode(
       repository.deleteCacheKey({
-        key: 'opencore:openapi:snapshot',
+        key: 'opencore:tenant:tenant_root:openapi:snapshot',
         dryRun: false,
       }),
       'MONITOR_OPERATIONS_CACHE_KEY_DELETE_CONFIRMATION_REQUIRED',
     );
     await expect(
       repository.deleteCacheKey({
-        key: 'opencore:openapi:snapshot',
+        key: 'opencore:tenant:tenant_root:openapi:snapshot',
         dryRun: false,
         confirmed: true,
       }),
@@ -153,13 +168,16 @@ describe('OperationsRepository', () => {
   });
 
   it('uses Redis for cache listing, safe value preview and confirmed deletion', async () => {
+    const rootSystemKey = 'opencore:tenant:tenant_root:system:config';
+    const foreignSystemKey = 'opencore:tenant:tenant_foreign:system:config';
     const redis = createRedisMock({
-      'opencore:admin:shell': 'shell-cache',
-      'opencore:system:config': JSON.stringify({
+      'opencore:tenant:tenant_root:admin:shell': 'shell-cache',
+      [rootSystemKey]: JSON.stringify({
         theme: 'dark',
         password: 'must-not-leak',
       }),
-      'opencore:secret:token': 'must-not-leak',
+      'opencore:tenant:tenant_root:secret:token': 'must-not-leak',
+      [foreignSystemKey]: JSON.stringify({ theme: 'foreign' }),
     });
     const repository = new PrismaOperationsRepository(
       createPrismaMock(),
@@ -167,55 +185,117 @@ describe('OperationsRepository', () => {
     );
 
     await expect(
-      repository.listCacheKeys({ prefix: 'opencore:system' }),
+      runAsTenant(ROOT_TENANT_ID, () =>
+        repository.listCacheKeys({ prefix: 'opencore:system' }),
+      ),
     ).resolves.toMatchObject({
       total: 1,
       scanComplete: true,
       items: [
         expect.objectContaining({
-          key: 'opencore:system:config',
-          name: 'opencore:system',
+          tenantId: ROOT_TENANT_ID,
+          key: rootSystemKey,
+          name: 'system',
           type: 'string',
         }),
       ],
     });
-    await expect(repository.listCacheNames()).resolves.toMatchObject({
+    await expect(
+      runAsTenant(ROOT_TENANT_ID, () => repository.listCacheNames()),
+    ).resolves.toMatchObject({
       items: expect.arrayContaining([
-        expect.objectContaining({ name: 'opencore:admin', keyCount: 1 }),
-        expect.objectContaining({ name: 'opencore:system', keyCount: 1 }),
+        expect.objectContaining({
+          tenantId: ROOT_TENANT_ID,
+          name: 'admin',
+          keyCount: 1,
+        }),
+        expect.objectContaining({
+          tenantId: ROOT_TENANT_ID,
+          name: 'system',
+          keyCount: 1,
+        }),
       ]),
     });
 
-    const safeValue = await repository.getCacheValue('opencore:system:config');
+    const safeValue = await runAsTenant(ROOT_TENANT_ID, () =>
+      repository.getCacheValue('opencore:system:config'),
+    );
+    expect(safeValue.tenantId).toBe(ROOT_TENANT_ID);
     expect(safeValue.valuePreview).toContain('"theme":"dark"');
     expect(safeValue.valuePreview).toContain('"password":"[redacted]"');
     expect(safeValue.valuePreview).not.toContain('must-not-leak');
     await expect(
-      repository.getCacheValue('opencore:secret:token'),
+      runAsTenant(ROOT_TENANT_ID, () =>
+        repository.getCacheValue('opencore:secret:token'),
+      ),
     ).resolves.toMatchObject({
       sensitive: true,
       valuePreview: '[redacted sensitive cache value]',
     });
     await expectHttpExceptionCode(
-      repository.getCacheValue('opencore:missing:key'),
+      runAsTenant(ROOT_TENANT_ID, () =>
+        repository.getCacheValue('opencore:missing:key'),
+      ),
       'MONITOR_OPERATIONS_CACHE_KEY_NOT_FOUND',
     );
     await expect(
-      repository.clearCache({
-        prefix: 'opencore:admin',
-        dryRun: false,
-        confirmed: true,
-      }),
+      runAsTenant(ROOT_TENANT_ID, () =>
+        repository.clearCache({
+          prefix: 'opencore:admin',
+          dryRun: false,
+          confirmed: true,
+        }),
+      ),
     ).resolves.toMatchObject({
       matchedKeys: 1,
       clearedKeys: 1,
     });
     await expect(
-      repository.deleteCacheKey({
-        key: 'opencore:system:config',
-        dryRun: false,
-        confirmed: true,
-      }),
+      runAsTenant(ROOT_TENANT_ID, () =>
+        repository.clearCache({
+          prefix: 'opencore:tenant:tenant_foreign:system',
+          dryRun: false,
+          confirmed: true,
+        }),
+      ),
+    ).resolves.toMatchObject({
+      matchedKeys: 0,
+      clearedKeys: 0,
+    });
+    await expectHttpExceptionCode(
+      runAsTenant(ROOT_TENANT_ID, () =>
+        repository.getCacheValue(foreignSystemKey),
+      ),
+      'MONITOR_OPERATIONS_CACHE_KEY_NOT_FOUND',
+    );
+    await expect(
+      runAsTenant(ROOT_TENANT_ID, () =>
+        repository.deleteCacheKey({
+          key: foreignSystemKey,
+          dryRun: false,
+          confirmed: true,
+        }),
+      ),
+    ).resolves.toMatchObject({
+      existed: false,
+      deleted: false,
+    });
+    await expect(
+      runAsTenant(FOREIGN_TENANT_ID, () =>
+        repository.getCacheValue(foreignSystemKey),
+      ),
+    ).resolves.toMatchObject({
+      tenantId: FOREIGN_TENANT_ID,
+      key: foreignSystemKey,
+    });
+    await expect(
+      runAsTenant(ROOT_TENANT_ID, () =>
+        repository.deleteCacheKey({
+          key: 'opencore:system:config',
+          dryRun: false,
+          confirmed: true,
+        }),
+      ),
     ).resolves.toMatchObject({
       existed: true,
       deleted: true,
@@ -225,6 +305,19 @@ describe('OperationsRepository', () => {
 
 async function createSeedSchedulerSummary() {
   return new SchedulerService(new SeedSchedulerRepository()).getSummary();
+}
+
+function runAsTenant<T>(tenantId: string, callback: () => T): T {
+  return runWithRequestContext(
+    {
+      requestId: `test:${tenantId}`,
+      traceId: `test:${tenantId}`,
+      tenantId,
+      membershipId: `membership:${tenantId}`,
+      accessMode: 'tenant',
+    },
+    callback,
+  );
 }
 
 async function createSeedOnlineUserSummary() {
@@ -284,6 +377,10 @@ function createRedisMock(values: Record<string, string>) {
   const entries = new Map(Object.entries(values));
 
   return {
+    key: (...parts: readonly string[]) =>
+      parts.length > 0 ? `opencore:${parts.join(':')}` : 'opencore:',
+    tenantKey: (tenantId: string, ...parts: readonly string[]) =>
+      ['opencore', 'tenant', tenantId, ...parts].join(':'),
     scan: async (_cursor: string, options: { match?: string } = {}) => {
       const prefix = options.match?.endsWith('*')
         ? options.match.slice(0, -1)

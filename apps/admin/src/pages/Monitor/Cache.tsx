@@ -57,6 +57,7 @@ type FormatMessage = (
 
 const searchFields: CurrentPageSearchField<CacheKeySummary>[] = [
   'key',
+  'tenantId',
   'name',
   'prefix',
   'type',
@@ -70,6 +71,10 @@ function createExportColumns(
       title: formatMessage('pages.monitor.cache.fields.key', 'Key'),
       dataIndex: 'key',
       sensitive: true,
+    },
+    {
+      title: formatMessage('pages.monitor.cache.fields.tenantId', 'Tenant ID'),
+      dataIndex: 'tenantId',
     },
     {
       title: formatMessage('pages.monitor.cache.fields.name', 'Name'),
@@ -105,6 +110,15 @@ function createFilterOptions(
   formatMessage: FormatMessage,
 ): CurrentPageFilterOption<CacheKeySummary>[] {
   return [
+    {
+      key: 'tenantId',
+      options: createCurrentPageFilterOptions(rows, 'tenantId'),
+      placeholder: formatMessage(
+        'pages.monitor.cache.fields.tenantId',
+        'Tenant ID',
+      ),
+      predicate: (record, value) => record.tenantId === value,
+    },
     {
       key: 'name',
       options: createCurrentPageFilterOptions(rows, 'name'),
@@ -146,6 +160,10 @@ function createCacheDetailFields(
       label: formatMessage('pages.monitor.cache.fields.key', 'Key'),
       value: record.key,
       sensitive: true,
+    },
+    {
+      label: formatMessage('pages.monitor.cache.fields.tenantId', 'Tenant ID'),
+      value: record.tenantId,
     },
     {
       label: formatMessage('pages.monitor.cache.fields.namespace', 'Namespace'),
@@ -385,6 +403,11 @@ export default function CachePage() {
       copyable: true,
     },
     {
+      title: formatMessage('pages.monitor.cache.fields.tenantId', 'Tenant ID'),
+      dataIndex: 'tenantId',
+      width: 150,
+    },
+    {
       title: formatMessage('pages.monitor.cache.fields.namespace', 'Namespace'),
       dataIndex: 'name',
       width: 180,
@@ -509,6 +532,14 @@ export default function CachePage() {
 
         <ProTable<CacheNameSummary>
           columns={[
+            {
+              title: formatMessage(
+                'pages.monitor.cache.fields.tenantId',
+                'Tenant ID',
+              ),
+              dataIndex: 'tenantId',
+              width: 150,
+            },
             {
               title: formatMessage(
                 'pages.monitor.cache.fields.namespace',

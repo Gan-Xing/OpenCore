@@ -3,6 +3,8 @@ import {
   createBullMqRedisConnectionOptions,
   createRedisKey,
   createRedisKeyFactory,
+  createTenantRedisKey,
+  createTenantRedisKeyFactory,
   normalizeRedisPrefix,
   normalizeTtlSeconds,
   readRedisOptionsFromEnv,
@@ -48,6 +50,15 @@ describe('@opencore/redis', () => {
     expect(
       createRedisKeyFactory('opencore:', 'system')('config', 'theme'),
     ).toBe('opencore:system:config:theme');
+    expect(
+      createTenantRedisKey('opencore:', 'Tenant A', 'config', 'theme'),
+    ).toBe('opencore:tenant:tenant-a:config:theme');
+    expect(
+      createTenantRedisKeyFactory('opencore:', 'tenant_root')(
+        'monitor',
+        'cache',
+      ),
+    ).toBe('opencore:tenant:tenant_root:monitor:cache');
     expect(() => assertRedisKeyPrefixAllowed('nestweb:')).toThrow(
       'Redis key prefix must not reuse a NestWeb prefix.',
     );
@@ -94,6 +105,9 @@ describe('@opencore/redis', () => {
       () => client,
     );
     const key = service.key('test', 'value');
+    const tenantKey = service.tenantKey('tenant_root', 'test', 'value');
+
+    expect(tenantKey).toBe('opencore:tenant:tenant_root:test:value');
 
     await service.connect();
     await service.setJson(key, { ok: true }, { ttlSeconds: 60 });

@@ -26,14 +26,20 @@ const runSafeId = runId.replace(/[^a-z0-9]/gi, '_').toLowerCase();
 const smokeCron = createSmokeCron(runId);
 const FOREIGN_TENANT_ID = `tenant_scheduler_foreign_${runSafeId}`;
 const FOREIGN_RUN_ID = `run_scheduler_foreign_${runSafeId}`;
+const FOREIGN_CACHE_TENANT_ID = `tenant_cache_foreign_${runSafeId}`;
 const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379/1';
 const redisKeyPrefix = normalizeRedisPrefix(
   process.env.REDIS_KEY_PREFIX || 'opencore',
 );
-const cacheSmokePrefix = `${redisKeyPrefix}monitor-cache-smoke:${runId}`;
-const cacheSmokeName = `${redisKeyPrefix}monitor-cache-smoke`.replace(/:$/, '');
+const cacheSmokeSuffix = `monitor-cache-smoke:${runId}`;
+const cacheTenantPrefix = `${redisKeyPrefix}tenant:${ROOT_TENANT_ID}:`;
+const foreignCacheTenantPrefix = `${redisKeyPrefix}tenant:${FOREIGN_CACHE_TENANT_ID}:`;
+const cacheSmokePrefix = `${cacheTenantPrefix}${cacheSmokeSuffix}`;
+const foreignCacheSmokePrefix = `${foreignCacheTenantPrefix}${cacheSmokeSuffix}`;
+const cacheSmokeName = 'monitor-cache-smoke';
 const cacheSmokeKey = `${cacheSmokePrefix}:value`;
 const cacheSmokeSecretKey = `${cacheSmokePrefix}:secret-token`;
+const foreignCacheSmokeKey = `${foreignCacheSmokePrefix}:value`;
 let redisClient;
 let token;
 let failed = false;
@@ -318,7 +324,11 @@ async function main() {
     assertArray(dispatch.queuedRuns, 'scheduler dispatch queued runs');
     const queuedRun = dispatch.queuedRuns[0];
     assertEqual(queuedRun.jobCode, JOB_CODE, 'scheduler queued run job code');
-    assertEqual(queuedRun.tenantId, ROOT_TENANT_ID, 'scheduler queued run tenant');
+    assertEqual(
+      queuedRun.tenantId,
+      ROOT_TENANT_ID,
+      'scheduler queued run tenant',
+    );
     assertEqual(queuedRun.status, 'queued', 'scheduler queued run status');
     assertEqual(queuedRun.trigger, 'schedule', 'scheduler queued run trigger');
     assertEqual(
@@ -342,7 +352,11 @@ async function main() {
     assertArray(worker.runs, 'scheduler worker runs');
     const workerRun = worker.runs[0];
     assertEqual(workerRun.id, queuedRun.id, 'scheduler worker run id');
-    assertEqual(workerRun.tenantId, ROOT_TENANT_ID, 'scheduler worker run tenant');
+    assertEqual(
+      workerRun.tenantId,
+      ROOT_TENANT_ID,
+      'scheduler worker run tenant',
+    );
     assertEqual(workerRun.status, 'completed', 'scheduler worker run status');
     assertEqual(workerRun.trigger, 'schedule', 'scheduler worker trigger');
     assertEqual(
@@ -446,6 +460,7 @@ async function main() {
           'monitor.cache.names',
           'monitor.cache.safe-value-preview',
           'monitor.cache.secret-redaction',
+          'monitor.cache.foreign-tenant-hidden',
           'monitor.cache.dry-run-clear',
           'monitor.cache.confirmed-key-delete',
           'monitor.cache.confirmed-prefix-clear',
@@ -642,6 +657,7 @@ async function seedRedisSmokeCache() {
     300,
   );
   await redisClient.set(cacheSmokeSecretKey, 'must-not-leak', 'EX', 300);
+  await redisClient.set(foreignCacheSmokeKey, 'foreign-cache', 'EX', 300);
 }
 
 async function verifyMonitorVersion() {
@@ -730,7 +746,11 @@ async function cleanupRedisSmokeCache() {
   }
 
   try {
-    await redisClient.del(cacheSmokeKey, cacheSmokeSecretKey);
+    await redisClient.del(
+      cacheSmokeKey,
+      cacheSmokeSecretKey,
+      foreignCacheSmokeKey,
+    );
   } finally {
     redisClient.disconnect();
   }
@@ -752,6 +772,20 @@ async function verifyMonitorCache() {
     cacheSmokeSecretKey,
     'cache key list',
   );
+  assertNotIncludes(
+    cacheKeys.items.map((item) => item.key),
+    foreignCacheSmokeKey,
+    'cache key list',
+  );
+  assertIncludes(
+    cacheKeys.items.map((item) => item.tenantId),
+    ROOT_TENANT_ID,
+    'cache key tenant list',
+  );
+  const foreignCacheKeys = await apiRequest(
+    `/monitor/cache?prefix=${encodeURIComponent(foreignCacheSmokePrefix)}`,
+  );
+  assertEqual(foreignCacheKeys.total, 0, 'foreign cache key list total');
 
   const cacheNames = await apiRequest('/monitor/cache/names');
   assertArray(cacheNames.items, 'cache namespace list items');
@@ -760,11 +794,17 @@ async function verifyMonitorCache() {
     cacheSmokeName,
     'cache namespace list',
   );
+  assertNotIncludes(
+    cacheNames.items.map((item) => item.tenantId),
+    FOREIGN_CACHE_TENANT_ID,
+    'cache namespace tenant list',
+  );
 
   const cacheValue = await apiRequest(
     `/monitor/cache/value?key=${encodeURIComponent(cacheSmokeKey)}`,
   );
   assertEqual(cacheValue.key, cacheSmokeKey, 'cache value key');
+  assertEqual(cacheValue.tenantId, ROOT_TENANT_ID, 'cache value tenant');
   assertEqual(cacheValue.encoding, 'string', 'cache value encoding');
   assertEqual(cacheValue.sensitive, true, 'cache value redacted JSON flag');
   assertIncludes(
@@ -784,6 +824,11 @@ async function verifyMonitorCache() {
     secretValue.valuePreview,
     '[redacted sensitive cache value]',
     'cache secret value preview',
+  );
+
+  await apiRequest(
+    `/monitor/cache/value?key=${encodeURIComponent(foreignCacheSmokeKey)}`,
+    { expected: [404] },
   );
 
   const dryRun = await apiRequest('/monitor/cache/clear', {
@@ -806,9 +851,50 @@ async function verifyMonitorCache() {
   });
   assertEqual(keyDelete.existed, true, 'cache key delete existed');
   assertEqual(keyDelete.deleted, true, 'cache key delete deleted');
+
+  const foreignKeyDelete = await apiRequest('/monitor/cache/key/delete', {
+    method: 'POST',
+    body: {
+      key: foreignCacheSmokeKey,
+      dryRun: false,
+      confirmed: true,
+    },
+  });
+  assertEqual(
+    foreignKeyDelete.existed,
+    false,
+    'foreign cache key delete existed',
+  );
+  assertEqual(
+    foreignKeyDelete.deleted,
+    false,
+    'foreign cache key delete deleted',
+  );
+  assertEqual(
+    await redisClient.get(foreignCacheSmokeKey),
+    'foreign-cache',
+    'foreign cache key after root delete',
+  );
+
   await apiRequest(
     `/monitor/cache/value?key=${encodeURIComponent(cacheSmokeSecretKey)}`,
     { expected: [404] },
+  );
+
+  const foreignClear = await apiRequest('/monitor/cache/clear', {
+    method: 'POST',
+    body: {
+      prefix: foreignCacheSmokePrefix,
+      dryRun: false,
+      confirmed: true,
+    },
+  });
+  assertEqual(foreignClear.matchedKeys, 0, 'foreign cache clear matched keys');
+  assertEqual(foreignClear.clearedKeys, 0, 'foreign cache clear cleared keys');
+  assertEqual(
+    await redisClient.get(foreignCacheSmokeKey),
+    'foreign-cache',
+    'foreign cache key after root clear',
   );
 
   const clear = await apiRequest('/monitor/cache/clear', {

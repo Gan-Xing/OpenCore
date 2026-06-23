@@ -37,6 +37,9 @@ export {
 } from '@opencore/online-user';
 
 export class CacheKeyDto {
+  @ApiProperty({ example: 'tenant_root' })
+  tenantId!: string;
+
   @ApiProperty()
   key!: string;
 
@@ -57,6 +60,9 @@ export class CacheKeyDto {
 }
 
 export class CacheNameDto {
+  @ApiProperty({ example: 'tenant_root' })
+  tenantId!: string;
+
   @ApiProperty()
   name!: string;
 

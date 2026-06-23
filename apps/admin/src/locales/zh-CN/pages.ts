@@ -1888,6 +1888,7 @@ export default {
   'pages.monitor.cache.fields.sensitivePreview': '敏感预览',
   'pages.monitor.cache.fields.size': '大小',
   'pages.monitor.cache.fields.sizeBytes': '大小（字节）',
+  'pages.monitor.cache.fields.tenantId': '租户 ID',
   'pages.monitor.cache.fields.ttl': 'TTL',
   'pages.monitor.cache.fields.ttlSeconds': 'TTL 秒数',
   'pages.monitor.cache.fields.type': '类型',

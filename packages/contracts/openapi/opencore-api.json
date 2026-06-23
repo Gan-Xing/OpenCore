@@ -15038,6 +15038,7 @@
       "CacheKeyDto": {
         "type": "object",
         "properties": {
+          "tenantId": { "type": "string", "example": "tenant_root" },
           "key": { "type": "string" },
           "name": { "type": "string" },
           "prefix": { "type": "string" },
@@ -15045,7 +15046,15 @@
           "sizeBytes": { "type": "number" },
           "type": { "type": "string" }
         },
-        "required": ["key", "name", "prefix", "ttlSeconds", "sizeBytes", "type"]
+        "required": [
+          "tenantId",
+          "key",
+          "name",
+          "prefix",
+          "ttlSeconds",
+          "sizeBytes",
+          "type"
+        ]
       },
       "CacheKeyPageDto": {
         "type": "object",
@@ -15074,6 +15083,7 @@
       "CacheNameDto": {
         "type": "object",
         "properties": {
+          "tenantId": { "type": "string", "example": "tenant_root" },
           "name": { "type": "string" },
           "prefix": { "type": "string" },
           "keyCount": { "type": "number" },
@@ -15083,6 +15093,7 @@
           "sampleKey": { "type": "string" }
         },
         "required": [
+          "tenantId",
           "name",
           "prefix",
           "keyCount",
@@ -15108,6 +15119,7 @@
       "CacheValueDto": {
         "type": "object",
         "properties": {
+          "tenantId": { "type": "string", "example": "tenant_root" },
           "key": { "type": "string" },
           "name": { "type": "string" },
           "prefix": { "type": "string" },
@@ -15120,6 +15132,7 @@
           "truncated": { "type": "boolean" }
         },
         "required": [
+          "tenantId",
           "key",
           "name",
           "prefix",

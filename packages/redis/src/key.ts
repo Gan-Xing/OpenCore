@@ -17,6 +17,21 @@ export function createRedisKeyFactory(
   return (...parts) => createRedisKey(keyPrefix, namespace, ...parts);
 }
 
+export function createTenantRedisKey(
+  keyPrefix: string,
+  tenantId: RedisKeyPart,
+  ...parts: readonly RedisKeyPart[]
+): string {
+  return createRedisKey(keyPrefix, 'tenant', tenantId, ...parts);
+}
+
+export function createTenantRedisKeyFactory(
+  keyPrefix: string,
+  tenantId: RedisKeyPart,
+): (...parts: readonly RedisKeyPart[]) => string {
+  return (...parts) => createTenantRedisKey(keyPrefix, tenantId, ...parts);
+}
+
 export function normalizeRedisPrefix(prefix: string): string {
   const trimmed = prefix.trim();
 

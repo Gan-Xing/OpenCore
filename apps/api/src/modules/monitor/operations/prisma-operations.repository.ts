@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { getRequestContext } from '@opencore/core';
 import { PrismaService } from '@opencore/database';
 import type { OnlineUserSummaryDto } from '@opencore/online-user';
 import { RedisService } from '@opencore/redis';
@@ -40,6 +41,7 @@ import {
 const CACHE_SCAN_LIMIT = 2_000;
 const CACHE_SCAN_COUNT = 100;
 const CACHE_VALUE_PREVIEW_LIMIT = 2_048;
+const ROOT_TENANT_ID = 'tenant_root';
 const SENSITIVE_CACHE_KEY_PATTERN =
   /(^|[:._-])(secret|token|password|credential|session|auth|authorization|private-key|api-key)($|[:._-])/i;
 const SENSITIVE_VALUE_FIELD_PATTERN =
@@ -101,6 +103,7 @@ export class PrismaOperationsRepository extends OperationsRepository {
     const items = Array.from(
       cache.records.reduce((names, record) => {
         const current = names.get(record.name) ?? {
+          tenantId: record.tenantId,
           name: record.name,
           prefix: record.prefix,
           keyCount: 0,
@@ -134,7 +137,9 @@ export class PrismaOperationsRepository extends OperationsRepository {
   }
 
   async getCacheValue(key: string): Promise<CacheValueDto> {
-    const normalizedKey = normalizeCacheKey(key);
+    const tenantId = resolveCurrentTenantId();
+    const tenantPrefix = this.resolveTenantRedisPrefix(tenantId);
+    const normalizedKey = this.normalizeTenantCacheKey(key, tenantPrefix);
     const record = await this.getCacheRecord(normalizedKey);
 
     if (record.type === 'none') {
@@ -169,9 +174,15 @@ export class PrismaOperationsRepository extends OperationsRepository {
   }
 
   async clearCache(body: ClearCacheDto): Promise<CacheClearResult> {
-    const prefix = normalizeCachePrefix(body.prefix);
+    const tenantPrefix = this.resolveTenantRedisPrefix(
+      resolveCurrentTenantId(),
+    );
+    const prefix = this.normalizeTenantCachePrefix(body.prefix, tenantPrefix);
     const cache = await this.collectCacheRecords(prefix);
-    const result = applyCacheClearPolicy(cache.records, body);
+    const result = applyCacheClearPolicy(cache.records, {
+      ...body,
+      prefix,
+    });
 
     if (!result.dryRun && !cache.scanComplete) {
       throw operationsBadRequest(
@@ -191,9 +202,15 @@ export class PrismaOperationsRepository extends OperationsRepository {
   }
 
   async deleteCacheKey(body: DeleteCacheKeyDto): Promise<CacheKeyDeleteResult> {
-    const key = normalizeCacheKey(body.key);
+    const tenantPrefix = this.resolveTenantRedisPrefix(
+      resolveCurrentTenantId(),
+    );
+    const key = this.normalizeTenantCacheKey(body.key, tenantPrefix);
     const exists = (await this.redis.type(key)) !== 'none';
-    const result = applyCacheKeyDeletePolicy(exists, body);
+    const result = applyCacheKeyDeletePolicy(exists, {
+      ...body,
+      key,
+    });
 
     if (!result.dryRun && exists) {
       result.deleted = (await this.redis.delete(key)) === 1;
@@ -244,8 +261,12 @@ export class PrismaOperationsRepository extends OperationsRepository {
     scanLimit: number;
     scanComplete: boolean;
   }> {
-    const normalizedPrefix = prefix ? normalizeCachePrefix(prefix) : undefined;
-    const match = normalizedPrefix ? `${normalizedPrefix}*` : undefined;
+    const tenantId = resolveCurrentTenantId();
+    const tenantPrefix = this.resolveTenantRedisPrefix(tenantId);
+    const normalizedPrefix = prefix
+      ? this.normalizeTenantCachePrefix(prefix, tenantPrefix)
+      : tenantPrefix;
+    const match = `${normalizedPrefix}*`;
     const seen = new Set<string>();
     const records: CacheKeyRecord[] = [];
     let cursor = '0';
@@ -270,7 +291,7 @@ export class PrismaOperationsRepository extends OperationsRepository {
           break;
         }
 
-        records.push(await this.getCacheRecord(key));
+        records.push(await this.getCacheRecord(key, tenantId, tenantPrefix));
       }
 
       if (!scanComplete) {
@@ -287,21 +308,58 @@ export class PrismaOperationsRepository extends OperationsRepository {
     };
   }
 
-  private async getCacheRecord(key: string): Promise<CacheKeyRecord> {
+  private async getCacheRecord(
+    key: string,
+    tenantId = resolveCurrentTenantId(),
+    tenantPrefix = this.resolveTenantRedisPrefix(tenantId),
+  ): Promise<CacheKeyRecord> {
     const [ttlSeconds, type, memoryUsage] = await Promise.all([
       this.redis.ttl(key),
       this.redis.type(key),
       this.redis.memoryUsage(key),
     ]);
 
+    const name = deriveCacheName(key, tenantPrefix);
+
     return {
+      tenantId,
       key,
-      name: deriveCacheName(key),
-      prefix: deriveCacheName(key),
+      name,
+      prefix: `${tenantPrefix}${name}`,
       ttlSeconds,
       sizeBytes: memoryUsage ?? 0,
       type,
     };
+  }
+
+  private resolveTenantRedisPrefix(tenantId: string): string {
+    return `${this.redis.tenantKey(tenantId)}:`;
+  }
+
+  private normalizeTenantCachePrefix(
+    prefix: string,
+    tenantPrefix: string,
+  ): string {
+    return this.normalizeTenantCacheKey(
+      normalizeCachePrefix(prefix),
+      tenantPrefix,
+    );
+  }
+
+  private normalizeTenantCacheKey(key: string, tenantPrefix: string): string {
+    const normalized = normalizeCacheKey(key);
+
+    if (normalized.startsWith(tenantPrefix)) {
+      return normalized;
+    }
+
+    const redisPrefix = this.redis.key();
+    const suffix =
+      redisPrefix && normalized.startsWith(redisPrefix)
+        ? normalized.slice(redisPrefix.length)
+        : normalized;
+
+    return `${tenantPrefix}${suffix}`;
   }
 
   private async findReport(code: string): Promise<ReportDefinitionRecord> {
@@ -337,14 +395,17 @@ function toInputJson(value: unknown): Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
 }
 
-function deriveCacheName(key: string): string {
-  const segments = key.split(':').filter(Boolean);
-
-  if (segments.length >= 2) {
-    return `${segments[0]}:${segments[1]}`;
-  }
+function deriveCacheName(key: string, tenantPrefix: string): string {
+  const scopedKey = key.startsWith(tenantPrefix)
+    ? key.slice(tenantPrefix.length)
+    : key;
+  const segments = scopedKey.split(':').filter(Boolean);
 
   return segments[0] ?? key;
+}
+
+function resolveCurrentTenantId(): string {
+  return getRequestContext()?.tenantId ?? ROOT_TENANT_ID;
 }
 
 function createSafeCacheValuePreview(

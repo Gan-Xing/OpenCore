@@ -72,6 +72,7 @@ export class SeedOperationsRepository extends OperationsRepository {
     const items = Array.from(
       this.cacheKeys.reduce((names, key) => {
         const current = names.get(key.name) ?? {
+          tenantId: key.tenantId,
           name: key.name,
           prefix: key.prefix,
           keyCount: 0,

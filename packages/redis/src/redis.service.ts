@@ -9,7 +9,7 @@ import {
   type RedisOptionsConfig,
 } from './redis-options';
 import { normalizeTtlSeconds, type TtlInput } from './ttl';
-import { createRedisKey } from './key';
+import { createRedisKey, createTenantRedisKey } from './key';
 
 export type RedisCacheSetOptions = {
   ttlSeconds?: TtlInput;
@@ -54,6 +54,13 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 
   key(...parts: readonly (string | number | boolean)[]): string {
     return createRedisKey(this.options.keyPrefix, ...parts);
+  }
+
+  tenantKey(
+    tenantId: string | number | boolean,
+    ...parts: readonly (string | number | boolean)[]
+  ): string {
+    return createTenantRedisKey(this.options.keyPrefix, tenantId, ...parts);
   }
 
   createBullMqConnectionOptions() {

@@ -2060,6 +2060,7 @@ export default {
   'pages.monitor.cache.fields.sensitivePreview': 'Sensitive Preview',
   'pages.monitor.cache.fields.size': 'Size',
   'pages.monitor.cache.fields.sizeBytes': 'Size Bytes',
+  'pages.monitor.cache.fields.tenantId': 'Tenant ID',
   'pages.monitor.cache.fields.ttl': 'TTL',
   'pages.monitor.cache.fields.ttlSeconds': 'TTL Seconds',
   'pages.monitor.cache.fields.type': 'Type',

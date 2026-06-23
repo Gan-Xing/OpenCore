@@ -41,6 +41,7 @@ export type JobRegistryEntrySummary = {
 };
 
 export type CacheKeySummary = {
+  tenantId: string;
   key: string;
   name: string;
   prefix: string;
@@ -50,6 +51,7 @@ export type CacheKeySummary = {
 };
 
 export type CacheNameSummary = {
+  tenantId: string;
   name: string;
   prefix: string;
   keyCount: number;
@@ -410,9 +412,10 @@ export function createOperationsFixtures(): OperationsFixtures {
   ];
   const cacheKeys: readonly CacheKeySummary[] = [
     {
-      key: 'opencore:admin:shell',
-      name: 'opencore:admin',
-      prefix: 'opencore:admin',
+      tenantId: 'tenant_root',
+      key: 'opencore:tenant:tenant_root:admin:shell',
+      name: 'admin',
+      prefix: 'opencore:tenant:tenant_root:admin',
       ttlSeconds: 300,
       sizeBytes: 512,
       type: 'string',
