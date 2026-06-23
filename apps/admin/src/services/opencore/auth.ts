@@ -11,6 +11,7 @@ import {
   type SocialAuthProviderSummary,
   type SocialAuthResultSummary,
   type StartSocialAuthFlowRequest,
+  type SwitchTenantRequest,
   type UpdateUserPasswordRequest,
   type UpdateUserProfileRequest,
   type UserPasswordMutationSummary,
@@ -65,6 +66,14 @@ export async function queryCurrentOpenCoreUser(): Promise<LoginResponse> {
 
 export async function logoutFromOpenCore(): Promise<LogoutResponse> {
   return authClient.logout(getRequiredAdminToken());
+}
+
+export async function switchOpenCoreTenant(
+  body: SwitchTenantRequest,
+): Promise<AdminCurrentUser> {
+  const session = await authClient.switchTenant(getRequiredAdminToken(), body);
+  setAdminToken(session.accessToken);
+  return toAdminCurrentUser(session.user);
 }
 
 export async function listOpenCoreSocialAuthProviders(): Promise<

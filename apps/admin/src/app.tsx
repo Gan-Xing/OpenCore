@@ -15,6 +15,7 @@ import {
   LangDropdown,
   NoticeBell,
   OfflineBanner,
+  TenantSwitcher,
   VersionDropdown,
 } from '@/components';
 import {
@@ -150,6 +151,7 @@ export const layout: RunTimeLayoutConfig = ({
       return [
         <DocLink key="doc" />,
         <NoticeBell key="notice" />,
+        <TenantSwitcher key="tenant" />,
         <VersionDropdown key="version" />,
         localeEnabled && <LangDropdown key="lang" />,
       ].filter(Boolean);

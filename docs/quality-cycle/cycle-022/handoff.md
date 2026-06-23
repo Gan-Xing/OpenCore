@@ -4,7 +4,7 @@ Date: 2026-06-23
 Repository: `Gan-Xing/OpenCore`  
 Branch: `main`  
 Target track: `Cycle-022 / Tenant Foundation`  
-Status: **In progress; T6 Admin control plane has T6c Tenant Member lifecycle/invitation deployed and publicly smoke-verified**
+Status: **In progress; T6 Admin control plane has T6d Admin tenant switcher deployed and publicly smoke-verified**
 
 ## 0. Current Round Snapshot
 
@@ -12,7 +12,7 @@ Updated: 2026-06-23
 
 Current completed slice count: **5 full slices**
 
-This working tree has advanced Cycle-022 through the first five full deployable tenant foundation slices plus T4a online-session tenant isolation, T4b login-log tenant isolation, T4c operation-audit tenant isolation, T4d dictionary tenant isolation, T4e system config tenant isolation, T4f file asset tenant isolation, T4g system notice tenant isolation, T5a scheduler tenant propagation, T5b Redis cache namespace isolation, T5c WebSocket runtime tenant scope, T5d BullMQ monitor queue namespace isolation, T5e Integration provider/outbox/OAuth tenant scope, T5f runtime parity audit, T6a Tenant Plan control-plane CRUD, T6b Tenant lifecycle control-plane CRUD, and T6c Tenant Member lifecycle/invitation control-plane CRUD:
+This working tree has advanced Cycle-022 through the first five full deployable tenant foundation slices plus T4a online-session tenant isolation, T4b login-log tenant isolation, T4c operation-audit tenant isolation, T4d dictionary tenant isolation, T4e system config tenant isolation, T4f file asset tenant isolation, T4g system notice tenant isolation, T5a scheduler tenant propagation, T5b Redis cache namespace isolation, T5c WebSocket runtime tenant scope, T5d BullMQ monitor queue namespace isolation, T5e Integration provider/outbox/OAuth tenant scope, T5f runtime parity audit, T6a Tenant Plan control-plane CRUD, T6b Tenant lifecycle control-plane CRUD, T6c Tenant Member lifecycle/invitation control-plane CRUD, and T6d Admin tenant switcher:
 
 - Prisma models for `TenantPlan`, `TenantPlanModule`, `Tenant`, `TenantMembership`, `TenantMembershipRole`, `TenantMembershipPost`, `PlatformRole`, `UserPlatformRole`, and `PlatformRolePermission`.
 - Migration `20260622223000_tenant_foundation` creates the `root` tenant, root `system.full` plan, root memberships for existing users, and transitional root copies of `UserRole` and `UserPost`.
@@ -133,11 +133,15 @@ This working tree has advanced Cycle-022 through the first five full deployable 
 - Tenancy SDK and live `/system/tenants` Admin now support per-tenant member list/create/edit/remove without adding a client tenant selector.
 - `guard:tenant-member-control-plane` and `smoke:core-tenant-member-lifecycle` were added and wired into local/deploy smoke scripts for T6c.
 - Refreshed deploy completed on API `39172` and Admin `39174`; local deploy smoke and public API Tenant Member lifecycle smoke passed for T6c.
+- T6d adds an Admin header tenant switcher that is visible only to multi-tenant users and calls the existing SDK `/auth/switch-tenant` flow instead of changing tenant client-side.
+- `switchOpenCoreTenant()` persists the server-reissued token, Admin updates the current user state, and the page reloads so tenant-scoped data is refetched under the new token.
+- `guard:tenant-switcher` and `smoke:core-tenant-switcher` were added and wired into local/deploy smoke scripts for T6d; the smoke creates a temporary tenant membership, switches to it, proves the old token is revoked, and cleans up.
+- Refreshed deploy completed on API `39172` and Admin `39174`; local deploy smoke and public API Tenant Switcher smoke passed for T6d.
 
 Still not complete:
 
 - tenant-scoped System/core repositories for other unreviewed non-org data;
-- Admin switcher and platform visit mode beyond active-tenant member assignment;
+- platform visit mode beyond active-tenant member assignment;
 - platform visit/impersonation audit.
 
 ---

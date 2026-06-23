@@ -6,7 +6,12 @@
  * 布局组件
  */
 import Footer from './Footer';
-import { DocLink, LangDropdown, VersionDropdown } from './RightContent';
+import {
+  DocLink,
+  LangDropdown,
+  TenantSwitcher,
+  VersionDropdown,
+} from './RightContent';
 import { AvatarDropdown } from './RightContent/AvatarDropdown';
 import { NoticeBell } from './RightContent/NoticeBell';
 
@@ -35,5 +40,6 @@ export {
   Footer,
   LangDropdown,
   NoticeBell,
+  TenantSwitcher,
   VersionDropdown,
 };

@@ -71,6 +71,7 @@ vi.mock('@/components', () => ({
   LangDropdown: () => null,
   NoticeBell: () => null,
   OfflineBanner: () => null,
+  TenantSwitcher: () => null,
   VersionDropdown: () => null,
 }));
 

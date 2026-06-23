@@ -24,7 +24,7 @@ Cycle-022 may only count a slice when it is code-backed, migrated, seeded, visib
 ## Below Waterline
 
 - Platform visit/impersonation is not done.
-- Admin switcher and platform visit mode are not done.
+- Platform visit mode is not done.
 - Remaining optional/business data-plane isolation is not done.
 
 These remain below the productization waterline and cannot be described as complete SaaS multi-tenancy.
@@ -145,7 +145,17 @@ These remain below the productization waterline and cannot be described as compl
 | No trusted tenant selector        | Done   | Tenant control is bound to the platform path parameter; create/update DTOs have no body/query/header tenant selector.                     |
 | OpenAPI/SDK/Admin consistency     | Done   | OpenAPI exports member lifecycle DTOs; SDK exposes tenant member lifecycle calls; `/system/tenants` opens a live member control modal.     |
 | Smoke/guard                       | Done   | Added `smoke:core-tenant-member-lifecycle` and `guard:tenant-member-control-plane`, both wired into local/deploy smoke scripts.           |
-| Remaining T6 scope                | Pending | Tenant switcher, platform visit mode, and platform visit audit remain separate T6 work.                                                   |
+| Remaining T6 scope                | Pending | Tenant switcher was later closed by T6d; platform visit mode and platform visit audit remain separate T6 work.                             |
+
+## T6d Admin Tenant Switcher
+
+| Requirement                  | Status | Notes                                                                                                                                       |
+| ---------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Visible multi-tenant switcher | Done   | Admin header renders `TenantSwitcher` only when the authenticated user has more than one tenant option.                                     |
+| Server token reissue         | Done   | Switcher calls SDK `switchTenant` through `switchOpenCoreTenant`, persists the returned token, and never mutates tenant context client-side. |
+| Tenant state reload          | Done   | Admin updates current user/permission state and reloads the page so tenant-scoped screens refetch with the new bearer token.                |
+| Smoke/guard                  | Done   | Added `smoke:core-tenant-switcher` and `guard:tenant-switcher`, both wired into local/deploy smoke scripts.                                 |
+| Remaining T6 scope           | Pending | Platform visit mode and platform visit audit remain separate T6 work.                                                                       |
 
 ## T4a Audit
 

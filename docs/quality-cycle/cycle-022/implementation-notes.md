@@ -1111,3 +1111,46 @@ Passed after deploy:
 - No Admin header tenant switcher in T6c.
 - No platform visit/impersonation runtime in T6c.
 - No email/SMS invitation delivery workflow in T6c; the control plane records invited memberships and can create users.
+
+## Round 24: T6d Admin Tenant Switcher
+
+### Completed
+
+- Added `switchOpenCoreTenant()` to the Admin auth service:
+  - calls SDK `switchTenant`;
+  - persists the server-reissued access token;
+  - returns the refreshed authenticated user shape used by Admin initial state.
+- Added the Admin header `TenantSwitcher`:
+  - renders only for users with multiple tenant options;
+  - switches by `membershipId`;
+  - updates current user permissions and reloads the page so tenant-scoped data is fetched under the new token.
+- Wired the switcher into the runtime layout actions and component export surface.
+- Added `smoke:core-tenant-switcher`:
+  - creates a temporary active tenant and admin membership;
+  - switches through `/auth/switch-tenant`;
+  - proves the original token is revoked and the new token is bound to the switched tenant;
+  - deletes temporary smoke tenants.
+- Added `guard:tenant-switcher` and wired the smoke into local/deploy smoke scripts.
+
+### Verification Log
+
+Passed before deploy:
+
+- Admin lint/test, typed smoke compilation, tenant switcher guard, full typecheck, lint, and test suite passed.
+
+Passed after deploy:
+
+- Refreshed OpenCore deploy rebuilt API/Admin, reseeded, restarted API `39172` and Admin `39174`, and passed deploy smoke including local Tenant Switcher checks.
+- Public API Tenant Switcher smoke passed against `http://144.217.243.161:39172`.
+
+### Remaining Product Debt
+
+- Complete platform visit mode.
+- Complete platform visit/impersonation audit.
+- Complete T7 optional/business model tenantization.
+
+### Deliberate Non-Goals
+
+- No front-end-only tenant mutation; the switcher always uses server token reissue.
+- No platform visit/impersonation runtime in T6d.
+- No tenant switch without reload; reload is the minimal reliable boundary for clearing stale tenant-scoped Admin state.

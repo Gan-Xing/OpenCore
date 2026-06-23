@@ -3,6 +3,7 @@ import {
   CheckOutlined,
   ForkOutlined,
   GlobalOutlined,
+  SwapOutlined,
 } from '@ant-design/icons';
 import {
   getAllLocales,
@@ -10,11 +11,13 @@ import {
   history,
   setLocale,
   useIntl,
+  useModel,
 } from '@umijs/max';
 import type { MenuProps } from 'antd';
-import { Button, Tooltip } from 'antd';
+import { Button, message, Tooltip } from 'antd';
 import { createStyles } from 'antd-style';
 import React, { useMemo } from 'react';
+import { switchOpenCoreTenant } from '@/services/opencore/auth';
 import HeaderDropdown from '../HeaderDropdown';
 
 export const localeLabelMap: Record<string, { label: string }> = {
@@ -32,6 +35,12 @@ const useStyles = createStyles(({ token, css }) => ({
     padding-inline: 8px !important;
     padding-block: 0 !important;
     border-radius: ${token.borderRadius}px !important;
+  `,
+  tenantCode: css`
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   `,
 }));
 
@@ -111,6 +120,83 @@ export const VersionDropdown: React.FC = () => {
         })}
       >
         <ForkOutlined />
+      </Button>
+    </HeaderDropdown>
+  );
+};
+
+export const TenantSwitcher: React.FC = () => {
+  const { styles } = useStyles();
+  const { initialState, setInitialState } = useModel('@@initialState');
+  const currentUser = initialState?.currentUser;
+  const activeMembershipId = currentUser?.activeMembership?.id;
+  const tenantOptions = currentUser?.tenantOptions ?? [];
+
+  if (!currentUser || tenantOptions.length <= 1) {
+    return null;
+  }
+
+  const onTenantClick: MenuProps['onClick'] = async ({ key }) => {
+    const membershipId = String(key);
+
+    if (membershipId === activeMembershipId) {
+      return;
+    }
+
+    try {
+      const nextUser = await switchOpenCoreTenant({ membershipId });
+      setInitialState((state) => {
+        const previous = state ?? initialState;
+
+        if (!previous) {
+          return previous;
+        }
+
+        return {
+          ...previous,
+          currentUser: nextUser,
+          permissions: nextUser.permissionCodes,
+        };
+      });
+      window.location.reload();
+    } catch (_error) {
+      void message.error('Tenant switch failed');
+    }
+  };
+
+  const items: MenuProps['items'] = tenantOptions.map((tenant) => ({
+    key: tenant.membershipId,
+    icon:
+      tenant.membershipId === activeMembershipId ? (
+        <CheckOutlined style={{ color: '#52c41a' }} />
+      ) : (
+        <span style={{ display: 'inline-block', width: 14 }} />
+      ),
+    label: `${tenant.name} (${tenant.code})`,
+  }));
+  const switchLabel = 'Switch tenant';
+
+  return (
+    <HeaderDropdown
+      placement="bottomRight"
+      arrow
+      menu={{
+        selectedKeys: activeMembershipId ? [activeMembershipId] : [],
+        onClick: onTenantClick,
+        items,
+        style: { minWidth: 220 },
+      }}
+    >
+      <Button
+        type="text"
+        className={styles.action}
+        aria-label={switchLabel}
+        title={switchLabel}
+      >
+        <SwapOutlined />
+        <span className={styles.tenantCode}>
+          {currentUser.activeTenant?.code ?? 'tenant'}
+        </span>
       </Button>
     </HeaderDropdown>
   );
