@@ -14,9 +14,9 @@ import type {
   RoleSummary,
   SystemDeptOptionSummary,
   SystemPostOptionSummary,
-  TenantFoundationSummary,
   TenantMemberSummary,
   TenantPlanSummary,
+  TenantSummary,
   TenancyFoundationSummary,
 } from '@opencore/sdk';
 import { useIntl } from '@umijs/max';
@@ -26,6 +26,7 @@ import {
   Descriptions,
   Form,
   Input,
+  InputNumber,
   Modal,
   Popconfirm,
   Select,
@@ -38,14 +39,18 @@ import {
 } from 'antd';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  createOpenCoreTenant,
   createOpenCoreTenantPlan,
   deleteOpenCoreTenantPlan,
   getOpenCoreTenancyFoundation,
   listOpenCoreTenantPlans,
+  listOpenCoreTenants,
   listOpenCoreRoles,
   listOpenCoreSystemDeptOptions,
   listOpenCoreSystemPostOptions,
   listOpenCoreTenantMembers,
+  setOpenCoreTenantStatus,
+  updateOpenCoreTenant,
   updateOpenCoreTenantPlan,
   updateOpenCoreTenantMemberAssignments,
 } from '@/services/opencore/platform';
@@ -57,6 +62,19 @@ type FormatMessage = (
 ) => string;
 
 const TENANT_READ_PERMISSION_MARKER = 'platform:tenant:read';
+const ROOT_TENANT_ID = 'tenant_root';
+
+type TenantFormValues = {
+  accountLimit?: number | null;
+  code: string;
+  contactMobile?: string;
+  contactName?: string;
+  expiresAt?: string;
+  name: string;
+  planCode?: string;
+  slug: string;
+  status: 'active' | 'expired' | 'suspended';
+};
 
 type PlanFormValues = {
   code: string;
@@ -131,9 +149,11 @@ function parsePlanLimitsJson(value: string): Record<string, unknown> {
 
 export default function TenantsPage() {
   const intl = useIntl();
+  const [tenantForm] = Form.useForm<TenantFormValues>();
   const [planForm] = Form.useForm<PlanFormValues>();
   const [form] = Form.useForm<MemberAssignmentFormValues>();
   const [summary, setSummary] = useState<TenancyFoundationSummary>();
+  const [tenants, setTenants] = useState<readonly TenantSummary[]>([]);
   const [plans, setPlans] = useState<readonly TenantPlanSummary[]>([]);
   const [members, setMembers] = useState<readonly TenantMemberSummary[]>([]);
   const [roles, setRoles] = useState<readonly RoleSummary[]>([]);
@@ -145,6 +165,8 @@ export default function TenantsPage() {
   >([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
+  const [editingTenant, setEditingTenant] = useState<TenantSummary | null>();
+  const [savingTenant, setSavingTenant] = useState(false);
   const [editingPlan, setEditingPlan] = useState<TenantPlanSummary | null>();
   const [savingPlan, setSavingPlan] = useState(false);
   const [deletingPlanId, setDeletingPlanId] = useState<string>();
@@ -163,6 +185,7 @@ export default function TenantsPage() {
     try {
       const [
         nextSummary,
+        nextTenants,
         nextPlans,
         nextMembers,
         nextRoles,
@@ -170,6 +193,7 @@ export default function TenantsPage() {
         nextPosts,
       ] = await Promise.all([
         getOpenCoreTenancyFoundation(),
+        listOpenCoreTenants(),
         listOpenCoreTenantPlans(),
         listOpenCoreTenantMembers(),
         listOpenCoreRoles(),
@@ -178,6 +202,7 @@ export default function TenantsPage() {
       ]);
 
       setSummary(nextSummary);
+      setTenants(nextTenants);
       setPlans(nextPlans);
       setMembers(nextMembers);
       setRoles(nextRoles);
@@ -226,6 +251,16 @@ export default function TenantsPage() {
         value: moduleCode,
       }));
   }, [summary]);
+  const planOptions = useMemo(
+    () =>
+      [...plans]
+        .sort((left, right) => left.code.localeCompare(right.code))
+        .map((plan) => ({
+          label: `${plan.name} (${plan.code})`,
+          value: plan.code,
+        })),
+    [plans],
+  );
 
   const backfillWarnings = useMemo(() => {
     if (!summary) {
@@ -293,6 +328,21 @@ export default function TenantsPage() {
     });
   }, [planForm]);
 
+  const openCreateTenant = useCallback(() => {
+    setEditingTenant(null);
+    tenantForm.setFieldsValue({
+      accountLimit: null,
+      code: '',
+      contactMobile: undefined,
+      contactName: undefined,
+      expiresAt: undefined,
+      name: '',
+      planCode: 'system.full',
+      slug: '',
+      status: 'active',
+    });
+  }, [tenantForm]);
+
   const deletePlan = useCallback(
     async (record: TenantPlanSummary) => {
       setDeletingPlanId(record.id);
@@ -312,7 +362,7 @@ export default function TenantsPage() {
     [formatMessage, loadSummary],
   );
 
-  const tenantColumns = useMemo<ProColumns<TenantFoundationSummary>[]>(
+  const tenantColumns = useMemo<ProColumns<TenantSummary>[]>(
     () => [
       {
         title: formatMessage('pages.system.tenants.fields.code', 'Code'),
@@ -339,6 +389,14 @@ export default function TenantsPage() {
         dataIndex: 'membershipCount',
       },
       {
+        title: formatMessage(
+          'pages.system.tenants.fields.accountLimit',
+          'Account limit',
+        ),
+        dataIndex: 'accountLimit',
+        renderText: (value) => value ?? '-',
+      },
+      {
         title: formatMessage('pages.system.tenants.fields.owners', 'Owners'),
         dataIndex: 'ownerUsernames',
         render: (_, record) =>
@@ -346,8 +404,46 @@ export default function TenantsPage() {
             ? record.ownerUsernames.join(', ')
             : '-',
       },
+      {
+        title: formatMessage('pages.system.tenants.fields.actions', 'Actions'),
+        valueType: 'option',
+        render: (_, record) => (
+          <Tooltip
+            title={formatMessage(
+              'pages.system.tenants.actions.editTenant',
+              'Edit tenant',
+            )}
+          >
+            <Button
+              aria-label={formatMessage(
+                'pages.system.tenants.actions.editTenantAria',
+                'Edit tenant',
+              )}
+              icon={<EditOutlined />}
+              onClick={() => {
+                setEditingTenant(record);
+                tenantForm.setFieldsValue({
+                  accountLimit: record.accountLimit ?? null,
+                  code: record.code,
+                  contactMobile: record.contactMobile ?? undefined,
+                  contactName: record.contactName ?? undefined,
+                  expiresAt: record.expiresAt ?? undefined,
+                  name: record.name,
+                  planCode: record.planCode ?? undefined,
+                  slug: record.slug,
+                  status:
+                    record.status === 'expired' || record.status === 'suspended'
+                      ? record.status
+                      : 'active',
+                });
+              }}
+              type="link"
+            />
+          </Tooltip>
+        ),
+      },
     ],
-    [formatMessage],
+    [formatMessage, tenantForm],
   );
 
   const planColumns = useMemo<ProColumns<TenantPlanSummary>[]>(
@@ -536,6 +632,49 @@ export default function TenantsPage() {
     [formatMessage, form],
   );
 
+  const saveTenant = async () => {
+    const values = await tenantForm.validateFields();
+    const body = {
+      accountLimit: values.accountLimit ?? null,
+      code: values.code,
+      contactMobile: values.contactMobile ?? null,
+      contactName: values.contactName ?? null,
+      expiresAt: values.expiresAt ?? null,
+      name: values.name,
+      planCode: values.planCode ?? null,
+      slug: values.slug,
+    };
+
+    setSavingTenant(true);
+    try {
+      if (editingTenant) {
+        await updateOpenCoreTenant(editingTenant.id, body);
+        if (values.status !== editingTenant.status) {
+          await setOpenCoreTenantStatus(editingTenant.id, {
+            expiresAt: values.expiresAt ?? null,
+            status: values.status,
+          });
+        }
+      } else {
+        await createOpenCoreTenant({
+          ...body,
+          status: values.status,
+        });
+      }
+      message.success(
+        formatMessage(
+          'pages.system.tenants.actions.saveTenantSuccess',
+          'Tenant saved.',
+        ),
+      );
+      setEditingTenant(undefined);
+      tenantForm.resetFields();
+      await loadSummary();
+    } finally {
+      setSavingTenant(false);
+    }
+  };
+
   const savePlan = async () => {
     const values = await planForm.validateFields();
     const limits = parsePlanLimitsJson(values.limitsJson);
@@ -716,15 +855,37 @@ export default function TenantsPage() {
         </Descriptions.Item>
       </Descriptions>
 
-      <ProTable<TenantFoundationSummary>
+      <ProTable<TenantSummary>
         columns={tenantColumns}
-        dataSource={[...(summary?.tenants ?? [])]}
+        dataSource={[...tenants]}
+        headerTitle={formatMessage(
+          'pages.system.tenants.sections.tenants',
+          'Tenants',
+        )}
         loading={loading}
         pagination={false}
         rowKey="id"
         search={false}
         style={{ marginBottom: 16 }}
-        toolBarRender={false}
+        toolBarRender={() => [
+          <Tooltip
+            key="create"
+            title={formatMessage(
+              'pages.system.tenants.actions.createTenant',
+              'Create tenant',
+            )}
+          >
+            <Button
+              aria-label={formatMessage(
+                'pages.system.tenants.actions.createTenantAria',
+                'Create tenant',
+              )}
+              icon={<PlusOutlined />}
+              onClick={openCreateTenant}
+              type="primary"
+            />
+          </Tooltip>,
+        ]}
       />
 
       <ProTable<TenantPlanSummary>
@@ -773,6 +934,122 @@ export default function TenantsPage() {
         search={false}
         toolBarRender={false}
       />
+
+      <Modal
+        destroyOnClose
+        confirmLoading={savingTenant}
+        onCancel={() => {
+          setEditingTenant(undefined);
+          tenantForm.resetFields();
+        }}
+        onOk={() => void saveTenant()}
+        open={editingTenant !== undefined}
+        title={
+          editingTenant
+            ? formatMessage(
+                'pages.system.tenants.actions.editTenant',
+                'Edit tenant',
+              )
+            : formatMessage(
+                'pages.system.tenants.actions.createTenant',
+                'Create tenant',
+              )
+        }
+      >
+        <Form form={tenantForm} layout="vertical">
+          <Form.Item
+            label={formatMessage('pages.system.tenants.fields.code', 'Code')}
+            name="code"
+            rules={[{ required: true }]}
+          >
+            <Input
+              autoComplete="off"
+              disabled={editingTenant?.id === ROOT_TENANT_ID}
+            />
+          </Form.Item>
+          <Form.Item
+            label={formatMessage('pages.system.tenants.fields.slug', 'Slug')}
+            name="slug"
+            rules={[{ required: true }]}
+          >
+            <Input
+              autoComplete="off"
+              disabled={editingTenant?.id === ROOT_TENANT_ID}
+            />
+          </Form.Item>
+          <Form.Item
+            label={formatMessage('pages.system.tenants.fields.name', 'Name')}
+            name="name"
+            rules={[{ required: true }]}
+          >
+            <Input autoComplete="off" />
+          </Form.Item>
+          <Form.Item
+            label={formatMessage(
+              'pages.system.tenants.fields.status',
+              'Status',
+            )}
+            name="status"
+            rules={[{ required: true }]}
+          >
+            <Select
+              disabled={editingTenant?.id === ROOT_TENANT_ID}
+              options={[
+                { label: 'active', value: 'active' },
+                { label: 'suspended', value: 'suspended' },
+                { label: 'expired', value: 'expired' },
+              ]}
+            />
+          </Form.Item>
+          <Form.Item
+            label={formatMessage('pages.system.tenants.fields.plan', 'Plan')}
+            name="planCode"
+          >
+            <Select
+              allowClear
+              optionFilterProp="label"
+              options={planOptions}
+              showSearch
+            />
+          </Form.Item>
+          <Form.Item
+            label={formatMessage(
+              'pages.system.tenants.fields.accountLimit',
+              'Account limit',
+            )}
+            name="accountLimit"
+          >
+            <InputNumber min={0} precision={0} style={{ width: '100%' }} />
+          </Form.Item>
+          <Form.Item
+            label={formatMessage(
+              'pages.system.tenants.fields.contactName',
+              'Contact name',
+            )}
+            name="contactName"
+          >
+            <Input autoComplete="off" />
+          </Form.Item>
+          <Form.Item
+            label={formatMessage(
+              'pages.system.tenants.fields.contactMobile',
+              'Contact mobile',
+            )}
+            name="contactMobile"
+          >
+            <Input autoComplete="off" />
+          </Form.Item>
+          <Form.Item
+            label={formatMessage(
+              'pages.system.tenants.fields.expiresAt',
+              'Expires at',
+            )}
+            name="expiresAt"
+          >
+            <Input placeholder="2026-12-31T23:59:59.000Z" />
+          </Form.Item>
+        </Form>
+      </Modal>
 
       <Modal
         destroyOnClose

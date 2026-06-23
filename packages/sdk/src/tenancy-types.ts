@@ -61,6 +61,44 @@ export type TenantFoundationSummary = {
   ownerUsernames: readonly string[];
 };
 
+export type TenantSummary = TenantFoundationSummary & {
+  planId?: string | null;
+  contactName?: string | null;
+  contactMobile?: string | null;
+  expiresAt?: string | null;
+  createdByUsername?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CreateTenantRequest = {
+  code: string;
+  slug: string;
+  name: string;
+  planCode?: string | null;
+  status?: 'active' | 'expired' | 'suspended';
+  contactName?: string | null;
+  contactMobile?: string | null;
+  accountLimit?: number | null;
+  expiresAt?: string | null;
+};
+
+export type UpdateTenantRequest = {
+  code?: string;
+  slug?: string;
+  name?: string;
+  planCode?: string | null;
+  contactName?: string | null;
+  contactMobile?: string | null;
+  accountLimit?: number | null;
+  expiresAt?: string | null;
+};
+
+export type SetTenantStatusRequest = {
+  status: 'active' | 'expired' | 'suspended';
+  expiresAt?: string | null;
+};
+
 export type PlatformRoleFoundationSummary = {
   code: string;
   name: string;

@@ -3,6 +3,8 @@ import { runWithRequestContext } from '@opencore/core';
 import { PrismaService } from '@opencore/database';
 import { TenantFoundationService } from './tenant.service';
 
+const ROOT_TENANT_ID = 'tenant_root';
+
 describe('TenantFoundationService membership assignments', () => {
   const prisma = new PrismaService();
   const service = new TenantFoundationService(prisma);
@@ -17,6 +19,10 @@ describe('TenantFoundationService membership assignments', () => {
   const deptId = `dept_member_${runId}`;
   const planCode = `plan.member.${runId}`;
   const updatedPlanCode = `plan.member.updated.${runId}`;
+  const managedTenantCode = `tenant.lifecycle.${runId}`;
+  const updatedManagedTenantCode = `tenant.lifecycle.updated.${runId}`;
+  const managedTenantSlug = `tenant-lifecycle-${runId}`;
+  const updatedManagedTenantSlug = `tenant-lifecycle-updated-${runId}`;
 
   beforeEach(async () => {
     await cleanup();
@@ -135,6 +141,87 @@ describe('TenantFoundationService membership assignments', () => {
     );
   });
 
+  it('manages tenant lifecycle without hard delete API', async () => {
+    const expiresAt = new Date(Date.now() + 86_400_000).toISOString();
+    const created = await runInTenant(ROOT_TENANT_ID, () =>
+      service.createTenant({
+        accountLimit: 12,
+        code: managedTenantCode,
+        contactName: 'Lifecycle Owner',
+        expiresAt,
+        name: 'Tenant Lifecycle Test',
+        planCode: 'system.full',
+        slug: managedTenantSlug,
+      }),
+    );
+
+    expect(created).toMatchObject({
+      accountLimit: 12,
+      code: managedTenantCode,
+      contactName: 'Lifecycle Owner',
+      membershipCount: 0,
+      name: 'Tenant Lifecycle Test',
+      planCode: 'system.full',
+      slug: managedTenantSlug,
+      status: 'active',
+    });
+
+    const updated = await service.updateTenant(created.id, {
+      accountLimit: 15,
+      code: updatedManagedTenantCode,
+      contactMobile: '15500001111',
+      contactName: null,
+      expiresAt: null,
+      name: 'Tenant Lifecycle Updated',
+      planCode: null,
+      slug: updatedManagedTenantSlug,
+    });
+
+    expect(updated).toMatchObject({
+      accountLimit: 15,
+      code: updatedManagedTenantCode,
+      contactMobile: '15500001111',
+      contactName: null,
+      expiresAt: null,
+      name: 'Tenant Lifecycle Updated',
+      planCode: null,
+      slug: updatedManagedTenantSlug,
+    });
+
+    const suspended = await service.setTenantStatus(updated.id, {
+      status: 'suspended',
+    });
+    expect(suspended.status).toBe('suspended');
+
+    const reactivated = await service.setTenantStatus(updated.id, {
+      status: 'active',
+    });
+    expect(reactivated.status).toBe('active');
+    expect(reactivated.expiresAt).toBeNull();
+
+    const tenants = await service.listTenants();
+    expect(tenants.some((tenant) => tenant.id === updated.id)).toBe(true);
+    await expect(service.getTenant(updated.id)).resolves.toMatchObject({
+      id: updated.id,
+      code: updatedManagedTenantCode,
+    });
+
+    await expectHttpExceptionCode(
+      service.createTenant({
+        code: `${managedTenantCode}.missing`,
+        name: 'Missing Plan Tenant',
+        planCode: 'missing.plan',
+        slug: `${managedTenantSlug}-missing`,
+      }),
+      'TENANT_PLAN_NOT_FOUND',
+    );
+
+    await expectHttpExceptionCode(
+      service.setTenantStatus(ROOT_TENANT_ID, { status: 'suspended' }),
+      'TENANT_ROOT_STATUS_IMMUTABLE',
+    );
+  });
+
   async function seedRows(): Promise<void> {
     await prisma.tenant.createMany({
       data: [
@@ -200,7 +287,12 @@ describe('TenantFoundationService membership assignments', () => {
 
   async function cleanup(): Promise<void> {
     await prisma.tenant.deleteMany({
-      where: { id: { in: [tenantId, otherTenantId] } },
+      where: {
+        OR: [
+          { id: { in: [tenantId, otherTenantId] } },
+          { code: { in: [managedTenantCode, updatedManagedTenantCode] } },
+        ],
+      },
     });
     await prisma.user.deleteMany({ where: { username } });
     await prisma.tenantPlan.deleteMany({

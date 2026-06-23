@@ -134,6 +134,92 @@ export class TenantFoundationDto {
   ownerUsernames!: readonly string[];
 }
 
+export class TenantDto extends TenantFoundationDto {
+  @ApiProperty({ required: false, nullable: true })
+  planId?: string | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  contactName?: string | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  contactMobile?: string | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  expiresAt?: string | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  createdByUsername?: string | null;
+
+  @ApiProperty()
+  createdAt!: string;
+
+  @ApiProperty()
+  updatedAt!: string;
+}
+
+export class CreateTenantDto {
+  @ApiProperty()
+  code!: string;
+
+  @ApiProperty()
+  slug!: string;
+
+  @ApiProperty()
+  name!: string;
+
+  @ApiProperty({ required: false, nullable: true })
+  planCode?: string | null;
+
+  @ApiProperty({ required: false, enum: ['active', 'expired', 'suspended'] })
+  status?: string;
+
+  @ApiProperty({ required: false, nullable: true })
+  contactName?: string | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  contactMobile?: string | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  accountLimit?: number | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  expiresAt?: string | null;
+}
+
+export class UpdateTenantDto {
+  @ApiProperty({ required: false })
+  code?: string;
+
+  @ApiProperty({ required: false })
+  slug?: string;
+
+  @ApiProperty({ required: false })
+  name?: string;
+
+  @ApiProperty({ required: false, nullable: true })
+  planCode?: string | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  contactName?: string | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  contactMobile?: string | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  accountLimit?: number | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  expiresAt?: string | null;
+}
+
+export class SetTenantStatusDto {
+  @ApiProperty({ enum: ['active', 'expired', 'suspended'] })
+  status!: string;
+
+  @ApiProperty({ required: false, nullable: true })
+  expiresAt?: string | null;
+}
+
 export class PlatformRoleFoundationDto {
   @ApiProperty()
   code!: string;

@@ -1,16 +1,36 @@
 import type { SdkRequest } from './rbac-client';
 import type {
   CreateTenantPlanRequest,
+  CreateTenantRequest,
+  SetTenantStatusRequest,
   TenancyFoundationSummary,
   TenantMemberSummary,
   TenantPlanDeleteResultSummary,
   TenantPlanSummary,
+  TenantSummary,
   UpdateTenantPlanRequest,
+  UpdateTenantRequest,
   UpdateTenantMemberAssignmentsRequest,
 } from './tenancy-types';
 
 export type TenancyClient = {
   getFoundationSummary: (token: string) => Promise<TenancyFoundationSummary>;
+  listTenants: (token: string) => Promise<readonly TenantSummary[]>;
+  getTenant: (token: string, tenantId: string) => Promise<TenantSummary>;
+  createTenant: (
+    token: string,
+    body: CreateTenantRequest,
+  ) => Promise<TenantSummary>;
+  updateTenant: (
+    token: string,
+    tenantId: string,
+    body: UpdateTenantRequest,
+  ) => Promise<TenantSummary>;
+  setTenantStatus: (
+    token: string,
+    tenantId: string,
+    body: SetTenantStatusRequest,
+  ) => Promise<TenantSummary>;
   listTenantPlans: (token: string) => Promise<readonly TenantPlanSummary[]>;
   getTenantPlan: (token: string, planId: string) => Promise<TenantPlanSummary>;
   createTenantPlan: (
@@ -40,6 +60,39 @@ export function createTenancyClient(request: SdkRequest): TenancyClient {
       request<TenancyFoundationSummary>('/core/tenancy/foundation', {
         token,
       }),
+    listTenants: (token) =>
+      request<readonly TenantSummary[]>('/core/tenancy/tenants', {
+        token,
+      }),
+    getTenant: (token, tenantId) =>
+      request<TenantSummary>(
+        `/core/tenancy/tenants/${encodeURIComponent(tenantId)}`,
+        { token },
+      ),
+    createTenant: (token, body) =>
+      request<TenantSummary>('/core/tenancy/tenants', {
+        method: 'POST',
+        body,
+        token,
+      }),
+    updateTenant: (token, tenantId, body) =>
+      request<TenantSummary>(
+        `/core/tenancy/tenants/${encodeURIComponent(tenantId)}`,
+        {
+          method: 'PATCH',
+          body,
+          token,
+        },
+      ),
+    setTenantStatus: (token, tenantId, body) =>
+      request<TenantSummary>(
+        `/core/tenancy/tenants/${encodeURIComponent(tenantId)}/status`,
+        {
+          method: 'PATCH',
+          body,
+          token,
+        },
+      ),
     listTenantPlans: (token) =>
       request<readonly TenantPlanSummary[]>('/core/tenancy/plans', {
         token,

@@ -13,17 +13,23 @@ import { listModules } from '@opencore/module-registry';
 import type { Prisma } from '@prisma/client';
 import type {
   CreateTenantPlanDto,
+  CreateTenantDto,
+  SetTenantStatusDto,
   TenantFoundationSummaryDto,
   TenantMemberDto,
   TenantPlanDeleteResultDto,
   TenantPlanDto,
+  TenantDto,
   UpdateTenantPlanDto,
+  UpdateTenantDto,
   UpdateTenantMemberAssignmentsDto,
 } from './tenant.dto';
 
 const ROOT_TENANT_CODE = 'root';
 const ROOT_TENANT_ID = 'tenant_root';
 const PLAN_CODE_PATTERN = /^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/;
+const TENANT_CODE_PATTERN = /^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/;
+const TENANT_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const registeredModuleCodes: ReadonlySet<string> = new Set(
   listModules().map((moduleDefinition) => moduleDefinition.code),
 );
@@ -122,6 +128,168 @@ export class TenantFoundationService {
         : undefined,
       generatedAt: new Date().toISOString(),
     };
+  }
+
+  async listTenants(): Promise<TenantDto[]> {
+    const tenants = await this.prisma.tenant.findMany({
+      include: tenantIncludes,
+      orderBy: { code: 'asc' },
+    });
+
+    return tenants.map(toTenantDto);
+  }
+
+  async getTenant(tenantId: string): Promise<TenantDto> {
+    return this.findTenantDto(normalizeTenantRecordId(tenantId));
+  }
+
+  async createTenant(body: CreateTenantDto): Promise<TenantDto> {
+    const code = normalizeTenantCode(body.code);
+    const slug = normalizeTenantSlug(body.slug);
+    const name = normalizeTenantRequiredText(body.name, 'name');
+    const status = normalizeTenantStatus(body.status ?? 'active');
+    const planId = await this.resolveTenantPlanId(body.planCode ?? null);
+    const accountLimit = normalizeTenantAccountLimit(body.accountLimit);
+    const expiresAt = normalizeTenantExpiresAt(body.expiresAt);
+    const requestContext = getRequestContext();
+
+    await this.assertTenantCodeAvailable(code);
+    await this.assertTenantSlugAvailable(slug);
+
+    const tenant = await this.prisma.tenant.create({
+      data: {
+        accountLimit,
+        code,
+        contactMobile: normalizeTenantNullableText(body.contactMobile),
+        contactName: normalizeTenantNullableText(body.contactName),
+        createdByUserId: requestContext?.actorUserId,
+        expiresAt: status === 'expired' && !expiresAt ? new Date() : expiresAt,
+        name,
+        planId,
+        slug,
+        status,
+      },
+      select: { id: true },
+    });
+
+    return this.findTenantDto(tenant.id);
+  }
+
+  async updateTenant(
+    tenantId: string,
+    body: UpdateTenantDto,
+  ): Promise<TenantDto> {
+    const id = normalizeTenantRecordId(tenantId);
+    const existing = await this.prisma.tenant.findUnique({
+      where: { id },
+      select: { code: true, id: true, slug: true },
+    });
+
+    if (!existing) {
+      throw tenantNotFound(id);
+    }
+
+    const codeProvided = hasOwn(body, 'code');
+    const slugProvided = hasOwn(body, 'slug');
+    const nameProvided = hasOwn(body, 'name');
+    const planProvided = hasOwn(body, 'planCode');
+    const contactNameProvided = hasOwn(body, 'contactName');
+    const contactMobileProvided = hasOwn(body, 'contactMobile');
+    const accountLimitProvided = hasOwn(body, 'accountLimit');
+    const expiresAtProvided = hasOwn(body, 'expiresAt');
+
+    const code = codeProvided ? normalizeTenantCode(body.code) : undefined;
+    const slug = slugProvided ? normalizeTenantSlug(body.slug) : undefined;
+    if (
+      existing.id === ROOT_TENANT_ID &&
+      ((code && code !== existing.code) || (slug && slug !== existing.slug))
+    ) {
+      throw tenantBadRequest(
+        'TENANT_ROOT_IMMUTABLE',
+        'Root tenant code and slug cannot be changed.',
+        { tenantId: id },
+      );
+    }
+
+    if (code && code !== existing.code) {
+      await this.assertTenantCodeAvailable(code);
+    }
+    if (slug && slug !== existing.slug) {
+      await this.assertTenantSlugAvailable(slug);
+    }
+
+    const planId = planProvided
+      ? await this.resolveTenantPlanId(body.planCode ?? null)
+      : undefined;
+
+    await this.prisma.tenant.update({
+      where: { id },
+      data: {
+        ...(accountLimitProvided
+          ? { accountLimit: normalizeTenantAccountLimit(body.accountLimit) }
+          : {}),
+        ...(code === undefined ? {} : { code }),
+        ...(contactMobileProvided
+          ? { contactMobile: normalizeTenantNullableText(body.contactMobile) }
+          : {}),
+        ...(contactNameProvided
+          ? { contactName: normalizeTenantNullableText(body.contactName) }
+          : {}),
+        ...(expiresAtProvided
+          ? { expiresAt: normalizeTenantExpiresAt(body.expiresAt) }
+          : {}),
+        ...(nameProvided
+          ? { name: normalizeTenantRequiredText(body.name, 'name') }
+          : {}),
+        ...(planProvided ? { planId } : {}),
+        ...(slug === undefined ? {} : { slug }),
+      },
+    });
+
+    return this.findTenantDto(id);
+  }
+
+  async setTenantStatus(
+    tenantId: string,
+    body: SetTenantStatusDto,
+  ): Promise<TenantDto> {
+    const id = normalizeTenantRecordId(tenantId);
+    const existing = await this.prisma.tenant.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+
+    if (!existing) {
+      throw tenantNotFound(id);
+    }
+
+    const status = normalizeTenantStatus(body.status);
+    if (id === ROOT_TENANT_ID && status !== 'active') {
+      throw tenantBadRequest(
+        'TENANT_ROOT_STATUS_IMMUTABLE',
+        'Root tenant cannot be suspended or expired.',
+        { tenantId: id, status },
+      );
+    }
+
+    const expiresAtProvided = hasOwn(body, 'expiresAt');
+    const expiresAt = expiresAtProvided
+      ? normalizeTenantExpiresAt(body.expiresAt)
+      : status === 'expired'
+        ? new Date()
+        : status === 'active'
+          ? null
+          : undefined;
+
+    await this.prisma.tenant.update({
+      where: { id },
+      data: {
+        ...(expiresAt === undefined ? {} : { expiresAt }),
+        status,
+      },
+    });
+
+    return this.findTenantDto(id);
   }
 
   async listTenantPlans(): Promise<TenantPlanDto[]> {
@@ -521,6 +689,110 @@ export class TenantFoundationService {
       );
     }
   }
+
+  private async findTenantDto(tenantId: string): Promise<TenantDto> {
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      include: tenantIncludes,
+    });
+
+    if (!tenant) {
+      throw tenantNotFound(tenantId);
+    }
+
+    return toTenantDto(tenant);
+  }
+
+  private async resolveTenantPlanId(
+    planCode: string | null,
+  ): Promise<string | null> {
+    const normalizedPlanCode = normalizeTenantNullableText(planCode);
+    if (!normalizedPlanCode) {
+      return null;
+    }
+
+    const plan = await this.prisma.tenantPlan.findUnique({
+      where: { code: normalizedPlanCode },
+      select: { id: true },
+    });
+
+    if (!plan) {
+      throw tenantPlanCodeNotFound(normalizedPlanCode);
+    }
+
+    return plan.id;
+  }
+
+  private async assertTenantCodeAvailable(code: string): Promise<void> {
+    const duplicate = await this.prisma.tenant.findUnique({
+      where: { code },
+      select: { id: true },
+    });
+
+    if (duplicate) {
+      throw tenantBadRequest(
+        'TENANT_CODE_EXISTS',
+        'Tenant code already exists.',
+        { code },
+      );
+    }
+  }
+
+  private async assertTenantSlugAvailable(slug: string): Promise<void> {
+    const duplicate = await this.prisma.tenant.findUnique({
+      where: { slug },
+      select: { id: true },
+    });
+
+    if (duplicate) {
+      throw tenantBadRequest(
+        'TENANT_SLUG_EXISTS',
+        'Tenant slug already exists.',
+        { slug },
+      );
+    }
+  }
+}
+
+const tenantIncludes = {
+  createdBy: { select: { username: true } },
+  memberships: {
+    include: {
+      user: { select: { username: true } },
+    },
+  },
+  plan: { select: { code: true, id: true } },
+} satisfies Prisma.TenantInclude;
+
+type TenantWithIncludes = Prisma.TenantGetPayload<{
+  include: typeof tenantIncludes;
+}>;
+
+function toTenantDto(tenant: TenantWithIncludes): TenantDto {
+  return {
+    id: tenant.id,
+    code: tenant.code,
+    slug: tenant.slug,
+    name: tenant.name,
+    status: tenant.status,
+    planCode: tenant.plan?.code ?? null,
+    planId: tenant.plan?.id ?? null,
+    accountLimit: tenant.accountLimit,
+    membershipCount: tenant.memberships.length,
+    activeMembershipCount: tenant.memberships.filter(
+      (membership) => membership.status === 'active',
+    ).length,
+    ownerUsernames: tenant.memberships
+      .filter((membership) => membership.isOwner)
+      .map((membership) => membership.user.username)
+      .sort((left, right) => left.localeCompare(right)),
+    contactName: tenant.contactName,
+    contactMobile: tenant.contactMobile,
+    expiresAt: tenant.expiresAt?.toISOString() ?? null,
+    createdByUsername: tenant.createdBy?.username ?? null,
+    createdAt: tenant.createdAt.toISOString(),
+    updatedAt: tenant.updatedAt.toISOString(),
+  };
 }
 
 const tenantPlanIncludes = {
@@ -849,6 +1121,122 @@ function normalizeModuleCodes(value: unknown): readonly string[] {
   return codes;
 }
 
+function normalizeTenantRecordId(value: unknown): string {
+  if (typeof value !== 'string' || value.trim() === '') {
+    throw tenantBadRequest(
+      'TENANT_ID_INVALID',
+      'Tenant id must be a non-empty string.',
+    );
+  }
+
+  return value.trim();
+}
+
+function normalizeTenantCode(value: unknown): string {
+  const code = normalizeTenantRequiredText(value, 'code');
+
+  if (!TENANT_CODE_PATTERN.test(code)) {
+    throw tenantBadRequest('TENANT_CODE_INVALID', 'Tenant code is invalid.', {
+      code,
+    });
+  }
+
+  return code;
+}
+
+function normalizeTenantSlug(value: unknown): string {
+  const slug = normalizeTenantRequiredText(value, 'slug');
+
+  if (!TENANT_SLUG_PATTERN.test(slug)) {
+    throw tenantBadRequest('TENANT_SLUG_INVALID', 'Tenant slug is invalid.', {
+      slug,
+    });
+  }
+
+  return slug;
+}
+
+function normalizeTenantRequiredText(value: unknown, field: string): string {
+  if (typeof value !== 'string' || value.trim() === '') {
+    throw tenantBadRequest(
+      'TENANT_FIELD_REQUIRED',
+      'Tenant field is required.',
+      { field },
+    );
+  }
+
+  return value.trim();
+}
+
+function normalizeTenantNullableText(value: unknown): string | null {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  if (typeof value !== 'string') {
+    throw tenantBadRequest('TENANT_FIELD_INVALID', 'Tenant field is invalid.');
+  }
+
+  const normalized = value.trim();
+  return normalized === '' ? null : normalized;
+}
+
+function normalizeTenantStatus(
+  status: unknown,
+): 'active' | 'expired' | 'suspended' {
+  if (status === 'active' || status === 'expired' || status === 'suspended') {
+    return status;
+  }
+
+  throw tenantBadRequest('TENANT_STATUS_INVALID', 'Tenant status is invalid.', {
+    status,
+  });
+}
+
+function normalizeTenantAccountLimit(value: unknown): number | null {
+  if (value === undefined || value === null || value === '') {
+    return null;
+  }
+
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < 0) {
+    throw tenantBadRequest(
+      'TENANT_ACCOUNT_LIMIT_INVALID',
+      'Tenant account limit must be a non-negative integer.',
+      { accountLimit: value },
+    );
+  }
+
+  return value;
+}
+
+function normalizeTenantExpiresAt(value: unknown): Date | null {
+  if (value === undefined || value === null || value === '') {
+    return null;
+  }
+
+  if (typeof value !== 'string') {
+    throw tenantBadRequest(
+      'TENANT_EXPIRES_AT_INVALID',
+      'Tenant expiresAt must be an ISO date string.',
+    );
+  }
+
+  const expiresAt = new Date(value);
+  if (Number.isNaN(expiresAt.getTime())) {
+    throw tenantBadRequest(
+      'TENANT_EXPIRES_AT_INVALID',
+      'Tenant expiresAt must be an ISO date string.',
+      { expiresAt: value },
+    );
+  }
+
+  return expiresAt;
+}
+
+function hasOwn<T extends object>(value: T, key: keyof T): boolean {
+  return Object.prototype.hasOwnProperty.call(value, key);
+}
+
 async function syncRootLegacyUser(
   tx: PrismaTransactionClient,
   userId: string,
@@ -925,6 +1313,36 @@ function tenantPlanNotFound(planId: string): NotFoundException {
       code: 'TENANT_PLAN_NOT_FOUND',
       message: 'Tenant plan not found.',
       details: { planId },
+    }),
+  );
+}
+
+function tenantPlanCodeNotFound(planCode: string): NotFoundException {
+  return new NotFoundException(
+    createApiErrorBody({
+      code: 'TENANT_PLAN_NOT_FOUND',
+      message: 'Tenant plan not found.',
+      details: { planCode },
+    }),
+  );
+}
+
+function tenantBadRequest(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): BadRequestException {
+  return new BadRequestException(
+    createApiErrorBody({ code, message, details }),
+  );
+}
+
+function tenantNotFound(tenantId: string): NotFoundException {
+  return new NotFoundException(
+    createApiErrorBody({
+      code: 'TENANT_NOT_FOUND',
+      message: 'Tenant not found.',
+      details: { tenantId },
     }),
   );
 }

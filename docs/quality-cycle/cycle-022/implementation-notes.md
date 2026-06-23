@@ -1029,3 +1029,42 @@ Passed after deploy:
 - No platform visit/impersonation runtime in T6a.
 - No tenant assignment or plan-change impact preview workflow in T6a.
 - No Tenant Member invitation or global-user creation flow in T6a.
+
+## Round 22: T6b Tenant Lifecycle Control Plane
+
+### Completed
+
+- Added platform-scoped Tenant lifecycle APIs:
+  - list/detail expose plan, membership counts, owner usernames, contacts, expiry, and creator metadata;
+  - create/update normalize code, slug, name, plan code, contact, account limit, and expiry fields;
+  - status mutation supports active/suspended/expired without adding a hard-delete API.
+- Added root tenant safety guards:
+  - root code and slug cannot be changed;
+  - root cannot be suspended or expired.
+- OpenAPI and SDK now expose typed Tenant list/detail/create/update/status contracts.
+- The live `/system/tenants` Admin page now loads tenants through the new SDK calls and provides create/edit/status controls without adding a tenant selector.
+- Added focused API service tests, typed smoke coverage, and a static lifecycle control-plane guard for T6b.
+
+### Verification Log
+
+Passed before deploy:
+
+- Focused tenant service tests covered Tenant lifecycle create/update/status, plan validation, and root status protection.
+- Tenant lifecycle control-plane guard, SDK contract check, OpenAPI export/drift/tag checks, API error-code guard, full typecheck, lint, and test suite passed.
+
+Passed after deploy:
+
+- Refreshed OpenCore deploy rebuilt API/Admin, reseeded, restarted API `39172` and Admin `39174`, and passed deploy smoke including local Tenant lifecycle checks.
+- Public API Tenant lifecycle smoke passed against `http://144.217.243.161:39172`.
+
+### Remaining Product Debt
+
+- Complete Tenant Member CRUD/invitation beyond active-tenant assignment.
+- Complete Admin tenant switcher, platform visit mode, and platform visit audit.
+- Complete T7 optional/business model tenantization.
+
+### Deliberate Non-Goals
+
+- No hard-delete tenant API in T6b.
+- No Tenant Member invitation or global-user creation flow in T6b.
+- No platform visit/impersonation runtime in T6b.

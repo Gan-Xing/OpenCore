@@ -24,7 +24,7 @@ Cycle-022 may only count a slice when it is code-backed, migrated, seeded, visib
 ## Below Waterline
 
 - Platform visit/impersonation is not done.
-- Tenant CRUD, member CRUD/invitation, Admin switcher, and platform visit mode are not done.
+- Tenant Member CRUD/invitation, Admin switcher, and platform visit mode are not done.
 - Remaining optional/business data-plane isolation is not done.
 
 These remain below the productization waterline and cannot be described as complete SaaS multi-tenancy.
@@ -121,6 +121,18 @@ These remain below the productization waterline and cannot be described as compl
 | OpenAPI/SDK/Admin consistency | Done    | OpenAPI exports plan DTOs; SDK exposes typed plan CRUD calls; `/system/tenants` uses live plan APIs for list/create/edit/delete.          |
 | Smoke/guard                   | Done    | Added `smoke:core-tenant-plan` and `guard:tenant-plan-control-plane`, both wired into local/deploy smoke scripts.                         |
 | Remaining T6 scope            | Pending | Tenant CRUD, Tenant Member lifecycle/invitation, tenant switcher, platform visit mode, and platform visit audit remain separate T6 work. |
+
+## T6b Tenant Lifecycle Control Plane
+
+| Requirement                     | Status  | Notes                                                                                                                                     |
+| ------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Live Tenant lifecycle APIs      | Done    | Added list/detail/create/update/status under `/api/core/tenancy/tenants` with `platform:tenant:*` permissions and no hard-delete route.   |
+| Field and plan validation       | Done    | Tenant code, slug, status, account limit, expiry, and optional plan code are normalized and validated before writes.                      |
+| Root tenant safety              | Done    | Root tenant code/slug cannot be changed and root tenant cannot be suspended or expired.                                                    |
+| No trusted tenant selector      | Done    | Create/update DTOs and controller paths have no client-controlled tenant selector; tenant control is platform-scoped.                     |
+| OpenAPI/SDK/Admin consistency   | Done    | OpenAPI exports tenant DTOs; SDK exposes typed tenant lifecycle calls; `/system/tenants` uses live APIs for tenant list/create/edit/status. |
+| Smoke/guard                     | Done    | Added `smoke:core-tenant-lifecycle` and `guard:tenant-lifecycle-control-plane`, both wired into local/deploy smoke scripts.               |
+| Remaining T6 scope              | Pending | Tenant Member lifecycle/invitation, tenant switcher, platform visit mode, and platform visit audit remain separate T6 work.              |
 
 ## T4a Audit
 

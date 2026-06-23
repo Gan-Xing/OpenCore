@@ -16,10 +16,14 @@ import {
 import { RequirePermission } from '../rbac/permissions.decorator';
 import {
   CreateTenantPlanDto,
+  CreateTenantDto,
+  SetTenantStatusDto,
   TenantFoundationSummaryDto,
   TenantPlanDeleteResultDto,
   TenantPlanDto,
+  TenantDto,
   UpdateTenantPlanDto,
+  UpdateTenantDto,
 } from './tenant.dto';
 import { TenantFoundationService } from './tenant.service';
 
@@ -34,6 +38,54 @@ export class TenantFoundationController {
   @ApiOkResponse({ type: TenantFoundationSummaryDto })
   getFoundationSummary(): Promise<TenantFoundationSummaryDto> {
     return this.tenancy.getFoundationSummary();
+  }
+}
+
+@ApiBearerAuth()
+@ApiTags('Core Tenancy')
+@Controller('core/tenancy/tenants')
+export class TenantController {
+  constructor(private readonly tenancy: TenantFoundationService) {}
+
+  @Get()
+  @RequirePermission('platform:tenant:read')
+  @ApiOkResponse({ type: [TenantDto] })
+  listTenants(): Promise<TenantDto[]> {
+    return this.tenancy.listTenants();
+  }
+
+  @Get(':tenantId')
+  @RequirePermission('platform:tenant:read')
+  @ApiOkResponse({ type: TenantDto })
+  getTenant(@Param('tenantId') tenantId: string): Promise<TenantDto> {
+    return this.tenancy.getTenant(tenantId);
+  }
+
+  @Post()
+  @RequirePermission('platform:tenant:create')
+  @ApiCreatedResponse({ type: TenantDto })
+  createTenant(@Body() body: CreateTenantDto): Promise<TenantDto> {
+    return this.tenancy.createTenant(body);
+  }
+
+  @Patch(':tenantId')
+  @RequirePermission('platform:tenant:update')
+  @ApiOkResponse({ type: TenantDto })
+  updateTenant(
+    @Param('tenantId') tenantId: string,
+    @Body() body: UpdateTenantDto,
+  ): Promise<TenantDto> {
+    return this.tenancy.updateTenant(tenantId, body);
+  }
+
+  @Patch(':tenantId/status')
+  @RequirePermission('platform:tenant:suspend')
+  @ApiOkResponse({ type: TenantDto })
+  setTenantStatus(
+    @Param('tenantId') tenantId: string,
+    @Body() body: SetTenantStatusDto,
+  ): Promise<TenantDto> {
+    return this.tenancy.setTenantStatus(tenantId, body);
   }
 }
 

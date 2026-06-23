@@ -3635,6 +3635,140 @@
         "tags": ["Core Tenancy"]
       }
     },
+    "/api/core/tenancy/tenants": {
+      "get": {
+        "operationId": "TenantController_listTenants",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/TenantDto" }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core Tenancy"]
+      },
+      "post": {
+        "operationId": "TenantController_createTenant",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateTenantDto" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TenantDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core Tenancy"]
+      }
+    },
+    "/api/core/tenancy/tenants/{tenantId}": {
+      "get": {
+        "operationId": "TenantController_getTenant",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TenantDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core Tenancy"]
+      },
+      "patch": {
+        "operationId": "TenantController_updateTenant",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateTenantDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TenantDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core Tenancy"]
+      }
+    },
+    "/api/core/tenancy/tenants/{tenantId}/status": {
+      "patch": {
+        "operationId": "TenantController_setTenantStatus",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SetTenantStatusDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TenantDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core Tenancy"]
+      }
+    },
     "/api/core/tenancy/plans": {
       "get": {
         "operationId": "TenantPlanController_listPlans",
@@ -12544,6 +12678,85 @@
           "backfill",
           "generatedAt"
         ]
+      },
+      "TenantDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "code": { "type": "string" },
+          "slug": { "type": "string" },
+          "name": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["active", "expired", "suspended"]
+          },
+          "planCode": { "type": "object", "nullable": true },
+          "accountLimit": { "type": "object", "nullable": true },
+          "membershipCount": { "type": "number" },
+          "activeMembershipCount": { "type": "number" },
+          "ownerUsernames": { "type": "array", "items": { "type": "string" } },
+          "planId": { "type": "object", "nullable": true },
+          "contactName": { "type": "object", "nullable": true },
+          "contactMobile": { "type": "object", "nullable": true },
+          "expiresAt": { "type": "object", "nullable": true },
+          "createdByUsername": { "type": "object", "nullable": true },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "code",
+          "slug",
+          "name",
+          "status",
+          "membershipCount",
+          "activeMembershipCount",
+          "ownerUsernames",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CreateTenantDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "slug": { "type": "string" },
+          "name": { "type": "string" },
+          "planCode": { "type": "object", "nullable": true },
+          "status": {
+            "type": "string",
+            "enum": ["active", "expired", "suspended"]
+          },
+          "contactName": { "type": "object", "nullable": true },
+          "contactMobile": { "type": "object", "nullable": true },
+          "accountLimit": { "type": "object", "nullable": true },
+          "expiresAt": { "type": "object", "nullable": true }
+        },
+        "required": ["code", "slug", "name"]
+      },
+      "UpdateTenantDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "slug": { "type": "string" },
+          "name": { "type": "string" },
+          "planCode": { "type": "object", "nullable": true },
+          "contactName": { "type": "object", "nullable": true },
+          "contactMobile": { "type": "object", "nullable": true },
+          "accountLimit": { "type": "object", "nullable": true },
+          "expiresAt": { "type": "object", "nullable": true }
+        }
+      },
+      "SetTenantStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["active", "expired", "suspended"]
+          },
+          "expiresAt": { "type": "object", "nullable": true }
+        },
+        "required": ["status"]
       },
       "TenantPlanUsageTenantDto": {
         "type": "object",

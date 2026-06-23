@@ -53,6 +53,7 @@ import {
   type CleanAuditLogsRequest,
   type ClaimQueuedJobsRequest,
   type CreateTenantPlanRequest,
+  type CreateTenantRequest,
   type CreateExportPreviewRequest,
   type CreateDictItemRequest,
   type CreateDictTypeRequest,
@@ -110,6 +111,7 @@ import {
   type TenantMemberSummary,
   type TenantPlanDeleteResultSummary,
   type TenantPlanSummary,
+  type TenantSummary,
   type DictBatchMutationSummary,
   type DictCacheRefreshSummary,
   type DictDataOptionQueryRequest,
@@ -256,7 +258,9 @@ import {
   type UserPageSummary,
   type UserMutationSummary,
   type UserRoleAssignmentSummary,
+  type SetTenantStatusRequest,
   type UpdateTenantPlanRequest,
+  type UpdateTenantRequest,
   type UpdateUserRequest,
   type UpdateTenantMemberAssignmentsRequest,
   type UserImportResultSummary,
@@ -279,6 +283,30 @@ export function getOpenCoreOpenApiDriftStatus(): Promise<OpenApiDriftStatus> {
 
 export function getOpenCoreTenancyFoundation(): Promise<TenancyFoundationSummary> {
   return tenancyClient.getFoundationSummary(getRequiredAdminToken());
+}
+
+export function listOpenCoreTenants(): Promise<readonly TenantSummary[]> {
+  return tenancyClient.listTenants(getRequiredAdminToken());
+}
+
+export function createOpenCoreTenant(
+  body: CreateTenantRequest,
+): Promise<TenantSummary> {
+  return tenancyClient.createTenant(getRequiredAdminToken(), body);
+}
+
+export function updateOpenCoreTenant(
+  tenantId: string,
+  body: UpdateTenantRequest,
+): Promise<TenantSummary> {
+  return tenancyClient.updateTenant(getRequiredAdminToken(), tenantId, body);
+}
+
+export function setOpenCoreTenantStatus(
+  tenantId: string,
+  body: SetTenantStatusRequest,
+): Promise<TenantSummary> {
+  return tenancyClient.setTenantStatus(getRequiredAdminToken(), tenantId, body);
 }
 
 export function listOpenCoreTenantPlans(): Promise<
