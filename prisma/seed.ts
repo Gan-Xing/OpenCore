@@ -1113,7 +1113,8 @@ async function seedSystemNoticeDeliveries(): Promise<number> {
       const deliveredAt = new Date(notice.publishedAt ?? notice.createdAt);
       await prisma.systemNoticeDelivery.upsert({
         where: {
-          noticeId_userId_channel: {
+          tenantId_noticeId_userId_channel: {
+            tenantId: notice.tenantId,
             noticeId: notice.id,
             userId: user.id,
             channel: 'in_app',
@@ -1123,6 +1124,7 @@ async function seedSystemNoticeDeliveries(): Promise<number> {
           username: user.username,
           displayName: user.displayName,
           title: notice.title,
+          tenantId: notice.tenantId,
           content: notice.content,
           type: notice.type,
           audience: notice.audience,
@@ -1135,6 +1137,7 @@ async function seedSystemNoticeDeliveries(): Promise<number> {
         },
         create: {
           id: `notice_delivery_${notice.id}_${user.id}`,
+          tenantId: notice.tenantId,
           noticeId: notice.id,
           userId: user.id,
           username: user.username,
@@ -1356,6 +1359,7 @@ async function seedSystemManagement(): Promise<{
     await prisma.systemNotice.upsert({
       where: { id: notice.id },
       update: {
+        tenantId: notice.tenantId,
         title: notice.title,
         content: notice.content,
         type: notice.type,
@@ -1371,6 +1375,7 @@ async function seedSystemManagement(): Promise<{
       },
       create: {
         id: notice.id,
+        tenantId: notice.tenantId,
         title: notice.title,
         content: notice.content,
         type: notice.type,
@@ -1389,8 +1394,14 @@ async function seedSystemManagement(): Promise<{
 
   for (const template of seedSystemNoticeTemplates) {
     await prisma.systemNoticeTemplate.upsert({
-      where: { code: template.code },
+      where: {
+        tenantId_code: {
+          tenantId: template.tenantId,
+          code: template.code,
+        },
+      },
       update: {
+        tenantId: template.tenantId,
         name: template.name,
         type: template.type,
         titleTemplate: template.titleTemplate,
@@ -1402,6 +1413,7 @@ async function seedSystemManagement(): Promise<{
       },
       create: {
         id: template.id,
+        tenantId: template.tenantId,
         code: template.code,
         name: template.name,
         type: template.type,

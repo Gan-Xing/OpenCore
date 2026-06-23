@@ -447,6 +447,7 @@ type NoticeTab = 'manage' | 'inbox' | 'templates';
 type NoticeManageView = 'notices' | 'deliveryRecords';
 
 const searchFields: CurrentPageSearchField<SystemNoticeSummary>[] = [
+  'tenantId',
   'title',
   'content',
   'createdBy',
@@ -455,6 +456,7 @@ const searchFields: CurrentPageSearchField<SystemNoticeSummary>[] = [
   'audience',
 ];
 const inboxSearchFields: CurrentPageSearchField<SystemNoticeInboxSummary>[] = [
+  'tenantId',
   'title',
   'content',
   'createdBy',
@@ -463,9 +465,18 @@ const inboxSearchFields: CurrentPageSearchField<SystemNoticeInboxSummary>[] = [
   'audience',
 ];
 const templateSearchFields: CurrentPageSearchField<SystemNoticeTemplateSummary>[] =
-  ['code', 'name', 'type', 'titleTemplate', 'contentTemplate', 'remark'];
+  [
+    'tenantId',
+    'code',
+    'name',
+    'type',
+    'titleTemplate',
+    'contentTemplate',
+    'remark',
+  ];
 const deliverySearchFields: CurrentPageSearchField<SystemNoticeDeliverySummary>[] =
   [
+    'tenantId',
     'title',
     'content',
     'username',
@@ -840,6 +851,10 @@ export default function SystemNoticesPage() {
       dataIndex: 'id',
     },
     {
+      title: formatMessage('pages.system.notices.fields.tenantId', 'Tenant'),
+      dataIndex: 'tenantId',
+    },
+    {
       title: formatMessage('pages.system.notices.fields.title', 'Title'),
       dataIndex: 'title',
     },
@@ -898,6 +913,10 @@ export default function SystemNoticesPage() {
   const templateExportColumns: CurrentPageExportColumn<SystemNoticeTemplateSummary>[] =
     [
       {
+        title: formatMessage('pages.system.notices.fields.tenantId', 'Tenant'),
+        dataIndex: 'tenantId',
+      },
+      {
         title: formatMessage('pages.system.notices.fields.code', 'Code'),
         dataIndex: 'code',
       },
@@ -947,6 +966,10 @@ export default function SystemNoticesPage() {
   const deliveryExportColumns: CurrentPageExportColumn<SystemNoticeDeliverySummary>[] =
     [
       {
+        title: formatMessage('pages.system.notices.fields.tenantId', 'Tenant'),
+        dataIndex: 'tenantId',
+      },
+      {
         title: formatMessage(
           'pages.system.notices.fields.noticeId',
           'Notice ID',
@@ -992,6 +1015,10 @@ export default function SystemNoticesPage() {
     {
       label: formatMessage('pages.system.notices.fields.id', 'ID'),
       value: record.id,
+    },
+    {
+      label: formatMessage('pages.system.notices.fields.tenantId', 'Tenant'),
+      value: record.tenantId,
     },
     {
       label: formatMessage('pages.system.notices.fields.title', 'Title'),
@@ -1083,6 +1110,10 @@ export default function SystemNoticesPage() {
     {
       label: formatMessage('pages.system.notices.fields.id', 'ID'),
       value: record.id,
+    },
+    {
+      label: formatMessage('pages.system.notices.fields.tenantId', 'Tenant'),
+      value: record.tenantId,
     },
     {
       label: formatMessage('pages.system.notices.fields.code', 'Code'),
@@ -3049,6 +3080,12 @@ export default function SystemNoticesPage() {
 
   const columns: ProColumns<SystemNoticeSummary>[] = [
     {
+      title: formatMessage('pages.system.notices.fields.tenantId', 'Tenant'),
+      dataIndex: 'tenantId',
+      ellipsis: true,
+      width: 140,
+    },
+    {
       title: formatMessage('pages.system.notices.fields.title', 'Title'),
       dataIndex: 'title',
       render: (_, record) => (
@@ -3115,6 +3152,12 @@ export default function SystemNoticesPage() {
   ];
 
   const deliveryColumns: ProColumns<SystemNoticeDeliverySummary>[] = [
+    {
+      title: formatMessage('pages.system.notices.fields.tenantId', 'Tenant'),
+      dataIndex: 'tenantId',
+      ellipsis: true,
+      width: 140,
+    },
     {
       title: formatMessage('pages.system.notices.fields.username', 'Username'),
       dataIndex: 'username',
@@ -3243,6 +3286,12 @@ export default function SystemNoticesPage() {
 
   const inboxColumns: ProColumns<SystemNoticeInboxSummary>[] = [
     {
+      title: formatMessage('pages.system.notices.fields.tenantId', 'Tenant'),
+      dataIndex: 'tenantId',
+      ellipsis: true,
+      width: 140,
+    },
+    {
       title: formatMessage('pages.system.notices.fields.title', 'Title'),
       dataIndex: 'title',
       render: (_, record) => (
@@ -3290,6 +3339,12 @@ export default function SystemNoticesPage() {
   ];
 
   const templateColumns: ProColumns<SystemNoticeTemplateSummary>[] = [
+    {
+      title: formatMessage('pages.system.notices.fields.tenantId', 'Tenant'),
+      dataIndex: 'tenantId',
+      ellipsis: true,
+      width: 140,
+    },
     {
       title: formatMessage('pages.system.notices.fields.name', 'Name'),
       dataIndex: 'name',

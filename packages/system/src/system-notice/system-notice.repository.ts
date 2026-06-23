@@ -556,7 +556,7 @@ export function createSystemNoticeExportPreview(
   return {
     filename: 'opencore-system-notices.csv',
     scope: 'current-page',
-    columns: ['title', 'type', 'status', 'audience', 'pinned'],
+    columns: ['tenantId', 'title', 'type', 'status', 'audience', 'pinned'],
     rowCount: page.items.length,
     generatedAt: new Date().toISOString(),
   };

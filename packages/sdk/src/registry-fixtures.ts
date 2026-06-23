@@ -356,6 +356,7 @@ export function createSystemNoticeFixtures(): PageResponse<SystemNoticeSummary> 
   return createPage([
     {
       id: 'notice_welcome',
+      tenantId: 'tenant_root',
       title: 'Welcome to OpenCore',
       content: 'OpenCore system management is ready for internal operators.',
       type: 'announcement',
@@ -369,6 +370,7 @@ export function createSystemNoticeFixtures(): PageResponse<SystemNoticeSummary> 
     },
     {
       id: 'notice_maintenance_window',
+      tenantId: 'tenant_root',
       title: 'Maintenance Window',
       content:
         'Planned maintenance announcements stay in draft until approved.',
@@ -389,6 +391,7 @@ export function createSystemNoticeTemplateFixtures(): PageResponse<SystemNoticeT
   return createPage([
     {
       id: 'notice_template_release_window',
+      tenantId: 'tenant_root',
       code: 'release.window',
       name: 'Release Window',
       type: 'announcement',

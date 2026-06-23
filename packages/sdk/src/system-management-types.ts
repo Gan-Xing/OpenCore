@@ -579,6 +579,7 @@ export type SystemNoticeAudience = 'admin' | 'all';
 
 export type SystemNoticeSummary = {
   id: string;
+  tenantId: string;
   title: string;
   content: string;
   type: SystemNoticeType;
@@ -619,6 +620,7 @@ export type SystemNoticeDeliveryProviderStatus = 'failed' | 'pending' | 'sent';
 
 export type SystemNoticeDeliverySummary = {
   id: string;
+  tenantId: string;
   noticeId: string;
   userId: string;
   username: string;
@@ -645,6 +647,7 @@ export type SystemNoticeDeliverySummary = {
 
 export type SystemNoticeTemplateSummary = {
   id: string;
+  tenantId: string;
   code: string;
   name: string;
   type: SystemNoticeType;

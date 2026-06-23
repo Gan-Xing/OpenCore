@@ -13192,6 +13192,7 @@
         "type": "object",
         "properties": {
           "id": { "type": "string" },
+          "tenantId": { "type": "string" },
           "title": { "type": "string" },
           "content": { "type": "string" },
           "type": {
@@ -13214,6 +13215,7 @@
         },
         "required": [
           "id",
+          "tenantId",
           "title",
           "content",
           "type",
@@ -13243,6 +13245,7 @@
         "type": "object",
         "properties": {
           "id": { "type": "string" },
+          "tenantId": { "type": "string" },
           "title": { "type": "string" },
           "content": { "type": "string" },
           "type": {
@@ -13267,6 +13270,7 @@
         },
         "required": [
           "id",
+          "tenantId",
           "title",
           "content",
           "type",
@@ -13369,6 +13373,7 @@
         "type": "object",
         "properties": {
           "id": { "type": "string" },
+          "tenantId": { "type": "string" },
           "noticeId": { "type": "string" },
           "userId": { "type": "string" },
           "username": { "type": "string" },
@@ -13403,6 +13408,7 @@
         },
         "required": [
           "id",
+          "tenantId",
           "noticeId",
           "userId",
           "username",
@@ -13509,6 +13515,7 @@
         "type": "object",
         "properties": {
           "id": { "type": "string" },
+          "tenantId": { "type": "string" },
           "code": { "type": "string" },
           "name": { "type": "string" },
           "type": {
@@ -13525,6 +13532,7 @@
         },
         "required": [
           "id",
+          "tenantId",
           "code",
           "name",
           "type",

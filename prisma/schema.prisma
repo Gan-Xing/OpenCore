@@ -85,6 +85,10 @@ model Tenant {
   depts           SystemDept[]
   posts           SystemPost[]
   fileAssets      FileAsset[]
+  systemNotices   SystemNotice[]
+  noticeTemplates SystemNoticeTemplate[]
+  noticeReceipts  SystemNoticeReadReceipt[]
+  noticeDeliveries SystemNoticeDelivery[]
   auditLogs       AuditLog[]
   loginLogs       LoginLog[]
   onlineSessions  OnlineUserSession[]
@@ -363,6 +367,8 @@ model SystemConfigSecretVersion {
 
 model SystemNotice {
   id           String                    @id @default(cuid())
+  tenantId     String                    @default("tenant_root")
+  tenant       Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   title        String
   content      String
   type         String
@@ -379,13 +385,16 @@ model SystemNotice {
   createdAt    DateTime                  @default(now())
   updatedAt    DateTime                  @updatedAt
 
-  @@index([status, type])
-  @@index([audience, pinned])
+  @@unique([tenantId, id])
+  @@index([tenantId, status, type])
+  @@index([tenantId, audience, pinned])
 }
 
 model SystemNoticeTemplate {
   id              String   @id @default(cuid())
-  code            String   @unique
+  tenantId        String   @default("tenant_root")
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  code            String
   name            String
   type            String
   titleTemplate   String
@@ -396,25 +405,29 @@ model SystemNoticeTemplate {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  @@index([enabled, type])
+  @@unique([tenantId, code])
+  @@index([tenantId, enabled, type])
 }
 
 model SystemNoticeReadReceipt {
   id        String       @id @default(cuid())
+  tenantId  String       @default("tenant_root")
   noticeId  String
   userId    String
-  notice    SystemNotice @relation(fields: [noticeId], references: [id], onDelete: Cascade)
+  tenant    Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  notice    SystemNotice @relation(fields: [tenantId, noticeId], references: [tenantId, id], onDelete: Cascade)
   user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   readAt    DateTime     @default(now())
   createdAt DateTime     @default(now())
 
-  @@unique([noticeId, userId])
-  @@index([userId, readAt])
-  @@index([noticeId, readAt])
+  @@unique([tenantId, noticeId, userId])
+  @@index([tenantId, userId, readAt])
+  @@index([tenantId, noticeId, readAt])
 }
 
 model SystemNoticeDelivery {
   id                String       @id @default(cuid())
+  tenantId          String       @default("tenant_root")
   noticeId          String
   userId            String
   username          String
@@ -437,16 +450,17 @@ model SystemNoticeDelivery {
   readAt            DateTime?
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
-  notice            SystemNotice @relation(fields: [noticeId], references: [id], onDelete: Cascade)
+  tenant            Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  notice            SystemNotice @relation(fields: [tenantId, noticeId], references: [tenantId, id], onDelete: Cascade)
   user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([noticeId, userId, channel])
-  @@index([noticeId, status])
-  @@index([noticeId, providerStatus])
-  @@index([userId, status])
-  @@index([channel, status])
-  @@index([provider, providerStatus])
-  @@index([providerMessageId])
+  @@unique([tenantId, noticeId, userId, channel])
+  @@index([tenantId, noticeId, status])
+  @@index([tenantId, noticeId, providerStatus])
+  @@index([tenantId, userId, status])
+  @@index([tenantId, channel, status])
+  @@index([tenantId, provider, providerStatus])
+  @@index([tenantId, providerMessageId])
 }
 
 model SystemDept {

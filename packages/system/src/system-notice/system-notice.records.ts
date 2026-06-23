@@ -17,6 +17,7 @@ export type SystemNoticeDeliveryProviderStatus = 'failed' | 'pending' | 'sent';
 
 export type SystemNoticeRecord = {
   id: string;
+  tenantId: string;
   title: string;
   content: string;
   type: SystemNoticeType;
@@ -34,6 +35,7 @@ export type SystemNoticeRecord = {
 
 export type SystemNoticeDeliveryRecord = {
   id: string;
+  tenantId: string;
   noticeId: string;
   userId: string;
   username: string;
@@ -60,6 +62,7 @@ export type SystemNoticeDeliveryRecord = {
 
 export type SystemNoticeTemplateRecord = {
   id: string;
+  tenantId: string;
   code: string;
   name: string;
   type: SystemNoticeType;
@@ -75,6 +78,7 @@ export type SystemNoticeTemplateRecord = {
 export const seedSystemNotices: readonly SystemNoticeRecord[] = [
   {
     id: 'notice_welcome',
+    tenantId: 'tenant_root',
     title: 'Welcome to OpenCore',
     content: 'OpenCore system management is ready for internal operators.',
     type: 'announcement',
@@ -88,6 +92,7 @@ export const seedSystemNotices: readonly SystemNoticeRecord[] = [
   },
   {
     id: 'notice_maintenance_window',
+    tenantId: 'tenant_root',
     title: 'Maintenance Window',
     content: 'Planned maintenance announcements stay in draft until approved.',
     type: 'maintenance',
@@ -106,6 +111,7 @@ export const seedSystemNoticeTemplates: readonly SystemNoticeTemplateRecord[] =
   [
     {
       id: 'notice_template_release_window',
+      tenantId: 'tenant_root',
       code: 'release.window',
       name: 'Release Window',
       type: 'announcement',

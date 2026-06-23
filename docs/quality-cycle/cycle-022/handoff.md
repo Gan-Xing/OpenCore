@@ -4,7 +4,7 @@ Date: 2026-06-23
 Repository: `Gan-Xing/OpenCore`  
 Branch: `main`  
 Target track: `Cycle-022 / Tenant Foundation`  
-Status: **In progress; T4f file asset tenant isolation implemented; T4 core data isolation remains partial**
+Status: **In progress; T4g system notice tenant isolation implemented; T4 core data isolation remains partial**
 
 ## 0. Current Round Snapshot
 
@@ -12,7 +12,7 @@ Updated: 2026-06-23
 
 Current completed slice count: **4 full slices**
 
-This working tree has advanced Cycle-022 through the first four full deployable tenant foundation slices plus T4a online-session tenant isolation, T4b login-log tenant isolation, T4c operation-audit tenant isolation, T4d dictionary tenant isolation, T4e system config tenant isolation, and T4f file asset tenant isolation:
+This working tree has advanced Cycle-022 through the first four full deployable tenant foundation slices plus T4a online-session tenant isolation, T4b login-log tenant isolation, T4c operation-audit tenant isolation, T4d dictionary tenant isolation, T4e system config tenant isolation, T4f file asset tenant isolation, and T4g system notice tenant isolation:
 
 - Prisma models for `TenantPlan`, `TenantPlanModule`, `Tenant`, `TenantMembership`, `TenantMembershipRole`, `TenantMembershipPost`, `PlatformRole`, `UserPlatformRole`, and `PlatformRolePermission`.
 - Migration `20260622223000_tenant_foundation` creates the `root` tenant, root `system.full` plan, root memberships for existing users, and transitional root copies of `UserRole` and `UserPost`.
@@ -92,10 +92,17 @@ This working tree has advanced Cycle-022 through the first four full deployable 
 - File seed records, OpenAPI DTOs, SDK summaries/fixtures, export previews, and Admin Files now expose `tenantId`.
 - `smoke:core-file` seeds a foreign tenant file metadata row and proves root-scope list/detail/download/update/delete/export operations do not cross tenants.
 - `pnpm guard:tenant-file-scope` was added for the T4f File Asset isolation closure.
+- Migration `20260623235000_tenant_scoped_system_notices` makes `SystemNotice`, `SystemNoticeTemplate`, `SystemNoticeReadReceipt`, and `SystemNoticeDelivery` tenant-owned with root backfill, tenant-prefixed indexes/uniques, and same-tenant child FKs.
+- `PrismaSystemNoticeRepository` now resolves the active tenant from `RequestContext`, scopes notice list/detail/lifecycle/delete, inbox/read receipt paths, delivery listing/execution, and template CRUD/render/test-send by tenant.
+- Notice dispatch recipients are active tenant memberships, so delivery fanout stays inside the active tenant.
+- Notice seed records, OpenAPI DTOs, SDK summaries/fixtures, export previews, and Admin Notices now expose `tenantId`.
+- `smoke:core-notice` seeds a foreign tenant notice/template/delivery/receipt fixture and proves root-scope list/detail/inbox/read/delivery/template mutation operations do not cross tenants.
+- `pnpm guard:tenant-notice-scope` was added for the T4g System Notice isolation closure.
+- Refreshed deploy completed on API `39172` and Admin `39174`; local deploy smoke and public API notice smoke passed.
 
 Still not complete:
 
-- tenant-scoped System/core repositories for notices and other non-org data;
+- tenant-scoped System/core repositories for other unreviewed non-org data;
 - Redis/file/queue/WebSocket/Integration/OAuth/audit runtime propagation;
 - Tenant Plan CRUD, Tenant Member CRUD/invitation, Admin switcher, and platform visit mode beyond active-tenant member assignment;
 - platform visit/impersonation audit.

@@ -1,10 +1,13 @@
 import { BadRequestException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
+import { runWithRequestContext } from '@opencore/core';
 import { PrismaService } from '@opencore/database';
 import { PrismaSystemNoticeRepository } from './system-notice.prisma-repository';
 import { SystemNoticeRealtimeService } from './system-notice.realtime';
 import { SeedSystemNoticeRepository } from './system-notice.seed-repository';
 import { SystemNoticeService } from './system-notice.service';
+
+const ROOT_TENANT_ID = 'tenant_root';
 
 describe('@opencore/system system-notice', () => {
   it('supports seeded notice CRUD, filtering, export previews and lifecycle', async () => {
@@ -185,7 +188,7 @@ describe('@opencore/system system-notice', () => {
     await expect(service.createExportPreview()).resolves.toMatchObject({
       filename: 'opencore-system-notices.csv',
       scope: 'current-page',
-      columns: ['title', 'type', 'status', 'audience', 'pinned'],
+      columns: ['tenantId', 'title', 'type', 'status', 'audience', 'pinned'],
     });
     await expect(service.deleteNotice(notice.id)).resolves.toEqual({
       deleted: true,
@@ -580,6 +583,11 @@ describe('@opencore/system system-notice', () => {
     const inboxTitle = `System notice inbox ${testRunId}`;
     const templateCode = `notice.template.${testRunId}`;
     const inboxUserId = `notice_inbox_user_${testRunId}`;
+    const inboxMembershipId = `notice_inbox_membership_${testRunId}`;
+    const tenantTitle = `Tenant scoped notice ${testRunId}`;
+    const foreignTitle = `Foreign scoped notice ${testRunId}`;
+    const otherTenantId = `tenant_notice_${testRunId}`;
+    const tenantTemplateCode = `tenant.notice.template.${testRunId}`;
 
     beforeEach(async () => {
       await cleanupTestRows();
@@ -693,6 +701,15 @@ describe('@opencore/system system-notice', () => {
           enabled: true,
         },
       });
+      await prisma.tenantMembership.create({
+        data: {
+          id: inboxMembershipId,
+          tenantId: ROOT_TENANT_ID,
+          userId: inboxUserId,
+          status: 'active',
+          joinedAt: new Date(),
+        },
+      });
       const notice = await service.createNotice({
         title: inboxTitle,
         content: 'Created by package inbox integration test.',
@@ -803,18 +820,169 @@ describe('@opencore/system system-notice', () => {
       );
     });
 
+    it('scopes notices, deliveries, inbox, and templates by tenant', async () => {
+      const admin = await prisma.user.findUniqueOrThrow({
+        where: { username: 'admin' },
+        select: { id: true },
+      });
+      await prisma.tenant.create({
+        data: {
+          id: otherTenantId,
+          code: otherTenantId,
+          slug: otherTenantId,
+          name: 'Notice Scope Tenant',
+          status: 'active',
+          memberships: {
+            create: {
+              id: `membership_${otherTenantId}`,
+              userId: admin.id,
+              status: 'active',
+              isOwner: true,
+              joinedAt: new Date(),
+            },
+          },
+        },
+      });
+
+      const rootNotice = await runInTenant(ROOT_TENANT_ID, () =>
+        service.createNotice({
+          title: tenantTitle,
+          content: 'Root tenant notice.',
+          type: 'announcement',
+          audience: 'admin',
+          createdBy: 'admin',
+        }),
+      );
+      const foreignNotice = await runInTenant(otherTenantId, () =>
+        service.createNotice({
+          title: foreignTitle,
+          content: 'Foreign tenant notice.',
+          type: 'security',
+          audience: 'admin',
+          createdBy: 'admin',
+        }),
+      );
+      await runInTenant(otherTenantId, () =>
+        service.publishNotice(foreignNotice.id),
+      );
+
+      await expectHttpExceptionCode(
+        runInTenant(ROOT_TENANT_ID, () => service.getNotice(foreignNotice.id)),
+        'SYSTEM_NOTICE_NOT_FOUND',
+      );
+      await expect(
+        runInTenant(ROOT_TENANT_ID, () =>
+          service.listNotices({ keyword: foreignTitle }),
+        ),
+      ).resolves.toMatchObject({ total: 0 });
+      await expect(
+        runInTenant(ROOT_TENANT_ID, () =>
+          service.listAllNoticeDeliveries({ noticeId: foreignNotice.id }),
+        ),
+      ).resolves.toMatchObject({ total: 0 });
+      await expectHttpExceptionCode(
+        runInTenant(ROOT_TENANT_ID, () =>
+          service.getNoticeInboxItem(admin.id, foreignNotice.id),
+        ),
+        'SYSTEM_NOTICE_INBOX_NOT_FOUND',
+      );
+      await expectHttpExceptionCode(
+        runInTenant(ROOT_TENANT_ID, () =>
+          service.markNoticesRead(admin.id, { ids: [foreignNotice.id] }),
+        ),
+        'SYSTEM_NOTICE_INBOX_NOT_FOUND',
+      );
+      await expect(
+        runInTenant(otherTenantId, () => service.getNotice(foreignNotice.id)),
+      ).resolves.toMatchObject({
+        id: foreignNotice.id,
+        tenantId: otherTenantId,
+      });
+      await expect(
+        prisma.systemNoticeDelivery.findFirst({
+          where: {
+            tenantId: otherTenantId,
+            noticeId: foreignNotice.id,
+            userId: admin.id,
+          },
+        }),
+      ).resolves.toBeTruthy();
+
+      await runInTenant(ROOT_TENANT_ID, () =>
+        service.createNoticeTemplate({
+          code: tenantTemplateCode,
+          name: 'Root Notice Template',
+          type: 'announcement',
+          titleTemplate: 'Root {{name}}',
+          contentTemplate: 'Root tenant {{name}}.',
+        }),
+      );
+      await runInTenant(otherTenantId, () =>
+        service.createNoticeTemplate({
+          code: tenantTemplateCode,
+          name: 'Foreign Notice Template',
+          type: 'security',
+          titleTemplate: 'Foreign {{name}}',
+          contentTemplate: 'Foreign tenant {{name}}.',
+        }),
+      );
+
+      await expect(
+        runInTenant(ROOT_TENANT_ID, () =>
+          service.getNoticeTemplate(tenantTemplateCode),
+        ),
+      ).resolves.toMatchObject({
+        name: 'Root Notice Template',
+        tenantId: ROOT_TENANT_ID,
+      });
+      await expect(
+        runInTenant(otherTenantId, () =>
+          service.getNoticeTemplate(tenantTemplateCode),
+        ),
+      ).resolves.toMatchObject({
+        name: 'Foreign Notice Template',
+        tenantId: otherTenantId,
+      });
+      expect(rootNotice.tenantId).toBe(ROOT_TENANT_ID);
+    });
+
     async function cleanupTestRows(): Promise<void> {
+      const noticeTitles = [
+        title,
+        inboxTitle,
+        'Maintenance 02:00 UTC',
+        tenantTitle,
+        foreignTitle,
+      ];
       await prisma.systemNoticeDelivery.deleteMany({
-        where: { userId: inboxUserId },
+        where: {
+          OR: [
+            { userId: inboxUserId },
+            { notice: { title: { in: noticeTitles } } },
+          ],
+        },
       });
       await prisma.systemNoticeReadReceipt.deleteMany({
-        where: { userId: inboxUserId },
+        where: {
+          OR: [
+            { userId: inboxUserId },
+            { notice: { title: { in: noticeTitles } } },
+          ],
+        },
       });
       await prisma.systemNoticeTemplate.deleteMany({
-        where: { code: templateCode },
+        where: { code: { in: [templateCode, tenantTemplateCode] } },
       });
       await prisma.systemNotice.deleteMany({
-        where: { title: { in: [title, inboxTitle, 'Maintenance 02:00 UTC'] } },
+        where: { title: { in: noticeTitles } },
+      });
+      await prisma.tenantMembership.deleteMany({
+        where: {
+          OR: [{ userId: inboxUserId }, { tenantId: otherTenantId }],
+        },
+      });
+      await prisma.tenant.deleteMany({
+        where: { id: otherTenantId },
       });
       await prisma.user.deleteMany({
         where: { id: inboxUserId },
@@ -848,4 +1016,15 @@ function getHttpExceptionResponse(error: unknown): unknown {
   }
 
   return undefined;
+}
+
+function runInTenant<T>(tenantId: string, callback: () => T): T {
+  return runWithRequestContext(
+    {
+      requestId: `test-${tenantId}`,
+      traceId: `test-${tenantId}`,
+      tenantId,
+    },
+    callback,
+  );
 }

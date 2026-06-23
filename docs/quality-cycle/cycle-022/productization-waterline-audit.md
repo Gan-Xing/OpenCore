@@ -171,7 +171,7 @@ These remain below the productization waterline and cannot be described as compl
 | Cross-tenant API rejection     | Done    | Prisma integration test and smoke prove foreign-tenant config rows are hidden, cannot be mutated, and survive root actions.  |
 | Seed/OpenAPI/SDK/Admin         | Done    | Seed config rows, DTOs, SDK summaries/fixtures, export previews, and Admin Config expose `tenantId`.                        |
 | Smoke/guard                    | Done    | Added `guard:tenant-config-scope`; `smoke:core-config` now covers foreign-tenant config isolation.                          |
-| Remaining T4 data scope        | Pending | File assets were completed in T4f; notice isolation remains pending.                                                         |
+| Remaining T4 data scope        | Pending | File assets were completed in T4f; notice isolation was completed in T4g; other unreviewed non-org data remains pending.      |
 
 ## T4f File Assets
 
@@ -184,4 +184,17 @@ These remain below the productization waterline and cannot be described as compl
 | Cross-tenant API rejection    | Done   | Prisma integration test and smoke prove foreign-tenant file rows are hidden and cannot be read, downloaded, updated, or deleted from root scope. |
 | Seed/OpenAPI/SDK/Admin        | Done   | Seed file rows, DTOs, SDK summaries/fixtures, export previews, and Admin Files expose `tenantId`.                          |
 | Smoke/guard                   | Done   | Added `guard:tenant-file-scope`; `smoke:core-file` now covers foreign-tenant file isolation.                               |
-| Remaining T4 data scope       | Pending | Notice isolation and other unreviewed non-org data remain pending.                                                          |
+| Remaining T4 data scope       | Pending | Notice isolation was completed in T4g; other unreviewed non-org data remains pending.                                      |
+
+## T4g System Notices
+
+| Check                          | Status | Evidence                                                                                                                     |
+| ------------------------------ | ------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| Notice tenant ownership        | Done   | `SystemNotice`, `SystemNoticeTemplate`, `SystemNoticeReadReceipt`, and `SystemNoticeDelivery` are backfilled to `tenant_root` and constrained to `Tenant`. |
+| Tenant-local notice uniqueness | Done   | Notice templates use `(tenantId, code)` uniqueness; read receipts and deliveries include tenant id in their uniqueness.      |
+| Repository tenant isolation    | Done   | Notice list/detail/lifecycle/delete, inbox/read receipt, delivery, and template paths resolve the active tenant from `RequestContext`. |
+| Tenant delivery fanout         | Done   | Notice dispatch recipients are active memberships in the notice tenant instead of all global enabled users.                  |
+| Cross-tenant API rejection     | Done   | Prisma integration test and smoke prove foreign-tenant notice/template/delivery/receipt rows are hidden and survive root actions. |
+| Seed/OpenAPI/SDK/Admin         | Done   | Seed notice rows, DTOs, SDK summaries/fixtures, export previews, and Admin Notices expose `tenantId`.                       |
+| Smoke/guard                    | Done   | Added `guard:tenant-notice-scope`; `smoke:core-notice` now covers foreign-tenant notice isolation.                          |
+| Remaining T4 data scope        | Pending | Other unreviewed non-org data remains pending.                                                                               |

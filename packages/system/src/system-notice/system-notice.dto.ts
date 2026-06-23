@@ -15,6 +15,9 @@ export class SystemNoticeDto {
   id!: string;
 
   @ApiProperty()
+  tenantId!: string;
+
+  @ApiProperty()
   title!: string;
 
   @ApiProperty()
@@ -160,6 +163,9 @@ export class SystemNoticeReadUserPageDto {
 export class SystemNoticeDeliveryDto {
   @ApiProperty()
   id!: string;
+
+  @ApiProperty()
+  tenantId!: string;
 
   @ApiProperty()
   noticeId!: string;
@@ -319,6 +325,9 @@ export class SystemNoticeDeliveryExecutionResultDto {
 export class SystemNoticeTemplateDto {
   @ApiProperty()
   id!: string;
+
+  @ApiProperty()
+  tenantId!: string;
 
   @ApiProperty()
   code!: string;

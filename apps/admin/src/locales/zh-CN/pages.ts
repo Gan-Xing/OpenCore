@@ -549,6 +549,7 @@ export default {
   'pages.system.notices.fields.remark': '备注',
   'pages.system.notices.fields.sentAt': '发送时间',
   'pages.system.notices.fields.status': '状态',
+  'pages.system.notices.fields.tenantId': '租户',
   'pages.system.notices.fields.title': '标题',
   'pages.system.notices.fields.titleTemplate': '标题模板',
   'pages.system.notices.fields.type': '类型',

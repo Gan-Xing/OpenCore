@@ -64,6 +64,8 @@ import type {
 } from './system-notice.dto';
 import type { SystemNoticeDeliveryChannel } from './system-notice.records';
 
+const ROOT_TENANT_ID = 'tenant_root';
+
 @Injectable()
 export class SeedSystemNoticeRepository extends SystemNoticeRepository {
   private notices = seedSystemNotices.map((notice) => ({ ...notice }));
@@ -388,6 +390,7 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
     const now = new Date().toISOString();
     const template: SystemNoticeTemplateRecord = {
       id: `notice_template_${input.code.replace(/[^a-z0-9]+/g, '_')}`,
+      tenantId: ROOT_TENANT_ID,
       ...input,
       createdAt: now,
       updatedAt: now,
@@ -442,6 +445,7 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
     const now = new Date().toISOString();
     const notice: SystemNoticeRecord = {
       id: `notice_template_test_${code.replace(/[^a-z0-9]+/g, '_')}_${Date.now()}`,
+      tenantId: ROOT_TENANT_ID,
       title: rendered.title,
       content: rendered.content,
       type: template.type,
@@ -489,6 +493,7 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
     const now = new Date().toISOString();
     const notice: SystemNoticeRecord = {
       id,
+      tenantId: ROOT_TENANT_ID,
       ...input,
       status: 'draft',
       createdAt: now,
@@ -789,6 +794,7 @@ function createDeliveryRecord(
   const provider = getSystemNoticeDeliveryProvider(channel);
   return {
     id: `notice_delivery_${notice.id}_${user.id}_${channel}`,
+    tenantId: notice.tenantId,
     noticeId: notice.id,
     userId: user.id,
     username: user.username,

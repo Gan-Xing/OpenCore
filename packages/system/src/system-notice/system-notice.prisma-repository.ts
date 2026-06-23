@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
+import { getRequestContext } from '@opencore/core';
 import { PrismaService } from '@opencore/database';
 import type { Prisma } from '@prisma/client';
 import type {
@@ -69,6 +70,7 @@ import {
 
 type PrismaSystemNotice = {
   id: string;
+  tenantId: string;
   title: string;
   content: string;
   type: string;
@@ -101,6 +103,7 @@ type PrismaSystemNoticeReadReceiptWithUser = {
 
 type PrismaSystemNoticeDelivery = {
   id: string;
+  tenantId: string;
   noticeId: string;
   userId: string;
   username: string;
@@ -127,6 +130,7 @@ type PrismaSystemNoticeDelivery = {
 
 type PrismaSystemNoticeTemplate = {
   id: string;
+  tenantId: string;
   code: string;
   name: string;
   type: string;
@@ -145,6 +149,8 @@ type PrismaNoticeDeliveryRecipient = {
   displayName: string;
 };
 
+const ROOT_TENANT_ID = 'tenant_root';
+
 @Injectable()
 export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
   constructor(private readonly prisma: PrismaService) {
@@ -155,7 +161,9 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
     query: SystemNoticePageQuery = {},
   ): Promise<PageResult<SystemNoticeRecord>> {
     const filters = normalizeSystemNoticeFilters(query);
+    const tenantId = resolveCurrentTenantId();
     const where = {
+      tenantId,
       ...(filters.status ? { status: filters.status } : {}),
       ...(filters.type ? { type: filters.type } : {}),
       ...(filters.audience ? { audience: filters.audience } : {}),
@@ -195,12 +203,13 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
     query: SystemNoticeInboxPageQuery = {},
   ): Promise<PageResult<SystemNoticeInboxRecord>> {
     const filters = normalizeSystemNoticeInboxFilters(query);
-    const where = createInboxWhere(userId, filters);
+    const tenantId = resolveCurrentTenantId();
+    const where = createInboxWhere(userId, filters, tenantId);
     const total = await this.prisma.systemNotice.count({ where });
     const pagination = normalizeSystemNoticePageQuery(query, total);
     const rows = await this.prisma.systemNotice.findMany({
       where,
-      include: createReadReceiptInclude(userId),
+      include: createReadReceiptInclude(userId, tenantId),
       orderBy: [
         { pinned: 'desc' },
         { publishedAt: 'desc' },
@@ -221,12 +230,13 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
     userId: string,
     id: string,
   ): Promise<SystemNoticeInboxRecord> {
+    const tenantId = resolveCurrentTenantId();
     const notice = await this.prisma.systemNotice.findFirst({
       where: {
         id,
-        ...createInboxWhere(userId, {}),
+        ...createInboxWhere(userId, {}, tenantId),
       },
-      include: createReadReceiptInclude(userId),
+      include: createReadReceiptInclude(userId, tenantId),
     });
 
     if (!notice) {
@@ -245,9 +255,10 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
     limit?: number | string,
   ): Promise<readonly SystemNoticeInboxRecord[]> {
     const take = normalizeUnreadNoticeLimit(limit);
+    const tenantId = resolveCurrentTenantId();
     const rows = await this.prisma.systemNotice.findMany({
-      where: createInboxWhere(userId, { readStatus: false }),
-      include: createReadReceiptInclude(userId),
+      where: createInboxWhere(userId, { readStatus: false }, tenantId),
+      include: createReadReceiptInclude(userId, tenantId),
       orderBy: [
         { pinned: 'desc' },
         { publishedAt: 'desc' },
@@ -261,8 +272,9 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
   }
 
   async countUnreadNoticeInbox(userId: string): Promise<number> {
+    const tenantId = resolveCurrentTenantId();
     return this.prisma.systemNotice.count({
-      where: createInboxWhere(userId, { readStatus: false }),
+      where: createInboxWhere(userId, { readStatus: false }, tenantId),
     });
   }
 
@@ -271,10 +283,12 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
     body: MarkSystemNoticesReadDto,
   ): Promise<SystemNoticeReadMutationResult> {
     const ids = normalizeMarkSystemNoticesReadInput(body);
+    const tenantId = resolveCurrentTenantId();
     await this.assertInboxNoticeIdsVisible(userId, ids);
     const now = new Date();
     const result = await this.prisma.systemNoticeReadReceipt.createMany({
       data: ids.map((noticeId) => ({
+        tenantId,
         noticeId,
         userId,
         readAt: now,
@@ -293,8 +307,9 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
   async markAllNoticesRead(
     userId: string,
   ): Promise<SystemNoticeReadMutationResult> {
+    const tenantId = resolveCurrentTenantId();
     const unreadRows = await this.prisma.systemNotice.findMany({
-      where: createInboxWhere(userId, { readStatus: false }),
+      where: createInboxWhere(userId, { readStatus: false }, tenantId),
       select: { id: true },
     });
     const ids = unreadRows.map((row) => row.id);
@@ -304,6 +319,7 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
         ? { count: 0 }
         : await this.prisma.systemNoticeReadReceipt.createMany({
             data: ids.map((noticeId) => ({
+              tenantId,
               noticeId,
               userId,
               readAt: now,
@@ -323,13 +339,14 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
     id: string,
     query: SystemNoticeReadUsersPageQuery = {},
   ): Promise<PageResult<SystemNoticeReadUserRecord>> {
-    await this.findNoticeById(id);
+    const notice = await this.findNoticeById(id);
+    const tenantId = notice.tenantId;
     const total = await this.prisma.systemNoticeReadReceipt.count({
-      where: { noticeId: id },
+      where: { tenantId, noticeId: id },
     });
     const pagination = normalizeSystemNoticePageQuery(query, total);
     const rows = await this.prisma.systemNoticeReadReceipt.findMany({
-      where: { noticeId: id },
+      where: { tenantId, noticeId: id },
       include: {
         user: {
           select: {
@@ -369,7 +386,9 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
     baseNoticeId?: string,
   ): Promise<PageResult<SystemNoticeDeliveryRecord>> {
     const filters = normalizeSystemNoticeDeliveryFilters(query);
+    const tenantId = resolveCurrentTenantId();
     const where = {
+      tenantId,
       ...(baseNoticeId || filters.noticeId
         ? { noticeId: baseNoticeId ?? filters.noticeId }
         : {}),
@@ -417,7 +436,7 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
     const notice = toSystemNoticeRecord(await this.findNoticeById(id));
     assertNoticeCanDispatch(notice.status);
     return this.executePendingDeliveries(
-      notice.id,
+      notice,
       normalizeSystemNoticeDeliveryChannelInput(body.channel),
     );
   }
@@ -426,7 +445,9 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
     query: SystemNoticeTemplatePageQuery = {},
   ): Promise<PageResult<SystemNoticeTemplateRecord>> {
     const filters = normalizeSystemNoticeTemplateFilters(query);
+    const tenantId = resolveCurrentTenantId();
     const where = {
+      tenantId,
       ...(filters.enabled === undefined ? {} : { enabled: filters.enabled }),
       ...(filters.type ? { type: filters.type } : {}),
       ...createDateRangeWhere('createdAt', filters),
@@ -460,8 +481,9 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
   async listNoticeTemplateOptions(): Promise<
     readonly SystemNoticeTemplateOptionRecord[]
   > {
+    const tenantId = resolveCurrentTenantId();
     const rows = await this.prisma.systemNoticeTemplate.findMany({
-      where: { enabled: true },
+      where: { tenantId, enabled: true },
       orderBy: [{ code: 'asc' }],
     });
 
@@ -486,22 +508,24 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
     body: CreateSystemNoticeTemplateDto,
   ): Promise<SystemNoticeTemplateRecord> {
     const input = normalizeCreateSystemNoticeTemplateInput(body);
+    const tenantId = resolveCurrentTenantId();
 
     if (
       await this.prisma.systemNoticeTemplate.findUnique({
-        where: { code: input.code },
+        where: { tenantId_code: { tenantId, code: input.code } },
         select: { code: true },
       })
     ) {
       throw systemNoticeConflict(
         'SYSTEM_NOTICE_TEMPLATE_ALREADY_EXISTS',
         `System notice template already exists: ${input.code}`,
-        { code: input.code },
+        { code: input.code, tenantId },
       );
     }
 
     const template = await this.prisma.systemNoticeTemplate.create({
       data: {
+        tenantId,
         ...input,
         params: [...input.params] as Prisma.InputJsonValue,
       },
@@ -519,7 +543,12 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
     );
     const input = normalizeUpdateSystemNoticeTemplateInput(existing, body);
     const template = await this.prisma.systemNoticeTemplate.update({
-      where: { code },
+      where: {
+        tenantId_code: {
+          tenantId: existing.tenantId,
+          code,
+        },
+      },
       data: {
         ...input,
         params: [...input.params] as Prisma.InputJsonValue,
@@ -530,8 +559,15 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
   }
 
   async deleteNoticeTemplate(code: string): Promise<{ deleted: true }> {
-    await this.findNoticeTemplateByCode(code);
-    await this.prisma.systemNoticeTemplate.delete({ where: { code } });
+    const template = await this.findNoticeTemplateByCode(code);
+    await this.prisma.systemNoticeTemplate.delete({
+      where: {
+        tenantId_code: {
+          tenantId: template.tenantId,
+          code,
+        },
+      },
+    });
     return { deleted: true };
   }
 
@@ -553,6 +589,7 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
     const template = toSystemNoticeTemplateRecord(
       await this.findNoticeTemplateByCode(code),
     );
+    const tenantId = template.tenantId;
     const input = normalizeTestSystemNoticeTemplateInput(template, body);
     const rendered = renderSystemNoticeTemplate(template, {
       templateParams: input.templateParams,
@@ -562,6 +599,7 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
 
     const notice = await this.prisma.systemNotice.create({
       data: {
+        tenantId,
         title: rendered.title,
         content: rendered.content,
         type: template.type,
@@ -575,6 +613,7 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
     });
     const delivery = await this.prisma.systemNoticeDelivery.create({
       data: {
+        tenantId,
         noticeId: notice.id,
         userId: recipient.id,
         username: recipient.username,
@@ -610,21 +649,27 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
 
   async createNotice(body: CreateSystemNoticeDto): Promise<SystemNoticeRecord> {
     const input = normalizeCreateSystemNoticeInput(body);
+    const tenantId = resolveCurrentTenantId();
 
     if (
       await this.prisma.systemNotice.findFirst({
-        where: { title: input.title, createdBy: input.createdBy },
+        where: {
+          tenantId,
+          title: input.title,
+          createdBy: input.createdBy,
+        },
       })
     ) {
       throw systemNoticeConflict(
         'SYSTEM_NOTICE_ALREADY_EXISTS',
         `System notice already exists: ${input.title}`,
-        { createdBy: input.createdBy, title: input.title },
+        { createdBy: input.createdBy, tenantId, title: input.title },
       );
     }
 
     const notice = await this.prisma.systemNotice.create({
       data: {
+        tenantId,
         ...input,
         validFrom: input.validFrom ? new Date(input.validFrom) : null,
         validTo: input.validTo ? new Date(input.validTo) : null,
@@ -642,7 +687,7 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
     assertNoticeNotArchived(existing.status, 'updated');
     const input = normalizeUpdateSystemNoticeInput(existing, body);
     const notice = await this.prisma.systemNotice.update({
-      where: { id },
+      where: { id: existing.id },
       data: {
         ...input,
         validFrom: input.validFrom ? new Date(input.validFrom) : null,
@@ -658,7 +703,7 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
     assertNoticeCanPublish(existing.status);
     const now = new Date();
     const notice = await this.prisma.systemNotice.update({
-      where: { id },
+      where: { id: existing.id },
       data: {
         status: 'published',
         publishedAt: now,
@@ -674,7 +719,7 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
     const existing = toSystemNoticeRecord(await this.findNoticeById(id));
     assertNoticeNotArchived(existing.status, 'archived');
     const notice = await this.prisma.systemNotice.update({
-      where: { id },
+      where: { id: existing.id },
       data: {
         status: 'archived',
         archivedAt: new Date(),
@@ -685,8 +730,8 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
   }
 
   async deleteNotice(id: string): Promise<{ deleted: true }> {
-    await this.findNoticeById(id);
-    await this.prisma.systemNotice.delete({ where: { id } });
+    const notice = await this.findNoticeById(id);
+    await this.prisma.systemNotice.delete({ where: { id: notice.id } });
     return { deleted: true };
   }
 
@@ -696,9 +741,10 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
   ): Promise<SystemNoticeDeliveryMutationResult> {
     assertNoticeCanDispatch(notice.status);
     const provider = getSystemNoticeDeliveryProvider(channel);
-    const recipients = await this.findNoticeRecipients();
+    const recipients = await this.findNoticeRecipients(notice.tenantId);
     const existingRows = await this.prisma.systemNoticeDelivery.findMany({
       where: {
+        tenantId: notice.tenantId,
         noticeId: notice.id,
         channel,
       },
@@ -713,6 +759,7 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
     if (pendingRecipients.length > 0) {
       await this.prisma.systemNoticeDelivery.createMany({
         data: pendingRecipients.map((recipient) => ({
+          tenantId: notice.tenantId,
           noticeId: notice.id,
           userId: recipient.id,
           username: recipient.username,
@@ -744,6 +791,7 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
       sentCount: 0,
       failedCount: 0,
       pendingCount: await this.countNoticeDeliveriesByProviderStatus(
+        notice.tenantId,
         notice.id,
         channel,
         provider,
@@ -753,7 +801,7 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
   }
 
   private async executePendingDeliveries(
-    noticeId: string,
+    notice: SystemNoticeRecord,
     channel: SystemNoticeDeliveryChannel,
   ): Promise<SystemNoticeDeliveryExecutionResult> {
     const provider = getSystemNoticeDeliveryProvider(channel);
@@ -763,7 +811,8 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
 
     const executableRows = await this.prisma.systemNoticeDelivery.findMany({
       where: {
-        noticeId,
+        tenantId: notice.tenantId,
+        noticeId: notice.id,
         channel,
         provider,
         providerStatus: { in: ['pending', 'failed'] },
@@ -783,7 +832,8 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
     });
     const totalRows = await this.prisma.systemNoticeDelivery.count({
       where: {
-        noticeId,
+        tenantId: notice.tenantId,
+        noticeId: notice.id,
         channel,
         provider,
       },
@@ -807,7 +857,7 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
         });
       } else {
         queuedOutboxCount = await this.enqueueNoticeIntegrationOutbox(
-          noticeId,
+          notice,
           channel,
           provider,
           executableRows,
@@ -816,7 +866,7 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
     }
 
     return {
-      noticeId,
+      noticeId: notice.id,
       channel,
       provider,
       attemptedCount: executableRows.length,
@@ -824,7 +874,8 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
       failedCount: 0,
       skippedCount: totalRows - executableRows.length,
       pendingCount: await this.countNoticeDeliveriesByProviderStatus(
-        noticeId,
+        notice.tenantId,
+        notice.id,
         channel,
         provider,
         'pending',
@@ -834,6 +885,7 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
   }
 
   private async countNoticeDeliveriesByProviderStatus(
+    tenantId: string,
     noticeId: string,
     channel: SystemNoticeDeliveryChannel,
     provider: SystemNoticeDeliveryProvider,
@@ -841,6 +893,7 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
   ): Promise<number> {
     return this.prisma.systemNoticeDelivery.count({
       where: {
+        tenantId,
         noticeId,
         channel,
         provider,
@@ -885,7 +938,7 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
   }
 
   private async enqueueNoticeIntegrationOutbox(
-    noticeId: string,
+    notice: SystemNoticeRecord,
     channel: Exclude<SystemNoticeDeliveryChannel, 'in_app'>,
     provider: SystemNoticeDeliveryProvider,
     rows: readonly {
@@ -921,7 +974,8 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
             audience: row.audience,
             deliveryId: row.id,
             displayName: row.displayName,
-            noticeId,
+            noticeId: notice.id,
+            tenantId: notice.tenantId,
             title: row.title,
             type: row.type,
             username: row.username,
@@ -950,41 +1004,63 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
     return queuedOutboxCount;
   }
 
-  private async findNoticeRecipients(): Promise<
+  private async findNoticeRecipients(
+    tenantId: string,
+  ): Promise<
     readonly PrismaNoticeDeliveryRecipient[]
   > {
-    return this.prisma.user.findMany({
-      where: { enabled: true },
-      select: {
-        id: true,
-        username: true,
-        displayName: true,
+    const memberships = await this.prisma.tenantMembership.findMany({
+      where: {
+        tenantId,
+        status: 'active',
+        user: { enabled: true },
       },
-      orderBy: [{ username: 'asc' }],
+      select: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            displayName: true,
+          },
+        },
+      },
+      orderBy: [{ user: { username: 'asc' } }],
     });
+
+    return memberships.map((membership) => membership.user);
   }
 
   private async findNoticeRecipientById(
     userId: string,
   ): Promise<PrismaNoticeDeliveryRecipient> {
-    const recipient = await this.prisma.user.findFirst({
-      where: { id: userId, enabled: true },
+    const tenantId = resolveCurrentTenantId();
+    const membership = await this.prisma.tenantMembership.findFirst({
+      where: {
+        tenantId,
+        userId,
+        status: 'active',
+        user: { enabled: true },
+      },
       select: {
-        id: true,
-        username: true,
-        displayName: true,
+        user: {
+          select: {
+            id: true,
+            username: true,
+            displayName: true,
+          },
+        },
       },
     });
 
-    if (!recipient) {
+    if (!membership) {
       throw systemNoticeNotFound(
         'SYSTEM_NOTICE_RECIPIENT_NOT_FOUND',
         `System notice recipient not found: ${userId}`,
-        { userId },
+        { tenantId, userId },
       );
     }
 
-    return recipient;
+    return membership.user;
   }
 
   private async markDeliveriesRead(
@@ -996,8 +1072,10 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
       return;
     }
 
+    const tenantId = resolveCurrentTenantId();
     await this.prisma.systemNoticeDelivery.updateMany({
       where: {
+        tenantId,
         userId,
         noticeId: { in: [...noticeIds] },
         channel: 'in_app',
@@ -1011,13 +1089,16 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
   }
 
   private async findNoticeById(id: string): Promise<PrismaSystemNotice> {
-    const notice = await this.prisma.systemNotice.findUnique({ where: { id } });
+    const tenantId = resolveCurrentTenantId();
+    const notice = await this.prisma.systemNotice.findFirst({
+      where: { id, tenantId },
+    });
 
     if (!notice) {
       throw systemNoticeNotFound(
         'SYSTEM_NOTICE_NOT_FOUND',
         `System notice not found: ${id}`,
-        { id },
+        { id, tenantId },
       );
     }
 
@@ -1027,15 +1108,16 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
   private async findNoticeTemplateByCode(
     code: string,
   ): Promise<PrismaSystemNoticeTemplate> {
+    const tenantId = resolveCurrentTenantId();
     const template = await this.prisma.systemNoticeTemplate.findUnique({
-      where: { code },
+      where: { tenantId_code: { tenantId, code } },
     });
 
     if (!template) {
       throw systemNoticeNotFound(
         'SYSTEM_NOTICE_TEMPLATE_NOT_FOUND',
         `System notice template not found: ${code}`,
-        { code },
+        { code, tenantId },
       );
     }
 
@@ -1046,10 +1128,11 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
     userId: string,
     ids: readonly string[],
   ): Promise<void> {
+    const tenantId = resolveCurrentTenantId();
     const rows = await this.prisma.systemNotice.findMany({
       where: {
         id: { in: [...ids] },
-        ...createInboxWhere(userId, {}),
+        ...createInboxWhere(userId, {}, tenantId),
       },
       select: { id: true },
     });
@@ -1069,6 +1152,7 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
 function toSystemNoticeRecord(notice: PrismaSystemNotice): SystemNoticeRecord {
   return {
     id: notice.id,
+    tenantId: notice.tenantId,
     title: notice.title,
     content: notice.content,
     type: toSystemNoticeType(notice.type),
@@ -1110,6 +1194,7 @@ function toSystemNoticeDeliveryRecord(
 ): SystemNoticeDeliveryRecord {
   return {
     id: delivery.id,
+    tenantId: delivery.tenantId,
     noticeId: delivery.noticeId,
     userId: delivery.userId,
     username: delivery.username,
@@ -1205,6 +1290,7 @@ function toSystemNoticeTemplateRecord(
 ): SystemNoticeTemplateRecord {
   return {
     id: template.id,
+    tenantId: template.tenantId,
     code: template.code,
     name: template.name,
     type: toSystemNoticeType(template.type),
@@ -1290,8 +1376,10 @@ function createInboxWhere(
     readStatus?: boolean;
     type?: string;
   },
+  tenantId: string,
 ) {
   return {
+    tenantId,
     status: 'published',
     audience: { in: ['all', 'admin'] },
     ...(filters.type ? { type: filters.type } : {}),
@@ -1313,21 +1401,25 @@ function createInboxWhere(
         OR: [{ validTo: null }, { validTo: { gte: new Date() } }],
       },
       ...(filters.readStatus === true
-        ? [{ readReceipts: { some: { userId } } }]
+        ? [{ readReceipts: { some: { tenantId, userId } } }]
         : []),
       ...(filters.readStatus === false
-        ? [{ readReceipts: { none: { userId } } }]
+        ? [{ readReceipts: { none: { tenantId, userId } } }]
         : []),
     ],
   };
 }
 
-function createReadReceiptInclude(userId: string) {
+function createReadReceiptInclude(userId: string, tenantId: string) {
   return {
     readReceipts: {
-      where: { userId },
+      where: { tenantId, userId },
       select: { readAt: true },
       take: 1,
     },
   };
+}
+
+function resolveCurrentTenantId(): string {
+  return getRequestContext()?.tenantId ?? ROOT_TENANT_ID;
 }

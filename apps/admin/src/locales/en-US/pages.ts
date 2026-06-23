@@ -594,6 +594,7 @@ export default {
   'pages.system.notices.fields.remark': 'Remark',
   'pages.system.notices.fields.sentAt': 'Sent At',
   'pages.system.notices.fields.status': 'Status',
+  'pages.system.notices.fields.tenantId': 'Tenant',
   'pages.system.notices.fields.title': 'Title',
   'pages.system.notices.fields.titleTemplate': 'Title Template',
   'pages.system.notices.fields.type': 'Type',

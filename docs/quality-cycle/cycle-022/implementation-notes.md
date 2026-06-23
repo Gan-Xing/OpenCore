@@ -698,3 +698,45 @@ Passed after deploy:
 - No platform-admin global file asset view in T4f; platform visit/control-plane behavior belongs with T6.
 - No client-driven tenant selector for file APIs.
 - No notice tenant isolation in this sub-slice.
+
+## Round 14: T4g System Notice Tenant Isolation
+
+### Completed
+
+- Made notices tenant-owned:
+  - added `SystemNotice.tenantId` with root backfill, tenant/status/type and tenant/audience/pinned indexes, and a tenant FK;
+  - added tenant ownership to `SystemNoticeTemplate`, `SystemNoticeReadReceipt`, and `SystemNoticeDelivery` with tenant-aware uniqueness and same-tenant child FKs.
+- Scoped Prisma notice operations:
+  - notice list/detail/create/update/publish/archive/delete resolve the active tenant from `RequestContext`;
+  - inbox, unread count/list, read receipts, read-user listing, delivery listing/execution, template CRUD/render/create-notice/test-send, and export preview metadata are tenant-scoped;
+  - dispatch recipients come from active memberships in the notice tenant.
+- Exposed `tenantId` through notice records, DTOs, SDK summaries/fixtures, Admin Notices fields, seed data, and export previews.
+- Added tenant-scope verification:
+  - Prisma integration test creates root and foreign tenant notices/templates and proves root context cannot read inbox/delivery/template rows from the foreign tenant;
+  - `smoke:core-notice` seeds a foreign tenant notice/template/delivery/receipt fixture and exercises root-scope public API isolation.
+- Added `guard:tenant-notice-scope`.
+
+### Verification Log
+
+Passed before deploy:
+
+- `pnpm prisma:validate`, `pnpm prisma:generate`, `pnpm prisma:migrate`, and `pnpm prisma:seed`.
+- Seed and typed-smoke typechecks plus OpenAPI export/drift, registry tag, SDK, Admin i18n, quality-doc, API error-code, and tenant notice guard checks.
+- Focused `system-notice` spec plus full repository lint, typecheck, and test suites.
+
+Passed after deploy:
+
+- OpenCore deploy rebuilt API/Admin, applied migrations, reseeded, restarted API `39172` and Admin `39174`, and passed deploy smoke including local notice tenant checks.
+- Public API notice smoke passed against `http://144.217.243.161:39172`.
+
+### Remaining Product Debt
+
+- Complete T4 System/core tenant data isolation for other unreviewed non-org data.
+- Complete T5 Redis/queue/WebSocket/Integration/OAuth/runtime tenant propagation and broader file/runtime review.
+- Complete T6 Tenant Plan CRUD, Tenant Member CRUD/invitation, Admin switcher, platform visit mode, and platform visit audit.
+
+### Deliberate Non-Goals
+
+- No platform-admin global notice view in T4g; platform visit/control-plane behavior belongs with T6.
+- No client-driven tenant selector for notice APIs.
+- No Redis/WebSocket/outbox tenant propagation beyond notice payload metadata in this sub-slice.

@@ -12,6 +12,7 @@ import {
   assertString,
   createTypedSmokeRuntime,
 } from './runtime';
+import { disconnectSmokePrisma, getSmokePrisma } from './prisma';
 
 const smoke = createTypedSmokeRuntime();
 const { apiPrefix, baseUrl, checkDocs, login, timeoutMs, username } = smoke;
@@ -24,6 +25,13 @@ const noticeTitles = [
   `OpenCore Smoke Notice Mark All ${runId}`,
 ];
 const templateCode = `smoke.template.${runId}`;
+const FOREIGN_TENANT_ID = `tenant_notice_foreign_${runId}`;
+const FOREIGN_NOTICE_ID = `notice_foreign_${runId}`;
+const FOREIGN_NOTICE_TITLE = `OpenCore Foreign Tenant Notice ${runId}`;
+const FOREIGN_DELIVERY_ID = `notice_delivery_foreign_${runId}`;
+const FOREIGN_READ_RECEIPT_ID = `notice_receipt_foreign_${runId}`;
+const FOREIGN_TEMPLATE_ID = `notice_template_foreign_${runId}`;
+const FOREIGN_TEMPLATE_CODE = `foreign.notice.template.${runId}`;
 let token;
 let smsHttpServer;
 let smtpServer;
@@ -47,7 +55,15 @@ async function main() {
     const loginResponse = await login();
     token = assertString(loginResponse.accessToken, 'login accessToken');
     const smokeUserId = assertString(loginResponse.user.id, 'login user id');
+    const smokeDisplayName =
+      typeof loginResponse.user.displayName === 'string'
+        ? loginResponse.user.displayName
+        : username;
     smoke.setToken(token);
+
+    await seedForeignTenantNotice(smokeUserId, smokeDisplayName);
+    await assertForeignTenantNoticeHidden(smokeUserId);
+    await assertForeignTenantNoticePreserved();
 
     await apiRequest('/core/notices/templates/simple-list', {
       expected: [200],
@@ -1342,6 +1358,9 @@ async function main() {
 
     await cleanupCreatedTemplates();
     await cleanupCreatedNotices();
+    await assertForeignTenantNoticePreserved();
+    await cleanupForeignTenantNotice();
+    await disconnectSmokePrisma();
 
     console.log(
       JSON.stringify({
@@ -1355,6 +1374,8 @@ async function main() {
           'core.notice.inbox.auth-required',
           'core.notice.realtime.auth-required',
           'auth.login',
+          'core.notice.foreign-hidden',
+          'core.notice.foreign-preserved',
           'core.notice.realtime.snapshot',
           'core.notice.realtime.read-event',
           'core.notice.template.simple-list',
@@ -1424,6 +1445,8 @@ async function main() {
     await smtpServer?.close().catch(() => undefined);
     await cleanupCreatedTemplates().catch(() => undefined);
     await cleanupCreatedNotices().catch(() => undefined);
+    await cleanupForeignTenantNotice().catch(() => undefined);
+    await disconnectSmokePrisma().catch(() => undefined);
     console.error(
       JSON.stringify({
         status: 'fail',
@@ -1437,6 +1460,233 @@ async function main() {
 }
 
 void main();
+
+async function seedForeignTenantNotice(userId, displayName) {
+  await cleanupForeignTenantNotice();
+  const prisma = getSmokePrisma();
+  const now = new Date();
+
+  await prisma.tenant.create({
+    data: {
+      id: FOREIGN_TENANT_ID,
+      code: FOREIGN_TENANT_ID,
+      slug: FOREIGN_TENANT_ID,
+      name: 'Notice Smoke Foreign Tenant',
+      status: 'active',
+    },
+  });
+  await prisma.systemNotice.create({
+    data: {
+      id: FOREIGN_NOTICE_ID,
+      tenantId: FOREIGN_TENANT_ID,
+      title: FOREIGN_NOTICE_TITLE,
+      content: 'Foreign tenant notice hidden from root smoke requests.',
+      type: 'announcement',
+      status: 'published',
+      audience: 'admin',
+      pinned: false,
+      publishedAt: now,
+      createdBy: username,
+    },
+  });
+  await prisma.systemNoticeTemplate.create({
+    data: {
+      id: FOREIGN_TEMPLATE_ID,
+      tenantId: FOREIGN_TENANT_ID,
+      code: FOREIGN_TEMPLATE_CODE,
+      name: 'Foreign Notice Template',
+      type: 'announcement',
+      titleTemplate: 'Foreign {{name}}',
+      contentTemplate: 'Foreign tenant {{name}}.',
+      params: ['name'],
+      enabled: true,
+      remark: 'Foreign tenant smoke fixture.',
+    },
+  });
+  await prisma.systemNoticeDelivery.create({
+    data: {
+      id: FOREIGN_DELIVERY_ID,
+      tenantId: FOREIGN_TENANT_ID,
+      noticeId: FOREIGN_NOTICE_ID,
+      userId,
+      username,
+      displayName,
+      channel: 'in_app',
+      status: 'delivered',
+      provider: 'in_app.local',
+      providerStatus: 'sent',
+      attemptCount: 1,
+      title: FOREIGN_NOTICE_TITLE,
+      content: 'Foreign tenant notice hidden from root smoke requests.',
+      type: 'announcement',
+      audience: 'admin',
+      deliveredAt: now,
+      lastAttemptAt: now,
+      sentAt: now,
+    },
+  });
+  await prisma.systemNoticeReadReceipt.create({
+    data: {
+      id: FOREIGN_READ_RECEIPT_ID,
+      tenantId: FOREIGN_TENANT_ID,
+      noticeId: FOREIGN_NOTICE_ID,
+      userId,
+      readAt: now,
+    },
+  });
+}
+
+async function assertForeignTenantNoticeHidden(userId) {
+  await apiRequest(`/core/notices/${encodeURIComponent(FOREIGN_NOTICE_ID)}`, {
+    expected: [404],
+  });
+  await apiRequest(
+    `/core/notices?keyword=${encodeURIComponent(FOREIGN_NOTICE_TITLE)}`,
+  ).then((page) => {
+    assertArray(page.items, 'foreign notice list items');
+    assertItemsExclude(page.items, FOREIGN_NOTICE_ID, 'foreign notice list');
+  });
+  await apiRequest(
+    `/core/notices/${encodeURIComponent(FOREIGN_NOTICE_ID)}`,
+    {
+      method: 'PATCH',
+      expected: [404],
+      body: { title: `${FOREIGN_NOTICE_TITLE} mutated` },
+    },
+  );
+  await apiRequest(
+    `/core/notices/${encodeURIComponent(FOREIGN_NOTICE_ID)}/publish`,
+    { method: 'PATCH', expected: [404] },
+  );
+  await apiRequest(
+    `/core/notices/${encodeURIComponent(FOREIGN_NOTICE_ID)}`,
+    { method: 'DELETE', expected: [404] },
+  );
+  await apiRequest(
+    `/core/notices/${encodeURIComponent(FOREIGN_NOTICE_ID)}/read-users?page=1&pageSize=10`,
+    { expected: [404] },
+  );
+  await apiRequest(
+    `/core/notices/${encodeURIComponent(FOREIGN_NOTICE_ID)}/deliveries?page=1&pageSize=10`,
+    { expected: [404] },
+  );
+  await apiRequest(
+    `/core/notices/deliveries?noticeId=${encodeURIComponent(FOREIGN_NOTICE_ID)}`,
+  ).then((page) => {
+    assertArray(page.items, 'foreign delivery list items');
+    assertItemsExclude(
+      page.items,
+      FOREIGN_DELIVERY_ID,
+      'foreign delivery list',
+    );
+  });
+  await apiRequest(
+    `/core/notices/inbox/${encodeURIComponent(FOREIGN_NOTICE_ID)}`,
+    { expected: [404] },
+  );
+  await apiRequest('/core/notices/inbox/read', {
+    method: 'POST',
+    expected: [404],
+    body: { ids: [FOREIGN_NOTICE_ID] },
+  });
+  await apiRequest(
+    `/core/notices/templates/${encodeURIComponent(FOREIGN_TEMPLATE_CODE)}`,
+    { expected: [404] },
+  );
+  await apiRequest(
+    `/core/notices/templates/${encodeURIComponent(FOREIGN_TEMPLATE_CODE)}`,
+    {
+      method: 'PATCH',
+      expected: [404],
+      body: { name: 'Mutated Foreign Notice Template' },
+    },
+  );
+  await apiRequest(
+    `/core/notices/templates/${encodeURIComponent(FOREIGN_TEMPLATE_CODE)}`,
+    { method: 'DELETE', expected: [404] },
+  );
+  await apiRequest(
+    `/core/notices/templates/${encodeURIComponent(FOREIGN_TEMPLATE_CODE)}/render`,
+    {
+      method: 'POST',
+      expected: [404],
+      body: { templateParams: { name: username } },
+    },
+  );
+  await apiRequest(
+    `/core/notices/templates?keyword=${encodeURIComponent(FOREIGN_TEMPLATE_CODE)}`,
+  ).then((page) => {
+    assertArray(page.items, 'foreign template list items');
+    if (page.items.some((item) => item?.code === FOREIGN_TEMPLATE_CODE)) {
+      throw new Error('foreign template list must not include foreign code');
+    }
+  });
+
+  assertString(userId, 'foreign tenant smoke user id');
+}
+
+async function assertForeignTenantNoticePreserved() {
+  const prisma = getSmokePrisma();
+  const notice = await prisma.systemNotice.findUnique({
+    where: { id: FOREIGN_NOTICE_ID },
+    select: { status: true, tenantId: true, title: true },
+  });
+  assertEqual(notice?.tenantId, FOREIGN_TENANT_ID, 'foreign notice tenant');
+  assertEqual(notice?.title, FOREIGN_NOTICE_TITLE, 'foreign notice title');
+  assertEqual(notice?.status, 'published', 'foreign notice status');
+
+  const delivery = await prisma.systemNoticeDelivery.findUnique({
+    where: { id: FOREIGN_DELIVERY_ID },
+    select: { status: true, tenantId: true, readAt: true },
+  });
+  assertEqual(
+    delivery?.tenantId,
+    FOREIGN_TENANT_ID,
+    'foreign delivery tenant',
+  );
+  assertEqual(delivery?.status, 'delivered', 'foreign delivery status');
+  assertEqual(delivery?.readAt, null, 'foreign delivery readAt preserved');
+
+  const receipt = await prisma.systemNoticeReadReceipt.findUnique({
+    where: { id: FOREIGN_READ_RECEIPT_ID },
+    select: { tenantId: true },
+  });
+  assertEqual(receipt?.tenantId, FOREIGN_TENANT_ID, 'foreign receipt tenant');
+
+  const template = await prisma.systemNoticeTemplate.findUnique({
+    where: { id: FOREIGN_TEMPLATE_ID },
+    select: { name: true, tenantId: true },
+  });
+  assertEqual(
+    template?.tenantId,
+    FOREIGN_TENANT_ID,
+    'foreign template tenant',
+  );
+  assertEqual(
+    template?.name,
+    'Foreign Notice Template',
+    'foreign template name',
+  );
+}
+
+async function cleanupForeignTenantNotice() {
+  const prisma = getSmokePrisma();
+  await prisma.systemNoticeReadReceipt.deleteMany({
+    where: { tenantId: FOREIGN_TENANT_ID },
+  });
+  await prisma.systemNoticeDelivery.deleteMany({
+    where: { tenantId: FOREIGN_TENANT_ID },
+  });
+  await prisma.systemNoticeTemplate.deleteMany({
+    where: { tenantId: FOREIGN_TENANT_ID },
+  });
+  await prisma.systemNotice.deleteMany({
+    where: { tenantId: FOREIGN_TENANT_ID },
+  });
+  await prisma.tenant.deleteMany({
+    where: { id: FOREIGN_TENANT_ID },
+  });
+}
 
 async function createNotice(title) {
   const notice = await apiRequest('/core/notices', {
