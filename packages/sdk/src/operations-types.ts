@@ -429,6 +429,8 @@ export function createOperationsFixtures(): OperationsFixtures {
       id: 'session_operator',
       username: 'operator',
       tokenId: 'token_operator_1',
+      tenantId: 'tenant_root',
+      accessMode: 'tenant',
       ip: '127.0.0.2',
       userAgent: 'OpenCore Smoke Operator',
       browser: 'OpenCore Smoke',

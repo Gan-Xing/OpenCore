@@ -72,6 +72,9 @@ const searchFields: CurrentPageSearchField<OnlineUserSessionSummary>[] = [
   'browser',
   'os',
   'userAgent',
+  'tenantId',
+  'membershipId',
+  'accessMode',
   'revokedBy',
   'revokedReason',
 ];
@@ -144,6 +147,27 @@ function createExportColumns(
     },
     {
       title: formatMessage(
+        'pages.monitor.onlineUsers.fields.accessMode',
+        'Access Mode',
+      ),
+      dataIndex: 'accessMode',
+    },
+    {
+      title: formatMessage(
+        'pages.monitor.onlineUsers.fields.tenantId',
+        'Tenant ID',
+      ),
+      dataIndex: 'tenantId',
+    },
+    {
+      title: formatMessage(
+        'pages.monitor.onlineUsers.fields.membershipId',
+        'Membership ID',
+      ),
+      dataIndex: 'membershipId',
+    },
+    {
+      title: formatMessage(
         'pages.monitor.onlineUsers.fields.revokedBy',
         'Revoked By',
       ),
@@ -208,6 +232,15 @@ function createFilterOptions(
       placeholder: formatMessage('pages.monitor.onlineUsers.fields.os', 'OS'),
       predicate: (record, value) => record.os === value,
     },
+    {
+      key: 'accessMode',
+      options: createCurrentPageFilterOptions(rows, 'accessMode'),
+      placeholder: formatMessage(
+        'pages.monitor.onlineUsers.fields.accessMode',
+        'Access Mode',
+      ),
+      predicate: (record, value) => record.accessMode === value,
+    },
   ];
 }
 
@@ -242,6 +275,27 @@ function createDetailFields(
     {
       label: formatMessage('pages.monitor.onlineUsers.fields.ip', 'IP'),
       value: record.ip,
+    },
+    {
+      label: formatMessage(
+        'pages.monitor.onlineUsers.fields.accessMode',
+        'Access Mode',
+      ),
+      value: record.accessMode,
+    },
+    {
+      label: formatMessage(
+        'pages.monitor.onlineUsers.fields.tenantId',
+        'Tenant ID',
+      ),
+      value: record.tenantId,
+    },
+    {
+      label: formatMessage(
+        'pages.monitor.onlineUsers.fields.membershipId',
+        'Membership ID',
+      ),
+      value: record.membershipId,
     },
     {
       label: formatMessage(
@@ -606,6 +660,16 @@ export default function OnlineUsersPage() {
       ),
       dataIndex: 'userAgent',
       ellipsis: true,
+    },
+    {
+      title: formatMessage(
+        'pages.monitor.onlineUsers.fields.accessMode',
+        'Access Mode',
+      ),
+      dataIndex: 'accessMode',
+      width: 136,
+      render: (_, record) =>
+        record.accessMode ? <Tag>{record.accessMode}</Tag> : '-',
     },
     {
       title: formatMessage(

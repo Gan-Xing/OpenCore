@@ -110,3 +110,15 @@ These remain below the productization waterline and cannot be described as compl
 | OpenAPI/SDK/Admin consistency                    | Done    | OpenAPI exports member DTOs; SDK adds list/update calls; `/system/tenants` edits current-tenant assignments from live APIs. |
 | Smoke/guard                                      | Done    | Added `smoke:core-tenant-member` and `guard:tenant-member-assignment`, both wired into local/deploy smoke scripts.          |
 | Tenant Member CRUD/invitation and switcher Admin | Pending | T3e is assignment only; full Tenant Member lifecycle and tenant switcher remain T6.                                         |
+
+## T4a Audit
+
+| Requirement                         | Status  | Notes                                                                                                                        |
+| ----------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Online session tenant isolation     | Done    | Monitor list/detail/summary/cleanup/kick-out now resolve the tenant from `RequestContext`, falling back to `tenant_root`.    |
+| Auth token validation remains valid | Done    | Session registration, bearer token validation, and token revocation remain token-scoped so auth does not depend on UI scope. |
+| Cross-tenant monitor rejection      | Done    | Prisma integration test and public smoke prove foreign-tenant sessions are hidden, skipped, and not cleaned from root scope. |
+| Seed/SDK/Admin consistency          | Done    | Seed and SDK fixtures include root tenant fields; Admin Online Users exposes access mode, tenant id, and membership id.      |
+| OpenAPI consistency                 | Done    | Online-session DTO already includes tenant fields; no endpoint shape change was required.                                    |
+| Smoke/guard                         | Done    | Added `guard:tenant-online-user-scope`; existing `smoke:core-online-user` now covers foreign-tenant session isolation.       |
+| Dict/config/notice/file/log scope   | Pending | T4a only closes online sessions. Remaining T4 modules still need tenant ownership, tests, smoke, guards, and docs.           |

@@ -4,7 +4,7 @@ Date: 2026-06-23
 Repository: `Gan-Xing/OpenCore`  
 Branch: `main`  
 Target track: `Cycle-022 / Tenant Foundation`  
-Status: **In progress; T3e tenant member assignment implemented, deployed, and verified; T3 organization/RBAC tenantization complete**
+Status: **In progress; T4a online-session tenant isolation implemented, deployed, and verified; T4 core data isolation remains partial**
 
 ## 0. Current Round Snapshot
 
@@ -12,7 +12,7 @@ Updated: 2026-06-23
 
 Current completed slice count: **4 full slices**
 
-This working tree has advanced Cycle-022 through the first four full deployable tenant foundation slices:
+This working tree has advanced Cycle-022 through the first four full deployable tenant foundation slices plus T4a online-session tenant isolation:
 
 - Prisma models for `TenantPlan`, `TenantPlanModule`, `Tenant`, `TenantMembership`, `TenantMembershipRole`, `TenantMembershipPost`, `PlatformRole`, `UserPlatformRole`, and `PlatformRolePermission`.
 - Migration `20260622223000_tenant_foundation` creates the `root` tenant, root `system.full` plan, root memberships for existing users, and transitional root copies of `UserRole` and `UserPost`.
@@ -56,10 +56,16 @@ This working tree has advanced Cycle-022 through the first four full deployable 
 - SDK tenancy client/types and the live `/system/tenants` Admin page now expose current-tenant members and an assignment modal for status, department, roles, and posts.
 - Tenant member assignment guard and smoke coverage were added and wired into local/deploy smoke scripts for the T3e Tenant Member assignment closure.
 - Refreshed deploy completed on API `39172` and Admin `39174`; tenant foundation/auth/RBAC/role/post/dept/member smokes passed against local and public API.
+- `PrismaOnlineUserRepository` now scopes monitor list/detail/summary/cleanup/kick-out operations to `RequestContext.tenantId`, with `tenant_root` fallback for single-mode compatibility.
+- Auth session registration, bearer token validation, and direct token revocation remain token-scoped so authentication does not depend on monitor UI tenant scope.
+- Online-session seed records and SDK fixtures now include root tenant fields for `session_operator`; Admin Online Users displays access mode, tenant id, and membership id from live data.
+- `smoke:core-online-user` seeds a foreign tenant session and proves root-scope list/detail/single-kick/batch-kick/expired-cleanup do not cross tenants.
+- `pnpm guard:tenant-online-user-scope` was added for the T4a Online Session isolation closure.
+- Refreshed deploy completed on API `39172` and Admin `39174`; tenant foundation/auth/RBAC/role/post/dept/member and online-user smokes passed against local and public API.
 
 Still not complete:
 
-- tenant-scoped System/core repositories for dict, config, notices, files, logs, online sessions, and other non-org data;
+- tenant-scoped System/core repositories for dict, config, notices, files, logs, and other non-org data;
 - Redis/file/queue/WebSocket/Integration/OAuth/audit runtime propagation;
 - Tenant Plan CRUD, Tenant Member CRUD/invitation, Admin switcher, and platform visit mode beyond active-tenant member assignment;
 - platform visit/impersonation audit.

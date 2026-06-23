@@ -433,3 +433,51 @@ Passed after deploy:
 - No Tenant Member creation/invitation/deletion API in T3e.
 - No client-driven tenant switch or body/query/header tenant selector.
 - No Redis/file/queue/WebSocket/Integration tenant propagation yet.
+
+## Round 8: T4a Online-Session Tenant Isolation
+
+### Completed
+
+- Scoped persisted monitor online-session operations:
+  - list, detail, summary, expired cleanup, single kick-out, and batch kick-out resolve the active tenant from `RequestContext`;
+  - missing context falls back to `tenant_root` for single-mode compatibility.
+- Kept auth paths token-scoped:
+  - session registration;
+  - bearer token validation and `lastSeenAt` refresh;
+  - direct token revocation.
+- Added tenant-scope verification:
+  - Prisma integration test creates a foreign tenant session and proves root context cannot list, detail, kick, or clean it;
+  - `smoke:core-online-user` seeds a foreign tenant session through Prisma and exercises the public API.
+- Updated seed/SDK/Admin:
+  - source online-session seed and SDK fixture now include root tenant fields for `session_operator`;
+  - Admin Online Users exposes access mode, tenant id, and membership id in search/export/detail/table surfaces.
+- Added `guard:tenant-online-user-scope` and kept existing local/deploy smoke wiring for `smoke-core-online-user.ts`.
+
+### Verification Log
+
+Passed before deploy:
+
+- Prisma schema validation, client generation, migration deploy, and seed.
+- `pnpm prisma:seed:check`, tenant foundation/auth/RBAC/role/post/dept/member/online-user guards, and typed smoke/script typechecks.
+- OpenAPI export/check, registry tag check, and SDK contract check.
+- Online-user package integration spec; full repository lint, typecheck, and test suites.
+- Local API smoke script, including foreign-tenant online-session hidden/detail/kick/cleanup checks.
+
+Passed after deploy:
+
+- Refreshed deploy on API `39172` and Admin `39174`.
+- Deploy smoke list, including public Admin UI checks and deployed API online-user smoke.
+- Public API tenant smokes for foundation, auth, RBAC, role, post, department, member, and online-user after sourcing `.env.opencore.local`.
+
+### Remaining Product Debt
+
+- Complete T4 System/core tenant data isolation for dict, config, notice, file, audit/login logs, and related core tables.
+- Complete T5 Redis/file/queue/WebSocket/Integration/OAuth/audit runtime propagation.
+- Complete T6 live Tenant Plan CRUD, Tenant Member CRUD/invitation, Admin switcher, platform visit mode, and platform visit audit.
+
+### Deliberate Non-Goals
+
+- No Prisma migration in T4a; `OnlineUserSession.tenantId` already existed from T2.
+- No body/query/header tenant selector for online-user monitor APIs.
+- No platform-admin global online-session view; that belongs with T6 platform visit/control plane.
+- No dict/config/notice/file/log tenant isolation in this sub-slice.

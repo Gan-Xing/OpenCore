@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
+import { getRequestContext } from '@opencore/core';
 import { PrismaService } from '@opencore/database';
 import type {
   SecurityAuthSessionRecord,
@@ -40,6 +41,8 @@ type OnlineUserSessionRow = {
   revokedReason: string | null;
 };
 
+const ROOT_TENANT_ID = 'tenant_root';
+
 @Injectable()
 export class PrismaOnlineUserRepository extends OnlineUserRepository {
   constructor(private readonly prisma: PrismaService) {
@@ -50,7 +53,9 @@ export class PrismaOnlineUserRepository extends OnlineUserRepository {
     query: OnlineUserQuery = {},
   ): Promise<PageResult<OnlineUserSessionRecord>> {
     const filters = normalizeOnlineUserFilters(query);
+    const tenantId = resolveCurrentTenantId();
     const where = {
+      tenantId,
       ...(filters.active === undefined
         ? {}
         : filters.active
@@ -84,7 +89,7 @@ export class PrismaOnlineUserRepository extends OnlineUserRepository {
   }
 
   async getOnlineUser(id: string): Promise<OnlineUserSessionRecord> {
-    return this.findSession(id);
+    return this.findScopedSession(id);
   }
 
   async registerSession(record: SecurityAuthSessionRecord): Promise<void> {
@@ -189,7 +194,7 @@ export class PrismaOnlineUserRepository extends OnlineUserRepository {
     id: string,
     body: KickOutSessionInput,
   ): Promise<OnlineUserSessionRecord> {
-    const existing = await this.findSession(id);
+    const existing = await this.findScopedSession(id);
     assertSessionActive(existing);
     const session = await this.prisma.onlineUserSession.update({
       where: { id },
@@ -204,7 +209,9 @@ export class PrismaOnlineUserRepository extends OnlineUserRepository {
   }
 
   async getSummary() {
+    const tenantId = resolveCurrentTenantId();
     const sessions = await this.prisma.onlineUserSession.findMany({
+      where: { tenantId },
       select: { expiresAt: true, revokedAt: true, username: true },
     });
 
@@ -219,8 +226,10 @@ export class PrismaOnlineUserRepository extends OnlineUserRepository {
 
   async cleanExpiredSessions(input: CleanExpiredOnlineUserSessionsInput = {}) {
     const expiredBefore = normalizeExpiredBefore(input.expiredBefore);
+    const tenantId = resolveCurrentTenantId();
     const result = await this.prisma.onlineUserSession.deleteMany({
       where: {
+        tenantId,
         expiresAt: { lte: new Date(expiredBefore) },
       },
     });
@@ -232,10 +241,12 @@ export class PrismaOnlineUserRepository extends OnlineUserRepository {
     };
   }
 
-  private async findSession(id: string): Promise<OnlineUserSessionRecord> {
+  private async findScopedSession(
+    id: string,
+  ): Promise<OnlineUserSessionRecord> {
     return requireOnlineUserSession(
       await this.prisma.onlineUserSession
-        .findUnique({ where: { id } })
+        .findFirst({ where: { id, tenantId: resolveCurrentTenantId() } })
         .then((session) =>
           session ? toOnlineUserSessionRecord(session) : undefined,
         ),
@@ -278,4 +289,8 @@ function isAuthAccessMode(
 
 function createSessionId(tokenId: string): string {
   return `session_${tokenId.replace(/[^a-zA-Z0-9_-]/gu, '_')}`;
+}
+
+function resolveCurrentTenantId(): string {
+  return getRequestContext()?.tenantId ?? ROOT_TENANT_ID;
 }
