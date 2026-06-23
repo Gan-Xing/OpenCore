@@ -26,6 +26,7 @@ export type MessageSummary = {
 
 export type NoticeSummary = {
   id: string;
+  tenantId: string;
   title: string;
   body: string;
   status: 'archived' | 'draft' | 'published';
@@ -185,6 +186,7 @@ export function createCollaborationFixtures(): CollaborationFixtures {
   const notices: readonly NoticeSummary[] = [
     {
       id: 'notice_release_window',
+      tenantId: 'tenant_root',
       title: 'Release window',
       body: 'OpenCore maintenance release window.',
       status: 'draft',

@@ -1270,3 +1270,48 @@ Passed after deploy:
 
 - No client-supplied tenant selector was added.
 - No sender/recipient identity redesign in T7a; this round only closes row ownership and access isolation.
+
+## Round 28: T7b Collaboration Notice Tenant Isolation
+
+### Completed
+
+- Added migration `20260624033000_tenant_scoped_collaboration_notices`:
+  - adds `CollaborationNotice.tenantId`;
+  - backfills existing notices to `tenant_root`;
+  - adds the tenant foreign key;
+  - replaces global notice lookup indexes with tenant-prefixed indexes.
+- Updated Prisma schema with `Tenant.collaborationNotices` and `CollaborationNotice.tenant`.
+- Updated Collaboration Notice repositories:
+  - Prisma summary/list/detail/create/publish/archive resolve `RequestContext.tenantId`;
+  - seed repository mirrors the same tenant fallback so tests cannot bypass isolation.
+- Updated public/admin surfaces:
+  - seed notice includes `tenantId`;
+  - `NoticeDto` and SDK `NoticeSummary` expose `tenantId`;
+  - Admin Notices displays and exports `tenantId`.
+- Extended `smoke:core-collaboration-notices`:
+  - creates a foreign tenant notice through Prisma;
+  - proves root token list/detail/publish/archive cannot access it;
+  - verifies the foreign row remains owned by the foreign tenant.
+- Added `guard:tenant-collaboration-notice-scope`.
+
+### Verification Log
+
+Passed before deploy:
+
+- Prisma client generation and schema validation.
+- Tenant collaboration notice guard, seed typecheck, typed smoke typecheck, OpenAPI export/check, SDK check, and registry tag check.
+- Focused API Collaboration repository test, focused API/SDK/Admin typechecks, full typecheck, full lint, and full test suite.
+
+Passed after deploy:
+
+- Refreshed OpenCore deploy rebuilt API/Admin, applied migration `20260624033000_tenant_scoped_collaboration_notices`, reseeded, restarted API `39172` and Admin `39174`, and passed deploy smoke including Collaboration Notice foreign-tenant checks.
+- Public API Collaboration Notice smoke passed against `http://144.217.243.161:39172`.
+
+### Remaining Product Debt
+
+- Complete T7 tenantization for Collaboration Todo, Collaboration Approval Lite, ReportDefinition, and future business domains.
+
+### Deliberate Non-Goals
+
+- No client-supplied tenant selector was added.
+- No notice audience identity redesign in T7b; this round only closes row ownership and access isolation.

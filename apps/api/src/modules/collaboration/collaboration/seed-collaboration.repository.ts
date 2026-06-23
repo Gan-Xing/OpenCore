@@ -62,7 +62,7 @@ export class SeedCollaborationRepository extends CollaborationRepository {
         (message) =>
           message.tenantId === tenantId && message.status !== 'deleted',
       ),
-      notices: this.notices,
+      notices: this.notices.filter((notice) => notice.tenantId === tenantId),
       todos: this.todos,
       approvals: this.approvals,
     });
@@ -133,17 +133,22 @@ export class SeedCollaborationRepository extends CollaborationRepository {
   async listNotices(
     query: NoticeQueryDto = {},
   ): Promise<PageResult<NoticeRecord>> {
+    const tenantId = resolveCurrentTenantId();
     return createPage(
-      this.notices.filter((notice) =>
-        matchesOptional(notice.status, query.status),
+      this.notices.filter(
+        (notice) =>
+          notice.tenantId === tenantId &&
+          matchesOptional(notice.status, query.status),
       ),
       query,
     );
   }
 
   async createNotice(body: CreateNoticeDto): Promise<NoticeRecord> {
+    const tenantId = resolveCurrentTenantId();
     const notice: NoticeRecord = {
       id: `notice_${this.notices.length + 1}`,
+      tenantId,
       title: body.title,
       body: body.body,
       status: 'draft',
@@ -313,8 +318,11 @@ export class SeedCollaborationRepository extends CollaborationRepository {
   }
 
   private findNotice(id: string): NoticeRecord {
+    const tenantId = resolveCurrentTenantId();
     return requireRecord(
-      this.notices.find((notice) => notice.id === id),
+      this.notices.find(
+        (notice) => notice.id === id && notice.tenantId === tenantId,
+      ),
       'Notice',
       id,
     );

@@ -59,6 +59,7 @@ const ROOT_TENANT_ID = 'tenant_root';
 
 type NoticeRow = {
   id: string;
+  tenantId: string;
   title: string;
   body: string;
   status: string;
@@ -112,7 +113,7 @@ export class PrismaCollaborationRepository extends CollaborationRepository {
       this.prisma.collaborationMessage.findMany({
         where: { tenantId, deletedAt: null },
       }),
-      this.prisma.collaborationNotice.findMany(),
+      this.prisma.collaborationNotice.findMany({ where: { tenantId } }),
       this.prisma.collaborationTodo.findMany(),
       this.prisma.collaborationApprovalLite.findMany(),
     ]);
@@ -212,8 +213,9 @@ export class PrismaCollaborationRepository extends CollaborationRepository {
   async listNotices(
     query: NoticeQueryDto = {},
   ): Promise<PageResult<NoticeRecord>> {
+    const tenantId = resolveCurrentTenantId();
     const rows = await this.prisma.collaborationNotice.findMany({
-      where: { status: query.status },
+      where: { tenantId, status: query.status },
       orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
     });
 
@@ -221,8 +223,10 @@ export class PrismaCollaborationRepository extends CollaborationRepository {
   }
 
   async createNotice(body: CreateNoticeDto): Promise<NoticeRecord> {
+    const tenantId = resolveCurrentTenantId();
     const notice = await this.prisma.collaborationNotice.create({
       data: {
+        tenantId,
         title: body.title,
         body: body.body,
         targetAudience: body.targetAudience,
@@ -437,9 +441,10 @@ export class PrismaCollaborationRepository extends CollaborationRepository {
   }
 
   private async findNotice(id: string): Promise<NoticeRecord> {
+    const tenantId = resolveCurrentTenantId();
     return requireRecord(
       await this.prisma.collaborationNotice
-        .findUnique({ where: { id } })
+        .findFirst({ where: { id, tenantId } })
         .then((notice) => (notice ? toNoticeRecord(notice) : undefined)),
       'Notice',
       id,
@@ -494,6 +499,7 @@ function resolveCurrentTenantId(): string {
 function toNoticeRecord(row: NoticeRow): NoticeRecord {
   return {
     id: row.id,
+    tenantId: row.tenantId,
     title: row.title,
     body: row.body,
     status: normalizeNoticeStatus(row.status),

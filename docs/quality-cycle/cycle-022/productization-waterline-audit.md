@@ -190,6 +190,18 @@ These remain below the productization waterline and cannot be described as compl
 | Smoke/guard                        | Done    | Added `guard:tenant-collaboration-message-scope`; existing collaboration message smoke now covers foreign-tenant message isolation.           |
 | Remaining T7 optional data scope   | Pending | Collaboration Notice, Todo, Approval Lite, ReportDefinition, and future business domains remain pending.                                      |
 
+## T7b Collaboration Notices
+
+| Check                              | Status  | Evidence                                                                                                                                      |
+| ---------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Notice tenant ownership            | Done    | `CollaborationNotice.tenantId` is backfilled to `tenant_root`, defaults to root, and is constrained to `Tenant`.                             |
+| Tenant-prefixed notice indexes     | Done    | Status/date and creator/date indexes now include `tenantId` first.                                                                           |
+| Repository tenant isolation        | Done    | Collaboration notice summary/list/detail/create/publish/archive resolve the active tenant from `RequestContext` with root fallback.          |
+| Cross-tenant API rejection         | Done    | `smoke:core-collaboration-notices` seeds a foreign tenant notice and proves root-scope list/detail/publish/archive cannot access it.          |
+| Seed/OpenAPI/SDK/Admin             | Done    | Seed notice rows, `NoticeDto`, SDK `NoticeSummary`, and Admin Notices expose `tenantId`.                                                      |
+| Smoke/guard                        | Done    | Added `guard:tenant-collaboration-notice-scope`; existing collaboration notice smoke now covers foreign-tenant notice isolation.              |
+| Remaining T7 optional data scope   | Pending | Collaboration Todo, Approval Lite, ReportDefinition, and future business domains remain pending.                                              |
+
 ## T4a Audit
 
 | Requirement                         | Status  | Notes                                                                                                                        |

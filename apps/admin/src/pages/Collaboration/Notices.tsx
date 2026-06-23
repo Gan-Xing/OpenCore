@@ -64,6 +64,7 @@ const NOTICE_CREATE_PERMISSION_MARKER = 'collaboration:notice:create';
 const NOTICE_UPDATE_PERMISSION_MARKER = 'collaboration:notice:update';
 
 const searchFields: CurrentPageSearchField<NoticeSummary>[] = [
+  'tenantId',
   'title',
   'createdBy',
   'status',
@@ -97,6 +98,13 @@ function createExportColumns(
     {
       title: formatMessage('pages.collaboration.common.fields.id', 'ID'),
       dataIndex: 'id',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.notices.fields.tenantId',
+        'Tenant ID',
+      ),
+      dataIndex: 'tenantId',
     },
     {
       title: formatMessage('pages.collaboration.notices.fields.title', 'Title'),
@@ -409,6 +417,14 @@ export default function NoticesPage() {
 
   const columns: ProColumns<NoticeSummary>[] = [
     {
+      title: formatMessage(
+        'pages.collaboration.notices.fields.tenantId',
+        'Tenant ID',
+      ),
+      dataIndex: 'tenantId',
+      width: 160,
+    },
+    {
       title: formatMessage('pages.collaboration.notices.fields.title', 'Title'),
       dataIndex: 'title',
       render: (_, record) => (
@@ -625,6 +641,13 @@ export default function NoticesPage() {
           {
             label: formatMessage('pages.collaboration.common.fields.id', 'ID'),
             value: selected?.id,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.notices.fields.tenantId',
+              'Tenant ID',
+            ),
+            value: selected?.tenantId,
           },
           {
             label: formatMessage(

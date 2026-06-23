@@ -2235,6 +2235,7 @@ export default {
   'pages.collaboration.notices.fields.body': '正文',
   'pages.collaboration.notices.fields.createdBy': '创建人',
   'pages.collaboration.notices.fields.publishedAt': '发布时间',
+  'pages.collaboration.notices.fields.tenantId': '租户 ID',
   'pages.collaboration.notices.fields.title': '标题',
   'pages.collaboration.notices.fields.validFrom': '生效时间',
   'pages.collaboration.notices.fields.validTo': '失效时间',

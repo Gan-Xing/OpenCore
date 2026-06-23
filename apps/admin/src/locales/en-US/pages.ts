@@ -2434,6 +2434,7 @@ export default {
   'pages.collaboration.notices.fields.body': 'Body',
   'pages.collaboration.notices.fields.createdBy': 'Created By',
   'pages.collaboration.notices.fields.publishedAt': 'Published At',
+  'pages.collaboration.notices.fields.tenantId': 'Tenant ID',
   'pages.collaboration.notices.fields.title': 'Title',
   'pages.collaboration.notices.fields.validFrom': 'Valid From',
   'pages.collaboration.notices.fields.validTo': 'Valid To',

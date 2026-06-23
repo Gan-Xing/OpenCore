@@ -606,6 +606,7 @@ async function seedCollaboration(): Promise<{
     await prisma.collaborationNotice.upsert({
       where: { id: notice.id },
       update: {
+        tenantId: notice.tenantId,
         title: notice.title,
         body: notice.body,
         status: notice.status,
@@ -619,6 +620,7 @@ async function seedCollaboration(): Promise<{
       },
       create: {
         id: notice.id,
+        tenantId: notice.tenantId,
         title: notice.title,
         body: notice.body,
         status: notice.status,

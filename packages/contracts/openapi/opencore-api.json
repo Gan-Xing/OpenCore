@@ -15010,6 +15010,7 @@
         "type": "object",
         "properties": {
           "id": { "type": "string" },
+          "tenantId": { "type": "string" },
           "title": { "type": "string" },
           "body": { "type": "string" },
           "status": {
@@ -15026,6 +15027,7 @@
         },
         "required": [
           "id",
+          "tenantId",
           "title",
           "body",
           "status",

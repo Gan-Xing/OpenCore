@@ -30,6 +30,7 @@ export const seedMessages: readonly MessageRecord[] = [
 export const seedNotices: readonly NoticeRecord[] = [
   {
     id: 'notice_release_window',
+    tenantId: 'tenant_root',
     title: 'Release window',
     body: 'OpenCore maintenance release window.',
     status: 'draft',

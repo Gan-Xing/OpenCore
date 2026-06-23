@@ -66,6 +66,39 @@ describe('CollaborationRepository', () => {
     });
   });
 
+  it('scopes notices by the active tenant context', async () => {
+    const repository = new SeedCollaborationRepository();
+    const foreignNotice = await runInTenant('tenant_foreign', () =>
+      repository.createNotice({
+        title: 'Foreign notice',
+        body: 'Foreign notice body',
+        targetAudience: ['admin'],
+        createdBy: 'foreign',
+      }),
+    );
+
+    await expect(repository.listNotices({ status: 'draft' })).resolves
+      .toMatchObject({
+        items: expect.not.arrayContaining([
+          expect.objectContaining({ id: foreignNotice.id }),
+        ]),
+      });
+    await expectHttpExceptionCode(
+      repository.getNotice(foreignNotice.id),
+      'COLLABORATION_RESOURCE_NOT_FOUND',
+    );
+    await expectHttpExceptionCode(
+      repository.publishNotice(foreignNotice.id),
+      'COLLABORATION_RESOURCE_NOT_FOUND',
+    );
+    await expect(runInTenant('tenant_foreign', () =>
+      repository.getNotice(foreignNotice.id),
+    )).resolves.toMatchObject({
+      id: foreignNotice.id,
+      tenantId: 'tenant_foreign',
+    });
+  });
+
   it('supports message read, archive, and delete policies', async () => {
     const repository = new SeedCollaborationRepository();
     const message = await repository.createMessage({
