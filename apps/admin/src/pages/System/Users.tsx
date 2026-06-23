@@ -2093,7 +2093,7 @@ export default function UsersPage() {
   return (
     <PageContainer
       title={formatMessage('pages.system.users.title', 'Users')}
-      subTitle={formatMessage('pages.system.rbac.section', 'S6 RBAC')}
+      subTitle={formatMessage('pages.system.rbac.section', 'Access Control')}
     >
       {loadError ? (
         <Alert

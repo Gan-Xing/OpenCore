@@ -669,7 +669,7 @@ export default function TodosPage() {
       title={formatMessage('pages.collaboration.todos.title', 'Todos')}
       subTitle={formatMessage(
         'pages.collaboration.section',
-        'S10 Collaboration',
+        'Collaboration',
       )}
     >
       {loadError ? (

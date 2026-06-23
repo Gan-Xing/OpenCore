@@ -1699,7 +1699,7 @@ export default function ConfigPage() {
   return (
     <PageContainer
       title={formatMessage('pages.system.config.title', 'System Config')}
-      subTitle={formatMessage('pages.system.config.section', 'S7 System')}
+      subTitle={formatMessage('pages.system.config.section', 'System Config')}
     >
       {loadError ? (
         <Alert

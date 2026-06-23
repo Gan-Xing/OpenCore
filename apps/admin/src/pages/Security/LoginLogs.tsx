@@ -961,7 +961,7 @@ export default function LoginLogsPage() {
   return (
     <PageContainer
       title={formatMessage('pages.security.loginLogs.title', 'Login Logs')}
-      subTitle={formatMessage('pages.system.section', 'S7 System')}
+      subTitle={formatMessage('pages.system.section', 'System Management')}
     >
       {loadError ? (
         <Alert

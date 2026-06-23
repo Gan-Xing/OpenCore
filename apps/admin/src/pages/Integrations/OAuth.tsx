@@ -611,7 +611,7 @@ export default function OAuthIntegrationPage() {
   return (
     <PageContainer
       title={formatMessage('menu.integrations.oauth', 'OAuth')}
-      subTitle={formatMessage('pages.integrations.section', 'S12 Integrations')}
+      subTitle={formatMessage('pages.integrations.section', 'Integrations')}
     >
       {loadError ? (
         <Alert

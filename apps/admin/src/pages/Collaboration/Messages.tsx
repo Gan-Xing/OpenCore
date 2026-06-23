@@ -584,7 +584,7 @@ export default function MessagesPage() {
       title={formatMessage('pages.collaboration.messages.title', 'Messages')}
       subTitle={formatMessage(
         'pages.collaboration.section',
-        'S10 Collaboration',
+        'Collaboration',
       )}
     >
       {loadError ? (

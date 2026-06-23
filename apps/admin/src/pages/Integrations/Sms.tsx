@@ -617,7 +617,7 @@ export default function SmsIntegrationPage() {
   return (
     <PageContainer
       title={formatMessage('menu.integrations.sms', 'SMS')}
-      subTitle={formatMessage('pages.integrations.section', 'S12 Integrations')}
+      subTitle={formatMessage('pages.integrations.section', 'Integrations')}
     >
       {loadError ? (
         <Alert

@@ -595,7 +595,7 @@ export default function ApprovalsPage() {
       )}
       subTitle={formatMessage(
         'pages.collaboration.section',
-        'S10 Collaboration',
+        'Collaboration',
       )}
     >
       {loadError ? (

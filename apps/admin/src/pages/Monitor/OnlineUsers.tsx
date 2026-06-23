@@ -756,7 +756,7 @@ export default function OnlineUsersPage() {
   return (
     <PageContainer
       title={formatMessage('pages.monitor.onlineUsers.title', 'Online Users')}
-      subTitle={formatMessage('pages.monitor.section', 'S11 Operations')}
+      subTitle={formatMessage('pages.monitor.section', 'Operations')}
     >
       {loadError ? (
         <Alert

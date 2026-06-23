@@ -444,7 +444,7 @@ export default function PermissionsPage() {
   return (
     <PageContainer
       title={formatMessage('menu.system.permissions', 'Permissions')}
-      subTitle={formatMessage('pages.system.rbac.section', 'S6 RBAC')}
+      subTitle={formatMessage('pages.system.rbac.section', 'Access Control')}
     >
       {loadError ? (
         <Alert

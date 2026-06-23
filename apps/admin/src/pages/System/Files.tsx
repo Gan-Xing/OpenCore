@@ -549,7 +549,7 @@ export default function FilesPage() {
   return (
     <PageContainer
       title={formatMessage('menu.system.files', 'File Center')}
-      subTitle={formatMessage('pages.system.section', 'S7 System')}
+      subTitle={formatMessage('pages.system.section', 'System Management')}
     >
       {loadError ? (
         <Alert

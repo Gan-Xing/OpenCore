@@ -108,7 +108,7 @@ export default function VersionPage() {
         'pages.monitor.version.title',
         'Live runtime version',
       )}
-      subTitle={formatMessage('pages.monitor.runtime.section', 'S8 Monitor')}
+      subTitle={formatMessage('pages.monitor.runtime.section', 'Runtime Monitor')}
     >
       {loadError ? (
         <Alert

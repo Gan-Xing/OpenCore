@@ -89,7 +89,7 @@ const SystemManagementTable = <T extends SystemManagementRecord>({
   return (
     <PageContainer
       title={title}
-      subTitle={formatMessage('pages.system.section', 'S7 System')}
+      subTitle={formatMessage('pages.system.section', 'System Management')}
     >
       <ProTable<T>
         rowKey={(record) => String(record.id ?? record.code ?? record.key)}

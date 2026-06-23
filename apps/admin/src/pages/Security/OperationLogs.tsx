@@ -807,7 +807,7 @@ export default function OperationLogsPage() {
         'pages.security.operationLogs.title',
         'Operation Logs',
       )}
-      subTitle={formatMessage('pages.system.section', 'S7 System')}
+      subTitle={formatMessage('pages.system.section', 'System Management')}
     >
       {loadError ? (
         <Alert

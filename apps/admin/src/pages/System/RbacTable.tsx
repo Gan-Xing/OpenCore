@@ -96,7 +96,7 @@ const RbacTable = <T extends RbacRecord>({
   return (
     <PageContainer
       title={title}
-      subTitle={formatMessage('pages.system.rbac.section', 'S6 RBAC')}
+      subTitle={formatMessage('pages.system.rbac.section', 'Access Control')}
     >
       <ProTable<T>
         rowKey={(record) => String(record.id ?? record.code ?? record.key)}

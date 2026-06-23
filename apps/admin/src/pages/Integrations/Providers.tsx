@@ -628,7 +628,7 @@ export default function ProvidersPage() {
   return (
     <PageContainer
       title={formatMessage('menu.integrations.providers', 'Providers')}
-      subTitle={formatMessage('pages.integrations.section', 'S12 Integrations')}
+      subTitle={formatMessage('pages.integrations.section', 'Integrations')}
     >
       {loadError ? (
         <Alert

@@ -543,7 +543,7 @@ export default function NoticesPage() {
       title={formatMessage('pages.collaboration.notices.title', 'Notices')}
       subTitle={formatMessage(
         'pages.collaboration.section',
-        'S10 Collaboration',
+        'Collaboration',
       )}
     >
       {loadError ? (

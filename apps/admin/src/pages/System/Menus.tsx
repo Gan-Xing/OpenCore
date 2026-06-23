@@ -747,7 +747,7 @@ export default function MenusPage() {
   return (
     <PageContainer
       title={formatMessage('pages.system.menus.title', 'Menus')}
-      subTitle={formatMessage('pages.system.rbac.section', 'S6 RBAC')}
+      subTitle={formatMessage('pages.system.rbac.section', 'Access Control')}
     >
       {loadError ? (
         <Alert

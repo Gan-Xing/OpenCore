@@ -641,7 +641,7 @@ export default function MailIntegrationPage() {
   return (
     <PageContainer
       title={formatMessage('menu.integrations.mail', 'Mail')}
-      subTitle={formatMessage('pages.integrations.section', 'S12 Integrations')}
+      subTitle={formatMessage('pages.integrations.section', 'Integrations')}
     >
       {loadError ? (
         <Alert

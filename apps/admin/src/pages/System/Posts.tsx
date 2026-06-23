@@ -547,7 +547,7 @@ export default function PostsPage() {
   return (
     <PageContainer
       title={formatMessage('menu.system.posts', 'Posts')}
-      subTitle={formatMessage('pages.system.section', 'S7 System')}
+      subTitle={formatMessage('pages.system.section', 'System Management')}
     >
       {loadError ? (
         <Alert

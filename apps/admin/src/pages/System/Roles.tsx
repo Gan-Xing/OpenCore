@@ -960,7 +960,7 @@ export default function RolesPage() {
   return (
     <PageContainer
       title={formatMessage('menu.system.roles', 'Roles')}
-      subTitle={formatMessage('pages.system.rbac.section', 'S6 RBAC')}
+      subTitle={formatMessage('pages.system.rbac.section', 'Access Control')}
     >
       {loadError ? (
         <Alert

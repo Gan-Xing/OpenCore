@@ -3415,7 +3415,7 @@ export default function SystemNoticesPage() {
   return (
     <PageContainer
       title={formatMessage('pages.system.notices.title', 'System Notices')}
-      subTitle={formatMessage('pages.system.notices.section', 'S7 System')}
+      subTitle={formatMessage('pages.system.notices.section', 'System Notices')}
     >
       <Tabs
         activeKey={activeTab}

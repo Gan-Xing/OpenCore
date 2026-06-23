@@ -149,7 +149,7 @@ export default function ExportToolsPage() {
   return (
     <PageContainer
       title={formatMessage('pages.tools.export.title', 'Live export protocol')}
-      subTitle={formatMessage('pages.tools.export.section', 'S8 Tool')}
+      subTitle={formatMessage('pages.tools.export.section', 'Tools')}
       extra={[
         <Tooltip
           key="reload"

@@ -240,7 +240,7 @@ export default function WeChatIntegrationPage() {
         'pages.integrations.wechat.title',
         'Live WeChat design',
       )}
-      subTitle={formatMessage('pages.integrations.section', 'S12 Integrations')}
+      subTitle={formatMessage('pages.integrations.section', 'Integrations')}
       extra={[
         <Tooltip
           key="reload"

@@ -174,7 +174,7 @@ export default function BillingDesignPage() {
   return (
     <PageContainer
       title={formatMessage('menu.integrations.payment', 'Payment Design')}
-      subTitle={formatMessage('pages.integrations.section', 'S12 Integrations')}
+      subTitle={formatMessage('pages.integrations.section', 'Integrations')}
     >
       <ProTable<IntegrationDesignSummary>
         rowKey="topic"

@@ -165,7 +165,7 @@ const OpenApiStatusPage: React.FC = () => {
   return (
     <PageContainer
       title={formatMessage('pages.tools.openapi.title', 'Live OpenAPI drift')}
-      subTitle={formatMessage('pages.tools.openapi.section', 'S5 status entry')}
+      subTitle={formatMessage('pages.tools.openapi.section', 'Tools')}
       extra={[
         <Button key="docs" icon={<ApiOutlined />} href="/api/docs">
           {formatMessage('pages.tools.openapi.actions.swagger', 'Swagger')}

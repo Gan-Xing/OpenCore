@@ -853,7 +853,7 @@ export default function JobsPage() {
   return (
     <PageContainer
       title={formatMessage('pages.monitor.jobs.title', 'Jobs')}
-      subTitle={formatMessage('pages.monitor.section', 'S11 Operations')}
+      subTitle={formatMessage('pages.monitor.section', 'Operations')}
     >
       {loadError ? (
         <Alert
