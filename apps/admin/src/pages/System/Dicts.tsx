@@ -27,7 +27,7 @@ import type {
   DictTypeSummary,
   ExportPreview,
 } from '@opencore/sdk';
-import { useAccess } from '@umijs/max';
+import { useAccess, useIntl } from '@umijs/max';
 import {
   Alert,
   Button,
@@ -402,7 +402,12 @@ function readFileAsDataUrl(file: File): Promise<string> {
 
 export default function DictsPage() {
   const access = useAccess();
+  const intl = useIntl();
   const { styles } = useStyles();
+  const tenantIdLabel = intl.formatMessage({
+    id: 'pages.system.dicts.fields.tenantId',
+    defaultMessage: 'Tenant ID',
+  });
   const screens = Grid.useBreakpoint();
   const isNarrow = screens.lg === false;
   const typeActionRef = useRef<ActionType | undefined>(undefined);
@@ -463,7 +468,7 @@ export default function DictsPage() {
 
   const createDetailFields = (record: DictTypeSummary): DetailField[] => [
     { label: text.fieldId, value: record.id },
-    { label: '租户 ID', value: record.tenantId },
+    { label: tenantIdLabel, value: record.tenantId },
     { label: '字典编码', value: record.code },
     { label: '字典名称', value: record.name },
     { label: '描述', value: record.description },
@@ -989,7 +994,7 @@ export default function DictsPage() {
       ),
     },
     {
-      title: '租户 ID',
+      title: tenantIdLabel,
       dataIndex: 'tenantId',
       width: 152,
       ellipsis: true,

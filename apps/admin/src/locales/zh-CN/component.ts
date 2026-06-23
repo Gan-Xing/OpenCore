@@ -11,4 +11,7 @@ export default {
   'component.currentPageFilters.reset': '重置',
   'component.currentPageFilters.searchPlaceholder': '搜索当前页',
   'component.readOnlyDetail.timeline': '时间线',
+  'component.tenantSwitcher.fallbackTenant': '租户',
+  'component.tenantSwitcher.switch': '切换租户',
+  'component.tenantSwitcher.switchFailed': '租户切换失败。',
 };

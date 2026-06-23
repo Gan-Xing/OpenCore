@@ -15,4 +15,7 @@ export default {
   'component.currentPageFilters.reset': 'Reset',
   'component.currentPageFilters.searchPlaceholder': 'Search current page',
   'component.readOnlyDetail.timeline': 'Timeline',
+  'component.tenantSwitcher.fallbackTenant': 'Tenant',
+  'component.tenantSwitcher.switch': 'Switch tenant',
+  'component.tenantSwitcher.switchFailed': 'Tenant switch failed.',
 };

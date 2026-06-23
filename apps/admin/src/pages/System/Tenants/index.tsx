@@ -166,11 +166,14 @@ function createPostOptions(rows: readonly SystemPostOptionSummary[]) {
     }));
 }
 
-function parsePlanLimitsJson(value: string): Record<string, unknown> {
+function parsePlanLimitsJson(
+  value: string,
+  objectErrorMessage: string,
+): Record<string, unknown> {
   const parsed = JSON.parse(value || '{}') as unknown;
 
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new Error('Tenant plan limits must be a JSON object.');
+    throw new Error(objectErrorMessage);
   }
 
   return parsed as Record<string, unknown>;
@@ -219,6 +222,30 @@ export default function TenantsPage() {
         ? intl.formatMessage({ id, defaultMessage }, values)
         : intl.formatMessage({ id, defaultMessage }),
     [intl],
+  );
+  const tenantStatusLabels = useMemo<Record<string, string>>(
+    () => ({
+      active: formatMessage('pages.system.tenants.status.active', 'Active'),
+      expired: formatMessage('pages.system.tenants.status.expired', 'Expired'),
+      invited: formatMessage('pages.system.tenants.status.invited', 'Invited'),
+      left: formatMessage('pages.system.tenants.status.left', 'Left'),
+      suspended: formatMessage(
+        'pages.system.tenants.status.suspended',
+        'Suspended',
+      ),
+    }),
+    [formatMessage],
+  );
+  const booleanLabels = useMemo(
+    () => ({
+      no: formatMessage('pages.system.tenants.values.false', 'No'),
+      yes: formatMessage('pages.system.tenants.values.true', 'Yes'),
+    }),
+    [formatMessage],
+  );
+  const planLimitsObjectError = formatMessage(
+    'pages.system.tenants.validation.limitsJsonObject',
+    'Tenant plan limits must be a JSON object.',
   );
 
   const loadSummary = useCallback(async () => {
@@ -443,14 +470,23 @@ export default function TenantsPage() {
     [formatMessage, loadSummary],
   );
 
-  const visitTenant = useCallback(async (record: TenantSummary) => {
-    await visitOpenCoreTenantAsPlatform({
-      reason: `Admin visit tenant ${record.code}`,
-      tenantId: record.id,
-    });
-    message.success(`Visiting tenant ${record.code}`);
-    window.location.reload();
-  }, []);
+  const visitTenant = useCallback(
+    async (record: TenantSummary) => {
+      await visitOpenCoreTenantAsPlatform({
+        reason: `Admin visit tenant ${record.code}`,
+        tenantId: record.id,
+      });
+      message.success(
+        formatMessage(
+          'pages.system.tenants.actions.visitTenantSuccess',
+          'Visiting tenant {code}.',
+          { code: record.code },
+        ),
+      );
+      window.location.reload();
+    },
+    [formatMessage],
+  );
 
   const tenantColumns = useMemo<ProColumns<TenantSummary>[]>(
     () => [
@@ -466,7 +502,9 @@ export default function TenantsPage() {
         title: formatMessage('pages.system.tenants.fields.status', 'Status'),
         dataIndex: 'status',
         render: (_, record) => (
-          <Tag color={statusColor(record.status)}>{record.status}</Tag>
+          <Tag color={statusColor(record.status)}>
+            {tenantStatusLabels[record.status] ?? record.status}
+          </Tag>
         ),
       },
       {
@@ -548,9 +586,17 @@ export default function TenantsPage() {
                 type="link"
               />
             </Tooltip>
-            <Tooltip title="Visit tenant">
+            <Tooltip
+              title={formatMessage(
+                'pages.system.tenants.actions.visitTenant',
+                'Visit tenant',
+              )}
+            >
               <Button
-                aria-label="Visit tenant"
+                aria-label={formatMessage(
+                  'pages.system.tenants.actions.visitTenantAria',
+                  'Visit tenant',
+                )}
                 disabled={record.status !== 'active'}
                 icon={<LoginOutlined />}
                 onClick={() => {
@@ -563,7 +609,13 @@ export default function TenantsPage() {
         ),
       },
     ],
-    [formatMessage, openTenantMembers, tenantForm, visitTenant],
+    [
+      formatMessage,
+      openTenantMembers,
+      tenantForm,
+      tenantStatusLabels,
+      visitTenant,
+    ],
   );
 
   const planColumns = useMemo<ProColumns<TenantPlanSummary>[]>(
@@ -581,7 +633,7 @@ export default function TenantsPage() {
         dataIndex: 'enabled',
         render: (_, record) => (
           <Tag color={record.enabled ? 'green' : 'red'}>
-            {record.enabled ? 'true' : 'false'}
+            {record.enabled ? booleanLabels.yes : booleanLabels.no}
           </Tag>
         ),
       },
@@ -664,7 +716,7 @@ export default function TenantsPage() {
         ),
       },
     ],
-    [deletePlan, deletingPlanId, formatMessage, planForm],
+    [booleanLabels, deletePlan, deletingPlanId, formatMessage, planForm],
   );
 
   const memberColumns = useMemo<ProColumns<TenantMemberSummary>[]>(
@@ -678,7 +730,9 @@ export default function TenantsPage() {
         title: formatMessage('pages.system.tenants.fields.status', 'Status'),
         dataIndex: 'status',
         render: (_, record) => (
-          <Tag color={statusColor(record.status)}>{record.status}</Tag>
+          <Tag color={statusColor(record.status)}>
+            {tenantStatusLabels[record.status] ?? record.status}
+          </Tag>
         ),
       },
       {
@@ -749,7 +803,7 @@ export default function TenantsPage() {
         ),
       },
     ],
-    [formatMessage, form],
+    [formatMessage, form, tenantStatusLabels],
   );
 
   const removeControlMember = useCallback(
@@ -787,7 +841,9 @@ export default function TenantsPage() {
         title: formatMessage('pages.system.tenants.fields.status', 'Status'),
         dataIndex: 'status',
         render: (_, record) => (
-          <Tag color={statusColor(record.status)}>{record.status}</Tag>
+          <Tag color={statusColor(record.status)}>
+            {tenantStatusLabels[record.status] ?? record.status}
+          </Tag>
         ),
       },
       {
@@ -795,7 +851,7 @@ export default function TenantsPage() {
         dataIndex: 'isOwner',
         render: (_, record) => (
           <Tag color={record.isOwner ? 'green' : 'default'}>
-            {record.isOwner ? 'true' : 'false'}
+            {record.isOwner ? booleanLabels.yes : booleanLabels.no}
           </Tag>
         ),
       },
@@ -908,9 +964,11 @@ export default function TenantsPage() {
     ],
     [
       formatMessage,
+      booleanLabels,
       memberForm,
       removeControlMember,
       removingControlMemberId,
+      tenantStatusLabels,
     ],
   );
 
@@ -959,7 +1017,7 @@ export default function TenantsPage() {
 
   const savePlan = async () => {
     const values = await planForm.validateFields();
-    const limits = parsePlanLimitsJson(values.limitsJson);
+    const limits = parsePlanLimitsJson(values.limitsJson, planLimitsObjectError);
     const body = {
       code: values.code,
       enabled: values.enabled,
@@ -1409,11 +1467,11 @@ export default function TenantsPage() {
           >
             <Select
               options={[
-                { label: 'active', value: 'active' },
-                { label: 'invited', value: 'invited' },
-                { label: 'suspended', value: 'suspended' },
+                { label: tenantStatusLabels.active, value: 'active' },
+                { label: tenantStatusLabels.invited, value: 'invited' },
+                { label: tenantStatusLabels.suspended, value: 'suspended' },
                 ...(editingControlMember
-                  ? [{ label: 'left', value: 'left' }]
+                  ? [{ label: tenantStatusLabels.left, value: 'left' }]
                   : []),
               ]}
             />
@@ -1523,9 +1581,9 @@ export default function TenantsPage() {
             <Select
               disabled={editingTenant?.id === ROOT_TENANT_ID}
               options={[
-                { label: 'active', value: 'active' },
-                { label: 'suspended', value: 'suspended' },
-                { label: 'expired', value: 'expired' },
+                { label: tenantStatusLabels.active, value: 'active' },
+                { label: tenantStatusLabels.suspended, value: 'suspended' },
+                { label: tenantStatusLabels.expired, value: 'expired' },
               ]}
             />
           </Form.Item>
@@ -1650,7 +1708,7 @@ export default function TenantsPage() {
             rules={[
               {
                 validator: async (_, value: string) => {
-                  parsePlanLimitsJson(value);
+                  parsePlanLimitsJson(value, planLimitsObjectError);
                 },
               },
             ]}
@@ -1694,8 +1752,8 @@ export default function TenantsPage() {
           >
             <Select
               options={[
-                { label: 'active', value: 'active' },
-                { label: 'suspended', value: 'suspended' },
+                { label: tenantStatusLabels.active, value: 'active' },
+                { label: tenantStatusLabels.suspended, value: 'suspended' },
               ]}
             />
           </Form.Item>

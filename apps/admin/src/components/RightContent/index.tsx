@@ -127,6 +127,7 @@ export const VersionDropdown: React.FC = () => {
 
 export const TenantSwitcher: React.FC = () => {
   const { styles } = useStyles();
+  const intl = useIntl();
   const { initialState, setInitialState } = useModel('@@initialState');
   const currentUser = initialState?.currentUser;
   const activeMembershipId = currentUser?.activeMembership?.id;
@@ -160,7 +161,12 @@ export const TenantSwitcher: React.FC = () => {
       });
       window.location.reload();
     } catch (_error) {
-      void message.error('Tenant switch failed');
+      void message.error(
+        intl.formatMessage({
+          id: 'component.tenantSwitcher.switchFailed',
+          defaultMessage: 'Tenant switch failed.',
+        }),
+      );
     }
   };
 
@@ -174,7 +180,10 @@ export const TenantSwitcher: React.FC = () => {
       ),
     label: `${tenant.name} (${tenant.code})`,
   }));
-  const switchLabel = 'Switch tenant';
+  const switchLabel = intl.formatMessage({
+    id: 'component.tenantSwitcher.switch',
+    defaultMessage: 'Switch tenant',
+  });
 
   return (
     <HeaderDropdown
@@ -195,7 +204,11 @@ export const TenantSwitcher: React.FC = () => {
       >
         <SwapOutlined />
         <span className={styles.tenantCode}>
-          {currentUser.activeTenant?.code ?? 'tenant'}
+          {currentUser.activeTenant?.code ??
+            intl.formatMessage({
+              id: 'component.tenantSwitcher.fallbackTenant',
+              defaultMessage: 'Tenant',
+            })}
         </span>
       </Button>
     </HeaderDropdown>
