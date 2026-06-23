@@ -7,6 +7,8 @@ import {
   assertOpenApiPath,
   assertString,
   createTypedSmokeRuntime,
+  delay,
+  formatBody,
 } from './runtime';
 
 const smoke = createTypedSmokeRuntime();
@@ -78,6 +80,7 @@ async function main() {
       'platform-visit',
       'platform visit request mode',
     );
+    await assertPlatformVisitAudit(tenant.id);
 
     await cleanup();
 
@@ -96,6 +99,7 @@ async function main() {
           'auth.platform-visit.old-token-revoked',
           'auth.platform-visit.me-preserves-mode',
           'auth.platform-visit.request-context',
+          'auth.platform-visit.audit-recorded',
           'core.platform-visit.cleanup',
         ],
       }),
@@ -117,6 +121,52 @@ async function main() {
 }
 
 void main();
+
+async function assertPlatformVisitAudit(tenantId: string) {
+  const client = await getSmokePrisma();
+  let latestRows: unknown[] = [];
+
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    const rows = await client.auditLog.findMany({
+      where: {
+        action: 'platform-visit',
+        resource: 'auth.platform-visit',
+        tenantId,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+    });
+    latestRows = rows;
+
+    const match = rows.find((row) => {
+      const metadata = row.metadata;
+
+      return (
+        metadata &&
+        typeof metadata === 'object' &&
+        !Array.isArray(metadata) &&
+        'reason' in metadata &&
+        metadata.reason === 'platform visit smoke' &&
+        'targetTenantId' in metadata &&
+        metadata.targetTenantId === tenantId
+      );
+    });
+
+    if (match) {
+      assertEqual(match.resourceId, tenantId, 'platform visit audit resource');
+      assertEqual(match.statusCode, 200, 'platform visit audit status');
+      return;
+    }
+
+    await delay(250);
+  }
+
+  throw new Error(
+    `Platform visit audit log was not recorded; latest rows=${formatBody(
+      latestRows,
+    )}`,
+  );
+}
 
 async function cleanup() {
   const client = await getSmokePrisma();

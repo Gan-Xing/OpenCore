@@ -13,6 +13,10 @@ import {
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { createApiErrorBody } from '@opencore/common';
 import { getRequestContext } from '@opencore/core';
+import {
+  AuditOperationLogService,
+  resolveAuditOperationLogLocation,
+} from '@opencore/audit';
 import { AuthService, type AuthenticatedUser } from './auth.service';
 import {
   BindSocialAuthLoginDto,
@@ -49,6 +53,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly socialAuth: SocialAuthService,
+    private readonly operationLogs: AuditOperationLogService,
   ) {}
 
   @Post('login')
@@ -118,19 +123,61 @@ export class AuthController {
     @Body() body: PlatformVisitTenantRequestDto,
     @Req() request: RequestWithUser,
   ): Promise<LoginResponseDto> {
-    return this.authService.visitTenantAsPlatform(
-      getHeaderValue(request.headers, 'authorization'),
-      {
-        reason: body.reason,
-        tenantCode: body.tenantCode,
-        tenantId: body.tenantId,
-      },
-      {
-        ip: request.ip,
-        userAgent: getHeaderValue(request.headers, 'user-agent'),
-        requestId: getRequestContext()?.requestId,
-      },
-    );
+    const startedAt = Date.now();
+    const ip = request.ip ?? 'unknown';
+    const userAgent = getHeaderValue(request.headers, 'user-agent') ?? 'unknown';
+    const requestId = getRequestContext()?.requestId ?? 'unknown';
+
+    return this.authService
+      .visitTenantAsPlatform(
+        getHeaderValue(request.headers, 'authorization'),
+        {
+          reason: body.reason,
+          tenantCode: body.tenantCode,
+          tenantId: body.tenantId,
+        },
+        {
+          ip,
+          requestId,
+          userAgent,
+        },
+      )
+      .then(async (session) => {
+        try {
+          await this.operationLogs.recordOperation({
+            tenantId: session.user.activeTenant?.id,
+            actorUsername: request.user?.username ?? session.user.username,
+            action: 'platform-visit',
+            resource: 'auth.platform-visit',
+            resourceId: session.user.activeTenant?.id,
+            method: 'POST',
+            path: '/api/auth/platform-visit',
+            statusCode: 200,
+            ip,
+            location: resolveAuditOperationLogLocation(ip),
+            userAgent,
+            requestId,
+            durationMs: Math.max(0, Date.now() - startedAt),
+            metadata: {
+              accessMode: session.user.accessMode,
+              reason: body.reason,
+              targetTenantCode: session.user.activeTenant?.code,
+              targetTenantId: session.user.activeTenant?.id,
+            },
+          });
+        } catch (error) {
+          await this.authService
+            .logout(`Bearer ${session.accessToken}`, {
+              ip,
+              requestId,
+              userAgent,
+            })
+            .catch(() => undefined);
+          throw error;
+        }
+
+        return session;
+      });
   }
 
   @Get('me')

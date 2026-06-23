@@ -23,7 +23,6 @@ Cycle-022 may only count a slice when it is code-backed, migrated, seeded, visib
 
 ## Below Waterline
 
-- Platform visit/impersonation is not done.
 - Remaining optional/business data-plane isolation is not done.
 
 These remain below the productization waterline and cannot be described as complete SaaS multi-tenancy.
@@ -166,7 +165,18 @@ These remain below the productization waterline and cannot be described as compl
 | Bearer/session validation        | Done   | Bearer auth validates target tenant status, online sessions allow missing membership only for platform visit, and `/auth/me` preserves mode. |
 | OpenAPI/SDK/Admin consistency    | Done   | OpenAPI exports the request DTO, SDK exposes `visitTenantAsPlatform()`, and `/system/tenants` includes an active-tenant visit action.        |
 | Smoke/guard                      | Done   | Added `smoke:core-platform-visit` and `guard:platform-visit`, both wired into local/deploy smoke scripts.                                    |
-| Remaining T6 scope               | Pending | Platform visit/impersonation audit remains separate T6 work.                                                                                |
+| Remaining T6 scope               | Done   | Platform visit audit was later closed by T6f.                                                                                                |
+
+## T6f Platform Visit Audit
+
+| Requirement                    | Status | Notes                                                                                                                                      |
+| ------------------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Dedicated audit row             | Done   | Successful platform visits write `AuditLog` rows with `action=platform-visit` and `resource=auth.platform-visit`.                         |
+| Target tenant ownership         | Done   | The audit row `tenantId` and `resourceId` are the visited tenant id, so audit list/detail/export stays inside existing tenant audit scope. |
+| Reason and request context      | Done   | Audit metadata stores reason and target tenant identifiers; standard fields store actor, request id, IP, location, user agent, and duration. |
+| No unaudited returned token      | Done   | If the dedicated audit write fails, the newly issued platform-visit token is revoked before the error is returned.                         |
+| Smoke/guard                     | Done   | `smoke:core-platform-visit` verifies the target-tenant audit row and `guard:platform-visit` locks audit wiring markers.                    |
+| Remaining T6 scope              | Done   | T6 Admin control plane is closed; remaining work is T4/T7 data-plane review and business-domain tenantization.                             |
 
 ## T4a Audit
 

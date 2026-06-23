@@ -33,6 +33,7 @@ const authRepositoryPath =
 const bearerPath =
   'packages/security/src/security-auth/security-bearer-token.service.ts';
 const authControllerPath = 'apps/api/src/modules/core/rbac/auth.controller.ts';
+const rbacModulePath = 'apps/api/src/modules/core/rbac/rbac.module.ts';
 const rbacDtoPath = 'apps/api/src/modules/core/rbac/rbac.dto.ts';
 const rbacRepositoryPath =
   'apps/api/src/modules/core/rbac/prisma-rbac.repository.ts';
@@ -50,6 +51,7 @@ const authService = readRequired(authServicePath);
 const authRepository = readRequired(authRepositoryPath);
 const bearer = readRequired(bearerPath);
 const authController = readRequired(authControllerPath);
+const rbacModule = readRequired(rbacModulePath);
 const rbacDto = readRequired(rbacDtoPath);
 const rbacRepository = readRequired(rbacRepositoryPath);
 const sdkClient = readRequired(sdkClientPath);
@@ -85,9 +87,15 @@ for (const marker of [
   "@Post('platform-visit')",
   "@RequirePermission('platform:tenant:visit')",
   'PlatformVisitTenantRequestDto',
+  'AuditOperationLogService',
+  "action: 'platform-visit'",
+  "resource: 'auth.platform-visit'",
+  'resolveAuditOperationLogLocation',
+  ".logout(`Bearer ${session.accessToken}`",
 ]) {
   requireIncludes(authControllerPath, authController, marker);
 }
+requireIncludes(rbacModulePath, rbacModule, 'AuditOperationLogModule');
 
 requireIncludes(rbacDtoPath, rbacDto, 'PlatformVisitTenantRequestDto');
 requireIncludes(rbacRepositoryPath, rbacRepository, 'findTenantForVisit');
@@ -103,6 +111,8 @@ for (const marker of [
   'auth.platform-visit',
   'auth.platform-visit.old-token-revoked',
   'auth.platform-visit.request-context',
+  'auth.platform-visit.audit-recorded',
+  'assertPlatformVisitAudit',
 ]) {
   requireIncludes(smokePath, smoke, marker);
 }

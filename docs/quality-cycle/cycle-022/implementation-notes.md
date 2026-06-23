@@ -1192,3 +1192,36 @@ Passed after deploy:
 - No membership is created for platform visit mode.
 - No front-end-only tenant mutation; platform visit always uses server token issue.
 - No dedicated platform visit audit row yet; this round only records the old-token revocation reason and leaves full impersonation audit to the remaining T6 audit work.
+
+## Round 26: T6f Platform Visit Audit
+
+### Completed
+
+- Added dedicated platform visit operation audit:
+  - successful `/auth/platform-visit` calls write tenant-owned `AuditLog` rows under the visited tenant;
+  - rows use `action=platform-visit`, `resource=auth.platform-visit`, and `resourceId=<targetTenantId>`;
+  - metadata includes the visit reason, access mode, target tenant id, and target tenant code.
+- The audit row uses the existing operation-log fields for actor username, request id, IP, location, user agent, duration, method, path, and status.
+- If the dedicated audit write fails after the visit token is issued, the newly issued visit token is revoked before the error is returned.
+- Extended `smoke:core-platform-visit` to verify the target-tenant audit row directly through Prisma.
+- Extended `guard:platform-visit` to lock the audit module/controller/smoke markers.
+
+### Verification Log
+
+Passed before deploy:
+
+- Platform visit guard, typed smoke compilation, focused API typecheck, full typecheck, full lint, and full test suite passed.
+
+Passed after deploy:
+
+- Refreshed OpenCore deploy rebuilt API/Admin, reseeded, restarted API `39172` and Admin `39174`, and passed deploy smoke including local Platform Visit audit checks.
+- Public API Platform Visit audit smoke passed against `http://144.217.243.161:39172`.
+
+### Remaining Product Debt
+
+- Continue T4/T7 remaining tenant data-plane review and optional/business model tenantization.
+
+### Deliberate Non-Goals
+
+- No new audit table in T6f; the existing tenant-owned `AuditLog` surface is sufficient for platform visit traceability.
+- No platform visit recording on failed authorization; this round records successful cross-tenant access.

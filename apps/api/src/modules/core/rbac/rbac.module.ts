@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
-import { AuditLoginLogModule } from '@opencore/audit';
+import { AuditLoginLogModule, AuditOperationLogModule } from '@opencore/audit';
 import { DatabaseModule } from '@opencore/database';
 import { FileModule } from '@opencore/file';
 import { OnlineUserModule } from '@opencore/online-user';
@@ -31,6 +31,7 @@ import { SocialAuthService } from './social-auth.service';
   imports: [
     DatabaseModule,
     AuditLoginLogModule,
+    AuditOperationLogModule,
     FileModule,
     IntegrationModule,
     LoginSecurityModule,
