@@ -73,6 +73,31 @@ describe('OperationsRepository', () => {
       truncated: false,
     });
     await expect(
+      runAsTenant(ROOT_TENANT_ID, () =>
+        repository.listCacheKeys({
+          prefix: 'opencore:tenant:tenant_foreign:admin',
+        }),
+      ),
+    ).resolves.toMatchObject({
+      total: 0,
+      scanComplete: true,
+    });
+    await expectHttpExceptionCode(
+      runAsTenant(ROOT_TENANT_ID, () =>
+        repository.getCacheValue('opencore:tenant:tenant_foreign:admin:shell'),
+      ),
+      'MONITOR_OPERATIONS_RESOURCE_NOT_FOUND',
+    );
+    await expect(
+      runAsTenant(FOREIGN_TENANT_ID, () =>
+        repository.getCacheValue('opencore:admin:shell'),
+      ),
+    ).resolves.toMatchObject({
+      tenantId: FOREIGN_TENANT_ID,
+      key: 'opencore:tenant:tenant_foreign:admin:shell',
+      valuePreview: expect.stringContaining('fixture'),
+    });
+    await expect(
       repository.listReports({ enabled: true, owner: 'admin' }),
     ).resolves.toMatchObject({ total: 1 });
   });

@@ -37,6 +37,15 @@ export const seedCacheKeys: readonly CacheKeyRecord[] = [
     sizeBytes: 4096,
     type: 'string',
   },
+  {
+    tenantId: 'tenant_foreign',
+    key: 'opencore:tenant:tenant_foreign:admin:shell',
+    name: 'admin',
+    prefix: 'opencore:tenant:tenant_foreign:admin',
+    ttlSeconds: 300,
+    sizeBytes: 256,
+    type: 'string',
+  },
 ];
 
 export const seedReports: readonly ReportDefinitionRecord[] = [

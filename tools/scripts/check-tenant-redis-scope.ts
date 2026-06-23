@@ -26,11 +26,29 @@ const checks: Array<{
     ],
   },
   {
+    file: 'apps/api/src/modules/monitor/operations/seed-operations.repository.ts',
+    markers: [
+      'getRequestContext',
+      'getTenantCacheKeys',
+      'normalizeTenantCacheKey',
+      'normalizeTenantCachePrefix',
+      'createTenantRedisPrefix',
+    ],
+  },
+  {
+    file: 'apps/api/src/modules/monitor/operations/operations.seed.ts',
+    markers: [
+      'opencore:tenant:tenant_foreign:admin:shell',
+      "tenantId: 'tenant_foreign'",
+    ],
+  },
+  {
     file: 'apps/api/src/modules/monitor/operations/operations.repository.spec.ts',
     markers: [
       'runWithRequestContext',
       'FOREIGN_TENANT_ID',
       'foreignSystemKey',
+      'opencore:tenant:tenant_foreign:admin:shell',
       'MONITOR_OPERATIONS_CACHE_KEY_NOT_FOUND',
     ],
   },

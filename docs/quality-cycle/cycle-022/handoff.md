@@ -4,15 +4,15 @@ Date: 2026-06-23
 Repository: `Gan-Xing/OpenCore`  
 Branch: `main`  
 Target track: `Cycle-022 / Tenant Foundation`  
-Status: **In progress; T5e Integration provider/outbox/OAuth tenant scope implemented; T5 runtime propagation remains partial pending broader review**
+Status: **In progress; T5 runtime propagation complete through T5f; next slice is T6 Admin control plane**
 
 ## 0. Current Round Snapshot
 
 Updated: 2026-06-23
 
-Current completed slice count: **4 full slices**
+Current completed slice count: **5 full slices**
 
-This working tree has advanced Cycle-022 through the first four full deployable tenant foundation slices plus T4a online-session tenant isolation, T4b login-log tenant isolation, T4c operation-audit tenant isolation, T4d dictionary tenant isolation, T4e system config tenant isolation, T4f file asset tenant isolation, T4g system notice tenant isolation, T5a scheduler tenant propagation, T5b Redis cache namespace isolation, T5c WebSocket runtime tenant scope, T5d BullMQ monitor queue namespace isolation, and T5e Integration provider/outbox/OAuth tenant scope:
+This working tree has advanced Cycle-022 through the first five full deployable tenant foundation slices plus T4a online-session tenant isolation, T4b login-log tenant isolation, T4c operation-audit tenant isolation, T4d dictionary tenant isolation, T4e system config tenant isolation, T4f file asset tenant isolation, T4g system notice tenant isolation, T5a scheduler tenant propagation, T5b Redis cache namespace isolation, T5c WebSocket runtime tenant scope, T5d BullMQ monitor queue namespace isolation, T5e Integration provider/outbox/OAuth tenant scope, and T5f runtime parity audit:
 
 - Prisma models for `TenantPlan`, `TenantPlanModule`, `Tenant`, `TenantMembership`, `TenantMembershipRole`, `TenantMembershipPost`, `PlatformRole`, `UserPlatformRole`, and `PlatformRolePermission`.
 - Migration `20260622223000_tenant_foundation` creates the `root` tenant, root `system.full` plan, root memberships for existing users, and transitional root copies of `UserRole` and `UserPost`.
@@ -114,11 +114,14 @@ This working tree has advanced Cycle-022 through the first four full deployable 
 - System notice external delivery and social-login OAuth token binding now use tenant-local Integration provider/token keys.
 - `pnpm guard:tenant-integration-scope` was added for the T5e Integration provider/outbox/OAuth closure.
 - Refreshed deploy completed on API `39172` and Admin `39174`; local deploy smokes and public API Integration health/OAuth token smokes passed.
+- T5f audited raw Redis/File/BullMQ/Scheduler/WebSocket/Integration runtime calls after T5a-T5e and fixed the remaining seed monitor-cache parity gap.
+- `SeedOperationsRepository` now resolves active tenant context and normalizes cache list/value/clear/delete keys into `opencore:tenant:{tenantId}:...`, matching the Prisma monitor-cache behavior.
+- `pnpm guard:tenant-redis-scope` now covers seed repository tenant normalization and the foreign seed cache fixture.
+- Refreshed deploy completed on API `39172` and Admin `39174`; local deploy smoke and public API monitor-jobs smoke passed for T5f.
 
 Still not complete:
 
 - tenant-scoped System/core repositories for other unreviewed non-org data;
-- broader runtime tenant propagation review beyond the T5a-T5e closed runtime surfaces;
 - Tenant Plan CRUD, Tenant Member CRUD/invitation, Admin switcher, and platform visit mode beyond active-tenant member assignment;
 - platform visit/impersonation audit.
 
@@ -1123,11 +1126,11 @@ Closed sub-slices:
 - T5b Monitor Cache Redis tenant namespace；
 - T5c Integration WebSocket runtime room/event tenant scope；
 - T5d BullMQ monitor queue namespace/control scope；
-- T5e Integration provider/outbox/OAuth tenant scope。
+- T5e Integration provider/outbox/OAuth tenant scope；
+- T5f broader runtime parity audit and seed monitor-cache tenant normalization。
 
 Remaining:
 
-- broader runtime audit for unreviewed queue payloads/workers/files/caches outside the closed surfaces；
 - platform-admin cross-tenant runtime behavior belongs with T6 visit mode and audit。
 
 ## T6 — Admin control plane

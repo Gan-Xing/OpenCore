@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { getRequestContext } from '@opencore/core';
 import type { OnlineUserSummaryDto } from '@opencore/online-user';
 import type { SchedulerSummaryDto } from '@opencore/scheduler';
 import type {
@@ -25,6 +26,8 @@ import {
   buildOperationsSummary,
   createPage,
   matchesOptional,
+  normalizeCacheKey,
+  normalizeCachePrefix,
   normalizeOptionalBoolean,
   OperationsRepository,
   requireRecord,
@@ -32,6 +35,9 @@ import {
   type CacheKeyDeleteResult,
   type PageResult,
 } from './operations.repository';
+
+const ROOT_TENANT_ID = 'tenant_root';
+const REDIS_KEY_PREFIX = 'opencore:';
 
 @Injectable()
 export class SeedOperationsRepository extends OperationsRepository {
@@ -46,9 +52,11 @@ export class SeedOperationsRepository extends OperationsRepository {
     scheduler: SchedulerSummaryDto,
     onlineUsers: OnlineUserSummaryDto,
   ) {
+    const cacheKeys = this.getTenantCacheKeys();
+
     return buildOperationsSummary({
       scheduler,
-      cacheKeys: this.cacheKeys,
+      cacheKeys,
       onlineUsers,
       reports: this.reports,
       exportJobDesign,
@@ -56,21 +64,25 @@ export class SeedOperationsRepository extends OperationsRepository {
   }
 
   async listCacheKeys(query: CacheKeyQueryDto = {}): Promise<CacheKeyPageDto> {
+    const tenantPrefix = createTenantRedisPrefix(resolveCurrentTenantId());
+    const prefix = query.prefix
+      ? normalizeTenantCachePrefix(query.prefix, tenantPrefix)
+      : tenantPrefix;
+
     return {
       ...createPage(
-        this.cacheKeys.filter((key) =>
-          query.prefix ? key.key.startsWith(query.prefix) : true,
-        ),
+        this.getTenantCacheKeys().filter((key) => key.key.startsWith(prefix)),
         query,
       ),
-      scanLimit: this.cacheKeys.length,
+      scanLimit: this.getTenantCacheKeys().length,
       scanComplete: true,
     };
   }
 
   async listCacheNames(): Promise<CacheNameListDto> {
+    const cacheKeys = this.getTenantCacheKeys();
     const items = Array.from(
-      this.cacheKeys.reduce((names, key) => {
+      cacheKeys.reduce((names, key) => {
         const current = names.get(key.name) ?? {
           tenantId: key.tenantId,
           name: key.name,
@@ -100,16 +112,20 @@ export class SeedOperationsRepository extends OperationsRepository {
     return {
       items,
       total: items.length,
-      scanLimit: this.cacheKeys.length,
+      scanLimit: cacheKeys.length,
       scanComplete: true,
     };
   }
 
   async getCacheValue(key: string): Promise<CacheValueDto> {
+    const tenantPrefix = createTenantRedisPrefix(resolveCurrentTenantId());
+    const normalizedKey = normalizeTenantCacheKey(key, tenantPrefix);
     const record = requireRecord(
-      this.cacheKeys.find((cacheKey) => cacheKey.key === key),
+      this.getTenantCacheKeys().find(
+        (cacheKey) => cacheKey.key === normalizedKey,
+      ),
       'Cache key',
-      key,
+      normalizedKey,
     );
 
     return {
@@ -122,7 +138,13 @@ export class SeedOperationsRepository extends OperationsRepository {
   }
 
   async clearCache(body: ClearCacheDto): Promise<CacheClearResult> {
-    const result = applyCacheClearPolicy(this.cacheKeys, body);
+    const tenantPrefix = createTenantRedisPrefix(resolveCurrentTenantId());
+    const prefix = normalizeTenantCachePrefix(body.prefix, tenantPrefix);
+    const tenantCacheKeys = this.getTenantCacheKeys();
+    const result = applyCacheClearPolicy(tenantCacheKeys, {
+      ...body,
+      prefix,
+    });
 
     if (!result.dryRun) {
       this.cacheKeys = this.cacheKeys.filter(
@@ -134,9 +156,11 @@ export class SeedOperationsRepository extends OperationsRepository {
   }
 
   async deleteCacheKey(body: DeleteCacheKeyDto): Promise<CacheKeyDeleteResult> {
+    const tenantPrefix = createTenantRedisPrefix(resolveCurrentTenantId());
+    const key = normalizeTenantCacheKey(body.key, tenantPrefix);
     const result = applyCacheKeyDeletePolicy(
-      this.cacheKeys.some((key) => key.key === body.key.trim()),
-      body,
+      this.getTenantCacheKeys().some((cacheKey) => cacheKey.key === key),
+      { ...body, key },
     );
 
     if (!result.dryRun && result.existed) {
@@ -184,6 +208,14 @@ export class SeedOperationsRepository extends OperationsRepository {
     return { ...exportJobDesign };
   }
 
+  private getTenantCacheKeys(): CacheKeyRecord[] {
+    const tenantId = resolveCurrentTenantId();
+    const tenantPrefix = createTenantRedisPrefix(tenantId);
+    return this.cacheKeys.filter(
+      (key) => key.tenantId === tenantId && key.key.startsWith(tenantPrefix),
+    );
+  }
+
   private findReport(code: string): ReportDefinitionRecord {
     return requireRecord(
       this.reports.find((report) => report.code === code),
@@ -191,4 +223,29 @@ export class SeedOperationsRepository extends OperationsRepository {
       code,
     );
   }
+}
+
+function resolveCurrentTenantId(): string {
+  return getRequestContext()?.tenantId ?? ROOT_TENANT_ID;
+}
+
+function createTenantRedisPrefix(tenantId: string): string {
+  return `${REDIS_KEY_PREFIX}tenant:${tenantId}:`;
+}
+
+function normalizeTenantCachePrefix(prefix: string, tenantPrefix: string) {
+  return normalizeTenantCacheKey(normalizeCachePrefix(prefix), tenantPrefix);
+}
+
+function normalizeTenantCacheKey(key: string, tenantPrefix: string): string {
+  const normalized = normalizeCacheKey(key);
+  if (normalized.startsWith(tenantPrefix)) {
+    return normalized;
+  }
+
+  const suffix = normalized.startsWith(REDIS_KEY_PREFIX)
+    ? normalized.slice(REDIS_KEY_PREFIX.length)
+    : normalized;
+
+  return `${tenantPrefix}${suffix}`;
 }

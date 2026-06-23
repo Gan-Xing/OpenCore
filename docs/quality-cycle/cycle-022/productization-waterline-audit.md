@@ -201,26 +201,36 @@ These remain below the productization waterline and cannot be described as compl
 
 ## T5a Scheduler Runtime Propagation
 
-| Check                               | Status  | Evidence                                                                                                                                                                          |
-| ----------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Scheduler tenant ownership          | Done    | `JobDefinition` and `JobRunLog` are backfilled to `tenant_root`, constrained to `Tenant`, and keyed by `(tenantId, code)`.                                                        |
-| Scheduler API tenant isolation      | Done    | Monitor job summary/list/detail/mutation/dispatch/claim/run-clean paths resolve the active tenant from `RequestContext`.                                                          |
-| Worker tenant context restoration   | Done    | `SchedulerJobExecutor` wraps handler execution in tenant request context and stamps run metadata with `tenantId`.                                                                 |
-| Tenant-scoped retention side effect | Done    | The audit-log retention handler deletes only audit rows for the scheduler run tenant.                                                                                             |
-| Cross-tenant worker rejection       | Done    | Prisma integration test and smoke prove root job APIs and worker claim do not see or consume foreign-tenant queued runs.                                                          |
-| Seed/OpenAPI/SDK/Admin              | Done    | Seed scheduler rows, DTOs, SDK summaries/fixtures, and Admin Jobs expose `tenantId`.                                                                                              |
-| Smoke/guard                         | Done    | Added `guard:tenant-scheduler-scope`; `smoke:core-monitor-jobs` covers foreign-tenant scheduler isolation.                                                                        |
-| Remaining T5 runtime scope          | Pending | Redis cache namespace, WebSocket runtime rooms/events, BullMQ monitor queue namespace, and Integration/outbox/OAuth persistence are done; broader runtime review remains pending. |
+| Check                               | Status | Evidence                                                                                                                   |
+| ----------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------- |
+| Scheduler tenant ownership          | Done   | `JobDefinition` and `JobRunLog` are backfilled to `tenant_root`, constrained to `Tenant`, and keyed by `(tenantId, code)`. |
+| Scheduler API tenant isolation      | Done   | Monitor job summary/list/detail/mutation/dispatch/claim/run-clean paths resolve the active tenant from `RequestContext`.   |
+| Worker tenant context restoration   | Done   | `SchedulerJobExecutor` wraps handler execution in tenant request context and stamps run metadata with `tenantId`.          |
+| Tenant-scoped retention side effect | Done   | The audit-log retention handler deletes only audit rows for the scheduler run tenant.                                      |
+| Cross-tenant worker rejection       | Done   | Prisma integration test and smoke prove root job APIs and worker claim do not see or consume foreign-tenant queued runs.   |
+| Seed/OpenAPI/SDK/Admin              | Done   | Seed scheduler rows, DTOs, SDK summaries/fixtures, and Admin Jobs expose `tenantId`.                                       |
+| Smoke/guard                         | Done   | Added `guard:tenant-scheduler-scope`; `smoke:core-monitor-jobs` covers foreign-tenant scheduler isolation.                 |
+| Remaining T5 runtime scope          | Done   | T5f completed the broader runtime parity audit and aligned seed monitor-cache behavior with Prisma tenant-prefix behavior. |
 
 ## T5e Integration Provider/Outbox/OAuth Runtime Scope
 
-| Check                               | Status  | Evidence                                                                                                                                       |
-| ----------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| Integration tenant ownership        | Done    | Provider, provider audit, template, outbox, OAuth token, OAuth flow, and OAuth callback audit rows carry `tenantId` and constrain to `Tenant`. |
-| Tenant-local Integration identities | Done    | Provider/template codes are unique per tenant; OAuth tokens are unique per `(tenantId, providerCode, subjectId, providerAccountId)`.           |
-| Repository tenant isolation         | Done    | Integration provider/template/outbox/OAuth list/detail/mutation paths resolve the active tenant from request context.                          |
-| OAuth callback tenant restoration   | Done    | Callback processing reads the globally unique flow `state` and writes token/audit/flow updates using the stored flow tenant.                   |
-| Cross-tenant API rejection          | Done    | Prisma integration test and smokes prove foreign Integration outbox/token rows are hidden from root API context and preserved.                 |
-| Seed/OpenAPI/SDK                    | Done    | Seed rows, DTOs, SDK summaries/fixtures, and OpenAPI Integration schemas expose tenant ownership.                                              |
-| Smoke/guard                         | Done    | Added `guard:tenant-integration-scope`; Integration health/OAuth smokes cover tenant fields and foreign-row isolation.                         |
-| Remaining T5 runtime scope          | Pending | Broader runtime tenant propagation review remains pending.                                                                                     |
+| Check                               | Status | Evidence                                                                                                                                       |
+| ----------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Integration tenant ownership        | Done   | Provider, provider audit, template, outbox, OAuth token, OAuth flow, and OAuth callback audit rows carry `tenantId` and constrain to `Tenant`. |
+| Tenant-local Integration identities | Done   | Provider/template codes are unique per tenant; OAuth tokens are unique per `(tenantId, providerCode, subjectId, providerAccountId)`.           |
+| Repository tenant isolation         | Done   | Integration provider/template/outbox/OAuth list/detail/mutation paths resolve the active tenant from request context.                          |
+| OAuth callback tenant restoration   | Done   | Callback processing reads the globally unique flow `state` and writes token/audit/flow updates using the stored flow tenant.                   |
+| Cross-tenant API rejection          | Done   | Prisma integration test and smokes prove foreign Integration outbox/token rows are hidden from root API context and preserved.                 |
+| Seed/OpenAPI/SDK                    | Done   | Seed rows, DTOs, SDK summaries/fixtures, and OpenAPI Integration schemas expose tenant ownership.                                              |
+| Smoke/guard                         | Done   | Added `guard:tenant-integration-scope`; Integration health/OAuth smokes cover tenant fields and foreign-row isolation.                         |
+| Remaining T5 runtime scope          | Done   | T5f completed the broader runtime parity audit; no additional T5 production runtime gap was found beyond seed monitor-cache parity.            |
+
+## T5f Runtime Parity Audit
+
+| Check                          | Status | Evidence                                                                                                                            |
+| ------------------------------ | ------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Raw runtime surface audit      | Done   | Reviewed Redis, File/object, BullMQ, Scheduler, WebSocket, and Integration/OAuth runtime calls after T5a-T5e.                       |
+| Seed monitor-cache parity      | Done   | `SeedOperationsRepository` now resolves active tenant context and normalizes cache keys/prefixes into `opencore:tenant:{tenantId}`. |
+| Cross-tenant seed cache hiding | Done   | Focused operations repository test proves root cannot read foreign seed cache and foreign tenant can read it through logical key.   |
+| Guard coverage                 | Done   | `guard:tenant-redis-scope` now checks seed repository tenant normalization and the foreign seed cache fixture.                      |
+| Remaining runtime foundation   | Done   | T5 runtime propagation is closed; T6 platform visit/control plane and T7 optional/business tenantization remain separate slices.    |

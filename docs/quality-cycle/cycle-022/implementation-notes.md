@@ -950,3 +950,44 @@ Passed after deploy:
 - No platform-admin global Integration control-plane view in T5e; platform visit/control-plane behavior belongs with T6.
 - No real external provider credential exchange/storage implementation beyond the existing callback/token-reference simulation.
 - No business-domain Integration workflows beyond the existing mail/SMS/OAuth/WebSocket surfaces.
+
+## Round 20: T5f Runtime Parity Audit
+
+### Completed
+
+- Audited the remaining runtime tenant propagation surfaces after T5a-T5e:
+  - Redis monitor cache access;
+  - File/object storage helpers and explicit global user-avatar storage;
+  - BullMQ monitor queue probes/control;
+  - Scheduler queue dispatch and worker claim;
+  - Integration provider/outbox/OAuth and WebSocket runtime paths.
+- Fixed the remaining parity gap in the seed monitor operations repository:
+  - seed cache list/value/clear/delete paths now resolve active tenant from `RequestContext`;
+  - logical cache keys and prefixes are normalized into `opencore:tenant:{tenantId}:...`;
+  - root seed cache calls cannot read or delete foreign tenant cache fixtures.
+- Added a foreign seed cache fixture and focused repository assertions for root-hidden/foreign-visible cache behavior.
+- Extended `guard:tenant-redis-scope` to cover seed repository tenant normalization and the foreign seed cache fixture.
+
+### Verification Log
+
+Passed before deploy:
+
+- Focused monitor operations repository test covered root-hidden/foreign-visible seed cache behavior.
+- Redis tenant-scope guard, quality docs check, full typecheck, lint, and test suite passed.
+
+Passed after deploy:
+
+- OpenCore deploy rebuilt API/Admin, reseeded, restarted API `39172` and Admin `39174`, and passed deploy smoke including monitor cache tenant checks.
+- Public API `smoke:core-monitor-jobs` passed against `http://144.217.243.161:39172`, including `monitor.cache.foreign-tenant-hidden` and `monitor.queue.tenant-runtime-name`.
+
+### Remaining Product Debt
+
+- Complete T4 System/core tenant data isolation for other unreviewed non-org data.
+- Complete T6 Tenant Plan CRUD, Tenant Member CRUD/invitation, Admin switcher, platform visit mode, and platform visit audit.
+- Complete T7 optional/business model tenantization.
+
+### Deliberate Non-Goals
+
+- No new production Redis namespace abstraction in T5f; T5b already added the runtime helper and this round closes seed parity.
+- No tenantization of Collaboration/Report optional data in T5f; those belong to T7.
+- No platform-admin visit mode or cross-tenant control-plane behavior in T5f; that belongs to T6.
