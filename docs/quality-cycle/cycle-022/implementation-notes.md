@@ -1543,3 +1543,44 @@ Passed after deploy:
 
 - No client-supplied tenant id was added to unlock or ordinary login-log APIs.
 - No new Admin UI was added; existing unlock action now operates under the bearer tenant context.
+
+## Round 36: T3g/T4i Root-Only Legacy User Org Bridges
+
+### Completed
+
+- Added migration `20260624083000_root_only_legacy_user_org` to harden legacy System User org bridges:
+  - `User.legacyDeptTenantId` defaults to `tenant_root`, is root-only checked, and participates in a composite FK to `SystemDept(tenantId, id)`;
+  - `UserRole.tenantId` defaults to `tenant_root`, is root-only checked, and participates in a composite FK to `Role(tenantId, id)`;
+  - `UserPost.tenantId` defaults to `tenant_root`, is root-only checked, and participates in a composite FK to `SystemPost(tenantId, id)`.
+- Kept non-root tenant org assignment on the authoritative membership models:
+  - `TenantMembership.deptId`;
+  - `TenantMembershipRole`;
+  - `TenantMembershipPost`.
+- Updated root compatibility write paths so legacy bridge rows stay root-pinned:
+  - System User role assignment writes `tenant_root` bridge rows;
+  - root TenantMember sync writes root legacy role/post rows.
+- Added focused DB-boundary coverage proving non-root Department/Role/Post rows cannot be connected through legacy User org relations.
+- Added `guard:tenant-legacy-user-org` to lock schema, migration, service, spec, and smoke markers.
+- Extended `smoke:core-user` with a foreign-tenant department fixture and a root user create attempt that must return `SYSTEM_USER_DEPT_NOT_FOUND`.
+- Updated Cycle-022 backlog, acceptance matrix, waterline audit, and handoff so T4 is closed for current core/system tenant-owned data while T7 remains pending for future business domains.
+
+### Verification Log
+
+Passed locally before deploy:
+
+- Prisma schema validation, client generation, migration application, seed typecheck, legacy User org guard, focused System User DB-boundary tests, System/API typechecks, typed smoke compilation, and local core-user smoke all passed.
+
+Passed after deploy:
+
+- Refreshed deploy completed on API `39172` and Admin `39174`, and public core-user smoke passed against `http://144.217.243.161:39172` including `core.user.legacy-dept.root-only`.
+
+### Remaining Product Debt
+
+- T7 remains partial for future CRM/ERP/Mall/AI business domains.
+- Legacy `User.deptId`, `UserRole`, and `UserPost` remain compatibility surfaces only for root/single-mode flows; new non-root features must use membership-scoped relations.
+
+### Deliberate Non-Goals
+
+- No new Admin UI was added; the public user form behavior is unchanged except that foreign-tenant legacy department ids are rejected.
+- No ordinary API gained a client-supplied tenant selector.
+- No future business-domain tenantization was started in this round.

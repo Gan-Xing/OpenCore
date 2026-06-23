@@ -22,8 +22,9 @@ model User {
   avatarMimeType      String?
   avatarSizeBytes     Int?
   avatarUpdatedAt     DateTime?
+  legacyDeptTenantId  String                    @default("tenant_root")
   deptId              String?
-  dept                SystemDept?               @relation(fields: [deptId], references: [id], onDelete: SetNull)
+  dept                SystemDept?               @relation(fields: [legacyDeptTenantId, deptId], references: [tenantId, id])
   roles               UserRole[]
   posts               UserPost[]
   tenantMemberships   TenantMembership[]        @relation("TenantMembershipUser")
@@ -38,6 +39,7 @@ model User {
   @@unique([mobile])
   @@unique([email])
   @@index([deptId])
+  @@index([legacyDeptTenantId, deptId])
 }
 
 model TenantPlan {
@@ -257,21 +259,25 @@ model Menu {
 }
 
 model UserRole {
-  userId String
-  roleId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  userId   String
+  roleId   String
+  tenantId String @default("tenant_root")
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role     Role   @relation(fields: [tenantId, roleId], references: [tenantId, id], onDelete: Cascade)
 
   @@id([userId, roleId])
+  @@index([tenantId])
 }
 
 model UserPost {
-  userId String
-  postId String
-  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post   SystemPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId   String
+  postId   String
+  tenantId String     @default("tenant_root")
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post     SystemPost @relation(fields: [tenantId, postId], references: [tenantId, id], onDelete: Cascade)
 
   @@id([userId, postId])
+  @@index([tenantId])
 }
 
 model RolePermission {

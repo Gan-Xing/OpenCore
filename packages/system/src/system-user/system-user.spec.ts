@@ -1327,6 +1327,80 @@ describe('@opencore/system system-user', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
+    it('keeps legacy user org bridges root-only at the database boundary', async () => {
+      const tenantId = `tenant_user_legacy_${testRunId}`;
+      const foreignDeptId = `dept_user_legacy_${testRunId}`;
+      const foreignPostId = `post_user_legacy_${testRunId}`;
+      const foreignRoleId = `role_user_legacy_${testRunId}`;
+      const user = await service.createUser({
+        username,
+        displayName: 'Legacy Root Boundary User',
+        password: 'initial-password',
+        roleCodes: [],
+      });
+
+      await prisma.tenant.create({
+        data: {
+          id: tenantId,
+          code: tenantId,
+          slug: tenantId,
+          name: 'Legacy Root Boundary Tenant',
+          status: 'active',
+        },
+      });
+      await prisma.systemDept.create({
+        data: {
+          id: foreignDeptId,
+          code: foreignDeptId,
+          name: 'Foreign Legacy Dept',
+          tenantId,
+        },
+      });
+      await prisma.systemPost.create({
+        data: {
+          id: foreignPostId,
+          code: foreignPostId,
+          name: 'Foreign Legacy Post',
+          tenantId,
+        },
+      });
+      await prisma.role.create({
+        data: {
+          id: foreignRoleId,
+          code: foreignRoleId,
+          name: 'Foreign Legacy Role',
+          tenantId,
+        },
+      });
+
+      await expect(
+        prisma.user.update({
+          where: { id: user.id },
+          data: { deptId: foreignDeptId },
+        }),
+      ).rejects.toThrow();
+      await expect(
+        prisma.userRole.create({
+          data: { roleId: foreignRoleId, userId: user.id },
+        }),
+      ).rejects.toThrow();
+      await expect(
+        prisma.userPost.create({
+          data: { postId: foreignPostId, userId: user.id },
+        }),
+      ).rejects.toThrow();
+      await expect(
+        prisma.userRole.create({
+          data: { roleId: foreignRoleId, tenantId, userId: user.id },
+        }),
+      ).rejects.toThrow();
+      await expect(
+        prisma.userPost.create({
+          data: { postId: foreignPostId, tenantId, userId: user.id },
+        }),
+      ).rejects.toThrow();
+    });
+
     it('persists imported users through Prisma and reports row failures', async () => {
       const result = await service.importUsers({
         contentBase64: createUserImportCsvBase64([
@@ -1449,6 +1523,9 @@ describe('@opencore/system system-user', () => {
       });
       await prisma.role.deleteMany({
         where: { code: roleCode },
+      });
+      await prisma.tenant.deleteMany({
+        where: { id: `tenant_user_legacy_${testRunId}` },
       });
     }
   });

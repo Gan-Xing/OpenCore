@@ -602,6 +602,7 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
             this.prisma.userRole.createMany({
               data: userIds.map((userId) => ({
                 roleId,
+                tenantId: ROOT_TENANT_ID,
                 userId,
               })),
               skipDuplicates: true,

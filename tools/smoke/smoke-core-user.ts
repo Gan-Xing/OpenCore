@@ -10,6 +10,7 @@ import {
   createTypedSmokeRuntime,
   formatBody,
 } from './runtime';
+import { disconnectSmokePrisma, getSmokePrisma } from './prisma';
 
 const {
   strToU8,
@@ -48,6 +49,8 @@ const importUpdatedPassword = `UserImportUpdated-${runId}`;
 const importGuardRoleCode = `user_import_create_only_${runId}`;
 const importGuardUsername = `user_import_guard_${runId}`;
 const importGuardPassword = `UserImportGuard-${runId}`;
+const foreignLegacyTenantId = `tenant_user_legacy_${runId}`;
+const foreignLegacyDeptId = `dept_user_legacy_${runId}`;
 let adminToken;
 let smokeUserId;
 let smokeUserToken;
@@ -57,6 +60,7 @@ let importUserId;
 let xlsxImportUserId;
 let importGuardUserId;
 let importGuardRoleCreated = false;
+let foreignLegacyDeptSeeded = false;
 const batchUserIds = new Set<string>();
 let originalAdminDisplayName;
 let originalAdminAvatarUpload;
@@ -77,6 +81,8 @@ async function main() {
     const loginResponse = await login();
     adminToken = assertString(loginResponse.accessToken, 'login accessToken');
     smoke.setToken(adminToken);
+    await seedForeignLegacyDept();
+    foreignLegacyDeptSeeded = true;
 
     const adminProfile = await apiRequest('/core/users/profile');
     const adminUserId = assertString(adminProfile.id, 'admin profile id');
@@ -248,6 +254,23 @@ async function main() {
     await apiRequest('/core/users/simple-list?deptId=missing_dept', {
       expected: [404],
     });
+    const foreignLegacyDeptResult = await apiRequest('/core/users', {
+      method: 'POST',
+      expected: [404],
+      body: {
+        username: `${smokeUsername}_foreign_dept`,
+        displayName: 'Smoke User Foreign Legacy Dept',
+        password: smokePassword,
+        roleCodes: [],
+        deptId: foreignLegacyDeptId,
+        enabled: true,
+      },
+    });
+    assertEqual(
+      foreignLegacyDeptResult.error?.code,
+      'SYSTEM_USER_DEPT_NOT_FOUND',
+      'foreign legacy dept root-only guard',
+    );
 
     const createdUser = await apiRequest('/core/users', {
       method: 'POST',
@@ -1289,6 +1312,7 @@ async function main() {
           'core.user.post.unknown-rejected',
           'core.user.dept.unknown-rejected',
           'core.user.simple-list.dept.unknown-rejected',
+          'core.user.legacy-dept.root-only',
           'core.user.create',
           'core.user.simple-list.authenticated-consumer',
           'core.user.simple-list.option-shape',
@@ -1489,6 +1513,49 @@ async function cleanup() {
     }).catch(() => undefined);
     dataScopeRoleCreated = false;
   }
+
+  if (foreignLegacyDeptSeeded) {
+    const prisma = getSmokePrisma();
+    await prisma.systemDept
+      .deleteMany({ where: { id: foreignLegacyDeptId } })
+      .catch(() => undefined);
+    await prisma.tenant
+      .deleteMany({ where: { id: foreignLegacyTenantId } })
+      .catch(() => undefined);
+    foreignLegacyDeptSeeded = false;
+  }
+
+  await disconnectSmokePrisma();
+}
+
+async function seedForeignLegacyDept() {
+  const prisma = getSmokePrisma();
+  await prisma.tenant.upsert({
+    where: { id: foreignLegacyTenantId },
+    update: {},
+    create: {
+      id: foreignLegacyTenantId,
+      code: foreignLegacyTenantId,
+      slug: foreignLegacyTenantId,
+      name: 'Smoke Foreign Legacy User Org Tenant',
+      status: 'active',
+    },
+  });
+  await prisma.systemDept.upsert({
+    where: {
+      tenantId_code: {
+        tenantId: foreignLegacyTenantId,
+        code: foreignLegacyDeptId,
+      },
+    },
+    update: {},
+    create: {
+      id: foreignLegacyDeptId,
+      code: foreignLegacyDeptId,
+      name: 'Smoke Foreign Legacy Dept',
+      tenantId: foreignLegacyTenantId,
+    },
+  });
 }
 
 async function restoreAdminProfile() {

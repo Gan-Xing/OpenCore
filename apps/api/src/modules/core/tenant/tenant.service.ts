@@ -2010,7 +2010,11 @@ async function syncRootLegacyUser(
     await tx.userRole.deleteMany({ where: { userId } });
     if (input.roleIds.length > 0) {
       await tx.userRole.createMany({
-        data: input.roleIds.map((roleId) => ({ roleId, userId })),
+        data: input.roleIds.map((roleId) => ({
+          roleId,
+          tenantId: ROOT_TENANT_ID,
+          userId,
+        })),
       });
     }
   }
@@ -2019,7 +2023,11 @@ async function syncRootLegacyUser(
     await tx.userPost.deleteMany({ where: { userId } });
     if (input.postIds.length > 0) {
       await tx.userPost.createMany({
-        data: input.postIds.map((postId) => ({ postId, userId })),
+        data: input.postIds.map((postId) => ({
+          postId,
+          tenantId: ROOT_TENANT_ID,
+          userId,
+        })),
       });
     }
   }

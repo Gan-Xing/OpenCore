@@ -50,8 +50,8 @@ These remain below the productization waterline and cannot be described as compl
 | Data scope uses active membership  | Done    | Security data-scope resolution receives the active membership id and uses membership dept/role scope.    |
 | OpenAPI/SDK contract               | Done    | Authenticated user DTO/SDK type now includes membership-derived `postCodes`.                             |
 | Smoke/guard                        | Done    | Added `smoke:core-tenant-rbac` and `guard:tenant-rbac`.                                                  |
-| Tenant-owned Role/Dept/Post CRUD   | Pending | Existing Role/Dept/Post repositories remain globally keyed; T3 is not complete.                          |
-| Tenant-scoped unique constraints   | Pending | Role/Dept/Post code uniqueness is still global and must be rewritten in a later T3/T4 closure.           |
+| Tenant-owned Role/Dept/Post CRUD   | Done    | Closed by T3b/T3c/T3d: Role, Post, and Department repositories are tenant-owned and scoped by request context. |
+| Tenant-scoped unique constraints   | Done    | Closed by T3b/T3c/T3d: Role/Post/Dept code uniqueness is tenant-local.                                   |
 
 ## T3b Audit
 
@@ -64,8 +64,8 @@ These remain below the productization waterline and cannot be described as compl
 | Root legacy bridge compatibility                  | Done    | `SystemUser` legacy `UserRole` reads/writes stay pinned to `tenant_root` for single-mode compatibility.      |
 | Seed/OpenAPI/SDK/Admin consistency                | Done    | Seed upserts root roles by `(tenant_root, code)`; OpenAPI/SDK shapes are unchanged and drift checks pass.    |
 | Smoke/guard                                       | Done    | Added `smoke:core-tenant-role` and `guard:tenant-role-scope`.                                                |
-| Tenant-owned Dept/Post CRUD                       | Pending | Department and Post repositories still use global code uniqueness.                                           |
-| Non-root membership role/post assignment Admin    | Pending | T3b does not add control-plane assignment APIs; existing user-role assignment is root legacy only.           |
+| Tenant-owned Dept/Post CRUD                       | Done    | Closed by T3c/T3d: Post and Department repositories use tenant-local uniqueness and request context.         |
+| Non-root membership role/post assignment Admin    | Done    | Closed by T3e/T6c: active-tenant assignment and platform member lifecycle APIs use `TenantMembership*`.      |
 
 ## T3c Audit
 
@@ -78,8 +78,8 @@ These remain below the productization waterline and cannot be described as compl
 | Root legacy bridge compatibility                  | Done    | `SystemUser` legacy `UserPost` reads/writes stay pinned to `tenant_root` for single-mode compatibility.    |
 | Seed/OpenAPI/SDK/Admin consistency                | Done    | Seed upserts root posts by `(tenant_root, code)`; OpenAPI/SDK/Admin shapes are unchanged and remain live.  |
 | Smoke/guard                                       | Done    | Added `smoke:core-tenant-post` and `guard:tenant-post-scope`.                                              |
-| Tenant-owned Department CRUD                      | Pending | Department repositories still use global code uniqueness and tree ownership.                               |
-| Non-root membership role/post assignment Admin    | Pending | T3c does not add control-plane assignment APIs; existing user-post assignment is root legacy only.         |
+| Tenant-owned Department CRUD                      | Done    | Closed by T3d: department tree ownership and code uniqueness are tenant-local.                             |
+| Non-root membership role/post assignment Admin    | Done    | Closed by T3e/T6c: non-root assignments use membership bridges rather than legacy `UserPost`.              |
 
 ## T3d Audit
 
@@ -94,7 +94,7 @@ These remain below the productization waterline and cannot be described as compl
 | RBAC data-scope department lookup                       | Done    | Role custom data-scope department validation and RBAC descendant lookup are scoped to the active tenant.                                  |
 | Seed/OpenAPI/SDK/Admin consistency                      | Done    | Seed upserts root departments by `(tenant_root, code)`; OpenAPI/SDK/Admin shapes are unchanged and remain live.                           |
 | Smoke/guard                                             | Done    | Added `smoke:core-tenant-dept` and `guard:tenant-dept-scope`.                                                                             |
-| Non-root membership role/post assignment Admin          | Pending | T3d does not add control-plane assignment APIs; existing role/post assignment remains root legacy only.                                   |
+| Non-root membership role/post assignment Admin          | Done    | Closed by T3e/T6c: active-tenant assignment and member lifecycle APIs validate role/post ownership per tenant.                          |
 
 ## T3e Audit
 
@@ -118,6 +118,16 @@ These remain below the productization waterline and cannot be described as compl
 | No Menu tenant row ownership          | Done   | `Menu` remains global product metadata; tenant isolation is enforced by plan/module filtering rather than duplicating menu rows.      |
 | Admin consistency                     | Done   | Admin menu and role-menu pages already consume live APIs, so their visible menu options are clipped by the tenant-bound token.        |
 | Smoke/guard                           | Done   | `smoke:core-menu` covers a limited tenant plan that excludes `core.user`; `guard:tenant-rbac` locks the filter markers.              |
+
+## T3g / T4i Root-Only Legacy User Org Bridges
+
+| Requirement                         | Status | Notes                                                                                                                                           |
+| ----------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Legacy User department boundary     | Done   | `User.legacyDeptTenantId` is root-only checked and `User(legacyDeptTenantId, deptId)` references `SystemDept(tenantId, id)`.                   |
+| Legacy UserRole boundary            | Done   | `UserRole.tenantId` defaults to `tenant_root`, is root-only checked, and references `Role(tenantId, id)`.                                      |
+| Legacy UserPost boundary            | Done   | `UserPost.tenantId` defaults to `tenant_root`, is root-only checked, and references `SystemPost(tenantId, id)`.                                |
+| Service compatibility               | Done   | Root System User writes and root TenantMember sync paths keep legacy bridge rows root-pinned while non-root assignments use `TenantMembership*`. |
+| Smoke/guard                         | Done   | `guard:tenant-legacy-user-org`, focused `system-user` tests, and `smoke:core-user` cover foreign tenant dept/role/post rejection.               |
 
 ## T6a Tenant Plan Control Plane
 
@@ -211,7 +221,7 @@ These remain below the productization waterline and cannot be described as compl
 | Cross-tenant API rejection         | Done    | `smoke:core-collaboration-notices` seeds a foreign tenant notice and proves root-scope list/detail/publish/archive cannot access it.          |
 | Seed/OpenAPI/SDK/Admin             | Done    | Seed notice rows, `NoticeDto`, SDK `NoticeSummary`, and Admin Notices expose `tenantId`.                                                      |
 | Smoke/guard                        | Done    | Added `guard:tenant-collaboration-notice-scope`; existing collaboration notice smoke now covers foreign-tenant notice isolation.              |
-| Remaining T7 optional data scope   | Pending | Collaboration Todo is being closed by T7c; Approval Lite, ReportDefinition, and future business domains remain pending.                       |
+| Remaining T7 optional data scope   | Pending | Collaboration Todo, Approval Lite, and ReportDefinition are closed; future business domains remain pending.                                    |
 
 ## T7c Collaboration Todos
 
@@ -235,7 +245,7 @@ These remain below the productization waterline and cannot be described as compl
 | Cross-tenant API rejection         | Done    | `smoke:core-collaboration-approvals` seeds a foreign tenant approval and proves root-scope list/detail/approve/reject cannot access it.       |
 | Seed/OpenAPI/SDK/Admin             | Done    | Seed approval rows, `ApprovalLiteDto`, SDK `ApprovalLiteSummary`, and Admin Approvals expose `tenantId`.                                      |
 | Smoke/guard                        | Done    | `guard:tenant-collaboration-approval-scope` passed and public collaboration approval smoke verified foreign-tenant approval isolation.         |
-| Remaining T7 optional data scope   | Pending | ReportDefinition is being closed by T7e; future business domains remain pending.                                                              |
+| Remaining T7 optional data scope   | Pending | ReportDefinition is closed by T7e; future business domains remain pending.                                                                    |
 
 ## T7e ReportDefinition
 
