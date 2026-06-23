@@ -41,6 +41,7 @@ export type NoticeSummary = {
 
 export type TodoSummary = {
   id: string;
+  tenantId: string;
   title: string;
   description?: string;
   sourceType: string;
@@ -198,6 +199,7 @@ export function createCollaborationFixtures(): CollaborationFixtures {
   const todos: readonly TodoSummary[] = [
     {
       id: 'todo_review_openforge',
+      tenantId: 'tenant_root',
       title: 'Review OpenForge patch plan',
       sourceType: 'manual',
       businessType: 'tool.openforge',

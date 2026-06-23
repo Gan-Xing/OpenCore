@@ -10,6 +10,10 @@ import {
 const smoke = createTypedSmokeRuntime();
 const { apiPrefix, baseUrl, checkDocs, clients, request, username } = smoke;
 const runId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+const runSafeId = runId.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+const ROOT_TENANT_ID = 'tenant_root';
+const FOREIGN_TENANT_ID = 'tenant_collaboration_todo_smoke_foreign';
+const FOREIGN_TODO_ID = `todo_foreign_${runSafeId}`;
 
 async function main() {
   const createdTodoIds: string[] = [];
@@ -31,6 +35,8 @@ async function main() {
 
     const loginResponse = await smoke.login();
     const token = assertString(loginResponse.accessToken, 'login accessToken');
+    await seedForeignTenantTodo();
+    await assertForeignTenantTodoHidden(token);
 
     const pendingTodos = await clients.collaboration.listTodos(token, {
       assignee: 'admin',
@@ -47,6 +53,7 @@ async function main() {
       'todo_review_openforge',
     );
     assertEqual(seededDetail.id, 'todo_review_openforge', 'seeded todo id');
+    assertEqual(seededDetail.tenantId, ROOT_TENANT_ID, 'seeded todo tenant id');
     assertEqual(seededDetail.status, 'pending', 'seeded todo status');
 
     const created = await clients.collaboration.createTodo(token, {
@@ -60,6 +67,7 @@ async function main() {
     });
     const createdTodoId = assertString(created.id, 'created todo id');
     createdTodoIds.push(createdTodoId);
+    assertEqual(created.tenantId, ROOT_TENANT_ID, 'created todo tenant id');
     assertEqual(created.status, 'pending', 'created todo status');
     assertEqual(created.assignee, 'admin', 'created todo assignee');
     assertEqual(created.businessId, runId, 'created todo business id');
@@ -167,6 +175,7 @@ async function main() {
               ]
             : []),
           'auth.login',
+          'collaboration.todos.foreign-hidden',
           'collaboration.todos.seeded-list-detail',
           'collaboration.todos.create',
           'collaboration.todos.list-filter',
@@ -184,6 +193,7 @@ async function main() {
     await cleanupCreatedTodos(createdTodoIds);
     throw error;
   } finally {
+    await cleanupForeignTenantTodo().catch(() => undefined);
     await disconnectSmokePrisma();
   }
 }
@@ -198,6 +208,111 @@ async function cleanupCreatedTodos(ids: readonly string[]) {
   });
 }
 
+async function seedForeignTenantTodo() {
+  const prisma = getSmokePrisma();
+
+  await cleanupForeignTenantTodo();
+  await prisma.tenant.upsert({
+    where: { id: FOREIGN_TENANT_ID },
+    update: {
+      code: 'collab-todo-smoke-foreign',
+      slug: 'collab-todo-smoke-foreign',
+      name: 'Collaboration Todo Smoke Foreign',
+      status: 'active',
+    },
+    create: {
+      id: FOREIGN_TENANT_ID,
+      code: 'collab-todo-smoke-foreign',
+      slug: 'collab-todo-smoke-foreign',
+      name: 'Collaboration Todo Smoke Foreign',
+      status: 'active',
+    },
+  });
+  await prisma.collaborationTodo.create({
+    data: {
+      id: FOREIGN_TODO_ID,
+      tenantId: FOREIGN_TENANT_ID,
+      title: `Foreign smoke todo ${runId}`,
+      description: 'Foreign tenant todo description.',
+      sourceType: 'manual',
+      businessType: 'smoke',
+      businessId: runId,
+      assignee: 'foreign-admin',
+      status: 'pending',
+      timeline: [
+        {
+          at: new Date().toISOString(),
+          actor: 'foreign-admin',
+          action: 'created',
+        },
+      ],
+    },
+  });
+}
+
+async function assertForeignTenantTodoHidden(rootToken: string) {
+  const list = await clients.collaboration.listTodos(rootToken, {
+    status: 'pending',
+  });
+  assertPageExcludesId(list, FOREIGN_TODO_ID, 'foreign todo list');
+
+  await smoke.apiRequest(
+    `/collaboration/todos/${encodeURIComponent(FOREIGN_TODO_ID)}`,
+    { expected: [404], token: rootToken },
+  );
+  await smoke.apiRequest(
+    `/collaboration/todos/${encodeURIComponent(FOREIGN_TODO_ID)}/assign`,
+    {
+      body: { actor: username, assignee: 'admin' },
+      expected: [404],
+      method: 'PATCH',
+      token: rootToken,
+    },
+  );
+  await smoke.apiRequest(
+    `/collaboration/todos/${encodeURIComponent(FOREIGN_TODO_ID)}/complete`,
+    {
+      body: { actor: username },
+      expected: [404],
+      method: 'PATCH',
+      token: rootToken,
+    },
+  );
+  await smoke.apiRequest(
+    `/collaboration/todos/${encodeURIComponent(FOREIGN_TODO_ID)}/cancel`,
+    {
+      body: { actor: username },
+      expected: [404],
+      method: 'PATCH',
+      token: rootToken,
+    },
+  );
+  await assertForeignTenantTodoPreserved();
+}
+
+async function assertForeignTenantTodoPreserved() {
+  const todo = await getSmokePrisma().collaborationTodo.findUnique({
+    where: { id: FOREIGN_TODO_ID },
+  });
+
+  if (
+    !todo ||
+    todo.tenantId !== FOREIGN_TENANT_ID ||
+    todo.status !== 'pending'
+  ) {
+    throw new Error('Foreign tenant collaboration todo was changed');
+  }
+}
+
+async function cleanupForeignTenantTodo() {
+  const prisma = getSmokePrisma();
+
+  await prisma.collaborationTodo.deleteMany({
+    where: { id: FOREIGN_TODO_ID },
+  });
+  await prisma.tenant.deleteMany({ where: { id: FOREIGN_TENANT_ID } });
+}
+
 function assertPageContainsId(
   page: { items: readonly { id: string }[] },
   id: string,
@@ -206,6 +321,17 @@ function assertPageContainsId(
   assertArray(page.items, `${label} items`);
   if (!page.items.some((item) => item.id === id)) {
     throw new Error(`${label} must contain ${id}`);
+  }
+}
+
+function assertPageExcludesId(
+  page: { items: readonly { id: string }[] },
+  id: string,
+  label: string,
+) {
+  assertArray(page.items, `${label} items`);
+  if (page.items.some((item) => item.id === id)) {
+    throw new Error(`${label} must not contain ${id}`);
   }
 }
 

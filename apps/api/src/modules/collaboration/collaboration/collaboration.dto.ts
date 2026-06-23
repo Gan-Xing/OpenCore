@@ -224,6 +224,9 @@ export class TodoDto {
   id!: string;
 
   @ApiProperty()
+  tenantId!: string;
+
+  @ApiProperty()
   title!: string;
 
   @ApiProperty({ required: false })

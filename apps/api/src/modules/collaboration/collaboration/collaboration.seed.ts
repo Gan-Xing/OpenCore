@@ -43,6 +43,7 @@ export const seedNotices: readonly NoticeRecord[] = [
 export const seedTodos: readonly TodoRecord[] = [
   {
     id: 'todo_review_openforge',
+    tenantId: 'tenant_root',
     title: 'Review OpenForge patch plan',
     description: 'Review generated patch plans before applying them.',
     sourceType: 'manual',

@@ -74,6 +74,7 @@ const TODO_UPDATE_PERMISSION_MARKER = 'collaboration:todo:update';
 const DEFAULT_TODO_ACTOR = 'admin';
 
 const searchFields: CurrentPageSearchField<TodoSummary>[] = [
+  'tenantId',
   'title',
   'sourceType',
   'businessType',
@@ -107,6 +108,13 @@ function createExportColumns(
     {
       title: formatMessage('pages.collaboration.common.fields.id', 'ID'),
       dataIndex: 'id',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.todos.fields.tenantId',
+        'Tenant ID',
+      ),
+      dataIndex: 'tenantId',
     },
     {
       title: formatMessage('pages.collaboration.todos.fields.title', 'Title'),
@@ -501,6 +509,14 @@ export default function TodosPage() {
 
   const columns: ProColumns<TodoSummary>[] = [
     {
+      title: formatMessage(
+        'pages.collaboration.todos.fields.tenantId',
+        'Tenant ID',
+      ),
+      dataIndex: 'tenantId',
+      width: 160,
+    },
+    {
       title: formatMessage('pages.collaboration.todos.fields.title', 'Title'),
       dataIndex: 'title',
       render: (_, record) => (
@@ -758,6 +774,13 @@ export default function TodosPage() {
           {
             label: formatMessage('pages.collaboration.common.fields.id', 'ID'),
             value: selected?.id,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.todos.fields.tenantId',
+              'Tenant ID',
+            ),
+            value: selected?.tenantId,
           },
           {
             label: formatMessage(

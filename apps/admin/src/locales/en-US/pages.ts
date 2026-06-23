@@ -2475,6 +2475,7 @@ export default {
   'pages.collaboration.todos.fields.completedAt': 'Completed At',
   'pages.collaboration.todos.fields.description': 'Description',
   'pages.collaboration.todos.fields.source': 'Source',
+  'pages.collaboration.todos.fields.tenantId': 'Tenant ID',
   'pages.collaboration.todos.fields.title': 'Title',
   'pages.collaboration.todos.load.failure': 'Unable to load todos.',
   'pages.collaboration.todos.load.liveFailure':

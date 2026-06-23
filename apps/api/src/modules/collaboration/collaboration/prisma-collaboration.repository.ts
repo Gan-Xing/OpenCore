@@ -74,6 +74,7 @@ type NoticeRow = {
 
 type TodoRow = {
   id: string;
+  tenantId: string;
   title: string;
   description: string | null;
   sourceType: string;
@@ -114,7 +115,7 @@ export class PrismaCollaborationRepository extends CollaborationRepository {
         where: { tenantId, deletedAt: null },
       }),
       this.prisma.collaborationNotice.findMany({ where: { tenantId } }),
-      this.prisma.collaborationTodo.findMany(),
+      this.prisma.collaborationTodo.findMany({ where: { tenantId } }),
       this.prisma.collaborationApprovalLite.findMany(),
     ]);
 
@@ -272,8 +273,10 @@ export class PrismaCollaborationRepository extends CollaborationRepository {
   }
 
   async listTodos(query: TodoQueryDto = {}): Promise<PageResult<TodoRecord>> {
+    const tenantId = resolveCurrentTenantId();
     const rows = await this.prisma.collaborationTodo.findMany({
       where: {
+        tenantId,
         status: query.status,
         assignee: query.assignee,
         sourceType: query.sourceType,
@@ -285,8 +288,10 @@ export class PrismaCollaborationRepository extends CollaborationRepository {
   }
 
   async createTodo(body: CreateTodoDto): Promise<TodoRecord> {
+    const tenantId = resolveCurrentTenantId();
     const todo = await this.prisma.collaborationTodo.create({
       data: {
+        tenantId,
         title: body.title,
         description: body.description,
         sourceType: body.sourceType,
@@ -452,9 +457,10 @@ export class PrismaCollaborationRepository extends CollaborationRepository {
   }
 
   private async findTodo(id: string): Promise<TodoRecord> {
+    const tenantId = resolveCurrentTenantId();
     return requireRecord(
       await this.prisma.collaborationTodo
-        .findUnique({ where: { id } })
+        .findFirst({ where: { id, tenantId } })
         .then((todo) => (todo ? toTodoRecord(todo) : undefined)),
       'Todo',
       id,
@@ -516,6 +522,7 @@ function toNoticeRecord(row: NoticeRow): NoticeRecord {
 function toTodoRecord(row: TodoRow): TodoRecord {
   return {
     id: row.id,
+    tenantId: row.tenantId,
     title: row.title,
     description: row.description ?? undefined,
     sourceType: row.sourceType,

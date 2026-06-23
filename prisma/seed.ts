@@ -639,6 +639,7 @@ async function seedCollaboration(): Promise<{
     await prisma.collaborationTodo.upsert({
       where: { id: todo.id },
       update: {
+        tenantId: todo.tenantId,
         title: todo.title,
         description: todo.description ?? null,
         sourceType: todo.sourceType,
@@ -653,6 +654,7 @@ async function seedCollaboration(): Promise<{
       },
       create: {
         id: todo.id,
+        tenantId: todo.tenantId,
         title: todo.title,
         description: todo.description ?? null,
         sourceType: todo.sourceType,

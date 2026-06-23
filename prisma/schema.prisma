@@ -101,6 +101,7 @@ model Tenant {
   webSocketRuntimeEvents IntegrationWebSocketRuntimeEvent[]
   collaborationMessages  CollaborationMessage[]
   collaborationNotices   CollaborationNotice[]
+  collaborationTodos     CollaborationTodo[]
   auditLogs              AuditLog[]
   loginLogs              LoginLog[]
   onlineSessions         OnlineUserSession[]
@@ -640,6 +641,8 @@ model CollaborationNotice {
 
 model CollaborationTodo {
   id           String    @id @default(cuid())
+  tenantId     String    @default("tenant_root")
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   title        String
   description  String?
   sourceType   String
@@ -653,9 +656,9 @@ model CollaborationTodo {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  @@index([assignee, status, createdAt])
-  @@index([sourceType, status])
-  @@index([businessType, businessId])
+  @@index([tenantId, assignee, status, createdAt])
+  @@index([tenantId, sourceType, status])
+  @@index([tenantId, businessType, businessId])
 }
 
 model CollaborationApprovalLite {

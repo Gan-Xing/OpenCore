@@ -99,6 +99,44 @@ describe('CollaborationRepository', () => {
     });
   });
 
+  it('scopes todos by the active tenant context', async () => {
+    const repository = new SeedCollaborationRepository();
+    const foreignTodo = await runInTenant('tenant_foreign', () =>
+      repository.createTodo({
+        title: 'Foreign todo',
+        sourceType: 'manual',
+        businessType: 'foreign',
+        businessId: 'todo',
+        assignee: 'foreign-admin',
+        actor: 'foreign-admin',
+      }),
+    );
+
+    await expect(repository.listTodos({ status: 'pending' })).resolves
+      .toMatchObject({
+        items: expect.not.arrayContaining([
+          expect.objectContaining({ id: foreignTodo.id }),
+        ]),
+      });
+    await expectHttpExceptionCode(
+      repository.getTodo(foreignTodo.id),
+      'COLLABORATION_RESOURCE_NOT_FOUND',
+    );
+    await expectHttpExceptionCode(
+      repository.assignTodo(foreignTodo.id, {
+        assignee: 'admin',
+        actor: 'admin',
+      }),
+      'COLLABORATION_RESOURCE_NOT_FOUND',
+    );
+    await expect(runInTenant('tenant_foreign', () =>
+      repository.getTodo(foreignTodo.id),
+    )).resolves.toMatchObject({
+      id: foreignTodo.id,
+      tenantId: 'tenant_foreign',
+    });
+  });
+
   it('supports message read, archive, and delete policies', async () => {
     const repository = new SeedCollaborationRepository();
     const message = await repository.createMessage({

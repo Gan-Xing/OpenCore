@@ -2271,6 +2271,7 @@ export default {
   'pages.collaboration.todos.fields.completedAt': '完成时间',
   'pages.collaboration.todos.fields.description': '描述',
   'pages.collaboration.todos.fields.source': '来源',
+  'pages.collaboration.todos.fields.tenantId': '租户 ID',
   'pages.collaboration.todos.fields.title': '标题',
   'pages.collaboration.todos.load.failure': '无法加载待办列表。',
   'pages.collaboration.todos.load.liveFailure': '实时协作待办不可用',

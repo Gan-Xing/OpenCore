@@ -4,7 +4,7 @@ Date: 2026-06-23
 Repository: `Gan-Xing/OpenCore`  
 Branch: `main`  
 Target track: `Cycle-022 / Tenant Foundation`  
-Status: **In progress; T6 Admin control plane is closed and T7b Collaboration Notice tenant isolation is deployed and publicly smoke-verified**
+Status: **In progress; T6 Admin control plane is closed and T7c Collaboration Todo tenant isolation is deployed and publicly smoke-verified**
 
 ## 0. Current Round Snapshot
 
@@ -12,7 +12,7 @@ Updated: 2026-06-23
 
 Current completed slice count: **6 full slices**
 
-This working tree has advanced Cycle-022 through six full deployable tenant foundation slices plus T4a online-session tenant isolation, T4b login-log tenant isolation, T4c operation-audit tenant isolation, T4d dictionary tenant isolation, T4e system config tenant isolation, T4f file asset tenant isolation, T4g system notice tenant isolation, T5a scheduler tenant propagation, T5b Redis cache namespace isolation, T5c WebSocket runtime tenant scope, T5d BullMQ monitor queue namespace isolation, T5e Integration provider/outbox/OAuth tenant scope, T5f runtime parity audit, T6a Tenant Plan control-plane CRUD, T6b Tenant lifecycle control-plane CRUD, T6c Tenant Member lifecycle/invitation control-plane CRUD, T6d Admin tenant switcher, T6e platform visit mode, T6f platform visit audit, T7a Collaboration Message tenant isolation, and T7b Collaboration Notice tenant isolation:
+This working tree has advanced Cycle-022 through six full deployable tenant foundation slices plus T4a online-session tenant isolation, T4b login-log tenant isolation, T4c operation-audit tenant isolation, T4d dictionary tenant isolation, T4e system config tenant isolation, T4f file asset tenant isolation, T4g system notice tenant isolation, T5a scheduler tenant propagation, T5b Redis cache namespace isolation, T5c WebSocket runtime tenant scope, T5d BullMQ monitor queue namespace isolation, T5e Integration provider/outbox/OAuth tenant scope, T5f runtime parity audit, T6a Tenant Plan control-plane CRUD, T6b Tenant lifecycle control-plane CRUD, T6c Tenant Member lifecycle/invitation control-plane CRUD, T6d Admin tenant switcher, T6e platform visit mode, T6f platform visit audit, T7a Collaboration Message tenant isolation, T7b Collaboration Notice tenant isolation, and T7c Collaboration Todo tenant isolation:
 
 - Prisma models for `TenantPlan`, `TenantPlanModule`, `Tenant`, `TenantMembership`, `TenantMembershipRole`, `TenantMembershipPost`, `PlatformRole`, `UserPlatformRole`, and `PlatformRolePermission`.
 - Migration `20260622223000_tenant_foundation` creates the `root` tenant, root `system.full` plan, root memberships for existing users, and transitional root copies of `UserRole` and `UserPost`.
@@ -156,11 +156,16 @@ This working tree has advanced Cycle-022 through six full deployable tenant foun
 - Collaboration notice seed records, OpenAPI DTO, SDK summary fixture, and Admin Notices now expose `tenantId`.
 - `smoke:core-collaboration-notices` seeds a foreign tenant notice and proves root-scope list/detail/publish/archive do not cross tenants; `guard:tenant-collaboration-notice-scope` locks the slice markers.
 - Refreshed deploy completed on API `39172` and Admin `39174`; local deploy smoke and public API Collaboration Notice tenant isolation smoke passed for T7b.
+- Migration `20260624043000_tenant_scoped_collaboration_todos` makes `CollaborationTodo` tenant-owned with root backfill, a tenant FK, and tenant-prefixed assignee/status, source/status, and business indexes.
+- `PrismaCollaborationRepository` and `SeedCollaborationRepository` now resolve active tenant context and scope Collaboration Todo summary/list/detail/create/assign/complete/cancel by tenant without trusting client tenant selectors.
+- Collaboration todo seed records, OpenAPI DTO, SDK summary fixture, and Admin Todos now expose `tenantId`.
+- `smoke:core-collaboration-todos` seeds a foreign tenant todo and proves root-scope list/detail/assign/complete/cancel do not cross tenants; `guard:tenant-collaboration-todo-scope` locks the slice markers.
+- Refreshed deploy completed on API `39172` and Admin `39174`; local deploy smoke and public API Collaboration Todo tenant isolation smoke passed for T7c.
 
 Still not complete:
 
 - tenant-scoped System/core repositories for other unreviewed non-org data;
-- T7 optional/business tenantization beyond Collaboration Message and Notice.
+- T7 optional/business tenantization beyond Collaboration Message, Notice, and Todo.
 
 ---
 
@@ -601,7 +606,7 @@ integration.provider
 | `LoginLockout`                     | Global credential security                    | V1 保持全局；用户名锁定不依赖前端租户                                                            |
 | `CollaborationMessage`             | Tenant-owned                                  | Done T7a: 增加 `tenantId` 并按 active tenant 查询；sender/recipient member/user identity 后续细化 |
 | `CollaborationNotice`              | Tenant-owned                                  | Done T7b: 增加 `tenantId` 并按 active tenant 查询                                                |
-| `CollaborationTodo`                | Tenant-owned                                  | 增加 `tenantId`                                                                                  |
+| `CollaborationTodo`                | Tenant-owned                                  | Done T7c: 增加 `tenantId` 并按 active tenant 查询                                                |
 | `CollaborationApprovalLite`        | Tenant-owned                                  | 增加 `tenantId`                                                                                  |
 | `JobDefinition`                    | Tenant-owned scheduler job                    | Done T5a: 增加 `tenantId`，code 改租户内唯一，monitor job API 按 active tenant 查询              |
 | `JobRunLog`                        | Tenant-owned run log                          | Done T5a: 增加 `tenantId`，worker claim/run detail/run clean 按 active tenant 查询               |
@@ -1186,10 +1191,10 @@ Closed sub-slices:
 
 - T7a Collaboration Message tenant isolation。
 - T7b Collaboration Notice tenant isolation。
+- T7c Collaboration Todo tenant isolation。
 
 Remaining:
 
-- Collaboration Todo；
 - Collaboration Approval Lite；
 - Reports；
 - 未来 CRM/ERP/Mall/AI 等业务域。

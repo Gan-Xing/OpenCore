@@ -15075,6 +15075,7 @@
         "type": "object",
         "properties": {
           "id": { "type": "string" },
+          "tenantId": { "type": "string" },
           "title": { "type": "string" },
           "description": { "type": "string" },
           "sourceType": { "type": "string" },
@@ -15097,6 +15098,7 @@
         },
         "required": [
           "id",
+          "tenantId",
           "title",
           "sourceType",
           "assignee",

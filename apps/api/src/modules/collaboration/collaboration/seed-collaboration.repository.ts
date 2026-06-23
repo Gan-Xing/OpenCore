@@ -63,7 +63,7 @@ export class SeedCollaborationRepository extends CollaborationRepository {
           message.tenantId === tenantId && message.status !== 'deleted',
       ),
       notices: this.notices.filter((notice) => notice.tenantId === tenantId),
-      todos: this.todos,
+      todos: this.todos.filter((todo) => todo.tenantId === tenantId),
       approvals: this.approvals,
     });
   }
@@ -183,9 +183,11 @@ export class SeedCollaborationRepository extends CollaborationRepository {
   }
 
   async listTodos(query: TodoQueryDto = {}): Promise<PageResult<TodoRecord>> {
+    const tenantId = resolveCurrentTenantId();
     return createPage(
       this.todos.filter(
         (todo) =>
+          todo.tenantId === tenantId &&
           matchesOptional(todo.status, query.status) &&
           matchesOptional(todo.assignee, query.assignee) &&
           matchesOptional(todo.sourceType, query.sourceType),
@@ -195,8 +197,10 @@ export class SeedCollaborationRepository extends CollaborationRepository {
   }
 
   async createTodo(body: CreateTodoDto): Promise<TodoRecord> {
+    const tenantId = resolveCurrentTenantId();
     const todo: TodoRecord = {
       id: `todo_${this.todos.length + 1}`,
+      tenantId,
       title: body.title,
       description: body.description,
       sourceType: body.sourceType,
@@ -329,8 +333,9 @@ export class SeedCollaborationRepository extends CollaborationRepository {
   }
 
   private findTodo(id: string): TodoRecord {
+    const tenantId = resolveCurrentTenantId();
     return requireRecord(
-      this.todos.find((todo) => todo.id === id),
+      this.todos.find((todo) => todo.id === id && todo.tenantId === tenantId),
       'Todo',
       id,
     );
