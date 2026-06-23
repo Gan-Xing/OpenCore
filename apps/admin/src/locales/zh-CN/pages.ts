@@ -2306,6 +2306,7 @@ export default {
   'pages.collaboration.approvals.fields.comment': '备注',
   'pages.collaboration.approvals.fields.decidedAt': '审批时间',
   'pages.collaboration.approvals.fields.requester': '申请人',
+  'pages.collaboration.approvals.fields.tenantId': '租户 ID',
   'pages.collaboration.approvals.fields.title': '标题',
   'pages.collaboration.approvals.load.failure': '无法加载审批列表。',
   'pages.collaboration.approvals.load.liveFailure': '实时协作审批不可用',

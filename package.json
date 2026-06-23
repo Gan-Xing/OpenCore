@@ -130,6 +130,7 @@
     "guard:tenant-auth": "pnpm scripts:ts tools/scripts/check-tenant-auth.ts",
     "guard:tenant-collaboration-message-scope": "pnpm scripts:ts tools/scripts/check-tenant-collaboration-message-scope.ts",
     "guard:tenant-collaboration-notice-scope": "pnpm scripts:ts tools/scripts/check-tenant-collaboration-notice-scope.ts",
+    "guard:tenant-collaboration-approval-scope": "pnpm scripts:ts tools/scripts/check-tenant-collaboration-approval-scope.ts",
     "guard:tenant-collaboration-todo-scope": "pnpm scripts:ts tools/scripts/check-tenant-collaboration-todo-scope.ts",
     "guard:tenant-config-scope": "pnpm scripts:ts tools/scripts/check-tenant-config-scope.ts",
     "guard:tenant-file-scope": "pnpm scripts:ts tools/scripts/check-tenant-file-scope.ts",

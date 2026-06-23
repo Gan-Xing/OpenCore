@@ -137,6 +137,43 @@ describe('CollaborationRepository', () => {
     });
   });
 
+  it('scopes approval-lite requests by the active tenant context', async () => {
+    const repository = new SeedCollaborationRepository();
+    const foreignApproval = await runInTenant('tenant_foreign', () =>
+      repository.createApprovalLiteRequest({
+        title: 'Foreign approval',
+        requester: 'foreign-developer',
+        approver: 'foreign-admin',
+        businessType: 'foreign',
+        businessId: 'approval',
+      }),
+    );
+
+    await expect(
+      repository.listApprovalLiteRequests({ status: 'pending' }),
+    ).resolves.toMatchObject({
+      items: expect.not.arrayContaining([
+        expect.objectContaining({ id: foreignApproval.id }),
+      ]),
+    });
+    await expectHttpExceptionCode(
+      repository.getApprovalLiteRequest(foreignApproval.id),
+      'COLLABORATION_RESOURCE_NOT_FOUND',
+    );
+    await expectHttpExceptionCode(
+      repository.approveApprovalLiteRequest(foreignApproval.id, {
+        actor: 'admin',
+      }),
+      'COLLABORATION_RESOURCE_NOT_FOUND',
+    );
+    await expect(runInTenant('tenant_foreign', () =>
+      repository.getApprovalLiteRequest(foreignApproval.id),
+    )).resolves.toMatchObject({
+      id: foreignApproval.id,
+      tenantId: 'tenant_foreign',
+    });
+  });
+
   it('supports message read, archive, and delete policies', async () => {
     const repository = new SeedCollaborationRepository();
     const message = await repository.createMessage({

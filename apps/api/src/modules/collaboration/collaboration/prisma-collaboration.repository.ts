@@ -90,6 +90,7 @@ type TodoRow = {
 
 type ApprovalRow = {
   id: string;
+  tenantId: string;
   title: string;
   requester: string;
   approver: string;
@@ -116,7 +117,7 @@ export class PrismaCollaborationRepository extends CollaborationRepository {
       }),
       this.prisma.collaborationNotice.findMany({ where: { tenantId } }),
       this.prisma.collaborationTodo.findMany({ where: { tenantId } }),
-      this.prisma.collaborationApprovalLite.findMany(),
+      this.prisma.collaborationApprovalLite.findMany({ where: { tenantId } }),
     ]);
 
     return buildCollaborationSummary({
@@ -363,8 +364,10 @@ export class PrismaCollaborationRepository extends CollaborationRepository {
   async listApprovalLiteRequests(
     query: ApprovalLiteQueryDto = {},
   ): Promise<PageResult<ApprovalLiteRecord>> {
+    const tenantId = resolveCurrentTenantId();
     const rows = await this.prisma.collaborationApprovalLite.findMany({
       where: {
+        tenantId,
         status: query.status,
         requester: query.requester,
         approver: query.approver,
@@ -378,8 +381,10 @@ export class PrismaCollaborationRepository extends CollaborationRepository {
   async createApprovalLiteRequest(
     body: CreateApprovalLiteDto,
   ): Promise<ApprovalLiteRecord> {
+    const tenantId = resolveCurrentTenantId();
     const approval = await this.prisma.collaborationApprovalLite.create({
       data: {
+        tenantId,
         title: body.title,
         requester: body.requester,
         approver: body.approver,
@@ -468,9 +473,10 @@ export class PrismaCollaborationRepository extends CollaborationRepository {
   }
 
   private async findApproval(id: string): Promise<ApprovalLiteRecord> {
+    const tenantId = resolveCurrentTenantId();
     return requireRecord(
       await this.prisma.collaborationApprovalLite
-        .findUnique({ where: { id } })
+        .findFirst({ where: { id, tenantId } })
         .then((approval) =>
           approval ? toApprovalRecord(approval) : undefined,
         ),
@@ -540,6 +546,7 @@ function toTodoRecord(row: TodoRow): TodoRecord {
 function toApprovalRecord(row: ApprovalRow): ApprovalLiteRecord {
   return {
     id: row.id,
+    tenantId: row.tenantId,
     title: row.title,
     requester: row.requester,
     approver: row.approver,

@@ -102,6 +102,7 @@ model Tenant {
   collaborationMessages  CollaborationMessage[]
   collaborationNotices   CollaborationNotice[]
   collaborationTodos     CollaborationTodo[]
+  collaborationApprovals CollaborationApprovalLite[]
   auditLogs              AuditLog[]
   loginLogs              LoginLog[]
   onlineSessions         OnlineUserSession[]
@@ -663,6 +664,8 @@ model CollaborationTodo {
 
 model CollaborationApprovalLite {
   id           String    @id @default(cuid())
+  tenantId     String    @default("tenant_root")
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   title        String
   requester    String
   approver     String
@@ -675,9 +678,9 @@ model CollaborationApprovalLite {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  @@index([requester, status, createdAt])
-  @@index([approver, status, createdAt])
-  @@index([businessType, businessId])
+  @@index([tenantId, requester, status, createdAt])
+  @@index([tenantId, approver, status, createdAt])
+  @@index([tenantId, businessType, businessId])
 }
 
 model JobDefinition {

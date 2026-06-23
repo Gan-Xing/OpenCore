@@ -15151,6 +15151,7 @@
         "type": "object",
         "properties": {
           "id": { "type": "string" },
+          "tenantId": { "type": "string" },
           "title": { "type": "string" },
           "requester": { "type": "string" },
           "approver": { "type": "string" },
@@ -15172,6 +15173,7 @@
         },
         "required": [
           "id",
+          "tenantId",
           "title",
           "requester",
           "approver",

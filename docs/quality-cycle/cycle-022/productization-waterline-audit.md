@@ -212,7 +212,19 @@ These remain below the productization waterline and cannot be described as compl
 | Cross-tenant API rejection         | Done    | `smoke:core-collaboration-todos` seeds a foreign tenant todo and proves root-scope list/detail/assign/complete/cancel cannot access it.       |
 | Seed/OpenAPI/SDK/Admin             | Done    | Seed todo rows, `TodoDto`, SDK `TodoSummary`, and Admin Todos expose `tenantId`.                                                              |
 | Smoke/guard                        | Done    | Added `guard:tenant-collaboration-todo-scope`; existing collaboration todo smoke now covers foreign-tenant todo isolation.                    |
-| Remaining T7 optional data scope   | Pending | Collaboration Approval Lite, ReportDefinition, and future business domains remain pending.                                                     |
+| Remaining T7 optional data scope   | Pending | Collaboration Approval Lite was closed by T7d; ReportDefinition and future business domains remain pending.                                      |
+
+## T7d Collaboration Approval Lite
+
+| Check                              | Status  | Evidence                                                                                                                                      |
+| ---------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Approval Lite tenant ownership     | Done    | `CollaborationApprovalLite.tenantId` is backfilled to `tenant_root`, defaults to root, and is constrained to `Tenant`.                        |
+| Tenant-prefixed approval indexes   | Done    | Requester/status/date, approver/status/date, and business indexes now include `tenantId` first.                                               |
+| Repository tenant isolation        | Done    | Collaboration approval-lite summary/list/detail/create/approve/reject resolve the active tenant from `RequestContext` with root fallback.     |
+| Cross-tenant API rejection         | Done    | `smoke:core-collaboration-approvals` seeds a foreign tenant approval and proves root-scope list/detail/approve/reject cannot access it.       |
+| Seed/OpenAPI/SDK/Admin             | Done    | Seed approval rows, `ApprovalLiteDto`, SDK `ApprovalLiteSummary`, and Admin Approvals expose `tenantId`.                                      |
+| Smoke/guard                        | Done    | `guard:tenant-collaboration-approval-scope` passed and public collaboration approval smoke verified foreign-tenant approval isolation.         |
+| Remaining T7 optional data scope   | Pending | ReportDefinition and future business domains remain pending.                                                                                  |
 
 ## T4a Audit
 

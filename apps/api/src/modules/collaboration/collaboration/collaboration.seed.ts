@@ -65,6 +65,7 @@ export const seedTodos: readonly TodoRecord[] = [
 export const seedApprovalLiteRequests: readonly ApprovalLiteRecord[] = [
   {
     id: 'approval_openforge_apply',
+    tenantId: 'tenant_root',
     title: 'Approve OpenForge apply',
     requester: 'developer',
     approver: 'admin',

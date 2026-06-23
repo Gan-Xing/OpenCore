@@ -10,6 +10,10 @@ import {
 const smoke = createTypedSmokeRuntime();
 const { apiPrefix, baseUrl, checkDocs, clients, request, username } = smoke;
 const runId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+const runSafeId = runId.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+const ROOT_TENANT_ID = 'tenant_root';
+const FOREIGN_TENANT_ID = 'tenant_collaboration_approval_smoke_foreign';
+const FOREIGN_APPROVAL_ID = `approval_foreign_${runSafeId}`;
 
 async function main() {
   const createdApprovalIds: string[] = [];
@@ -30,6 +34,8 @@ async function main() {
 
     const loginResponse = await smoke.login();
     const token = assertString(loginResponse.accessToken, 'login accessToken');
+    await seedForeignTenantApproval();
+    await assertForeignTenantApprovalHidden(token);
 
     const pendingApprovals =
       await clients.collaboration.listApprovalLiteRequests(token, {
@@ -51,6 +57,11 @@ async function main() {
       'approval_openforge_apply',
       'seeded approval id',
     );
+    assertEqual(
+      seededDetail.tenantId,
+      ROOT_TENANT_ID,
+      'seeded approval tenant id',
+    );
     assertEqual(seededDetail.status, 'pending', 'seeded approval status');
 
     const created = await clients.collaboration.createApprovalLiteRequest(
@@ -65,6 +76,11 @@ async function main() {
     );
     const createdApprovalId = assertString(created.id, 'created approval id');
     createdApprovalIds.push(createdApprovalId);
+    assertEqual(
+      created.tenantId,
+      ROOT_TENANT_ID,
+      'created approval tenant id',
+    );
     assertEqual(created.status, 'pending', 'created approval status');
     assertEqual(created.approver, 'admin', 'created approval approver');
     assertEqual(created.businessId, runId, 'created approval business id');
@@ -195,6 +211,7 @@ async function main() {
               ]
             : []),
           'auth.login',
+          'collaboration.approvals.foreign-hidden',
           'collaboration.approvals.seeded-list-detail',
           'collaboration.approvals.create',
           'collaboration.approvals.list-filter',
@@ -212,6 +229,7 @@ async function main() {
     await cleanupCreatedApprovals(createdApprovalIds);
     throw error;
   } finally {
+    await cleanupForeignTenantApproval().catch(() => undefined);
     await disconnectSmokePrisma();
   }
 }
@@ -226,6 +244,101 @@ async function cleanupCreatedApprovals(ids: readonly string[]) {
   });
 }
 
+async function seedForeignTenantApproval() {
+  const prisma = getSmokePrisma();
+
+  await cleanupForeignTenantApproval();
+  await prisma.tenant.upsert({
+    where: { id: FOREIGN_TENANT_ID },
+    update: {
+      code: 'collab-approval-smoke-foreign',
+      slug: 'collab-approval-smoke-foreign',
+      name: 'Collaboration Approval Smoke Foreign',
+      status: 'active',
+    },
+    create: {
+      id: FOREIGN_TENANT_ID,
+      code: 'collab-approval-smoke-foreign',
+      slug: 'collab-approval-smoke-foreign',
+      name: 'Collaboration Approval Smoke Foreign',
+      status: 'active',
+    },
+  });
+  await prisma.collaborationApprovalLite.create({
+    data: {
+      id: FOREIGN_APPROVAL_ID,
+      tenantId: FOREIGN_TENANT_ID,
+      title: `Foreign smoke approval ${runId}`,
+      requester: 'foreign-developer',
+      approver: 'foreign-admin',
+      businessType: 'smoke',
+      businessId: runId,
+      status: 'pending',
+      timeline: [
+        {
+          at: new Date().toISOString(),
+          actor: 'foreign-developer',
+          action: 'submitted',
+        },
+      ],
+    },
+  });
+}
+
+async function assertForeignTenantApprovalHidden(rootToken: string) {
+  const list = await clients.collaboration.listApprovalLiteRequests(rootToken, {
+    status: 'pending',
+  });
+  assertPageExcludesId(list, FOREIGN_APPROVAL_ID, 'foreign approval list');
+
+  await smoke.apiRequest(
+    `/collaboration/approvals/${encodeURIComponent(FOREIGN_APPROVAL_ID)}`,
+    { expected: [404], token: rootToken },
+  );
+  await smoke.apiRequest(
+    `/collaboration/approvals/${encodeURIComponent(FOREIGN_APPROVAL_ID)}/approve`,
+    {
+      body: { actor: username },
+      expected: [404],
+      method: 'PATCH',
+      token: rootToken,
+    },
+  );
+  await smoke.apiRequest(
+    `/collaboration/approvals/${encodeURIComponent(FOREIGN_APPROVAL_ID)}/reject`,
+    {
+      body: { actor: username },
+      expected: [404],
+      method: 'PATCH',
+      token: rootToken,
+    },
+  );
+  await assertForeignTenantApprovalPreserved();
+}
+
+async function assertForeignTenantApprovalPreserved() {
+  const approval = await getSmokePrisma().collaborationApprovalLite.findUnique({
+    where: { id: FOREIGN_APPROVAL_ID },
+  });
+
+  if (
+    !approval ||
+    approval.tenantId !== FOREIGN_TENANT_ID ||
+    approval.status !== 'pending'
+  ) {
+    throw new Error('Foreign tenant collaboration approval was changed');
+  }
+}
+
+async function cleanupForeignTenantApproval() {
+  const prisma = getSmokePrisma();
+
+  await prisma.collaborationApprovalLite.deleteMany({
+    where: { id: FOREIGN_APPROVAL_ID },
+  });
+  await prisma.tenant.deleteMany({ where: { id: FOREIGN_TENANT_ID } });
+}
+
 function assertPageContainsId(
   page: { items: readonly { id: string }[] },
   id: string,
@@ -234,6 +347,17 @@ function assertPageContainsId(
   assertArray(page.items, `${label} items`);
   if (!page.items.some((item) => item.id === id)) {
     throw new Error(`${label} must contain ${id}`);
+  }
+}
+
+function assertPageExcludesId(
+  page: { items: readonly { id: string }[] },
+  id: string,
+  label: string,
+) {
+  assertArray(page.items, `${label} items`);
+  if (page.items.some((item) => item.id === id)) {
+    throw new Error(`${label} must not contain ${id}`);
   }
 }
 

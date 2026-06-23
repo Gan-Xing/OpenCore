@@ -72,6 +72,7 @@ const APPROVAL_UPDATE_PERMISSION_MARKER = 'collaboration:approval-lite:update';
 const DEFAULT_DECISION_ACTOR = 'admin';
 
 const searchFields: CurrentPageSearchField<ApprovalLiteSummary>[] = [
+  'tenantId',
   'title',
   'requester',
   'approver',
@@ -100,6 +101,13 @@ function createExportColumns(
     {
       title: formatMessage('pages.collaboration.common.fields.id', 'ID'),
       dataIndex: 'id',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.approvals.fields.tenantId',
+        'Tenant ID',
+      ),
+      dataIndex: 'tenantId',
     },
     {
       title: formatMessage(
@@ -450,6 +458,14 @@ export default function ApprovalsPage() {
   const columns: ProColumns<ApprovalLiteSummary>[] = [
     {
       title: formatMessage(
+        'pages.collaboration.approvals.fields.tenantId',
+        'Tenant ID',
+      ),
+      dataIndex: 'tenantId',
+      width: 160,
+    },
+    {
+      title: formatMessage(
         'pages.collaboration.approvals.fields.title',
         'Title',
       ),
@@ -677,6 +693,13 @@ export default function ApprovalsPage() {
           {
             label: formatMessage('pages.collaboration.common.fields.id', 'ID'),
             value: selected?.id,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.approvals.fields.tenantId',
+              'Tenant ID',
+            ),
+            value: selected?.tenantId,
           },
           {
             label: formatMessage(

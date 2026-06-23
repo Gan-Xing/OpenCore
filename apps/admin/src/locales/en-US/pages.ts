@@ -2514,6 +2514,7 @@ export default {
   'pages.collaboration.approvals.fields.comment': 'Comment',
   'pages.collaboration.approvals.fields.decidedAt': 'Decided At',
   'pages.collaboration.approvals.fields.requester': 'Requester',
+  'pages.collaboration.approvals.fields.tenantId': 'Tenant ID',
   'pages.collaboration.approvals.fields.title': 'Title',
   'pages.collaboration.approvals.load.failure': 'Unable to load approvals.',
   'pages.collaboration.approvals.load.liveFailure':

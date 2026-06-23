@@ -1360,3 +1360,39 @@ Passed after deploy:
 
 - No client-supplied tenant selector was added.
 - No assignee identity redesign in T7c; this round only closes row ownership and access isolation.
+
+## Round 30: T7d Collaboration Approval Lite Tenant Isolation
+
+### Completed
+
+- Added migration `20260624053000_tenant_scoped_collaboration_approvals`:
+  - adds `CollaborationApprovalLite.tenantId`;
+  - backfills existing approvals to `tenant_root`;
+  - adds the tenant foreign key;
+  - replaces global approval lookup indexes with tenant-prefixed indexes.
+- Updated Prisma schema with `Tenant.collaborationApprovals` and `CollaborationApprovalLite.tenant`.
+- Updated Collaboration Approval Lite repositories:
+  - Prisma summary/list/detail/create/approve/reject resolve `RequestContext.tenantId`;
+  - seed repository mirrors the same tenant fallback so tests cannot bypass isolation.
+- Updated public/admin surfaces:
+  - seed approval includes `tenantId`;
+  - `ApprovalLiteDto` and SDK `ApprovalLiteSummary` expose `tenantId`;
+  - Admin Approvals displays and exports `tenantId`.
+- Extended `smoke:core-collaboration-approvals`:
+  - creates a foreign tenant approval through Prisma;
+  - proves root token list/detail/approve/reject cannot access it;
+  - verifies the foreign row remains owned by the foreign tenant.
+- Added `guard:tenant-collaboration-approval-scope`.
+
+### Verification Log
+
+- Passed Prisma validation/generation, seed and typed-smoke checks, OpenAPI/SDK drift checks, the focused collaboration repository spec, API/Admin/SDK/full typechecks, lint, full tests, refreshed deploy, and public Collaboration Approval Lite smoke including `collaboration.approvals.foreign-hidden`.
+
+### Remaining Product Debt
+
+- Complete T7 tenantization for ReportDefinition and future business domains.
+
+### Deliberate Non-Goals
+
+- No client-supplied tenant selector was added.
+- No requester/approver identity redesign in T7d; this round only closes row ownership and access isolation.

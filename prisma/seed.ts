@@ -674,6 +674,7 @@ async function seedCollaboration(): Promise<{
     await prisma.collaborationApprovalLite.upsert({
       where: { id: approval.id },
       update: {
+        tenant: { connect: { id: approval.tenantId } },
         title: approval.title,
         requester: approval.requester,
         approver: approval.approver,
@@ -687,6 +688,7 @@ async function seedCollaboration(): Promise<{
       },
       create: {
         id: approval.id,
+        tenant: { connect: { id: approval.tenantId } },
         title: approval.title,
         requester: approval.requester,
         approver: approval.approver,

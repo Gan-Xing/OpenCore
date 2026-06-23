@@ -64,7 +64,9 @@ export class SeedCollaborationRepository extends CollaborationRepository {
       ),
       notices: this.notices.filter((notice) => notice.tenantId === tenantId),
       todos: this.todos.filter((todo) => todo.tenantId === tenantId),
-      approvals: this.approvals,
+      approvals: this.approvals.filter(
+        (approval) => approval.tenantId === tenantId,
+      ),
     });
   }
 
@@ -249,9 +251,11 @@ export class SeedCollaborationRepository extends CollaborationRepository {
   async listApprovalLiteRequests(
     query: ApprovalLiteQueryDto = {},
   ): Promise<PageResult<ApprovalLiteRecord>> {
+    const tenantId = resolveCurrentTenantId();
     return createPage(
       this.approvals.filter(
         (approval) =>
+          approval.tenantId === tenantId &&
           matchesOptional(approval.status, query.status) &&
           matchesOptional(approval.requester, query.requester) &&
           matchesOptional(approval.approver, query.approver),
@@ -263,8 +267,10 @@ export class SeedCollaborationRepository extends CollaborationRepository {
   async createApprovalLiteRequest(
     body: CreateApprovalLiteDto,
   ): Promise<ApprovalLiteRecord> {
+    const tenantId = resolveCurrentTenantId();
     const approval: ApprovalLiteRecord = {
       id: `approval_${this.approvals.length + 1}`,
+      tenantId,
       title: body.title,
       requester: body.requester,
       approver: body.approver,
@@ -342,8 +348,11 @@ export class SeedCollaborationRepository extends CollaborationRepository {
   }
 
   private findApproval(id: string): ApprovalLiteRecord {
+    const tenantId = resolveCurrentTenantId();
     return requireRecord(
-      this.approvals.find((approval) => approval.id === id),
+      this.approvals.find(
+        (approval) => approval.id === id && approval.tenantId === tenantId,
+      ),
       'Approval Lite request',
       id,
     );

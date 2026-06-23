@@ -57,6 +57,7 @@ export type TodoSummary = {
 
 export type ApprovalLiteSummary = {
   id: string;
+  tenantId: string;
   title: string;
   requester: string;
   approver: string;
@@ -219,6 +220,7 @@ export function createCollaborationFixtures(): CollaborationFixtures {
   const approvals: readonly ApprovalLiteSummary[] = [
     {
       id: 'approval_openforge_apply',
+      tenantId: 'tenant_root',
       title: 'Approve OpenForge apply',
       requester: 'developer',
       approver: 'admin',
