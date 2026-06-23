@@ -655,3 +655,46 @@ Passed after deploy:
 - No platform-admin global config view in T4e; platform visit/control-plane behavior belongs with T6.
 - No client-driven tenant selector for config APIs.
 - No notice/file tenant isolation in this sub-slice.
+
+## Round 13: T4f File Asset Tenant Isolation
+
+### Completed
+
+- Made file assets tenant-owned:
+  - added `FileAsset.tenantId` with root backfill, tenant/storage-key uniqueness, tenant/date index, and tenant FK;
+  - exposed `tenantId` through file records, DTOs, SDK summaries, seed, export previews, and Admin Files.
+- Scoped Prisma file asset operations:
+  - list/detail/export/create/update/delete resolve the active tenant from `RequestContext`;
+  - missing context falls back to `tenant_root` for single-mode compatibility.
+- Tenant-scoped object keys:
+  - new system file assets are stored under `runtime/tenant/<tenantId>/file-assets/...`;
+  - upload/download/delete use the repository-returned storage key, so metadata scoping and object access share the same tenant boundary.
+- Added tenant-scope verification:
+  - Prisma integration test creates a foreign tenant file row and proves root context cannot read or list it;
+  - `smoke:core-file` seeds a foreign tenant file metadata row and exercises list/detail/download/update/delete/export through the public API.
+- Added `guard:tenant-file-scope`.
+
+### Verification Log
+
+Passed before deploy:
+
+- Prisma validation, client generation, migration deploy, and seed.
+- Seed and typed-smoke typechecks plus OpenAPI export/drift, registry tag, SDK, quality-doc, and tenant file guard checks.
+- Focused system-management file spec plus full repository lint, typecheck, and test suites.
+
+Passed after deploy:
+
+- OpenCore deploy rebuilt API/Admin, applied migrations, reseeded, restarted API `39172` and Admin `39174`, and passed deploy smoke including local file tenant checks.
+- Public API file smoke passed against `http://144.217.243.161:39172`.
+
+### Remaining Product Debt
+
+- Complete T4 System/core tenant data isolation for notices and related unreviewed core tables.
+- Complete T5 Redis/queue/WebSocket/Integration/OAuth/runtime tenant propagation and broader file runtime review.
+- Complete T6 Tenant Plan CRUD, Tenant Member CRUD/invitation, Admin switcher, platform visit mode, and platform visit audit.
+
+### Deliberate Non-Goals
+
+- No platform-admin global file asset view in T4f; platform visit/control-plane behavior belongs with T6.
+- No client-driven tenant selector for file APIs.
+- No notice tenant isolation in this sub-slice.

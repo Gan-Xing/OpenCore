@@ -1482,6 +1482,7 @@ async function seedSystemManagement(): Promise<{
     await prisma.fileAsset.upsert({
       where: { id: file.id },
       update: {
+        tenantId: file.tenantId,
         originalName: file.originalName,
         mimeType: file.mimeType,
         sizeBytes: file.sizeBytes,
@@ -1491,6 +1492,7 @@ async function seedSystemManagement(): Promise<{
       },
       create: {
         id: file.id,
+        tenantId: file.tenantId,
         originalName: file.originalName,
         mimeType: file.mimeType,
         sizeBytes: file.sizeBytes,

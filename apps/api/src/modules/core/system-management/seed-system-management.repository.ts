@@ -10,6 +10,8 @@ import {
   createExportPreview,
   createPage,
   createStorageKey,
+  createTenantStoragePrefix,
+  ROOT_TENANT_ID,
   systemManagementNotFound,
   SystemManagementRepository,
   type ExportPreview,
@@ -34,9 +36,13 @@ export class SeedSystemManagementRepository extends SystemManagementRepository {
   async createFileAsset(body: CreateFileAssetDto): Promise<FileAssetRecord> {
     assertSafeFileAsset(body);
 
-    const storageKey = createStorageKey(body);
+    const storageKey = createStorageKey(
+      body,
+      createTenantStoragePrefix('runtime/', ROOT_TENANT_ID),
+    );
     const file: FileAssetRecord = {
       id: `file_${storageKey.slice(-12)}`,
+      tenantId: ROOT_TENANT_ID,
       originalName: body.originalName,
       mimeType: body.mimeType,
       sizeBytes: body.sizeBytes,

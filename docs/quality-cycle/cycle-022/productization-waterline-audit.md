@@ -157,7 +157,7 @@ These remain below the productization waterline and cannot be described as compl
 | Cross-tenant API rejection     | Done    | Prisma integration test and smoke prove foreign-tenant dictionaries are hidden, cannot be mutated, and survive root actions. |
 | Seed/OpenAPI/SDK/Admin         | Done    | Seed dictionary rows, DTOs, SDK summaries/fixtures, and Admin Dicts expose `tenantId`.                                      |
 | Smoke/guard                    | Done    | Added `guard:tenant-dict-scope`; `smoke:core-dict` now covers foreign-tenant dictionary isolation.                          |
-| Remaining T4 data scope        | Pending | Config was completed in T4e; notice and file isolation remain pending.                                                       |
+| Remaining T4 data scope        | Pending | Config was completed in T4e and file assets in T4f; notice isolation remains pending.                                        |
 
 ## T4e System Config
 
@@ -171,4 +171,17 @@ These remain below the productization waterline and cannot be described as compl
 | Cross-tenant API rejection     | Done    | Prisma integration test and smoke prove foreign-tenant config rows are hidden, cannot be mutated, and survive root actions.  |
 | Seed/OpenAPI/SDK/Admin         | Done    | Seed config rows, DTOs, SDK summaries/fixtures, export previews, and Admin Config expose `tenantId`.                        |
 | Smoke/guard                    | Done    | Added `guard:tenant-config-scope`; `smoke:core-config` now covers foreign-tenant config isolation.                          |
-| Remaining T4 data scope        | Pending | Notice and file isolation remain pending.                                                                                   |
+| Remaining T4 data scope        | Pending | File assets were completed in T4f; notice isolation remains pending.                                                         |
+
+## T4f File Assets
+
+| Check                         | Status | Evidence                                                                                                                    |
+| ----------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------- |
+| File asset tenant ownership   | Done   | `FileAsset.tenantId` is backfilled to `tenant_root`, required, indexed, and constrained to `Tenant`.                       |
+| Tenant storage-key uniqueness | Done   | File asset storage key uniqueness is now `(tenantId, storageKey)`, allowing tenant-local object-key ownership.              |
+| Repository tenant isolation   | Done   | File list/detail/export/create/update/delete resolve the active tenant from `RequestContext` with `tenant_root` fallback.  |
+| Object key tenant prefix      | Done   | New system file asset keys are generated under `runtime/tenant/<tenantId>/file-assets/...`.                                |
+| Cross-tenant API rejection    | Done   | Prisma integration test and smoke prove foreign-tenant file rows are hidden and cannot be read, downloaded, updated, or deleted from root scope. |
+| Seed/OpenAPI/SDK/Admin        | Done   | Seed file rows, DTOs, SDK summaries/fixtures, export previews, and Admin Files expose `tenantId`.                          |
+| Smoke/guard                   | Done   | Added `guard:tenant-file-scope`; `smoke:core-file` now covers foreign-tenant file isolation.                               |
+| Remaining T4 data scope       | Pending | Notice isolation and other unreviewed non-org data remain pending.                                                          |

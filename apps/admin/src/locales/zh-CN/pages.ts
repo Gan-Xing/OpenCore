@@ -240,6 +240,7 @@ export default {
   'pages.system.files.fields.createdAt': '创建时间',
   'pages.system.files.fields.file': '文件',
   'pages.system.files.fields.id': 'ID',
+  'pages.system.files.fields.tenantId': '租户 ID',
   'pages.system.files.fields.mime': 'MIME 类型',
   'pages.system.files.fields.name': '文件名',
   'pages.system.files.fields.size': '大小',

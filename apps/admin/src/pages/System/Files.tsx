@@ -64,6 +64,7 @@ const searchFields: CurrentPageSearchField<FileAssetSummary>[] = [
   'originalName',
   'mimeType',
   'storageKey',
+  'tenantId',
   'uploadedBy',
   'checksum',
 ];
@@ -154,6 +155,10 @@ export default function FilesPage() {
       dataIndex: 'id',
     },
     {
+      title: formatMessage('pages.system.files.fields.tenantId', 'Tenant ID'),
+      dataIndex: 'tenantId',
+    },
+    {
       title: formatMessage('pages.system.files.fields.name', 'Name'),
       dataIndex: 'originalName',
     },
@@ -190,6 +195,10 @@ export default function FilesPage() {
   ];
   const createDetailFields = (record: FileAssetSummary): DetailField[] => [
     { label: formatMessage('pages.system.files.fields.id', 'ID'), value: record.id },
+    {
+      label: formatMessage('pages.system.files.fields.tenantId', 'Tenant ID'),
+      value: record.tenantId,
+    },
     {
       label: formatMessage('pages.system.files.fields.name', 'Name'),
       value: record.originalName,
@@ -418,6 +427,12 @@ export default function FilesPage() {
           {record.originalName}
         </Typography.Link>
       ),
+    },
+    {
+      title: formatMessage('pages.system.files.fields.tenantId', 'Tenant ID'),
+      dataIndex: 'tenantId',
+      width: 160,
+      ellipsis: true,
     },
     {
       title: formatMessage('pages.system.files.fields.mime', 'MIME'),

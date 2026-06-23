@@ -12,7 +12,9 @@ import {
   createExportPreview,
   createPageResult,
   createStorageKey,
+  createTenantStoragePrefix,
   normalizePageQuery,
+  resolveCurrentTenantId,
   systemManagementConflict,
   systemManagementNotFound,
   SystemManagementRepository,
@@ -23,6 +25,7 @@ import {
 
 type PrismaFileAsset = {
   id: string;
+  tenantId: string;
   originalName: string;
   mimeType: string;
   sizeBytes: number;
@@ -43,9 +46,12 @@ export class PrismaSystemManagementRepository extends SystemManagementRepository
   async listFiles(
     query: PageQueryDto = {},
   ): Promise<PageResult<FileAssetRecord>> {
-    const total = await this.prisma.fileAsset.count();
+    const tenantId = resolveCurrentTenantId();
+    const where = { tenantId };
+    const total = await this.prisma.fileAsset.count({ where });
     const pagination = normalizePageQuery(query, total);
     const rows = await this.prisma.fileAsset.findMany({
+      where,
       orderBy: [{ createdAt: 'desc' }, { originalName: 'asc' }],
       skip: pagination.skip,
       take: pagination.take,
@@ -61,18 +67,27 @@ export class PrismaSystemManagementRepository extends SystemManagementRepository
   async createFileAsset(body: CreateFileAssetDto): Promise<FileAssetRecord> {
     assertSafeFileAsset(body);
 
-    const storageKey = createStorageKey(body, this.storagePrefix);
+    const tenantId = resolveCurrentTenantId();
+    const storageKey = createStorageKey(
+      body,
+      createTenantStoragePrefix(this.storagePrefix, tenantId),
+    );
 
-    if (await this.prisma.fileAsset.findUnique({ where: { storageKey } })) {
+    if (
+      await this.prisma.fileAsset.findUnique({
+        where: { tenantId_storageKey: { tenantId, storageKey } },
+      })
+    ) {
       throw systemManagementConflict(
         'SYSTEM_FILE_ASSET_EXISTS',
         'File asset already exists.',
-        { storageKey },
+        { storageKey, tenantId },
       );
     }
 
     const file = await this.prisma.fileAsset.create({
       data: {
+        tenantId,
         originalName: body.originalName,
         mimeType: body.mimeType,
         sizeBytes: body.sizeBytes,
@@ -132,7 +147,10 @@ export class PrismaSystemManagementRepository extends SystemManagementRepository
   }
 
   private async findFileById(id: string): Promise<PrismaFileAsset> {
-    const file = await this.prisma.fileAsset.findUnique({ where: { id } });
+    const tenantId = resolveCurrentTenantId();
+    const file = await this.prisma.fileAsset.findFirst({
+      where: { id, tenantId },
+    });
 
     if (!file) {
       throw systemManagementNotFound(
@@ -149,6 +167,7 @@ export class PrismaSystemManagementRepository extends SystemManagementRepository
 function toFileAssetRecord(file: PrismaFileAsset): FileAssetRecord {
   return {
     id: file.id,
+    tenantId: file.tenantId,
     originalName: file.originalName,
     mimeType: file.mimeType,
     sizeBytes: file.sizeBytes,

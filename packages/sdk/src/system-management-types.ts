@@ -422,6 +422,7 @@ export type RotateSystemConfigVaultKeyRequest = {
 
 export type FileAssetSummary = {
   id: string;
+  tenantId: string;
   originalName: string;
   mimeType: string;
   sizeBytes: number;

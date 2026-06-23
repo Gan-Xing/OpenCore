@@ -41,7 +41,13 @@ describe('SystemManagementRepository', () => {
     await expect(
       repository.createExportPreview('files'),
     ).resolves.toMatchObject({
-      columns: ['originalName', 'mimeType', 'sizeBytes', 'storageKey'],
+      columns: [
+        'tenantId',
+        'originalName',
+        'mimeType',
+        'sizeBytes',
+        'storageKey',
+      ],
     });
   });
 });

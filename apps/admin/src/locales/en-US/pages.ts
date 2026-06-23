@@ -253,6 +253,7 @@ export default {
   'pages.system.files.fields.createdAt': 'Created At',
   'pages.system.files.fields.file': 'File',
   'pages.system.files.fields.id': 'ID',
+  'pages.system.files.fields.tenantId': 'Tenant ID',
   'pages.system.files.fields.mime': 'MIME',
   'pages.system.files.fields.name': 'Name',
   'pages.system.files.fields.size': 'Size',

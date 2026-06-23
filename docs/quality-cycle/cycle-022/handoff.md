@@ -4,7 +4,7 @@ Date: 2026-06-23
 Repository: `Gan-Xing/OpenCore`  
 Branch: `main`  
 Target track: `Cycle-022 / Tenant Foundation`  
-Status: **In progress; T4e system config tenant isolation implemented, deployed, and verified; T4 core data isolation remains partial**
+Status: **In progress; T4f file asset tenant isolation implemented; T4 core data isolation remains partial**
 
 ## 0. Current Round Snapshot
 
@@ -12,7 +12,7 @@ Updated: 2026-06-23
 
 Current completed slice count: **4 full slices**
 
-This working tree has advanced Cycle-022 through the first four full deployable tenant foundation slices plus T4a online-session tenant isolation, T4b login-log tenant isolation, T4c operation-audit tenant isolation, T4d dictionary tenant isolation, and T4e system config tenant isolation:
+This working tree has advanced Cycle-022 through the first four full deployable tenant foundation slices plus T4a online-session tenant isolation, T4b login-log tenant isolation, T4c operation-audit tenant isolation, T4d dictionary tenant isolation, T4e system config tenant isolation, and T4f file asset tenant isolation:
 
 - Prisma models for `TenantPlan`, `TenantPlanModule`, `Tenant`, `TenantMembership`, `TenantMembershipRole`, `TenantMembershipPost`, `PlatformRole`, `UserPlatformRole`, and `PlatformRolePermission`.
 - Migration `20260622223000_tenant_foundation` creates the `root` tenant, root `system.full` plan, root memberships for existing users, and transitional root copies of `UserRole` and `UserPost`.
@@ -87,10 +87,15 @@ This working tree has advanced Cycle-022 through the first four full deployable 
 - `smoke:core-config` seeds a foreign tenant config/override/secret version and proves root-scope list/detail/mutation/value/override/secret-version operations do not cross tenants.
 - `pnpm guard:tenant-config-scope` was added for the T4e System Config isolation closure.
 - Refreshed deploy completed on API `39172` and Admin `39174`; local deploy smoke and public API config smoke passed.
+- Migration `20260623233000_tenant_scoped_file_assets` makes `FileAsset` tenant-owned with root backfill, tenant/storage-key uniqueness, a tenant/date index, and a tenant FK.
+- `PrismaSystemManagementRepository` now resolves the active tenant from `RequestContext`, scopes file list/detail/export/create/update/delete by tenant, and generates storage keys under `runtime/tenant/<tenantId>/file-assets/...`.
+- File seed records, OpenAPI DTOs, SDK summaries/fixtures, export previews, and Admin Files now expose `tenantId`.
+- `smoke:core-file` seeds a foreign tenant file metadata row and proves root-scope list/detail/download/update/delete/export operations do not cross tenants.
+- `pnpm guard:tenant-file-scope` was added for the T4f File Asset isolation closure.
 
 Still not complete:
 
-- tenant-scoped System/core repositories for notices, files, and other non-org data;
+- tenant-scoped System/core repositories for notices and other non-org data;
 - Redis/file/queue/WebSocket/Integration/OAuth/audit runtime propagation;
 - Tenant Plan CRUD, Tenant Member CRUD/invitation, Admin switcher, and platform visit mode beyond active-tenant member assignment;
 - platform visit/impersonation audit.
@@ -191,7 +196,7 @@ OpenCore 已经完成单租户企业后台的大部分基础产品化，不是 s
 - `AuthenticatedUser` 已优先使用当前 `TenantMembershipRole` / `TenantMembershipPost`，权限会按租户套餐 module 裁剪；legacy `UserRole` 仅保留为 seed/in-memory fallback；
 - `PrismaService` 是裸 `PrismaClient`，没有 tenant-scoped client；
 - Redis key 没有 tenant namespace；
-- 文件 key 默认是 `runtime/file-assets/...`；
+- System file asset metadata now stores tenant-prefixed object keys, but broader file/runtime propagation still needs the T5 pass;
 - Scheduler handler input 没有 `tenantId`；
 - 多数 Prisma Model 使用全局唯一约束；
 - Repository 普遍按 `id`、`code`、`username` 直接查询。

@@ -100,6 +100,8 @@ export default {
   'error.SYSTEM_FILE_CONTENT_EMPTY': 'The file content must not be empty.',
   'error.SYSTEM_FILE_OBJECT_NOT_FOUND':
     'The stored file object does not exist.',
+  'error.SYSTEM_FILE_TENANT_ID_INVALID':
+    'The file tenant cannot be used in a storage prefix.',
   'error.SYSTEM_IP_ADDRESS_REQUIRED': 'The IP address is required.',
   'error.BAD_REQUEST': 'The request is invalid.',
   'error.VALIDATION_FAILED': 'The submitted content failed validation.',

@@ -252,10 +252,11 @@ export function createFileAssetFixtures(): PageResponse<FileAssetSummary> {
   return createPage([
     {
       id: 'file_readme',
+      tenantId: 'tenant_root',
       originalName: 'opencore-readme.txt',
       mimeType: 'text/plain',
       sizeBytes: 512,
-      storageKey: 'runtime/file-assets/opencore-readme.txt',
+      storageKey: 'runtime/tenant/tenant_root/file-assets/opencore-readme.txt',
       checksum: 'sha256:readme',
       uploadedBy: 'admin',
       createdAt: '2026-06-10T00:00:00.000Z',

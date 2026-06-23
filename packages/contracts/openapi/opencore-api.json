@@ -13925,6 +13925,7 @@
         "type": "object",
         "properties": {
           "id": { "type": "string" },
+          "tenantId": { "type": "string" },
           "originalName": { "type": "string" },
           "mimeType": { "type": "string" },
           "sizeBytes": { "type": "number" },
@@ -13935,6 +13936,7 @@
         },
         "required": [
           "id",
+          "tenantId",
           "originalName",
           "mimeType",
           "sizeBytes",

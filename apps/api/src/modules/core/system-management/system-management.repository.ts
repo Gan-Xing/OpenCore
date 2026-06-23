@@ -5,9 +5,11 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { createApiErrorBody } from '@opencore/common';
+import { getRequestContext } from '@opencore/core';
 import {
   assertSafeFileAssetInput,
   createFileAssetStorageKey,
+  normalizeObjectPrefix,
 } from '@opencore/file';
 import type {
   CreateFileAssetDto,
@@ -33,6 +35,9 @@ export type ExportPreview = {
 };
 
 export type SystemManagementExportResource = 'files';
+export const ROOT_TENANT_ID = 'tenant_root';
+
+const TENANT_STORAGE_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
 
 export type NormalizedPageQuery = {
   page: number;
@@ -134,6 +139,25 @@ export function createStorageKey(
   return createFileAssetStorageKey(body, prefix);
 }
 
+export function createTenantStoragePrefix(
+  prefix = 'runtime/',
+  tenantId: string,
+): string {
+  if (!TENANT_STORAGE_ID_PATTERN.test(tenantId)) {
+    throw systemManagementBadRequest(
+      'SYSTEM_FILE_TENANT_ID_INVALID',
+      'Tenant ID cannot be used in a storage prefix.',
+      { tenantId },
+    );
+  }
+
+  return `${normalizeObjectPrefix(prefix)}tenant/${tenantId}/`;
+}
+
+export function resolveCurrentTenantId(): string {
+  return getRequestContext()?.tenantId ?? ROOT_TENANT_ID;
+}
+
 export function assertSafeFileAsset(body: CreateFileAssetDto): void {
   assertSafeFileAssetInput(body);
 }
@@ -187,5 +211,5 @@ function clone<T>(value: T): T {
 }
 
 const exportColumnsByResource = {
-  files: ['originalName', 'mimeType', 'sizeBytes', 'storageKey'],
+  files: ['tenantId', 'originalName', 'mimeType', 'sizeBytes', 'storageKey'],
 } as const;

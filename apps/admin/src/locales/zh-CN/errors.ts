@@ -66,6 +66,7 @@ export default {
   'error.SYSTEM_FILE_CONTENT_BASE64_INVALID': '文件内容必须是有效的 base64。',
   'error.SYSTEM_FILE_CONTENT_EMPTY': '文件内容不能为空。',
   'error.SYSTEM_FILE_OBJECT_NOT_FOUND': '存储文件对象不存在。',
+  'error.SYSTEM_FILE_TENANT_ID_INVALID': '文件租户不能用于存储前缀。',
   'error.SYSTEM_IP_ADDRESS_REQUIRED': 'IP 地址不能为空。',
   'error.BAD_REQUEST': '请求参数无效。',
   'error.VALIDATION_FAILED': '提交内容校验失败。',

@@ -84,6 +84,7 @@ model Tenant {
   dictTypes       DictType[]
   depts           SystemDept[]
   posts           SystemPost[]
+  fileAssets      FileAsset[]
   auditLogs       AuditLog[]
   loginLogs       LoginLog[]
   onlineSessions  OnlineUserSession[]
@@ -496,14 +497,19 @@ model SystemPost {
 
 model FileAsset {
   id           String   @id @default(cuid())
+  tenantId     String   @default("tenant_root")
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   originalName String
   mimeType     String
   sizeBytes    Int
-  storageKey   String   @unique
+  storageKey   String
   checksum     String?
   uploadedBy   String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  @@unique([tenantId, storageKey])
+  @@index([tenantId, createdAt])
 }
 
 model AuditLog {

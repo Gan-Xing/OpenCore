@@ -244,6 +244,9 @@ export class FileAssetDto {
   id!: string;
 
   @ApiProperty()
+  tenantId!: string;
+
+  @ApiProperty()
   originalName!: string;
 
   @ApiProperty()
