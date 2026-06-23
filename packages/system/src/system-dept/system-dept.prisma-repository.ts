@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { getRequestContext } from '@opencore/core';
 import { PrismaService } from '@opencore/database';
 import type {
   CreateSystemDeptDto,
@@ -31,6 +32,7 @@ import {
 
 type PrismaSystemDept = {
   id: string;
+  tenantId: string;
   code: string;
   name: string;
   parentId: string | null;
@@ -43,6 +45,8 @@ type PrismaSystemDept = {
   updatedAt: Date;
 };
 
+const ROOT_TENANT_ID = 'tenant_root';
+
 @Injectable()
 export class PrismaSystemDeptRepository extends SystemDeptRepository {
   constructor(private readonly prisma: PrismaService) {
@@ -53,8 +57,10 @@ export class PrismaSystemDeptRepository extends SystemDeptRepository {
     query: SystemDeptQuery = {},
   ): Promise<SystemDeptTreeRecord[]> {
     const filters = normalizeSystemDeptFilters(query);
+    const tenantId = resolveCurrentTenantId();
     const rows = await this.prisma.systemDept.findMany({
       where: {
+        tenantId,
         ...(filters.enabled === undefined ? {} : { enabled: filters.enabled }),
         ...(filters.parentId ? { parentId: filters.parentId } : {}),
       },
@@ -65,8 +71,9 @@ export class PrismaSystemDeptRepository extends SystemDeptRepository {
   }
 
   async listDeptOptions(): Promise<SystemDeptOptionRecord[]> {
+    const tenantId = resolveCurrentTenantId();
     const rows = await this.prisma.systemDept.findMany({
-      where: { enabled: true },
+      where: { tenantId, enabled: true },
       orderBy: [{ order: 'asc' }, { name: 'asc' }],
     });
 
@@ -79,14 +86,22 @@ export class PrismaSystemDeptRepository extends SystemDeptRepository {
 
   async createDept(body: CreateSystemDeptDto): Promise<SystemDeptRecord> {
     const input = normalizeCreateSystemDeptInput(body);
+    const tenantId = resolveCurrentTenantId();
 
     if (
-      await this.prisma.systemDept.findUnique({ where: { code: input.code } })
+      await this.prisma.systemDept.findUnique({
+        where: {
+          tenantId_code: {
+            tenantId,
+            code: input.code,
+          },
+        },
+      })
     ) {
       throw systemDeptConflict(
         'SYSTEM_DEPT_ALREADY_EXISTS',
         'System dept already exists.',
-        { code: input.code },
+        { code: input.code, tenantId },
       );
     }
 
@@ -95,7 +110,7 @@ export class PrismaSystemDeptRepository extends SystemDeptRepository {
     }
 
     const dept = await this.prisma.systemDept.create({
-      data: input,
+      data: { ...input, tenantId },
     });
 
     return toSystemDeptRecord(dept);
@@ -105,12 +120,13 @@ export class PrismaSystemDeptRepository extends SystemDeptRepository {
     id: string,
     body: UpdateSystemDeptDto,
   ): Promise<SystemDeptRecord> {
-    const existing = toSystemDeptRecord(await this.findDeptById(id));
+    const existingEntity = await this.findDeptById(id);
+    const existing = toSystemDeptRecord(existingEntity);
     const input = normalizeUpdateSystemDeptInput(existing, body);
     assertNoDeptSelfParent(id, input.parentId);
     await this.assertNoDeptCycle(id, input.parentId);
     const dept = await this.prisma.systemDept.update({
-      where: { id },
+      where: { id: existingEntity.id },
       data: input,
     });
 
@@ -122,9 +138,10 @@ export class PrismaSystemDeptRepository extends SystemDeptRepository {
   ): Promise<{ updatedCount: number; items: SystemDeptRecord[] }> {
     const input = normalizeUpdateSystemDeptOrderInput(body);
     const ids = input.map((item) => item.id);
+    const tenantId = resolveCurrentTenantId();
     const existing = (
       await this.prisma.systemDept.findMany({
-        where: { id: { in: ids } },
+        where: { tenantId, id: { in: ids } },
       })
     ).map(toSystemDeptRecord);
 
@@ -147,17 +164,27 @@ export class PrismaSystemDeptRepository extends SystemDeptRepository {
   }
 
   async deleteDept(id: string): Promise<{ deleted: true }> {
-    await this.findDeptById(id);
+    const dept = await this.findDeptById(id);
     assertNoDeptChildren(
-      await this.prisma.systemDept.count({ where: { parentId: id } }),
+      await this.prisma.systemDept.count({
+        where: { tenantId: dept.tenantId, parentId: id },
+      }),
     );
-    assertNoDeptUsers(await this.prisma.user.count({ where: { deptId: id } }));
+    assertNoDeptUsers(
+      (await this.prisma.user.count({ where: { deptId: id } })) +
+        (await this.prisma.tenantMembership.count({
+          where: { tenantId: dept.tenantId, deptId: id },
+        })),
+    );
     await this.prisma.systemDept.delete({ where: { id } });
     return { deleted: true };
   }
 
   private async findDeptById(id: string): Promise<PrismaSystemDept> {
-    const dept = await this.prisma.systemDept.findUnique({ where: { id } });
+    const tenantId = resolveCurrentTenantId();
+    const dept = await this.prisma.systemDept.findFirst({
+      where: { tenantId, id },
+    });
 
     if (!dept) {
       throw systemDeptNotFound(
@@ -165,6 +192,7 @@ export class PrismaSystemDeptRepository extends SystemDeptRepository {
         'System dept not found.',
         {
           id,
+          tenantId,
         },
       );
     }
@@ -191,6 +219,10 @@ export class PrismaSystemDeptRepository extends SystemDeptRepository {
         (await this.findDeptById(currentParentId)).parentId ?? undefined;
     }
   }
+}
+
+function resolveCurrentTenantId(): string {
+  return getRequestContext()?.tenantId ?? ROOT_TENANT_ID;
 }
 
 function toSystemDeptRecord(dept: PrismaSystemDept): SystemDeptRecord {

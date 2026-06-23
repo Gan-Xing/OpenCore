@@ -4,15 +4,15 @@ Date: 2026-06-23
 Repository: `Gan-Xing/OpenCore`  
 Branch: `main`  
 Target track: `Cycle-022 / Tenant Foundation`  
-Status: **In progress; T3c tenant-scoped Post catalog implemented, deployed, and verified**
+Status: **In progress; T3d tenant-scoped Department catalog implemented, deployed, and verified**
 
 ## 0. Current Round Snapshot
 
 Updated: 2026-06-23
 
-Current completed slice count: **3 full slices + 3 T3 sub-slices**
+Current completed slice count: **3 full slices + 4 T3 sub-slices**
 
-This working tree has advanced Cycle-022 through the first two full deployable tenant foundation slices and the first three T3 authorization/RBAC/org sub-slices:
+This working tree has advanced Cycle-022 through the first three full deployable tenant foundation slices and the first four T3 authorization/RBAC/org sub-slices:
 
 - Prisma models for `TenantPlan`, `TenantPlanModule`, `Tenant`, `TenantMembership`, `TenantMembershipRole`, `TenantMembershipPost`, `PlatformRole`, `UserPlatformRole`, and `PlatformRolePermission`.
 - Migration `20260622223000_tenant_foundation` creates the `root` tenant, root `system.full` plan, root memberships for existing users, and transitional root copies of `UserRole` and `UserPost`.
@@ -45,10 +45,14 @@ This working tree has advanced Cycle-022 through the first two full deployable t
 - Seeded posts upsert by `(tenant_root, code)`; seeded users attach only root posts.
 - `pnpm guard:tenant-post-scope` and `pnpm smoke:core-tenant-post` were added for the T3c Post catalog closure.
 - Refreshed deploy completed on API `39172` and Admin `39174`; tenant foundation/auth/RBAC/role/post smokes passed against local and public API.
+- Migration `20260623143000_tenant_scoped_departments` makes `SystemDept` tenant-owned, rewrites department code uniqueness to `(tenantId, code)`, and adds composite same-tenant checks for department parents and membership departments.
+- `PrismaSystemDeptRepository` now resolves the active tenant from `RequestContext`, scopes Department tree/options/get/create/update/order/delete operations by tenant, and rejects cross-tenant parents.
+- Root legacy `User.deptId`, seed user departments, Role custom data-scope department validation, and RBAC descendant department lookup are pinned/scoped to the correct tenant.
+- Tenant department guard and smoke aliases were added for the T3d Department catalog closure.
+- Refreshed deploy completed on API `39172` and Admin `39174`; tenant foundation/auth/RBAC/role/post/dept smokes passed against local and public API.
 
 Still not complete:
 
-- tenant-owned Department CRUD and unique constraint rewrites;
 - tenant membership role/post assignment APIs that manage non-root tenants directly;
 - tenant-scoped System repositories for user/org management beyond authz bridge reads;
 - Redis/file/queue/WebSocket/Integration/OAuth/audit runtime propagation;

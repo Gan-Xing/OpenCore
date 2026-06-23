@@ -898,8 +898,8 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
       return;
     }
 
-    const dept = await this.prisma.systemDept.findUnique({
-      where: { id: deptId },
+    const dept = await this.prisma.systemDept.findFirst({
+      where: { tenantId: ROOT_TENANT_ID, id: deptId },
       select: { id: true },
     });
 
@@ -914,6 +914,7 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
 
   private async resolveDeptSubtreeIds(deptId: string): Promise<Set<string>> {
     const depts = await this.prisma.systemDept.findMany({
+      where: { tenantId: ROOT_TENANT_ID },
       select: { id: true, parentId: true },
     });
     const target = depts.find((dept) => dept.id === deptId);

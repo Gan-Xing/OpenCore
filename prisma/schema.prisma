@@ -80,6 +80,7 @@ model Tenant {
   membershipRoles TenantMembershipRole[]
   membershipPosts TenantMembershipPost[]
   roles           Role[]
+  depts           SystemDept[]
   posts           SystemPost[]
   onlineSessions  OnlineUserSession[]
   createdAt       DateTime               @default(now())
@@ -434,7 +435,9 @@ model SystemNoticeDelivery {
 
 model SystemDept {
   id                String             @id @default(cuid())
-  code              String             @unique
+  tenantId          String             @default("tenant_root")
+  tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  code              String
   name              String
   parentId          String?
   parent            SystemDept?        @relation("SystemDeptTree", fields: [parentId], references: [id], onDelete: SetNull)
@@ -449,6 +452,10 @@ model SystemDept {
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 
+  @@unique([tenantId, code])
+  @@unique([tenantId, id])
+  @@index([tenantId])
+  @@index([tenantId, parentId, order])
   @@index([parentId, order])
 }
 

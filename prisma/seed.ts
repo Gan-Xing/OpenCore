@@ -1169,8 +1169,8 @@ async function assertSeedUserDeptExists(
     return;
   }
 
-  const dept = await prisma.systemDept.findUnique({
-    where: { id: deptId },
+  const dept = await prisma.systemDept.findFirst({
+    where: { tenantId: ROOT_TENANT_ID, id: deptId },
     select: { id: true },
   });
 
@@ -1403,8 +1403,14 @@ async function seedSystemManagement(): Promise<{
 
   for (const dept of seedSystemDepts) {
     await prisma.systemDept.upsert({
-      where: { code: dept.code },
+      where: {
+        tenantId_code: {
+          tenantId: ROOT_TENANT_ID,
+          code: dept.code,
+        },
+      },
       update: {
+        tenantId: ROOT_TENANT_ID,
         name: dept.name,
         parentId: dept.parentId,
         order: dept.order,
@@ -1416,6 +1422,7 @@ async function seedSystemManagement(): Promise<{
       },
       create: {
         id: dept.id,
+        tenantId: ROOT_TENANT_ID,
         code: dept.code,
         name: dept.name,
         parentId: dept.parentId,

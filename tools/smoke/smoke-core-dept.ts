@@ -32,6 +32,10 @@ async function main() {
 
     const loginResponse = await login();
     token = assertString(loginResponse.accessToken, 'login accessToken');
+    const activeTenantCode = assertString(
+      loginResponse.user.activeTenant?.code,
+      'active tenant code',
+    );
     smoke.setToken(token);
 
     const seededOptions = await publicDeptOptions();
@@ -241,6 +245,7 @@ async function main() {
         status: 'pass',
         baseUrl,
         apiPrefix,
+        tenantCode: activeTenantCode,
         checks: [
           'health.live',
           'health.ready',

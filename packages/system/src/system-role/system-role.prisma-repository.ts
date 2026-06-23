@@ -228,8 +228,9 @@ export class PrismaSystemRoleRepository extends SystemRoleRepository {
       return;
     }
 
+    const tenantId = resolveCurrentTenantId();
     const depts = await this.prisma.systemDept.findMany({
-      where: { id: { in: [...deptIds] } },
+      where: { tenantId, id: { in: [...deptIds] } },
       select: { id: true },
     });
     const existing = new Set(depts.map((dept) => dept.id));
@@ -239,7 +240,7 @@ export class PrismaSystemRoleRepository extends SystemRoleRepository {
       throw systemRoleNotFound(
         'SYSTEM_ROLE_DEPT_NOT_FOUND',
         'System dept not found.',
-        { id: missing },
+        { id: missing, tenantId },
       );
     }
   }

@@ -309,3 +309,67 @@ Passed after deploy:
 - No public Post DTO shape change; active tenant is derived from authenticated request context.
 - No Tenant Plan CRUD or Member CRUD API in T3c.
 - No Redis/file/queue/WebSocket/Integration tenant propagation yet.
+
+## Round 6: T3d Tenant-Scoped Department Catalog
+
+### Completed
+
+- Added migration `20260623143000_tenant_scoped_departments`:
+  - adds `SystemDept.tenantId`;
+  - backfills existing departments to `tenant_root`;
+  - replaces global `SystemDept.code` uniqueness with `(tenantId, code)`;
+  - adds `(tenantId, id)` for same-tenant FK enforcement;
+  - adds `SystemDept(tenantId, parentId)` same-tenant parent enforcement;
+  - adds `TenantMembership(tenantId, deptId)` same-tenant membership department enforcement.
+- Updated Prisma schema:
+  - `Tenant.depts`;
+  - required `SystemDept.tenant`;
+  - tenant indexes and composite uniqueness.
+- Updated Department repository:
+  - resolves active tenant through `RequestContext`;
+  - scopes department tree/options/get/create/update/order/delete operations to the active tenant;
+  - rejects cross-tenant parents because parent lookup uses the same tenant context;
+  - treats tenant memberships as department assignments when guarding delete.
+- Updated root compatibility:
+  - `SystemUser` legacy `User.deptId` validation and subtree filters stay pinned to `tenant_root`;
+  - seed upserts root departments by `(tenant_root, code)`;
+  - seeded users validate department ids in the root tenant only.
+- Updated RBAC/data scope:
+  - Role custom data-scope department validation is active-tenant scoped;
+  - Prisma RBAC descendant department lookup uses the active request tenant, falling back to `tenant_root`.
+- Updated RBAC integration fixture:
+  - non-root tenant authz tests now create a tenant-owned `operations` department instead of binding the membership to a root department.
+- Added verification:
+  - tenant department scope guard;
+  - tenant department smoke alias;
+  - integration test proves the same department code can exist in root and a non-root tenant while tree/options/detail resolve by request context.
+
+### Verification Log
+
+Passed before deploy:
+
+- Prisma schema validation, client generation, migration deploy, and seed.
+- `pnpm prisma:seed:check`, tenant foundation/auth/RBAC/role/post/dept guards, and typed smoke typecheck.
+- OpenAPI export/check and SDK contract check.
+- Direct System Department, System User, System Role, and API RBAC integration specs.
+- Full repository lint, typecheck, and test suites.
+
+Passed after deploy:
+
+- Refreshed deploy on API `39172` and Admin `39174`.
+- Local and public API smokes for tenant foundation, tenant auth, tenant RBAC, tenant role scope, tenant post scope, and tenant department scope.
+- Public Admin route and bundle checks from the deploy script.
+
+### Remaining Product Debt
+
+- Add non-root Tenant Member role/post/department assignment APIs/Admin surface.
+- Complete T4 System/core tenant data isolation for dict, config, notice, file, logs, and online sessions.
+- Complete T5 Redis/file/queue/WebSocket/Integration/OAuth/audit runtime propagation.
+- Complete T6 live Tenant Plan/Member CRUD, Admin switcher, and platform visit audit.
+
+### Deliberate Non-Goals
+
+- No Tenant Member CRUD or assignment API in T3d.
+- No public Department DTO shape change; active tenant is derived from authenticated request context.
+- No Tenant Plan CRUD API in T3d.
+- No Redis/file/queue/WebSocket/Integration tenant propagation yet.

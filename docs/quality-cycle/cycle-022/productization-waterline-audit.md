@@ -82,3 +82,18 @@ These remain below the productization waterline and cannot be described as compl
 | Smoke/guard                                      | Done    | Added `smoke:core-tenant-post` and `guard:tenant-post-scope`.                                                |
 | Tenant-owned Department CRUD                     | Pending | Department repositories still use global code uniqueness and tree ownership.                                 |
 | Non-root membership role/post assignment Admin   | Pending | T3c does not add control-plane assignment APIs; existing user-post assignment is root legacy only.           |
+
+## T3d Audit
+
+| Requirement                                           | Status  | Notes                                                                                                              |
+| ----------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------ |
+| Department ownership by tenant                        | Done    | `SystemDept` now has `tenantId` and belongs to `Tenant`; existing departments backfill to `tenant_root`.           |
+| Department code uniqueness by tenant                  | Done    | Dropped global `SystemDept.code` uniqueness and added `(tenantId, code)` plus `(tenantId, id)`.                    |
+| Department tree cannot cross tenant parent ownership  | Done    | Migration adds `SystemDept(tenantId, parentId)` FK to `SystemDept(tenantId, id)`; repository parent lookup is scoped by `RequestContext`. |
+| Membership department cannot cross tenant ownership   | Done    | Migration adds `TenantMembership(tenantId, deptId)` FK to `SystemDept(tenantId, id)`.                              |
+| Department repository uses authenticated tenant context | Done   | `PrismaSystemDeptRepository` scopes tree/options/get/create/update/order/delete by `RequestContext`.               |
+| Root legacy bridge compatibility                      | Done    | `SystemUser` legacy `User.deptId` validation/subtree filters and seed user departments stay pinned to `tenant_root`. |
+| RBAC data-scope department lookup                     | Done    | Role custom data-scope department validation and RBAC descendant lookup are scoped to the active tenant.           |
+| Seed/OpenAPI/SDK/Admin consistency                    | Done    | Seed upserts root departments by `(tenant_root, code)`; OpenAPI/SDK/Admin shapes are unchanged and remain live.    |
+| Smoke/guard                                           | Done    | Added `smoke:core-tenant-dept` and `guard:tenant-dept-scope`.                                                      |
+| Non-root membership role/post assignment Admin        | Pending | T3d does not add control-plane assignment APIs; existing role/post assignment remains root legacy only.            |

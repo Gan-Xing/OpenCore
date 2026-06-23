@@ -14,6 +14,7 @@ describe('PrismaRbacRepository integration', () => {
   const tenantAuthzId = `tenant_authz_${tenantAuthzRunId}`;
   const tenantAuthzCode = `authz-${tenantAuthzRunId}`;
   const tenantAuthzMembershipId = `membership_authz_${tenantAuthzRunId}`;
+  const tenantAuthzDeptId = `dept_authz_${tenantAuthzRunId}`;
 
   beforeEach(async () => {
     await cleanupPermission();
@@ -196,12 +197,21 @@ describe('PrismaRbacRepository integration', () => {
       },
       select: { id: true },
     });
+    await prisma.systemDept.create({
+      data: {
+        id: tenantAuthzDeptId,
+        tenantId: tenantAuthzId,
+        code: 'operations',
+        name: 'Tenant Authz Operations',
+        order: 30,
+      },
+    });
     await prisma.tenantMembership.create({
       data: {
         id: tenantAuthzMembershipId,
         tenantId: tenantAuthzId,
         userId: admin.id,
-        deptId: 'dept_operations',
+        deptId: tenantAuthzDeptId,
         status: 'active',
         roles: {
           create: {
@@ -232,7 +242,7 @@ describe('PrismaRbacRepository integration', () => {
       repository.getDataScopeProfileForUser(admin.id, tenantAuthzMembershipId),
     ).resolves.toEqual({
       userId: admin.id,
-      deptId: 'dept_operations',
+      deptId: tenantAuthzDeptId,
       roles: [
         {
           roleCode: 'admin',

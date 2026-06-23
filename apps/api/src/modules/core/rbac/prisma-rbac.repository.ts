@@ -3,6 +3,7 @@ import {
   listModules,
 } from '@opencore/module-registry';
 import { Injectable } from '@nestjs/common';
+import { getRequestContext } from '@opencore/core';
 import { PrismaService } from '@opencore/database';
 import type {
   SecurityDataScopeProfile,
@@ -43,6 +44,7 @@ const permissionModuleCodeByCode: ReadonlyMap<string, string> = new Map(
     ]),
   ),
 );
+const ROOT_TENANT_ID = 'tenant_root';
 
 type PrismaUserWithRoles = {
   id: string;
@@ -382,7 +384,9 @@ export class PrismaRbacRepository extends RbacRepository {
   }
 
   async listDescendantDeptIds(deptId: string): Promise<string[]> {
+    const tenantId = getRequestContext()?.tenantId ?? ROOT_TENANT_ID;
     const depts = await this.prisma.systemDept.findMany({
+      where: { tenantId },
       select: { id: true, parentId: true },
     });
     const childrenByParentId = new Map<string, string[]>();

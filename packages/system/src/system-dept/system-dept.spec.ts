@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { runWithRequestContext } from '@opencore/core';
 import { PrismaService } from '@opencore/database';
 import { PrismaSystemDeptRepository } from './system-dept.prisma-repository';
 import { SeedSystemDeptRepository } from './system-dept.seed-repository';
@@ -160,6 +161,7 @@ describe('@opencore/system system-dept', () => {
     const siblingCode = `dept_sibling_${testRunId}`;
     const boundCode = `dept_bound_${testRunId}`;
     const boundUsername = `dept_user_${testRunId}`;
+    const tenantId = `tenant_dept_${testRunId}`;
     let parentId = '';
     let childId = '';
     let siblingId = '';
@@ -311,6 +313,118 @@ describe('@opencore/system system-dept', () => {
       boundDeptId = '';
     });
 
+    it('scopes dept codes and trees to the active tenant context', async () => {
+      await prisma.tenant.create({
+        data: {
+          id: tenantId,
+          code: tenantId,
+          slug: tenantId,
+          name: 'Tenant Dept Scope Test',
+        },
+      });
+      const rootDept = await service.createDept({
+        code: parentCode,
+        name: 'Root Scoped Dept',
+        order: 40,
+      });
+      parentId = rootDept.id;
+
+      await expectHttpExceptionCode(
+        runInTenant(tenantId, () =>
+          service.createDept({
+            code: childCode,
+            name: 'Cross Tenant Parent Dept',
+            parentId: rootDept.id,
+            order: 50,
+          }),
+        ),
+        'SYSTEM_DEPT_NOT_FOUND',
+      );
+
+      const tenantDept = await runInTenant(tenantId, () =>
+        service.createDept({
+          code: parentCode,
+          name: 'Tenant Scoped Dept',
+          order: 60,
+        }),
+      );
+      const tenantChild = await runInTenant(tenantId, () =>
+        service.createDept({
+          code: childCode,
+          name: 'Tenant Scoped Child Dept',
+          parentId: tenantDept.id,
+          order: 70,
+        }),
+      );
+
+      await expect(service.getDept(rootDept.id)).resolves.toMatchObject({
+        id: rootDept.id,
+        code: parentCode,
+        name: 'Root Scoped Dept',
+      });
+      await expect(
+        runInTenant(tenantId, () => service.getDept(tenantDept.id)),
+      ).resolves.toMatchObject({
+        id: tenantDept.id,
+        code: parentCode,
+        name: 'Tenant Scoped Dept',
+      });
+      await expectHttpExceptionCode(
+        service.getDept(tenantDept.id),
+        'SYSTEM_DEPT_NOT_FOUND',
+      );
+      await expect(
+        runInTenant(tenantId, () => service.listDeptOptions()),
+      ).resolves.toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: tenantDept.id,
+            name: 'Tenant Scoped Dept',
+          }),
+        ]),
+      );
+      await expect(
+        runInTenant(tenantId, () => service.listDeptTree()),
+      ).resolves.toEqual([
+        expect.objectContaining({
+          id: tenantDept.id,
+          children: [
+            expect.objectContaining({
+              id: tenantChild.id,
+              parentId: tenantDept.id,
+            }),
+          ],
+        }),
+      ]);
+      await expectHttpExceptionCode(
+        service.createDept({
+          code: parentCode,
+          name: 'Duplicate Root Dept',
+        }),
+        'SYSTEM_DEPT_ALREADY_EXISTS',
+      );
+      await expectHttpExceptionCode(
+        runInTenant(tenantId, () =>
+          service.createDept({
+            code: parentCode,
+            name: 'Duplicate Tenant Dept',
+          }),
+        ),
+        'SYSTEM_DEPT_ALREADY_EXISTS',
+      );
+      await expect(
+        prisma.systemDept.findMany({
+          where: { code: parentCode },
+          select: { tenantId: true, name: true },
+        }),
+      ).resolves.toEqual(
+        expect.arrayContaining([
+          { tenantId: 'tenant_root', name: 'Root Scoped Dept' },
+          { tenantId, name: 'Tenant Scoped Dept' },
+        ]),
+      );
+    });
+
     async function cleanupTestRows(): Promise<void> {
       await prisma.user.deleteMany({
         where: { username: boundUsername },
@@ -321,6 +435,9 @@ describe('@opencore/system system-dept', () => {
       await prisma.systemDept.deleteMany({
         where: { code: { in: [parentCode, boundCode] } },
       });
+      await prisma.tenant.deleteMany({
+        where: { id: tenantId },
+      });
       parentId = '';
       childId = '';
       siblingId = '';
@@ -328,6 +445,17 @@ describe('@opencore/system system-dept', () => {
     }
   });
 });
+
+function runInTenant<T>(tenantId: string, callback: () => T): T {
+  return runWithRequestContext(
+    {
+      requestId: `test-${tenantId}`,
+      traceId: `test-${tenantId}`,
+      tenantId,
+    },
+    callback,
+  );
+}
 
 async function expectHttpExceptionCode(
   promise: Promise<unknown>,
