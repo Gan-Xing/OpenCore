@@ -4,7 +4,7 @@ Date: 2026-06-23
 Repository: `Gan-Xing/OpenCore`  
 Branch: `main`  
 Target track: `Cycle-022 / Tenant Foundation`  
-Status: **In progress; T5a scheduler tenant propagation implemented; T5 runtime propagation remains partial**
+Status: **In progress; T5e Integration provider/outbox/OAuth tenant scope implemented; T5 runtime propagation remains partial pending broader review**
 
 ## 0. Current Round Snapshot
 
@@ -12,7 +12,7 @@ Updated: 2026-06-23
 
 Current completed slice count: **4 full slices**
 
-This working tree has advanced Cycle-022 through the first four full deployable tenant foundation slices plus T4a online-session tenant isolation, T4b login-log tenant isolation, T4c operation-audit tenant isolation, T4d dictionary tenant isolation, T4e system config tenant isolation, T4f file asset tenant isolation, T4g system notice tenant isolation, and T5a scheduler tenant propagation:
+This working tree has advanced Cycle-022 through the first four full deployable tenant foundation slices plus T4a online-session tenant isolation, T4b login-log tenant isolation, T4c operation-audit tenant isolation, T4d dictionary tenant isolation, T4e system config tenant isolation, T4f file asset tenant isolation, T4g system notice tenant isolation, T5a scheduler tenant propagation, T5b Redis cache namespace isolation, T5c WebSocket runtime tenant scope, T5d BullMQ monitor queue namespace isolation, and T5e Integration provider/outbox/OAuth tenant scope:
 
 - Prisma models for `TenantPlan`, `TenantPlanModule`, `Tenant`, `TenantMembership`, `TenantMembershipRole`, `TenantMembershipPost`, `PlatformRole`, `UserPlatformRole`, and `PlatformRolePermission`.
 - Migration `20260622223000_tenant_foundation` creates the `root` tenant, root `system.full` plan, root memberships for existing users, and transitional root copies of `UserRole` and `UserPost`.
@@ -106,11 +106,19 @@ This working tree has advanced Cycle-022 through the first four full deployable 
 - `smoke:core-monitor-jobs` seeds a foreign tenant scheduler job/run and proves root-scope monitor job APIs and worker claim do not cross tenants.
 - `pnpm guard:tenant-scheduler-scope` was added for the T5a Scheduler propagation closure.
 - Refreshed deploy completed on API `39172` and Admin `39174`; local deploy smoke and public API monitor-jobs smoke passed.
+- Redis monitor cache list/value/delete/clear uses tenant-prefixed keys resolved from `RequestContext`; foreign tenant keys are hidden and preserved.
+- WebSocket diagnostic runtime rooms normalize to `tenant:{tenantId}:integration.*`, persisted runtime events carry `tenantId`, and diagnostics read active-tenant events only.
+- BullMQ monitor queue probes/control use tenant-specific Redis prefixes while keeping public queue names logical and exposing tenant runtime names.
+- Migration `20260624013000_tenant_scoped_integrations` makes Integration provider, audit, template, outbox, OAuth token, OAuth flow, and OAuth callback audit rows tenant-owned.
+- Integration provider/template codes are tenant-local, OAuth token identity is unique per `(tenantId, providerCode, subjectId, providerAccountId)`, and callbacks recover the tenant from the stored flow state.
+- System notice external delivery and social-login OAuth token binding now use tenant-local Integration provider/token keys.
+- `pnpm guard:tenant-integration-scope` was added for the T5e Integration provider/outbox/OAuth closure.
+- Refreshed deploy completed on API `39172` and Admin `39174`; local deploy smokes and public API Integration health/OAuth token smokes passed.
 
 Still not complete:
 
 - tenant-scoped System/core repositories for other unreviewed non-org data;
-- Redis/file/WebSocket/Integration/OAuth/audit runtime propagation and broader BullMQ queue namespace/payload handling;
+- broader runtime tenant propagation review beyond the T5a-T5e closed runtime surfaces;
 - Tenant Plan CRUD, Tenant Member CRUD/invitation, Admin switcher, and platform visit mode beyond active-tenant member assignment;
 - platform visit/impersonation audit.
 
@@ -201,19 +209,18 @@ OpenCore 已经完成单租户企业后台的大部分基础产品化，不是 s
 
 当前项目状态可以概括为：
 
-> **单租户平台基础已完成，多租户平台基础尚未建设。**
+> **多租户基础已覆盖身份、权限、主要 System/core 数据面和 T5a-T5e runtime 面；完整 SaaS 控制面和更广业务域迁移尚未完成。**
 
-当前代码没有完整的 tenant runtime：
+当前 tenant runtime 事实：
 
 - `RequestContext` 已有 `requestId`、`traceId`、`actorUserId`、`tenantId`、`membershipId`、`accessMode`，但多数 repository 尚未消费 tenant 字段；
 - Access Token 已有 `sub`、`jti`、`iat`、`exp`、`tid`、`mid`、`am`；
 - `AuthenticatedUser` 已优先使用当前 `TenantMembershipRole` / `TenantMembershipPost`，权限会按租户套餐 module 裁剪；legacy `UserRole` 仅保留为 seed/in-memory fallback；
 - `PrismaService` 是裸 `PrismaClient`，没有 tenant-scoped client；
-- Redis key 没有 tenant namespace；
-- System file asset metadata now stores tenant-prefixed object keys, but broader file/runtime propagation still needs the T5 pass;
-- Scheduler handler input 没有 `tenantId`；
-- 多数 Prisma Model 使用全局唯一约束；
-- Repository 普遍按 `id`、`code`、`username` 直接查询。
+- Monitor cache Redis keys, BullMQ monitor queue prefixes, Scheduler jobs/runs, WebSocket runtime rooms/events, and Integration provider/outbox/OAuth rows now carry active-tenant scope where those surfaces exist;
+- System file asset metadata stores tenant-prefixed object keys;
+- 多数尚未迁移的业务/可选 Prisma Model 仍可能使用全局唯一约束；
+- 未完成的 repository 仍可能按 `id`、`code`、`username` 直接查询，下一轮必须继续按 backlog/waterline 审计。
 
 因此，仅新增 `Tenant` 表和 Admin 页面会形成“有租户页面但没有租户隔离”的假多租户，禁止这样实施。
 
@@ -528,49 +535,49 @@ integration.provider
 
 以下分类是实施前的默认决策。若代码事实发生变化，必须先更新本矩阵，再改 schema。
 
-| Current model                      | Target ownership                              | Required action                                                                 |
-| ---------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------- | --------------------------- |
-| `User`                             | Global identity                               | 保持全局；移出直接 dept/role/post 关系                                          |
-| `Role`                             | Tenant-owned                                  | 演进为 `TenantRole`，增加 `tenantId`，code 改租户内唯一                         |
-| `Permission`                       | Global catalog                                | 保持全局唯一，不加 `tenantId`                                                   |
-| `Menu`                             | Global catalog                                | 保持全局，不复制每租户菜单                                                      |
-| `UserRole`                         | Obsolete                                      | 迁移为 `TenantMembershipRole`                                                   |
-| `UserPost`                         | Obsolete                                      | 迁移为 `TenantMembershipPost`                                                   |
-| `RolePermission`                   | Tenant authorization                          | 通过 tenant role 隔离；建议关系表保留 `tenantId` 做复合约束                     |
-| `DictType`                         | Tenant-owned with optional system definitions | 增加 tenant scope 或拆分系统字典与租户字典                                      |
-| `DictItem`                         | Tenant-owned child                            | 跟随 DictType；禁止跨租户 typeId                                                |
-| `SystemConfig`                     | Mixed                                         | 拆为全局 `ConfigDefinition` 与 `TenantConfigValue`                              |
-| `SystemConfigEnvironmentOverride`  | Tenant-owned value                            | 迁移到租户配置覆盖模型                                                          |
-| `SystemConfigSecretVersion`        | Tenant-owned secret                           | 增加 tenant ownership，密钥和审计必须隔离                                       |
-| `SystemNotice`                     | Tenant-owned                                  | 增加 `tenantId`                                                                 |
-| `SystemNoticeTemplate`             | Tenant-owned or system template               | 明确 `system/tenant` scope，租户模板必须隔离                                    |
-| `SystemNoticeReadReceipt`          | Tenant-owned child                            | 增加或继承 tenant，校验 notice/member 同租户                                    |
-| `SystemNoticeDelivery`             | Tenant-owned child                            | 增加 tenant，provider 选择必须使用该租户配置                                    |
-| `SystemDept`                       | Tenant-owned                                  | 增加 `tenantId`，code 改租户内唯一                                              |
-| `SystemPost`                       | Tenant-owned                                  | 增加 `tenantId`，code 改租户内唯一                                              |
-| `FileAsset`                        | Tenant-owned                                  | 增加 `tenantId`，对象 key 加 tenant prefix                                      |
-| `AuditLog`                         | Explicit scoped event                         | 增加 `scope=platform                                                            | tenant`与受约束的`tenantId` |
-| `LoginLog`                         | Explicit scoped event                         | 登录前可无 tenant；选择租户后记录 tenant，使用显式 scope                        |
-| `LoginLockout`                     | Global credential security                    | V1 保持全局；用户名锁定不依赖前端租户                                           |
-| `CollaborationMessage`             | Tenant-owned                                  | 增加 `tenantId`，sender/recipient 使用 member/user identity 明确化              |
-| `CollaborationNotice`              | Tenant-owned                                  | 增加 `tenantId`                                                                 |
-| `CollaborationTodo`                | Tenant-owned                                  | 增加 `tenantId`                                                                 |
-| `CollaborationApprovalLite`        | Tenant-owned                                  | 增加 `tenantId`                                                                 |
-| `JobDefinition`                    | Platform runtime currently                    | 当前 maintenance jobs 保持平台级；未来新增独立 tenant schedule 模型或显式 scope |
-| `JobRunLog`                        | Explicit scoped event                         | 增加 scope/tenant 快照，tenant job 不得丢失上下文                               |
-| `OnlineUserSession`                | Tenant-bound access session                   | 增加 `tenantId`、`membershipId`、`accessMode`                                   |
-| `ReportDefinition`                 | Tenant-owned                                  | 未来启用时增加 `tenantId`；当前不作为 Cycle-022 主功能                          |
-| `IntegrationProvider`              | Mixed                                         | 拆为全局 driver/catalog 与 `TenantIntegrationProvider` 实例                     |
-| `IntegrationProviderAuditLog`      | Tenant-owned audit                            | 增加 tenant 快照                                                                |
-| `IntegrationTemplate`              | Tenant-owned                                  | 增加 `tenantId`，code 改租户内唯一                                              |
-| `IntegrationOutbox`                | Tenant-owned runtime                          | 增加 tenant，worker 必须恢复上下文                                              |
-| `IntegrationOAuthToken`            | Tenant-owned secret                           | 增加 tenant，provider instance 和 subject 必须同租户                            |
-| `IntegrationOAuthFlow`             | Tenant-owned flow                             | state 必须绑定 tenant                                                           |
-| `IntegrationOAuthCallbackAudit`    | Tenant-owned audit                            | callback 必须恢复并校验 tenant                                                  |
-| `IntegrationWebSocketRuntimeEvent` | Tenant-owned/scoped                           | room 和 event 必须带 tenant namespace                                           |
-| `AreaDatasetVersion`               | Global master data                            | 保持全局                                                                        |
-| `AreaRegion`                       | Global master data                            | 保持全局                                                                        |
-| `AreaIpRange`                      | Global master data                            | 保持全局                                                                        |
+| Current model                      | Target ownership                              | Required action                                                                                  |
+| ---------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `User`                             | Global identity                               | 保持全局；移出直接 dept/role/post 关系                                                           |
+| `Role`                             | Tenant-owned                                  | 演进为 `TenantRole`，增加 `tenantId`，code 改租户内唯一                                          |
+| `Permission`                       | Global catalog                                | 保持全局唯一，不加 `tenantId`                                                                    |
+| `Menu`                             | Global catalog                                | 保持全局，不复制每租户菜单                                                                       |
+| `UserRole`                         | Obsolete                                      | 迁移为 `TenantMembershipRole`                                                                    |
+| `UserPost`                         | Obsolete                                      | 迁移为 `TenantMembershipPost`                                                                    |
+| `RolePermission`                   | Tenant authorization                          | 通过 tenant role 隔离；建议关系表保留 `tenantId` 做复合约束                                      |
+| `DictType`                         | Tenant-owned with optional system definitions | 增加 tenant scope 或拆分系统字典与租户字典                                                       |
+| `DictItem`                         | Tenant-owned child                            | 跟随 DictType；禁止跨租户 typeId                                                                 |
+| `SystemConfig`                     | Mixed                                         | 拆为全局 `ConfigDefinition` 与 `TenantConfigValue`                                               |
+| `SystemConfigEnvironmentOverride`  | Tenant-owned value                            | 迁移到租户配置覆盖模型                                                                           |
+| `SystemConfigSecretVersion`        | Tenant-owned secret                           | 增加 tenant ownership，密钥和审计必须隔离                                                        |
+| `SystemNotice`                     | Tenant-owned                                  | 增加 `tenantId`                                                                                  |
+| `SystemNoticeTemplate`             | Tenant-owned or system template               | 明确 `system/tenant` scope，租户模板必须隔离                                                     |
+| `SystemNoticeReadReceipt`          | Tenant-owned child                            | 增加或继承 tenant，校验 notice/member 同租户                                                     |
+| `SystemNoticeDelivery`             | Tenant-owned child                            | 增加 tenant，provider 选择必须使用该租户配置                                                     |
+| `SystemDept`                       | Tenant-owned                                  | 增加 `tenantId`，code 改租户内唯一                                                               |
+| `SystemPost`                       | Tenant-owned                                  | 增加 `tenantId`，code 改租户内唯一                                                               |
+| `FileAsset`                        | Tenant-owned                                  | 增加 `tenantId`，对象 key 加 tenant prefix                                                       |
+| `AuditLog`                         | Tenant-owned operation audit                  | Done T4c: 增加 `tenantId`，list/detail/export/delete/retention clean 按 active tenant 查询       |
+| `LoginLog`                         | Tenant-owned login audit                      | Done T4b: 增加 `tenantId`，登录/登出记录和 list/detail/export/delete/clean 按 active tenant 查询 |
+| `LoginLockout`                     | Global credential security                    | V1 保持全局；用户名锁定不依赖前端租户                                                            |
+| `CollaborationMessage`             | Tenant-owned                                  | 增加 `tenantId`，sender/recipient 使用 member/user identity 明确化                               |
+| `CollaborationNotice`              | Tenant-owned                                  | 增加 `tenantId`                                                                                  |
+| `CollaborationTodo`                | Tenant-owned                                  | 增加 `tenantId`                                                                                  |
+| `CollaborationApprovalLite`        | Tenant-owned                                  | 增加 `tenantId`                                                                                  |
+| `JobDefinition`                    | Tenant-owned scheduler job                    | Done T5a: 增加 `tenantId`，code 改租户内唯一，monitor job API 按 active tenant 查询              |
+| `JobRunLog`                        | Tenant-owned run log                          | Done T5a: 增加 `tenantId`，worker claim/run detail/run clean 按 active tenant 查询               |
+| `OnlineUserSession`                | Tenant-bound access session                   | 增加 `tenantId`、`membershipId`、`accessMode`                                                    |
+| `ReportDefinition`                 | Tenant-owned                                  | 未来启用时增加 `tenantId`；当前不作为 Cycle-022 主功能                                           |
+| `IntegrationProvider`              | Tenant-owned provider instance                | Done T5e: 增加 `tenantId`，code 改租户内唯一；全局 driver/catalog 如需拆分留给后续               |
+| `IntegrationProviderAuditLog`      | Tenant-owned audit                            | Done T5e: 增加 `tenantId` 并按 active tenant 查询                                                |
+| `IntegrationTemplate`              | Tenant-owned                                  | Done T5e: 增加 `tenantId`，code 改租户内唯一                                                     |
+| `IntegrationOutbox`                | Tenant-owned runtime                          | Done T5e: 增加 `tenantId`，API/notice sync 按 tenant 限制                                        |
+| `IntegrationOAuthToken`            | Tenant-owned secret reference                 | Done T5e: 增加 `tenantId`，唯一键改为 `(tenantId, providerCode, subjectId, providerAccountId)`   |
+| `IntegrationOAuthFlow`             | Tenant-owned flow                             | Done T5e: 增加 `tenantId`，callback 从全局唯一 state 恢复 flow tenant                            |
+| `IntegrationOAuthCallbackAudit`    | Tenant-owned audit                            | Done T5e: 增加 `tenantId`，callback audit 写入 flow tenant                                       |
+| `IntegrationWebSocketRuntimeEvent` | Tenant-owned/scoped                           | Done T5c: room 和 event 带 tenant namespace                                                      |
+| `AreaDatasetVersion`               | Global master data                            | 保持全局                                                                                         |
+| `AreaRegion`                       | Global master data                            | 保持全局                                                                                         |
+| `AreaIpRange`                      | Global master data                            | 保持全局                                                                                         |
 
 注意：
 
@@ -586,7 +593,7 @@ scope = tenant   -> tenantId IS NOT NULL
 
 ## 10. Unique Constraint Migration
 
-以下全局唯一约束需要改成租户内复合唯一：
+以下全局唯一约束需要改成租户内复合唯一。T3b-T5e 已完成 Role、SystemDept、SystemPost、DictType、SystemConfig、SystemNoticeTemplate、Scheduler job、IntegrationProvider、IntegrationTemplate 和 IntegrationOAuthToken 的关键复合唯一约束；后续继续按 backlog 审计剩余模型。
 
 ```text
 Role.code
@@ -595,9 +602,6 @@ SystemPost.code
 DictType.code
 TenantConfig.key
 SystemNoticeTemplate.code
-IntegrationTemplate.code
-TenantIntegrationProvider.code
-TenantSchedule.code
 ReportDefinition.code
 ```
 
@@ -810,7 +814,7 @@ RLS 可作为第二层纵深防御，但不作为第一轮唯一安全机制。
 
 ## 14. Redis Isolation
 
-当前 Redis key factory 不知道 tenant。目标 namespace：
+T5b 已完成 Monitor Cache 可见面的 tenant namespace。后续新增 tenant data Redis key 必须继续使用同一类 namespace：
 
 ```text
 opencore:{env}:tenant:{tenantId}:config:...
@@ -829,17 +833,17 @@ opencore:{env}:platform:...
 
 - 禁止 tenant data 使用无 tenant 的 key factory；
 - prefix clear 必须限制在当前 tenant；
-- Monitor Cache 的平台页面需要明确 platform/tenant scope；
+- Monitor Cache 已按 active tenant 解析 key，平台级清理仍需要明确 platform/tenant scope；
 - 平台管理员清理租户缓存必须显式指定租户并审计。
 
 ---
 
 ## 15. File and Object Storage Isolation
 
-当前文件对象 key 应改为：
+T4f 已完成 `FileAsset` metadata tenant scope 和 tenant-prefixed object key。后续新增文件对象 key 应继续使用 tenant namespace：
 
 ```text
-tenants/{tenantId}/file-assets/{fileId-or-digest}-{safeName}
+runtime/tenant/{tenantId}/file-assets/{fileId-or-digest}-{safeName}
 ```
 
 平台资产：
@@ -891,7 +895,7 @@ Worker 执行顺序：
 
 ### Integration Provider
 
-当前模型混合了 provider 类型和实例配置，建议拆分：
+T5e 已将当前 `IntegrationProvider` 作为 tenant-owned provider instance 处理。若后续需要全局 provider driver/catalog，可再拆分：
 
 ```text
 IntegrationProviderDriver      Global
@@ -909,7 +913,7 @@ TenantIntegrationProvider      Tenant-owned
 
 ### Outbox
 
-每条 Outbox 必须固定：
+T5e 已让每条 Integration Outbox 固定：
 
 - tenantId；
 - provider instance；
@@ -921,7 +925,7 @@ A 租户的消息绝不能使用 B 租户的 SMTP/SMS 配置。
 
 ### OAuth
 
-OAuth state 必须绑定：
+T5e 已让 OAuth flow 记录 `tenantId`，callback 通过全局唯一 `state` 恢复 flow tenant。后续真实外部 OAuth provider 接入仍必须绑定：
 
 ```text
 tenantId
@@ -934,6 +938,8 @@ expiry
 callback 不能只凭 provider code 寻找 token。
 
 ### WebSocket
+
+T5c 已完成 Integration diagnostic WebSocket runtime tenant room rewrite。后续 WebSocket room 命名继续遵守：
 
 room 命名：
 
@@ -1111,13 +1117,18 @@ platform:tenant-member:manage
 
 ## T5 — Runtime propagation
 
-- Redis namespace；
-- MinIO/S3 object key；
-- BullMQ payload/context；
-- Scheduler scope；
-- Integration provider/outbox；
-- OAuth callback；
-- WebSocket room。
+Closed sub-slices:
+
+- T5a Scheduler job/run tenant scope and handler context；
+- T5b Monitor Cache Redis tenant namespace；
+- T5c Integration WebSocket runtime room/event tenant scope；
+- T5d BullMQ monitor queue namespace/control scope；
+- T5e Integration provider/outbox/OAuth tenant scope。
+
+Remaining:
+
+- broader runtime audit for unreviewed queue payloads/workers/files/caches outside the closed surfaces；
+- platform-admin cross-tenant runtime behavior belongs with T6 visit mode and audit。
 
 ## T6 — Admin control plane
 
