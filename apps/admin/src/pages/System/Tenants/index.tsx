@@ -1,11 +1,19 @@
-import { ReloadOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
+import {
+  EditOutlined,
+  ReloadOutlined,
+  SafetyCertificateOutlined,
+} from '@ant-design/icons';
 import {
   PageContainer,
   ProTable,
   type ProColumns,
 } from '@ant-design/pro-components';
 import type {
+  RoleSummary,
+  SystemDeptOptionSummary,
+  SystemPostOptionSummary,
   TenantFoundationSummary,
+  TenantMemberSummary,
   TenantPlanFoundationSummary,
   TenancyFoundationSummary,
 } from '@opencore/sdk';
@@ -14,13 +22,24 @@ import {
   Alert,
   Button,
   Descriptions,
+  Form,
+  Modal,
+  Select,
   Space,
   Statistic,
   Tag,
   Tooltip,
+  message,
 } from 'antd';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { getOpenCoreTenancyFoundation } from '@/services/opencore/platform';
+import {
+  getOpenCoreTenancyFoundation,
+  listOpenCoreRoles,
+  listOpenCoreSystemDeptOptions,
+  listOpenCoreSystemPostOptions,
+  listOpenCoreTenantMembers,
+  updateOpenCoreTenantMemberAssignments,
+} from '@/services/opencore/platform';
 
 type FormatMessage = (
   id: string,
@@ -29,6 +48,13 @@ type FormatMessage = (
 ) => string;
 
 const TENANT_READ_PERMISSION_MARKER = 'platform:tenant:read';
+
+type MemberAssignmentFormValues = {
+  deptId?: string;
+  postCodes?: string[];
+  roleCodes?: string[];
+  status: 'active' | 'suspended';
+};
 
 function statusColor(status: string): string {
   if (status === 'active') {
@@ -42,11 +68,55 @@ function statusColor(status: string): string {
   return 'red';
 }
 
+function createRoleOptions(rows: readonly RoleSummary[]) {
+  return [...rows]
+    .sort((left, right) => left.code.localeCompare(right.code))
+    .map((role) => ({
+      label: `${role.name} (${role.code})`,
+      value: role.code,
+    }));
+}
+
+function createDeptOptions(rows: readonly SystemDeptOptionSummary[]) {
+  return [...rows]
+    .sort(
+      (left, right) =>
+        left.order - right.order || left.name.localeCompare(right.name),
+    )
+    .map((dept) => ({
+      label: dept.name,
+      value: dept.id,
+    }));
+}
+
+function createPostOptions(rows: readonly SystemPostOptionSummary[]) {
+  return [...rows]
+    .sort(
+      (left, right) =>
+        left.order - right.order || left.name.localeCompare(right.name),
+    )
+    .map((post) => ({
+      label: `${post.name} (${post.code})`,
+      value: post.code,
+    }));
+}
+
 export default function TenantsPage() {
   const intl = useIntl();
+  const [form] = Form.useForm<MemberAssignmentFormValues>();
   const [summary, setSummary] = useState<TenancyFoundationSummary>();
+  const [members, setMembers] = useState<readonly TenantMemberSummary[]>([]);
+  const [roles, setRoles] = useState<readonly RoleSummary[]>([]);
+  const [deptOptionsRows, setDeptOptionsRows] = useState<
+    readonly SystemDeptOptionSummary[]
+  >([]);
+  const [postOptionsRows, setPostOptionsRows] = useState<
+    readonly SystemPostOptionSummary[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
+  const [editingMember, setEditingMember] = useState<TenantMemberSummary>();
+  const [savingMember, setSavingMember] = useState(false);
   const formatMessage: FormatMessage = useCallback(
     (id, defaultMessage, values) =>
       values
@@ -55,10 +125,23 @@ export default function TenantsPage() {
     [intl],
   );
 
-  const loadSummary = async () => {
+  const loadSummary = useCallback(async () => {
     setLoading(true);
     try {
-      setSummary(await getOpenCoreTenancyFoundation());
+      const [nextSummary, nextMembers, nextRoles, nextDeptOptions, nextPosts] =
+        await Promise.all([
+          getOpenCoreTenancyFoundation(),
+          listOpenCoreTenantMembers(),
+          listOpenCoreRoles(),
+          listOpenCoreSystemDeptOptions(),
+          listOpenCoreSystemPostOptions(),
+        ]);
+
+      setSummary(nextSummary);
+      setMembers(nextMembers);
+      setRoles(nextRoles);
+      setDeptOptionsRows(nextDeptOptions);
+      setPostOptionsRows(nextPosts);
       setLoadError(undefined);
     } catch (error: unknown) {
       setLoadError(
@@ -72,11 +155,21 @@ export default function TenantsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [formatMessage]);
 
   useEffect(() => {
     void loadSummary();
-  }, []);
+  }, [loadSummary]);
+
+  const roleOptions = useMemo(() => createRoleOptions(roles), [roles]);
+  const deptOptions = useMemo(
+    () => createDeptOptions(deptOptionsRows),
+    [deptOptionsRows],
+  );
+  const postOptions = useMemo(
+    () => createPostOptions(postOptionsRows),
+    [postOptionsRows],
+  );
 
   const backfillWarnings = useMemo(() => {
     if (!summary) {
@@ -197,6 +290,120 @@ export default function TenantsPage() {
     ],
     [formatMessage],
   );
+
+  const memberColumns = useMemo<ProColumns<TenantMemberSummary>[]>(
+    () => [
+      {
+        title: formatMessage('pages.system.tenants.fields.username', 'User'),
+        dataIndex: 'username',
+        render: (_, record) => `${record.displayName} (${record.username})`,
+      },
+      {
+        title: formatMessage('pages.system.tenants.fields.status', 'Status'),
+        dataIndex: 'status',
+        render: (_, record) => (
+          <Tag color={statusColor(record.status)}>{record.status}</Tag>
+        ),
+      },
+      {
+        title: formatMessage(
+          'pages.system.tenants.fields.department',
+          'Department',
+        ),
+        dataIndex: 'deptName',
+        renderText: (value, record) => value ?? record.deptId ?? '-',
+      },
+      {
+        title: formatMessage('pages.system.tenants.fields.roles', 'Roles'),
+        dataIndex: 'roleCodes',
+        render: (_, record) =>
+          record.roleCodes.length > 0 ? (
+            <Space size={[0, 4]} wrap>
+              {record.roleCodes.map((code) => (
+                <Tag key={code}>{code}</Tag>
+              ))}
+            </Space>
+          ) : (
+            '-'
+          ),
+      },
+      {
+        title: formatMessage('pages.system.tenants.fields.posts', 'Posts'),
+        dataIndex: 'postCodes',
+        render: (_, record) =>
+          record.postCodes.length > 0 ? (
+            <Space size={[0, 4]} wrap>
+              {record.postCodes.map((code) => (
+                <Tag key={code}>{code}</Tag>
+              ))}
+            </Space>
+          ) : (
+            '-'
+          ),
+      },
+      {
+        title: formatMessage('pages.system.tenants.fields.actions', 'Actions'),
+        valueType: 'option',
+        render: (_, record) => (
+          <Tooltip
+            title={formatMessage(
+              'pages.system.tenants.actions.editMember',
+              'Edit member assignments',
+            )}
+          >
+            <Button
+              aria-label={formatMessage(
+                'pages.system.tenants.actions.editMemberAria',
+                'Edit member assignments',
+              )}
+              icon={<EditOutlined />}
+              onClick={() => {
+                setEditingMember(record);
+                form.setFieldsValue({
+                  deptId: record.deptId ?? undefined,
+                  postCodes: [...record.postCodes],
+                  roleCodes: [...record.roleCodes],
+                  status:
+                    record.status === 'suspended' ? 'suspended' : 'active',
+                });
+              }}
+              type="link"
+            />
+          </Tooltip>
+        ),
+      },
+    ],
+    [formatMessage, form],
+  );
+
+  const saveMemberAssignments = async () => {
+    if (!editingMember) {
+      return;
+    }
+
+    const values = await form.validateFields();
+
+    setSavingMember(true);
+    try {
+      await updateOpenCoreTenantMemberAssignments(editingMember.id, {
+        deptId: values.deptId ?? null,
+        postCodes: values.postCodes ?? [],
+        roleCodes: values.roleCodes ?? [],
+        status: values.status,
+      });
+      message.success(
+        formatMessage(
+          'pages.system.tenants.actions.editMemberSuccess',
+          'Member assignments updated.',
+        ),
+      );
+      setEditingMember(undefined);
+      form.resetFields();
+      await loadSummary();
+    } finally {
+      setSavingMember(false);
+    }
+  };
 
   return (
     <PageContainer
@@ -334,8 +541,96 @@ export default function TenantsPage() {
         pagination={false}
         rowKey="id"
         search={false}
+        style={{ marginBottom: 16 }}
         toolBarRender={false}
       />
+
+      <ProTable<TenantMemberSummary>
+        columns={memberColumns}
+        dataSource={[...members]}
+        headerTitle={formatMessage(
+          'pages.system.tenants.sections.members',
+          'Current tenant members',
+        )}
+        loading={loading}
+        pagination={false}
+        rowKey="id"
+        search={false}
+        toolBarRender={false}
+      />
+
+      <Modal
+        destroyOnClose
+        confirmLoading={savingMember}
+        onCancel={() => {
+          setEditingMember(undefined);
+          form.resetFields();
+        }}
+        onOk={() => void saveMemberAssignments()}
+        open={Boolean(editingMember)}
+        title={formatMessage(
+          'pages.system.tenants.actions.editMember',
+          'Edit member assignments',
+        )}
+      >
+        <Form form={form} layout="vertical">
+          <Form.Item
+            label={formatMessage(
+              'pages.system.tenants.fields.status',
+              'Status',
+            )}
+            name="status"
+            rules={[{ required: true }]}
+          >
+            <Select
+              options={[
+                { label: 'active', value: 'active' },
+                { label: 'suspended', value: 'suspended' },
+              ]}
+            />
+          </Form.Item>
+          <Form.Item
+            label={formatMessage(
+              'pages.system.tenants.fields.department',
+              'Department',
+            )}
+            name="deptId"
+          >
+            <Select
+              allowClear
+              optionFilterProp="label"
+              options={deptOptions}
+              showSearch
+            />
+          </Form.Item>
+          <Form.Item
+            label={formatMessage('pages.system.tenants.fields.roles', 'Roles')}
+            name="roleCodes"
+            rules={[{ type: 'array' }]}
+          >
+            <Select
+              allowClear
+              mode="multiple"
+              optionFilterProp="label"
+              options={roleOptions}
+              showSearch
+            />
+          </Form.Item>
+          <Form.Item
+            label={formatMessage('pages.system.tenants.fields.posts', 'Posts')}
+            name="postCodes"
+            rules={[{ type: 'array' }]}
+          >
+            <Select
+              allowClear
+              mode="multiple"
+              optionFilterProp="label"
+              options={postOptions}
+              showSearch
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
     </PageContainer>
   );
 }

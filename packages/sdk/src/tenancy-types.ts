@@ -57,3 +57,25 @@ export type TenancyFoundationSummary = {
   requestContext?: TenantRequestContextSummary;
   generatedAt: string;
 };
+
+export type TenantMemberSummary = {
+  id: string;
+  userId: string;
+  username: string;
+  displayName: string;
+  status: 'active' | 'suspended' | string;
+  isOwner: boolean;
+  deptId?: string | null;
+  deptName?: string | null;
+  roleCodes: readonly string[];
+  postCodes: readonly string[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type UpdateTenantMemberAssignmentsRequest = {
+  deptId?: string | null;
+  status?: 'active' | 'suspended';
+  roleCodes?: readonly string[];
+  postCodes?: readonly string[];
+};

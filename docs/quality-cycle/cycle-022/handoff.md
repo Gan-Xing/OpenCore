@@ -4,15 +4,15 @@ Date: 2026-06-23
 Repository: `Gan-Xing/OpenCore`  
 Branch: `main`  
 Target track: `Cycle-022 / Tenant Foundation`  
-Status: **In progress; T3d tenant-scoped Department catalog implemented, deployed, and verified**
+Status: **In progress; T3e tenant member assignment implemented, deployed, and verified; T3 organization/RBAC tenantization complete**
 
 ## 0. Current Round Snapshot
 
 Updated: 2026-06-23
 
-Current completed slice count: **3 full slices + 4 T3 sub-slices**
+Current completed slice count: **4 full slices**
 
-This working tree has advanced Cycle-022 through the first three full deployable tenant foundation slices and the first four T3 authorization/RBAC/org sub-slices:
+This working tree has advanced Cycle-022 through the first four full deployable tenant foundation slices:
 
 - Prisma models for `TenantPlan`, `TenantPlanModule`, `Tenant`, `TenantMembership`, `TenantMembershipRole`, `TenantMembershipPost`, `PlatformRole`, `UserPlatformRole`, and `PlatformRolePermission`.
 - Migration `20260622223000_tenant_foundation` creates the `root` tenant, root `system.full` plan, root memberships for existing users, and transitional root copies of `UserRole` and `UserPost`.
@@ -50,13 +50,18 @@ This working tree has advanced Cycle-022 through the first three full deployable
 - Root legacy `User.deptId`, seed user departments, Role custom data-scope department validation, and RBAC descendant department lookup are pinned/scoped to the correct tenant.
 - Tenant department guard and smoke aliases were added for the T3d Department catalog closure.
 - Refreshed deploy completed on API `39172` and Admin `39174`; tenant foundation/auth/RBAC/role/post/dept smokes passed against local and public API.
+- Active-tenant member assignment APIs were added under `GET /api/core/tenancy/members` and `PATCH /api/core/tenancy/members/:membershipId/assignments`.
+- Member assignment derives tenant ownership from authenticated `RequestContext`, validates membership/department/role/post ownership in that tenant, and ignores any client-supplied body/query/header tenant selector.
+- Root tenant assignment updates sync back to legacy `User.enabled`, `User.deptId`, `UserRole`, and `UserPost` so single-mode System User flows stay compatible.
+- SDK tenancy client/types and the live `/system/tenants` Admin page now expose current-tenant members and an assignment modal for status, department, roles, and posts.
+- Tenant member assignment guard and smoke coverage were added and wired into local/deploy smoke scripts for the T3e Tenant Member assignment closure.
+- Refreshed deploy completed on API `39172` and Admin `39174`; tenant foundation/auth/RBAC/role/post/dept/member smokes passed against local and public API.
 
 Still not complete:
 
-- tenant membership role/post assignment APIs that manage non-root tenants directly;
-- tenant-scoped System repositories for user/org management beyond authz bridge reads;
+- tenant-scoped System/core repositories for dict, config, notices, files, logs, online sessions, and other non-org data;
 - Redis/file/queue/WebSocket/Integration/OAuth/audit runtime propagation;
-- Tenant Plan and Member CRUD Admin;
+- Tenant Plan CRUD, Tenant Member CRUD/invitation, Admin switcher, and platform visit mode beyond active-tenant member assignment;
 - platform visit/impersonation audit.
 
 ---

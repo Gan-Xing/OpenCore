@@ -106,6 +106,7 @@ import {
   type SetRoleStatusRequest,
   type SystemStatusSummary,
   type TenancyFoundationSummary,
+  type TenantMemberSummary,
   type DictBatchMutationSummary,
   type DictCacheRefreshSummary,
   type DictDataOptionQueryRequest,
@@ -253,6 +254,7 @@ import {
   type UserMutationSummary,
   type UserRoleAssignmentSummary,
   type UpdateUserRequest,
+  type UpdateTenantMemberAssignmentsRequest,
   type UserImportResultSummary,
   type UserImportTemplateSummary,
 } from '@opencore/sdk';
@@ -273,6 +275,23 @@ export function getOpenCoreOpenApiDriftStatus(): Promise<OpenApiDriftStatus> {
 
 export function getOpenCoreTenancyFoundation(): Promise<TenancyFoundationSummary> {
   return tenancyClient.getFoundationSummary(getRequiredAdminToken());
+}
+
+export function listOpenCoreTenantMembers(): Promise<
+  readonly TenantMemberSummary[]
+> {
+  return tenancyClient.listMembers(getRequiredAdminToken());
+}
+
+export function updateOpenCoreTenantMemberAssignments(
+  membershipId: string,
+  body: UpdateTenantMemberAssignmentsRequest,
+): Promise<TenantMemberSummary> {
+  return tenancyClient.updateMemberAssignments(
+    getRequiredAdminToken(),
+    membershipId,
+    body,
+  );
 }
 
 export function getOpenCoreExportProtocol(): Promise<CurrentPageExportProtocolSummary> {

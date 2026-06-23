@@ -134,3 +134,55 @@ export class TenantFoundationSummaryDto {
   @ApiProperty()
   generatedAt!: string;
 }
+
+export class TenantMemberDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  userId!: string;
+
+  @ApiProperty()
+  username!: string;
+
+  @ApiProperty()
+  displayName!: string;
+
+  @ApiProperty({ enum: ['active', 'suspended'] })
+  status!: string;
+
+  @ApiProperty()
+  isOwner!: boolean;
+
+  @ApiProperty({ required: false, nullable: true, type: String })
+  deptId?: string | null;
+
+  @ApiProperty({ required: false, nullable: true, type: String })
+  deptName?: string | null;
+
+  @ApiProperty({ type: [String] })
+  roleCodes!: readonly string[];
+
+  @ApiProperty({ type: [String] })
+  postCodes!: readonly string[];
+
+  @ApiProperty()
+  createdAt!: string;
+
+  @ApiProperty()
+  updatedAt!: string;
+}
+
+export class UpdateTenantMemberAssignmentsDto {
+  @ApiProperty({ required: false, nullable: true, type: String })
+  deptId?: string | null;
+
+  @ApiProperty({ required: false, enum: ['active', 'suspended'] })
+  status?: string;
+
+  @ApiProperty({ required: false, type: [String] })
+  roleCodes?: readonly string[];
+
+  @ApiProperty({ required: false, type: [String] })
+  postCodes?: readonly string[];
+}

@@ -373,3 +373,63 @@ Passed after deploy:
 - No public Department DTO shape change; active tenant is derived from authenticated request context.
 - No Tenant Plan CRUD API in T3d.
 - No Redis/file/queue/WebSocket/Integration tenant propagation yet.
+
+## Round 7: T3e Active-Tenant Member Assignment
+
+### Completed
+
+- Added active-tenant member APIs:
+  - `GET /api/core/tenancy/members`;
+  - `PATCH /api/core/tenancy/members/:membershipId/assignments`.
+- Kept tenant selection server-side:
+  - controller accepts no tenant query/header selector;
+  - assignment body has `deptId`, `status`, `roleCodes`, and `postCodes` only;
+  - service resolves tenant from `RequestContext`, falling back to `tenant_root` for single-mode compatibility.
+- Added assignment validation:
+  - membership must belong to the active tenant;
+  - department must belong to the active tenant when set;
+  - role codes must resolve in the active tenant;
+  - post codes must resolve in the active tenant;
+  - duplicate role/post codes are rejected.
+- Added root bridge sync:
+  - root member status syncs to `User.enabled`;
+  - root member department syncs to `User.deptId`;
+  - root member roles/posts sync to legacy `UserRole` and `UserPost`.
+- Updated OpenAPI/SDK/Admin:
+  - `TenantMemberDto` and `UpdateTenantMemberAssignmentsDto`;
+  - SDK `TenancyClient.listMembers()` and `updateMemberAssignments()`;
+  - `/system/tenants` now shows current-tenant members and edits status, department, roles, and posts from live APIs.
+- Added verification:
+  - integration spec for active-tenant assignment and cross-tenant role rejection;
+  - `guard:tenant-member-assignment`;
+  - `smoke:core-tenant-member`;
+  - local/deploy smoke script wiring.
+
+### Verification Log
+
+Passed before deploy:
+
+- Prisma schema validation, client generation, migration deploy, and seed.
+- `pnpm prisma:seed:check`, tenant foundation/auth/RBAC/role/post/dept/member guards, and typed smoke/script typechecks.
+- OpenAPI export/check, registry tag check, and SDK contract check.
+- API tenant service integration spec; full repository lint, typecheck, and test suites.
+- Local API smoke script, including `core.tenant-member.list`, `core.tenant-member.update`, body `tenantId` ignore check, and root legacy bridge check.
+
+Passed after deploy:
+
+- Refreshed deploy on API `39172` and Admin `39174`.
+- Deploy smoke list, including public Admin UI checks and deployed API tenant member smoke.
+- Public API tenant smokes for foundation, auth, RBAC, role, post, department, and member after sourcing `.env.opencore.local`.
+
+### Remaining Product Debt
+
+- Complete T4 System/core tenant data isolation for dict, config, notice, file, audit/login logs, online sessions, and related core tables.
+- Complete T5 Redis/file/queue/WebSocket/Integration/OAuth/audit runtime propagation.
+- Complete T6 live Tenant Plan CRUD, Tenant Member CRUD/invitation, Admin switcher, platform visit mode, and platform visit audit.
+
+### Deliberate Non-Goals
+
+- No new Prisma migration in T3e; required tenant-owned membership/role/post/dept relations already existed from T1 and T3b-T3d.
+- No Tenant Member creation/invitation/deletion API in T3e.
+- No client-driven tenant switch or body/query/header tenant selector.
+- No Redis/file/queue/WebSocket/Integration tenant propagation yet.

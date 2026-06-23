@@ -3635,6 +3635,62 @@
         "tags": ["Core Tenancy"]
       }
     },
+    "/api/core/tenancy/members": {
+      "get": {
+        "operationId": "TenantMemberController_listMembers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/TenantMemberDto" }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core Tenancy"]
+      }
+    },
+    "/api/core/tenancy/members/{membershipId}/assignments": {
+      "patch": {
+        "operationId": "TenantMemberController_updateMemberAssignments",
+        "parameters": [
+          {
+            "name": "membershipId",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTenantMemberAssignmentsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TenantMemberDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core Tenancy"]
+      }
+    },
     "/api/core/dicts": {
       "get": {
         "operationId": "SystemManagementController_listDicts",
@@ -12311,6 +12367,44 @@
           "backfill",
           "generatedAt"
         ]
+      },
+      "TenantMemberDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "userId": { "type": "string" },
+          "username": { "type": "string" },
+          "displayName": { "type": "string" },
+          "status": { "type": "string", "enum": ["active", "suspended"] },
+          "isOwner": { "type": "boolean" },
+          "deptId": { "type": "string", "nullable": true },
+          "deptName": { "type": "string", "nullable": true },
+          "roleCodes": { "type": "array", "items": { "type": "string" } },
+          "postCodes": { "type": "array", "items": { "type": "string" } },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "userId",
+          "username",
+          "displayName",
+          "status",
+          "isOwner",
+          "roleCodes",
+          "postCodes",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "UpdateTenantMemberAssignmentsDto": {
+        "type": "object",
+        "properties": {
+          "deptId": { "type": "string", "nullable": true },
+          "status": { "type": "string", "enum": ["active", "suspended"] },
+          "roleCodes": { "type": "array", "items": { "type": "string" } },
+          "postCodes": { "type": "array", "items": { "type": "string" } }
+        }
       },
       "DictItemDto": {
         "type": "object",

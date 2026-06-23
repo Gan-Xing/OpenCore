@@ -265,6 +265,13 @@ run_with_env env \
   OPENCORE_SMOKE_PORT="$SMOKE_PORT" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
   run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
+    "$ROOT_DIR/tools/smoke/smoke-core-tenant-member.ts"
+
+run_with_env env \
+  OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
+  OPENCORE_SMOKE_PORT="$SMOKE_PORT" \
+  OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
+  run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
     "$ROOT_DIR/tools/smoke/smoke-core-file.ts"
 
 run_with_env env \
