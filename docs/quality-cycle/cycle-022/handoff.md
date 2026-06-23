@@ -4,7 +4,7 @@ Date: 2026-06-23
 Repository: `Gan-Xing/OpenCore`  
 Branch: `main`  
 Target track: `Cycle-022 / Tenant Foundation`  
-Status: **In progress; T6 Admin control plane has T6d Admin tenant switcher deployed and publicly smoke-verified**
+Status: **In progress; T6 Admin control plane has T6e platform visit mode deployed and publicly smoke-verified**
 
 ## 0. Current Round Snapshot
 
@@ -12,7 +12,7 @@ Updated: 2026-06-23
 
 Current completed slice count: **5 full slices**
 
-This working tree has advanced Cycle-022 through the first five full deployable tenant foundation slices plus T4a online-session tenant isolation, T4b login-log tenant isolation, T4c operation-audit tenant isolation, T4d dictionary tenant isolation, T4e system config tenant isolation, T4f file asset tenant isolation, T4g system notice tenant isolation, T5a scheduler tenant propagation, T5b Redis cache namespace isolation, T5c WebSocket runtime tenant scope, T5d BullMQ monitor queue namespace isolation, T5e Integration provider/outbox/OAuth tenant scope, T5f runtime parity audit, T6a Tenant Plan control-plane CRUD, T6b Tenant lifecycle control-plane CRUD, T6c Tenant Member lifecycle/invitation control-plane CRUD, and T6d Admin tenant switcher:
+This working tree has advanced Cycle-022 through the first five full deployable tenant foundation slices plus T4a online-session tenant isolation, T4b login-log tenant isolation, T4c operation-audit tenant isolation, T4d dictionary tenant isolation, T4e system config tenant isolation, T4f file asset tenant isolation, T4g system notice tenant isolation, T5a scheduler tenant propagation, T5b Redis cache namespace isolation, T5c WebSocket runtime tenant scope, T5d BullMQ monitor queue namespace isolation, T5e Integration provider/outbox/OAuth tenant scope, T5f runtime parity audit, T6a Tenant Plan control-plane CRUD, T6b Tenant lifecycle control-plane CRUD, T6c Tenant Member lifecycle/invitation control-plane CRUD, T6d Admin tenant switcher, and T6e platform visit mode:
 
 - Prisma models for `TenantPlan`, `TenantPlanModule`, `Tenant`, `TenantMembership`, `TenantMembershipRole`, `TenantMembershipPost`, `PlatformRole`, `UserPlatformRole`, and `PlatformRolePermission`.
 - Migration `20260622223000_tenant_foundation` creates the `root` tenant, root `system.full` plan, root memberships for existing users, and transitional root copies of `UserRole` and `UserPost`.
@@ -137,11 +137,15 @@ This working tree has advanced Cycle-022 through the first five full deployable 
 - `switchOpenCoreTenant()` persists the server-reissued token, Admin updates the current user state, and the page reloads so tenant-scoped data is refetched under the new token.
 - `guard:tenant-switcher` and `smoke:core-tenant-switcher` were added and wired into local/deploy smoke scripts for T6d; the smoke creates a temporary tenant membership, switches to it, proves the old token is revoked, and cleans up.
 - Refreshed deploy completed on API `39172` and Admin `39174`; local deploy smoke and public API Tenant Switcher smoke passed for T6d.
+- T6e adds `POST /api/auth/platform-visit` behind `platform:tenant:visit`; the service resolves the target tenant server-side, issues an `accessMode: 'platform-visit'` bearer token without a tenant membership, and revokes the previous token.
+- Platform-visit bearer authentication validates the target tenant from the token, preserves `/auth/me` as the current bearer session, and keeps ordinary APIs driven by authenticated request context rather than client-supplied tenant selectors.
+- SDK and Admin expose `visitTenantAsPlatform()` / `visitOpenCoreTenantAsPlatform()`, and `/system/tenants` adds a platform visit action for active tenants.
+- `guard:platform-visit` and `smoke:core-platform-visit` were added and wired into local/deploy smoke scripts for T6e.
+- Refreshed deploy completed on API `39172` and Admin `39174`; local deploy smoke and public API Platform Visit smoke passed for T6e.
 
 Still not complete:
 
 - tenant-scoped System/core repositories for other unreviewed non-org data;
-- platform visit mode beyond active-tenant member assignment;
 - platform visit/impersonation audit.
 
 ---
@@ -1158,7 +1162,7 @@ Remaining:
 - Tenant Plans（T6a closed list/detail/create/update/delete; change preview and tenant assignment workflows remain）；
 - Members；
 - Header switcher；
-- Platform visit mode；
+- Platform visit mode（T6e closed token/session/request-context mode; audit remains）；
 - public API/Admin smoke；
 - deploy guard。
 

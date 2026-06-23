@@ -1,6 +1,7 @@
 import {
   DeleteOutlined,
   EditOutlined,
+  LoginOutlined,
   PlusOutlined,
   ReloadOutlined,
   SafetyCertificateOutlined,
@@ -39,6 +40,7 @@ import {
   message,
 } from 'antd';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { visitOpenCoreTenantAsPlatform } from '@/services/opencore/auth';
 import {
   createOpenCoreTenant,
   createOpenCoreTenantMember,
@@ -441,6 +443,15 @@ export default function TenantsPage() {
     [formatMessage, loadSummary],
   );
 
+  const visitTenant = useCallback(async (record: TenantSummary) => {
+    await visitOpenCoreTenantAsPlatform({
+      reason: `Admin visit tenant ${record.code}`,
+      tenantId: record.id,
+    });
+    message.success(`Visiting tenant ${record.code}`);
+    window.location.reload();
+  }, []);
+
   const tenantColumns = useMemo<ProColumns<TenantSummary>[]>(
     () => [
       {
@@ -537,11 +548,22 @@ export default function TenantsPage() {
                 type="link"
               />
             </Tooltip>
+            <Tooltip title="Visit tenant">
+              <Button
+                aria-label="Visit tenant"
+                disabled={record.status !== 'active'}
+                icon={<LoginOutlined />}
+                onClick={() => {
+                  void visitTenant(record);
+                }}
+                type="link"
+              />
+            </Tooltip>
           </Space>
         ),
       },
     ],
-    [formatMessage, openTenantMembers, tenantForm],
+    [formatMessage, openTenantMembers, tenantForm, visitTenant],
   );
 
   const planColumns = useMemo<ProColumns<TenantPlanSummary>[]>(

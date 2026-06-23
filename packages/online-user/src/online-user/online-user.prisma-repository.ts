@@ -153,15 +153,16 @@ export class PrismaOnlineUserRepository extends OnlineUserRepository {
 
     if (
       !registeredSession.tenantId ||
-      !registeredSession.membershipId ||
-      !isAuthAccessMode(registeredSession.accessMode)
+      !isAuthAccessMode(registeredSession.accessMode) ||
+      (registeredSession.accessMode === 'tenant' &&
+        !registeredSession.membershipId)
     ) {
       return undefined;
     }
 
     return {
       accessMode: registeredSession.accessMode,
-      membershipId: registeredSession.membershipId,
+      membershipId: registeredSession.membershipId ?? undefined,
       tenantId: registeredSession.tenantId,
       tokenId,
     };

@@ -4,6 +4,7 @@ export {
   type LoginContext,
   type LoginResult,
   type LoginResponse,
+  type PlatformVisitTenantSelection,
   type TenantSelectionLoginResponse,
   type TenantSessionSelection,
 } from '@opencore/security';

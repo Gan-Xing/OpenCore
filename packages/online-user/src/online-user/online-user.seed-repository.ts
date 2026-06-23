@@ -96,7 +96,11 @@ export class SeedOnlineUserRepository extends OnlineUserRepository {
     assertTokenSessionActive(session);
     session.lastSeenAt = new Date().toISOString();
 
-    if (!session.tenantId || !session.membershipId || !session.accessMode) {
+    if (
+      !session.tenantId ||
+      !session.accessMode ||
+      (session.accessMode === 'tenant' && !session.membershipId)
+    ) {
       return undefined;
     }
 

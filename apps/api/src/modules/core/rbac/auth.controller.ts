@@ -21,6 +21,7 @@ import {
   LoginResultDto,
   LoginResponseDto,
   LogoutResponseDto,
+  PlatformVisitTenantRequestDto,
   SelectTenantRequestDto,
   SocialAuthFlowDto,
   SocialAuthProviderDto,
@@ -28,7 +29,7 @@ import {
   StartSocialAuthFlowDto,
   SwitchTenantRequestDto,
 } from './rbac.dto';
-import { RequireAuthenticated } from './permissions.decorator';
+import { RequireAuthenticated, RequirePermission } from './permissions.decorator';
 import { SocialAuthService } from './social-auth.service';
 import type { OAuthProviderCallbackDto } from '../../integration/integration/integration.dto';
 
@@ -109,6 +110,29 @@ export class AuthController {
     );
   }
 
+  @Post('platform-visit')
+  @ApiBearerAuth()
+  @RequirePermission('platform:tenant:visit')
+  @ApiOkResponse({ type: LoginResponseDto })
+  platformVisitTenant(
+    @Body() body: PlatformVisitTenantRequestDto,
+    @Req() request: RequestWithUser,
+  ): Promise<LoginResponseDto> {
+    return this.authService.visitTenantAsPlatform(
+      getHeaderValue(request.headers, 'authorization'),
+      {
+        reason: body.reason,
+        tenantCode: body.tenantCode,
+        tenantId: body.tenantId,
+      },
+      {
+        ip: request.ip,
+        userAgent: getHeaderValue(request.headers, 'user-agent'),
+        requestId: getRequestContext()?.requestId,
+      },
+    );
+  }
+
   @Get('me')
   @ApiBearerAuth()
   @RequireAuthenticated()
@@ -118,16 +142,8 @@ export class AuthController {
       throw authUnauthorized('AUTH_USER_MISSING', 'Missing authenticated user');
     }
 
-    return this.authService.createSessionForUser(
-      request.user.id,
-      {
-        ip: request.ip,
-        userAgent: getHeaderValue(request.headers, 'user-agent'),
-        requestId: getRequestContext()?.requestId,
-      },
-      {
-        membershipId: request.user.activeMembership?.id,
-      },
+    return this.authService.currentSession(
+      getHeaderValue(request.headers, 'authorization'),
     );
   }
 

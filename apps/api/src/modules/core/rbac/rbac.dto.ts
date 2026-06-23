@@ -79,6 +79,20 @@ export class SwitchTenantRequestDto {
   membershipId?: string;
 }
 
+export class PlatformVisitTenantRequestDto {
+  @ApiProperty({ required: false, example: 'tenant_root' })
+  tenantId?: string;
+
+  @ApiProperty({ required: false, example: 'root' })
+  tenantCode?: string;
+
+  @ApiProperty({
+    required: false,
+    example: 'Support investigation requested by tenant owner',
+  })
+  reason?: string;
+}
+
 export class AuthenticatedTenantDto {
   @ApiProperty()
   id!: string;

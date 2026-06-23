@@ -8,6 +8,7 @@ import { PrismaService } from '@opencore/database';
 import type {
   SecurityDataScopeProfile,
   SecurityDataScopeType,
+  SecurityAuthTenantRecord,
   SecurityAuthTenantMembershipLookup,
   SecurityAuthTenantMembershipRecord,
 } from '@opencore/security';
@@ -217,6 +218,19 @@ export class PrismaRbacRepository extends RbacRepository {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: {
+        platformRoles: {
+          include: {
+            platformRole: {
+              include: {
+                permissions: {
+                  include: {
+                    permission: true,
+                  },
+                },
+              },
+            },
+          },
+        },
         roles: {
           include: {
             role: {
@@ -239,13 +253,22 @@ export class PrismaRbacRepository extends RbacRepository {
 
     return [
       ...new Set(
-        user.roles.flatMap((userRole) =>
-          userRole.role.enabled
-            ? userRole.role.permissions.map(
-                (rolePermission) => rolePermission.permission.code,
-              )
-            : [],
-        ),
+        [
+          ...user.roles.flatMap((userRole) =>
+            userRole.role.enabled
+              ? userRole.role.permissions.map(
+                  (rolePermission) => rolePermission.permission.code,
+                )
+              : [],
+          ),
+          ...user.platformRoles.flatMap((userPlatformRole) =>
+            userPlatformRole.platformRole.enabled
+              ? userPlatformRole.platformRole.permissions.map(
+                  (rolePermission) => rolePermission.permission.code,
+                )
+              : [],
+          ),
+        ],
       ),
     ].sort();
   }
@@ -312,6 +335,56 @@ export class PrismaRbacRepository extends RbacRepository {
           membership.tenantCode === hostTenantCode ||
           membership.tenantSlug === hostTenantCode),
     );
+  }
+
+  override async findTenantForVisit(input: {
+    tenantCode?: string;
+    tenantHost?: string;
+    tenantId?: string;
+  }): Promise<SecurityAuthTenantRecord | undefined> {
+    const hostTenantCode = normalizeTenantHostCode(input.tenantHost);
+    const selectors = [
+      ...(input.tenantId ? [{ id: input.tenantId }] : []),
+      ...(input.tenantCode
+        ? [{ code: input.tenantCode }, { slug: input.tenantCode }]
+        : []),
+      ...(hostTenantCode
+        ? [{ code: hostTenantCode }, { slug: hostTenantCode }]
+        : []),
+    ];
+
+    if (selectors.length === 0) {
+      return undefined;
+    }
+
+    const tenant = await this.prisma.tenant.findFirst({
+      where: {
+        OR: selectors,
+      },
+      include: {
+        plan: {
+          include: {
+            modules: true,
+          },
+        },
+      },
+    });
+
+    return tenant
+      ? {
+          code: tenant.code,
+          enabledModuleCodes: [
+            ...new Set(
+              tenant.plan?.modules.map((module) => module.moduleCode) ?? [],
+            ),
+          ].sort(),
+          expiresAt: tenant.expiresAt?.toISOString(),
+          id: tenant.id,
+          name: tenant.name,
+          slug: tenant.slug,
+          status: tenant.status,
+        }
+      : undefined;
   }
 
   async getDataScopeProfileForUser(

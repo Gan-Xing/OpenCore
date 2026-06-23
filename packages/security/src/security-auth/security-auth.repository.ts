@@ -26,6 +26,16 @@ export type SecurityAuthTenantMembershipRecord = {
   permissionCodes?: readonly string[];
 };
 
+export type SecurityAuthTenantRecord = {
+  id: string;
+  code: string;
+  slug: string;
+  name: string;
+  status: string;
+  expiresAt?: string;
+  enabledModuleCodes: readonly string[];
+};
+
 export type SecurityAuthTenantMembershipLookup = {
   userId: string;
   membershipId?: string;
@@ -93,7 +103,7 @@ export type SecurityAuthSessionRecord = {
   username: string;
   tokenId: string;
   tenantId: string;
-  membershipId: string;
+  membershipId?: string;
   accessMode: SecurityTenantAccessMode;
   ip: string;
   userAgent: string;
@@ -239,21 +249,53 @@ export abstract class SecurityAuthUserRepository {
           membership.tenantSlug === hostTenantCode),
     );
   }
+
+  async findTenantForVisit(
+    input: Pick<
+      SecurityAuthTenantMembershipLookup,
+      'tenantCode' | 'tenantHost' | 'tenantId'
+    >,
+  ): Promise<SecurityAuthTenantRecord | undefined> {
+    const hostTenantCode = normalizeTenantHostCode(input.tenantHost);
+
+    if (
+      input.tenantId === 'tenant_root' ||
+      input.tenantCode === 'root' ||
+      hostTenantCode === 'root'
+    ) {
+      return createDefaultRootTenantRecord();
+    }
+
+    return undefined;
+  }
 }
 
 function createDefaultRootTenantMembership(
   userId: string,
 ): SecurityAuthTenantMembershipRecord {
+  const tenant = createDefaultRootTenantRecord();
+
   return {
     enabledModuleCodes: [],
     isOwner: userId === 'user_admin',
     membershipId: `tenant_membership_root_${userId}`,
     membershipStatus: 'active',
-    tenantCode: 'root',
-    tenantId: 'tenant_root',
-    tenantName: 'Root Tenant',
-    tenantSlug: 'root',
-    tenantStatus: 'active',
+    tenantCode: tenant.code,
+    tenantId: tenant.id,
+    tenantName: tenant.name,
+    tenantSlug: tenant.slug,
+    tenantStatus: tenant.status,
+  };
+}
+
+function createDefaultRootTenantRecord(): SecurityAuthTenantRecord {
+  return {
+    code: 'root',
+    enabledModuleCodes: [],
+    id: 'tenant_root',
+    name: 'Root Tenant',
+    slug: 'root',
+    status: 'active',
   };
 }
 

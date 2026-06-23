@@ -34,7 +34,7 @@ export type VerifiedSecurityBearerToken = {
 export type SecurityBearerSessionSubject = {
   subject: string;
   tenantId: string;
-  membershipId: string;
+  membershipId?: string;
   accessMode: SecurityTenantAccessMode;
 };
 

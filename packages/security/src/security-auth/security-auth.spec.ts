@@ -227,6 +227,54 @@ describe('@opencore/security security-auth', () => {
     });
   });
 
+  it('issues platform visit sessions without tenant membership', async () => {
+    const repository = new PlatformVisitSecurityAuthUserRepository();
+    const sessions = new InMemorySecurityAuthSessionRepository();
+    const service = new SecurityAuthService(
+      repository,
+      new InMemorySecurityLoginAttemptRecorder(),
+      sessions,
+    );
+
+    const rootSession = expectAuthenticated(
+      await service.login('admin', 'admin123'),
+    );
+    const rootTokenId = sessions.records[0].tokenId;
+    const visitSession = await service.visitTenantAsPlatform(
+      `Bearer ${rootSession.accessToken}`,
+      {
+        reason: 'support check',
+        tenantCode: 'beta',
+      },
+    );
+
+    expect(visitSession.user).toMatchObject({
+      accessMode: 'platform-visit',
+      activeMembership: undefined,
+      activeTenant: expect.objectContaining({ code: 'beta' }),
+      permissionCodes: expect.arrayContaining(['platform:tenant:visit']),
+    });
+    expect(sessions.records.at(-1)).toEqual(
+      expect.objectContaining({
+        accessMode: 'platform-visit',
+        tenantId: 'tenant_beta',
+      }),
+    );
+    expect(sessions.records.at(-1)).not.toHaveProperty('membershipId');
+    expect(sessions.revocations).toContainEqual({
+      actor: 'admin',
+      reason: 'platform tenant visit: support check',
+      tokenId: rootTokenId,
+    });
+    await expect(
+      service.authenticateBearer(`Bearer ${visitSession.accessToken}`),
+    ).resolves.toMatchObject({
+      accessMode: 'platform-visit',
+      activeMembership: undefined,
+      activeTenant: expect.objectContaining({ code: 'beta' }),
+    });
+  });
+
   it('rejects invalid credentials and disabled users', async () => {
     const repository = new InMemorySecurityAuthUserRepository();
     const loginAttempts = new InMemorySecurityLoginAttemptRecorder();
@@ -399,6 +447,30 @@ class MultiTenantSecurityAuthUserRepository extends InMemorySecurityAuthUserRepo
         tenantStatus: 'active',
       },
     ];
+  }
+}
+
+class PlatformVisitSecurityAuthUserRepository extends InMemorySecurityAuthUserRepository {
+  override async getPermissionCodesForUser(): Promise<string[]> {
+    return ['core:dashboard:read', 'platform:tenant:visit'];
+  }
+
+  override async findTenantForVisit(input: {
+    tenantCode?: string;
+    tenantId?: string;
+  }) {
+    if (input.tenantCode === 'beta' || input.tenantId === 'tenant_beta') {
+      return {
+        code: 'beta',
+        enabledModuleCodes: ['core.dashboard'],
+        id: 'tenant_beta',
+        name: 'Beta',
+        slug: 'beta',
+        status: 'active',
+      };
+    }
+
+    return super.findTenantForVisit(input);
   }
 }
 

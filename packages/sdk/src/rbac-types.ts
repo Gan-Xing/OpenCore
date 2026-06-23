@@ -69,6 +69,12 @@ export type SwitchTenantRequest = {
   membershipId?: string;
 };
 
+export type PlatformVisitTenantRequest = {
+  tenantId?: string;
+  tenantCode?: string;
+  reason?: string;
+};
+
 export type LogoutResponse = {
   loggedOut: true;
 };

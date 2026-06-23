@@ -115,6 +115,34 @@
         "tags": ["Auth"]
       }
     },
+    "/api/auth/platform-visit": {
+      "post": {
+        "operationId": "AuthController_platformVisitTenant",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlatformVisitTenantRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LoginResponseDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Auth"]
+      }
+    },
     "/api/auth/me": {
       "get": {
         "operationId": "AuthController_me",
@@ -10758,6 +10786,17 @@
           "tenantId": { "type": "string", "example": "tenant_root" },
           "tenantCode": { "type": "string", "example": "root" },
           "membershipId": { "type": "string" }
+        }
+      },
+      "PlatformVisitTenantRequestDto": {
+        "type": "object",
+        "properties": {
+          "tenantId": { "type": "string", "example": "tenant_root" },
+          "tenantCode": { "type": "string", "example": "root" },
+          "reason": {
+            "type": "string",
+            "example": "Support investigation requested by tenant owner"
+          }
         }
       },
       "LogoutResponseDto": {

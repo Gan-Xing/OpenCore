@@ -1154,3 +1154,41 @@ Passed after deploy:
 - No front-end-only tenant mutation; the switcher always uses server token reissue.
 - No platform visit/impersonation runtime in T6d.
 - No tenant switch without reload; reload is the minimal reliable boundary for clearing stale tenant-scoped Admin state.
+
+## Round 25: T6e Platform Visit Mode
+
+### Completed
+
+- Added explicit platform visit authentication:
+  - `POST /api/auth/platform-visit` is protected by `platform:tenant:visit`;
+  - the service resolves the target tenant server-side by id/code/slug/host selector;
+  - platform visit tokens use `accessMode: 'platform-visit'` and carry the target tenant id without creating a tenant membership.
+- Updated bearer/session handling so platform visit sessions validate active tenant status, allow a missing membership id only for platform visit, and keep ordinary API tenant scope derived from the authenticated request context.
+- Changed `/auth/me` to return the current bearer session instead of silently reissuing a tenant token, preserving platform visit mode for Admin and SDK callers.
+- Added SDK/Admin wiring:
+  - SDK `visitTenantAsPlatform()`;
+  - Admin `visitOpenCoreTenantAsPlatform()`;
+  - `/system/tenants` active-tenant visit action that stores the returned token and reloads tenant-scoped state.
+- Added `smoke:core-platform-visit` and `guard:platform-visit`, and wired the smoke into local/deploy smoke scripts.
+
+### Verification Log
+
+Passed before deploy:
+
+- Platform visit guard, typed smoke compilation, focused SDK auth client tests, security auth tests, focused security/online-user/API/Admin typechecks, OpenAPI export/drift/tag checks, SDK generation check, full typecheck, full lint, and full test suite passed.
+
+Passed after deploy:
+
+- Refreshed OpenCore deploy rebuilt API/Admin, reseeded, restarted API `39172` and Admin `39174`, and passed deploy smoke including local Platform Visit checks.
+- Public API Platform Visit smoke passed against `http://144.217.243.161:39172`.
+
+### Remaining Product Debt
+
+- Complete platform visit/impersonation audit.
+- Complete T7 optional/business model tenantization.
+
+### Deliberate Non-Goals
+
+- No membership is created for platform visit mode.
+- No front-end-only tenant mutation; platform visit always uses server token issue.
+- No dedicated platform visit audit row yet; this round only records the old-token revocation reason and leaves full impersonation audit to the remaining T6 audit work.

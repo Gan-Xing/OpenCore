@@ -16,6 +16,10 @@ describe('createRbacClient', () => {
     await client.login({ username: 'admin', password: 'admin123' });
     await client.selectTenant({ loginTicket: 'ticket', tenantCode: 'root' });
     await client.switchTenant('token', { tenantCode: 'root' });
+    await client.visitTenantAsPlatform('token', {
+      reason: 'support',
+      tenantId: 'tenant_beta',
+    });
     await client.me('token');
     await client.logout('token');
     await client.listSocialAuthProviders();
@@ -150,6 +154,7 @@ describe('createRbacClient', () => {
       { path: '/auth/login', method: 'POST' },
       { path: '/auth/select-tenant', method: 'POST' },
       { path: '/auth/switch-tenant', method: 'POST', token: 'token' },
+      { path: '/auth/platform-visit', method: 'POST', token: 'token' },
       { path: '/auth/me', token: 'token' },
       { path: '/auth/logout', method: 'POST', token: 'token' },
       { path: '/auth/social/providers' },

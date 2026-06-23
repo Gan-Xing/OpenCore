@@ -7,6 +7,7 @@ import {
   type LoginResult,
   type LoginResponse,
   type LogoutResponse,
+  type PlatformVisitTenantRequest,
   type SocialAuthFlowSummary,
   type SocialAuthProviderSummary,
   type SocialAuthResultSummary,
@@ -72,6 +73,17 @@ export async function switchOpenCoreTenant(
   body: SwitchTenantRequest,
 ): Promise<AdminCurrentUser> {
   const session = await authClient.switchTenant(getRequiredAdminToken(), body);
+  setAdminToken(session.accessToken);
+  return toAdminCurrentUser(session.user);
+}
+
+export async function visitOpenCoreTenantAsPlatform(
+  body: PlatformVisitTenantRequest,
+): Promise<AdminCurrentUser> {
+  const session = await authClient.visitTenantAsPlatform(
+    getRequiredAdminToken(),
+    body,
+  );
   setAdminToken(session.accessToken);
   return toAdminCurrentUser(session.user);
 }

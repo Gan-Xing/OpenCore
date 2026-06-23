@@ -24,7 +24,6 @@ Cycle-022 may only count a slice when it is code-backed, migrated, seeded, visib
 ## Below Waterline
 
 - Platform visit/impersonation is not done.
-- Platform visit mode is not done.
 - Remaining optional/business data-plane isolation is not done.
 
 These remain below the productization waterline and cannot be described as complete SaaS multi-tenancy.
@@ -120,7 +119,7 @@ These remain below the productization waterline and cannot be described as compl
 | No trusted tenant selector    | Done    | Create/update DTOs and controller paths have no client-controlled tenant selector; plan control is platform-scoped.                       |
 | OpenAPI/SDK/Admin consistency | Done    | OpenAPI exports plan DTOs; SDK exposes typed plan CRUD calls; `/system/tenants` uses live plan APIs for list/create/edit/delete.          |
 | Smoke/guard                   | Done    | Added `smoke:core-tenant-plan` and `guard:tenant-plan-control-plane`, both wired into local/deploy smoke scripts.                         |
-| Remaining T6 scope            | Pending | Tenant lifecycle was later closed by T6b and Tenant Member lifecycle by T6c; tenant switcher, platform visit mode, and platform visit audit remain separate T6 work. |
+| Remaining T6 scope            | Pending | Tenant lifecycle was later closed by T6b, Tenant Member lifecycle by T6c, tenant switcher by T6d, and platform visit mode by T6e; platform visit audit remains separate T6 work. |
 
 ## T6b Tenant Lifecycle Control Plane
 
@@ -132,7 +131,7 @@ These remain below the productization waterline and cannot be described as compl
 | No trusted tenant selector      | Done    | Create/update DTOs and controller paths have no client-controlled tenant selector; tenant control is platform-scoped.                     |
 | OpenAPI/SDK/Admin consistency   | Done    | OpenAPI exports tenant DTOs; SDK exposes typed tenant lifecycle calls; `/system/tenants` uses live APIs for tenant list/create/edit/status. |
 | Smoke/guard                     | Done    | Added `smoke:core-tenant-lifecycle` and `guard:tenant-lifecycle-control-plane`, both wired into local/deploy smoke scripts.               |
-| Remaining T6 scope              | Pending | Tenant Member lifecycle was later closed by T6c; tenant switcher, platform visit mode, and platform visit audit remain separate T6 work. |
+| Remaining T6 scope              | Pending | Tenant Member lifecycle was later closed by T6c, tenant switcher by T6d, and platform visit mode by T6e; platform visit audit remains separate T6 work. |
 
 ## T6c Tenant Member Lifecycle Control Plane
 
@@ -145,7 +144,7 @@ These remain below the productization waterline and cannot be described as compl
 | No trusted tenant selector        | Done   | Tenant control is bound to the platform path parameter; create/update DTOs have no body/query/header tenant selector.                     |
 | OpenAPI/SDK/Admin consistency     | Done   | OpenAPI exports member lifecycle DTOs; SDK exposes tenant member lifecycle calls; `/system/tenants` opens a live member control modal.     |
 | Smoke/guard                       | Done   | Added `smoke:core-tenant-member-lifecycle` and `guard:tenant-member-control-plane`, both wired into local/deploy smoke scripts.           |
-| Remaining T6 scope                | Pending | Tenant switcher was later closed by T6d; platform visit mode and platform visit audit remain separate T6 work.                             |
+| Remaining T6 scope                | Pending | Tenant switcher was later closed by T6d and platform visit mode by T6e; platform visit audit remains separate T6 work.                     |
 
 ## T6d Admin Tenant Switcher
 
@@ -155,7 +154,19 @@ These remain below the productization waterline and cannot be described as compl
 | Server token reissue         | Done   | Switcher calls SDK `switchTenant` through `switchOpenCoreTenant`, persists the returned token, and never mutates tenant context client-side. |
 | Tenant state reload          | Done   | Admin updates current user/permission state and reloads the page so tenant-scoped screens refetch with the new bearer token.                |
 | Smoke/guard                  | Done   | Added `smoke:core-tenant-switcher` and `guard:tenant-switcher`, both wired into local/deploy smoke scripts.                                 |
-| Remaining T6 scope           | Pending | Platform visit mode and platform visit audit remain separate T6 work.                                                                       |
+| Remaining T6 scope           | Pending | Platform visit mode was later closed by T6e; platform visit audit remains separate T6 work.                                                  |
+
+## T6e Platform Visit Mode
+
+| Requirement                     | Status | Notes                                                                                                                                       |
+| ------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Explicit platform visit API      | Done   | Added `POST /api/auth/platform-visit` behind `platform:tenant:visit`.                                                                       |
+| Server-resolved tenant context   | Done   | The request accepts tenant id/code selectors, but the service resolves the tenant through the repository and validates status before signing. |
+| Membership-less visit token      | Done   | Platform visit tokens carry `accessMode: 'platform-visit'` and target `tenantId` without creating or requiring `TenantMembership`.          |
+| Bearer/session validation        | Done   | Bearer auth validates target tenant status, online sessions allow missing membership only for platform visit, and `/auth/me` preserves mode. |
+| OpenAPI/SDK/Admin consistency    | Done   | OpenAPI exports the request DTO, SDK exposes `visitTenantAsPlatform()`, and `/system/tenants` includes an active-tenant visit action.        |
+| Smoke/guard                      | Done   | Added `smoke:core-platform-visit` and `guard:platform-visit`, both wired into local/deploy smoke scripts.                                    |
+| Remaining T6 scope               | Pending | Platform visit/impersonation audit remains separate T6 work.                                                                                |
 
 ## T4a Audit
 

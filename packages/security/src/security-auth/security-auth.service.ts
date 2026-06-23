@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { createApiErrorBody } from '@opencore/common';
 import {
   AllowAllSecurityAuthSessionRepository,
@@ -17,6 +21,7 @@ import {
   type SecurityAuthUserRecord,
   type SecurityAuthTenantMembershipLookup,
   type SecurityAuthTenantMembershipRecord,
+  type SecurityAuthTenantRecord,
   type SecurityAuthSessionContext,
   type SecurityTenantAccessMode,
 } from './security-auth.repository';
@@ -86,6 +91,13 @@ export type TenantSessionSelection = Pick<
   SecurityAuthTenantMembershipLookup,
   'membershipId' | 'tenantCode' | 'tenantHost' | 'tenantId'
 >;
+
+export type PlatformVisitTenantSelection = Pick<
+  SecurityAuthTenantMembershipLookup,
+  'tenantCode' | 'tenantHost' | 'tenantId'
+> & {
+  reason?: string;
+};
 
 export type LogoutResponse = {
   loggedOut: true;
@@ -217,6 +229,39 @@ export class SecurityAuthService {
     return session;
   }
 
+  async visitTenantAsPlatform(
+    authorization: string | undefined,
+    selection: PlatformVisitTenantSelection,
+    context: LoginContext = {},
+  ): Promise<LoginResponse> {
+    const token = this.bearerTokens.verifyAuthorizationToken(authorization);
+    const currentUser = await this.authenticateBearer(authorization);
+
+    if (!currentUser.permissionCodes.includes('platform:tenant:visit')) {
+      throw new ForbiddenException(
+        createApiErrorBody({
+          code: 'AUTH_PLATFORM_VISIT_FORBIDDEN',
+          message: 'Missing permission: platform:tenant:visit',
+        }),
+      );
+    }
+
+    const tenant = await this.repository.findTenantForVisit(selection);
+    this.assertUsableTenant(tenant);
+    const session = await this.issuePlatformVisitSession(
+      await this.assertActiveUser(currentUser.id),
+      tenant,
+      context,
+    );
+
+    await this.sessions.revokeSession(token.tokenId, {
+      actor: currentUser.username,
+      reason: `platform tenant visit: ${selection.reason?.trim() || tenant.code}`,
+    });
+
+    return session;
+  }
+
   private async issueSession(
     user: SecurityAuthUserRecord,
     membership: SecurityAuthTenantMembershipRecord,
@@ -257,6 +302,45 @@ export class SecurityAuthService {
     };
   }
 
+  private async issuePlatformVisitSession(
+    user: SecurityAuthUserRecord,
+    tenant: SecurityAuthTenantRecord,
+    context: LoginContext,
+  ): Promise<LoginResponse> {
+    const token = this.bearerTokens.signSession({
+      accessMode: 'platform-visit',
+      subject: user.id,
+      tenantId: tenant.id,
+    });
+    const authenticatedUser = await this.toAuthenticatedUser(
+      user.id,
+      undefined,
+      'platform-visit',
+      tenant,
+    );
+    const issuedAt = new Date().toISOString();
+
+    await this.sessions.registerSession({
+      accessMode: 'platform-visit',
+      tenantId: tenant.id,
+      userId: user.id,
+      username: authenticatedUser.username,
+      tokenId: token.tokenId,
+      ip: context.ip ?? 'unknown',
+      userAgent: context.userAgent ?? 'unknown',
+      lastSeenAt: issuedAt,
+      expiresAt: token.expiresAt,
+    });
+
+    return {
+      accessToken: token.accessToken,
+      tokenType: token.tokenType,
+      expiresInSeconds: token.expiresInSeconds,
+      status: 'authenticated',
+      user: authenticatedUser,
+    };
+  }
+
   async authenticateBearer(
     authorization: string | undefined,
   ): Promise<AuthenticatedUser> {
@@ -264,6 +348,19 @@ export class SecurityAuthService {
     const session = await this.sessions.assertSessionActive(token.tokenId);
     this.assertTokenTenantContext(token);
     this.assertSessionTenantContext(token, session);
+    if (token.accessMode === 'platform-visit') {
+      const tenant = await this.repository.findTenantForVisit({
+        tenantId: token.tenantId,
+      });
+      this.assertUsableTenant(tenant);
+      return this.toAuthenticatedUser(
+        token.subject,
+        undefined,
+        token.accessMode,
+        tenant,
+      );
+    }
+
     const membership = await this.repository.findTenantMembershipForUser({
       membershipId: token.membershipId,
       tenantId: token.tenantId,
@@ -276,6 +373,24 @@ export class SecurityAuthService {
       membership,
       token.accessMode,
     );
+  }
+
+  async currentSession(
+    authorization: string | undefined,
+  ): Promise<LoginResponse> {
+    const token = this.bearerTokens.verifyAuthorizationToken(authorization);
+    const user = await this.authenticateBearer(authorization);
+
+    return {
+      accessToken: extractBearerToken(authorization),
+      expiresInSeconds: Math.max(
+        0,
+        Math.floor((Date.parse(token.expiresAt) - Date.now()) / 1000),
+      ),
+      status: 'authenticated',
+      tokenType: 'Bearer',
+      user,
+    };
   }
 
   async logout(
@@ -309,6 +424,7 @@ export class SecurityAuthService {
     userId: string,
     activeMembership?: SecurityAuthTenantMembershipRecord,
     accessMode: SecurityTenantAccessMode = 'tenant',
+    activeTenant?: SecurityAuthTenantRecord,
   ): Promise<AuthenticatedUser> {
     const user = await this.assertActiveUser(userId);
     const memberships = await this.listUsableTenantMemberships(user.id);
@@ -324,8 +440,13 @@ export class SecurityAuthService {
         : undefined,
       activeTenant: activeMembership
         ? toAuthenticatedTenant(activeMembership)
-        : undefined,
-      enabledModuleCodes: activeMembership?.enabledModuleCodes ?? [],
+        : activeTenant
+          ? toAuthenticatedTenantRecord(activeTenant)
+          : undefined,
+      enabledModuleCodes:
+        activeMembership?.enabledModuleCodes ??
+        activeTenant?.enabledModuleCodes ??
+        [],
       id: user.id,
       username: user.username,
       displayName: user.displayName,
@@ -434,10 +555,19 @@ export class SecurityAuthService {
     >,
   ): asserts token is {
     accessMode: SecurityTenantAccessMode;
-    membershipId: string;
+    membershipId?: string;
     tenantId: string;
   } {
-    if (!token.accessMode || !token.membershipId || !token.tenantId) {
+    if (!token.accessMode || !token.tenantId) {
+      throw new UnauthorizedException(
+        createApiErrorBody({
+          code: 'AUTH_TENANT_CONTEXT_MISSING',
+          message: 'Bearer token is missing tenant context',
+        }),
+      );
+    }
+
+    if (token.accessMode === 'tenant' && !token.membershipId) {
       throw new UnauthorizedException(
         createApiErrorBody({
           code: 'AUTH_TENANT_CONTEXT_MISSING',
@@ -450,7 +580,7 @@ export class SecurityAuthService {
   private assertSessionTenantContext(
     token: {
       accessMode: SecurityTenantAccessMode;
-      membershipId: string;
+      membershipId?: string;
       tenantId: string;
       tokenId: string;
     },
@@ -479,6 +609,14 @@ export class SecurityAuthService {
     membership: SecurityAuthTenantMembershipRecord | undefined,
   ): asserts membership is SecurityAuthTenantMembershipRecord {
     if (!isUsableTenantMembership(membership)) {
+      throw tenantUnavailableError();
+    }
+  }
+
+  private assertUsableTenant(
+    tenant: SecurityAuthTenantRecord | undefined,
+  ): asserts tenant is SecurityAuthTenantRecord {
+    if (!isUsableTenant(tenant)) {
       throw tenantUnavailableError();
     }
   }
@@ -601,6 +739,12 @@ function normalizeLoginUsername(username: string): string {
   return username.trim();
 }
 
+function extractBearerToken(authorization: string | undefined): string {
+  return authorization?.startsWith('Bearer ')
+    ? authorization.slice('Bearer '.length)
+    : '';
+}
+
 function invalidCredentialsError(): UnauthorizedException {
   return new UnauthorizedException(
     createApiErrorBody({
@@ -652,6 +796,16 @@ function isUsableTenantMembership(
   );
 }
 
+function isUsableTenant(
+  tenant: SecurityAuthTenantRecord | undefined,
+): tenant is SecurityAuthTenantRecord {
+  if (!tenant || tenant.status !== 'active') {
+    return false;
+  }
+
+  return !tenant.expiresAt || tenant.expiresAt > new Date().toISOString();
+}
+
 function toAuthenticatedTenant(
   membership: SecurityAuthTenantMembershipRecord,
 ): AuthenticatedTenant {
@@ -661,6 +815,18 @@ function toAuthenticatedTenant(
     name: membership.tenantName,
     slug: membership.tenantSlug,
     status: membership.tenantStatus,
+  };
+}
+
+function toAuthenticatedTenantRecord(
+  tenant: SecurityAuthTenantRecord,
+): AuthenticatedTenant {
+  return {
+    code: tenant.code,
+    id: tenant.id,
+    name: tenant.name,
+    slug: tenant.slug,
+    status: tenant.status,
   };
 }
 

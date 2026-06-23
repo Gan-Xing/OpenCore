@@ -33,6 +33,8 @@ export default {
     'The session is missing tenant context. Please sign in again.',
   'error.AUTH_TENANT_UNAVAILABLE':
     'No active tenant membership is available for this account.',
+  'error.AUTH_PLATFORM_VISIT_FORBIDDEN':
+    'Your account cannot visit tenants as a platform administrator.',
   'error.SECURITY_LOGIN_LOCKOUT_OCCURRED_AT_INVALID':
     'The login lockout attempt time is invalid.',
   'error.SECURITY_LOGIN_LOCKOUT_POLICY_INVALID':

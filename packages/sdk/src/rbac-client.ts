@@ -18,6 +18,7 @@ import type {
   LoginResponse,
   LogoutResponse,
   MenuSummary,
+  PlatformVisitTenantRequest,
   PermissionSummary,
   RbacDeleteResult,
   RbacExportPreview,
@@ -69,6 +70,10 @@ export type RbacClient = {
   switchTenant: (
     token: string,
     request: SwitchTenantRequest,
+  ) => Promise<LoginResponse>;
+  visitTenantAsPlatform: (
+    token: string,
+    request: PlatformVisitTenantRequest,
   ) => Promise<LoginResponse>;
   me: (token: string) => Promise<LoginResponse>;
   logout: (token: string) => Promise<LogoutResponse>;
@@ -231,6 +236,12 @@ export function createRbacClient(request: SdkRequest): RbacClient {
       }),
     switchTenant: (token, body) =>
       request<LoginResponse>('/auth/switch-tenant', {
+        method: 'POST',
+        body,
+        token,
+      }),
+    visitTenantAsPlatform: (token, body) =>
+      request<LoginResponse>('/auth/platform-visit', {
         method: 'POST',
         body,
         token,
