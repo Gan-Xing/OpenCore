@@ -129,6 +129,7 @@
     "guard:admin-live-only": "pnpm scripts:ts tools/scripts/admin-fallback-closure-guard.ts",
     "guard:admin-fallback-closure": "pnpm scripts:ts tools/scripts/admin-fallback-closure-guard.ts --manifest tools/guards/system-admin-live-only.guard.json",
     "guard:tenant-auth": "pnpm scripts:ts tools/scripts/check-tenant-auth.ts",
+    "guard:tenant-business-domain-admission": "pnpm scripts:ts tools/scripts/check-tenant-business-domain-admission.ts",
     "guard:tenant-collaboration-message-scope": "pnpm scripts:ts tools/scripts/check-tenant-collaboration-message-scope.ts",
     "guard:tenant-collaboration-notice-scope": "pnpm scripts:ts tools/scripts/check-tenant-collaboration-notice-scope.ts",
     "guard:tenant-collaboration-approval-scope": "pnpm scripts:ts tools/scripts/check-tenant-collaboration-approval-scope.ts",

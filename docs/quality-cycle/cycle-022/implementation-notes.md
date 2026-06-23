@@ -1576,7 +1576,7 @@ Passed after deploy:
 
 ### Remaining Product Debt
 
-- T7 remains partial for future CRM/ERP/Mall/AI business domains.
+- T7 was later closed for the current codebase by the T7f business-domain admission guard; future CRM/ERP/Mall/AI/payment domains require a new tenant-owned admission cycle.
 - Legacy `User.deptId`, `UserRole`, and `UserPost` remain compatibility surfaces only for root/single-mode flows; new non-root features must use membership-scoped relations.
 
 ### Deliberate Non-Goals
@@ -1584,3 +1584,36 @@ Passed after deploy:
 - No new Admin UI was added; the public user form behavior is unchanged except that foreign-tenant legacy department ids are rejected.
 - No ordinary API gained a client-supplied tenant selector.
 - No future business-domain tenantization was started in this round.
+
+## Round 37: T7f Business-Domain Admission Guard
+
+### Completed
+
+- Added `guard:tenant-business-domain-admission` to lock the final Cycle-022 scope boundary:
+  - current Prisma schema must not contain unadmitted CRM/ERP/Mall/AI/payment business-domain models;
+  - module registry must keep forbidden P4/P5 prefixes out of the SaaS foundation registry;
+  - OpenForge manual schema validation must continue rejecting forbidden business-domain module prefixes.
+- Closed T7 for the current OpenCore codebase without inventing empty CRM/ERP/Mall/AI modules.
+- Updated Cycle-022 backlog, acceptance matrix, waterline audit, and handoff to mark future business domains as out-of-cycle and admission-controlled rather than pending in this cycle.
+
+### Verification Log
+
+Passed locally before deploy:
+
+- T7f admission guard, documentation quality check, Prisma schema validation, seed typecheck, typed smoke compilation, OpenAPI export/check, SDK check, registry tag check, full typecheck, full test, and full lint all passed.
+
+Passed after deploy:
+
+- Refreshed deploy completed on API `39172` and Admin `39174`.
+- Public `smoke:tool-openforge` passed against `http://144.217.243.161:39172`.
+- Public tenant-auth smoke exited cleanly against `http://144.217.243.161:39172`.
+
+### Remaining Product Debt
+
+- Future CRM/ERP/Mall/AI/payment domains still require a new tenant-owned domain plan before any implementation starts.
+- The active worktree has unrelated Admin modifications outside this slice plus `.opencore/storage/`; Cycle-022 cannot be marked complete while the handoff stop condition still requires a clean worktree.
+
+### Deliberate Non-Goals
+
+- No placeholder business modules, tables, routes, Admin pages, or SDK clients were added.
+- No payment runtime was added; the existing Integration payment design page remains documentation/design surface only.

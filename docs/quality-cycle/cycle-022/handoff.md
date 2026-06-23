@@ -4,15 +4,15 @@ Date: 2026-06-23
 Repository: `Gan-Xing/OpenCore`  
 Branch: `main`  
 Target track: `Cycle-022 / Tenant Foundation`  
-Status: **In progress; T3g/T4i root-only legacy User org bridge is deployed and smoke-verified**
+Status: **In progress; Cycle-022 V1 code is deployed and smoke-verified, but the clean-worktree stop condition is not met because unrelated Admin changes remain**
 
 ## 0. Current Round Snapshot
 
 Updated: 2026-06-23
 
-Current completed slice count: **7 full slices**
+Current completed slice count: **8 full slices**
 
-This working tree has advanced Cycle-022 through seven full deployable tenant foundation slices plus T2 server-side host tenant resolution, T3f tenant-plan menu surface scope, T3g/T4i root-only legacy User org bridge hardening, T4a online-session tenant isolation, T4b login-log tenant isolation, T4c operation-audit tenant isolation, T4d dictionary tenant isolation, T4e system config tenant isolation, T4f file asset tenant isolation, T4g system notice tenant isolation, T4h login lockout tenant isolation, T5a scheduler tenant propagation, T5b Redis cache namespace isolation, T5c WebSocket runtime tenant scope, T5d BullMQ monitor queue namespace isolation, T5e Integration provider/outbox/OAuth tenant scope, T5f runtime parity audit, T6a Tenant Plan control-plane CRUD, T6b Tenant lifecycle control-plane CRUD, T6c Tenant Member lifecycle/invitation control-plane CRUD, T6d Admin tenant switcher, T6e platform visit mode, T6f platform visit audit, T7a Collaboration Message tenant isolation, T7b Collaboration Notice tenant isolation, T7c Collaboration Todo tenant isolation, T7d Collaboration Approval Lite tenant isolation, and T7e ReportDefinition tenant isolation:
+This working tree has advanced Cycle-022 through eight full deployable tenant foundation slices plus T2 server-side host tenant resolution, T3f tenant-plan menu surface scope, T3g/T4i root-only legacy User org bridge hardening, T4a online-session tenant isolation, T4b login-log tenant isolation, T4c operation-audit tenant isolation, T4d dictionary tenant isolation, T4e system config tenant isolation, T4f file asset tenant isolation, T4g system notice tenant isolation, T4h login lockout tenant isolation, T5a scheduler tenant propagation, T5b Redis cache namespace isolation, T5c WebSocket runtime tenant scope, T5d BullMQ monitor queue namespace isolation, T5e Integration provider/outbox/OAuth tenant scope, T5f runtime parity audit, T6a Tenant Plan control-plane CRUD, T6b Tenant lifecycle control-plane CRUD, T6c Tenant Member lifecycle/invitation control-plane CRUD, T6d Admin tenant switcher, T6e platform visit mode, T6f platform visit audit, T7a Collaboration Message tenant isolation, T7b Collaboration Notice tenant isolation, T7c Collaboration Todo tenant isolation, T7d Collaboration Approval Lite tenant isolation, T7e ReportDefinition tenant isolation, and T7f business-domain admission guard:
 
 - Prisma models for `TenantPlan`, `TenantPlanModule`, `Tenant`, `TenantMembership`, `TenantMembershipRole`, `TenantMembershipPost`, `PlatformRole`, `UserPlatformRole`, and `PlatformRolePermission`.
 - Migration `20260622223000_tenant_foundation` creates the `root` tenant, root `system.full` plan, root memberships for existing users, and transitional root copies of `UserRole` and `UserPost`.
@@ -178,15 +178,17 @@ This working tree has advanced Cycle-022 through seven full deployable tenant fo
 - ReportDefinition seed records, OpenAPI DTO, SDK summary fixture, and Admin Reports now expose `tenantId`.
 - `smoke:core-operations-reports` seeds a foreign tenant report and proves root-scope list/detail do not cross tenants; `guard:tenant-report-definition-scope` locks the slice markers.
 - Refreshed deploy completed on API `39172` and Admin `39174`; local deploy smoke and public API ReportDefinition tenant isolation smoke passed for T7e.
+- T7f business-domain admission guard proves the current Prisma schema has no CRM/ERP/Mall/AI/payment business models and locks module-registry/OpenForge forbidden prefixes (`industry.*`, `integration.pay`, `ai.*`) so future domains cannot enter Cycle-022 without a tenant-owned domain plan; refreshed deploy completed on API `39172` and Admin `39174`, public `smoke:tool-openforge` passed, and public tenant-auth smoke exited cleanly.
 - T2 host/domain login hardening removes public `tenantHost` from Login DTO/OpenAPI/SDK, derives the value only from server-observed `X-Forwarded-Host`/`Host`, and extends `smoke:core-tenancy-auth` plus `guard:tenant-auth` to prove a host-derived login signs a token for the matching tenant slug.
 - Refreshed deploy completed on API `39172` and Admin `39174`; public `smoke:core-tenancy-auth` passed against `http://144.217.243.161:39172` for the T2b host/domain login closure.
 - T3f tenant-plan menu surface scope filters `/core/menus`, menu detail/export, and role-menu assignment by the active token's `enabledModuleCodes`; refreshed deploy completed on API `39172` and Admin `39174`, and public `smoke:core-menu` proves a tenant without `core.user` cannot see, detail, or assign `system.users`.
 - T4h tenant-scoped login lockouts key failed username counters by `(tenantId, username)`, treat localhost/IP platform hosts as no tenant selector for root fallback, and keep root unlock/login from clearing tenant-specific lockouts; refreshed deploy completed on API `39172` and Admin `39174`, and public `smoke:core-login-log` passed against `http://144.217.243.161:39172`.
 
-Still not complete:
+Completion audit:
 
-- tenant-scoped System/core repositories for other unreviewed non-org data;
-- T7 optional/business tenantization beyond Collaboration Message, Notice, Todo, Approval Lite, and ReportDefinition.
+- Cycle-022 tenant-foundation code paths are closed for the current OpenCore schema and module registry.
+- Future CRM/ERP/Mall/AI/payment domains are intentionally not implemented in Cycle-022 and require a new tenant-owned admission cycle.
+- Final completion still requires the clean-worktree stop condition; unrelated Admin modifications and `.opencore/storage/` remain outside this slice and were not reverted or committed.
 
 ---
 
@@ -1219,10 +1221,11 @@ Closed sub-slices:
 - T7c Collaboration Todo tenant isolation。
 - T7d Collaboration Approval Lite tenant isolation。
 - T7e ReportDefinition tenant isolation。
+- T7f business-domain admission guard。
 
 Remaining:
 
-- 未来 CRM/ERP/Mall/AI 等业务域。
+- None for the current OpenCore codebase. Future CRM/ERP/Mall/AI/payment domains require a new cycle with tenant-owned schema, API, Admin, smoke, guard, OpenAPI, SDK, and docs before implementation.
 
 ---
 

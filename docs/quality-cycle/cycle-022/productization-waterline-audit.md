@@ -23,9 +23,10 @@ Cycle-022 may only count a slice when it is code-backed, migrated, seeded, visib
 
 ## Below Waterline
 
-- Remaining optional/business data-plane isolation is not done.
+- No current Cycle-022 tenant-foundation slice remains below the waterline.
+- Future CRM/ERP/Mall/AI/payment domains are intentionally not implemented in this cycle and are blocked by admission guards until a future tenant-owned domain plan exists.
 
-These remain below the productization waterline and cannot be described as complete SaaS multi-tenancy.
+Cycle-022 can be described as complete SaaS tenant-foundation V1 for the current OpenCore codebase; future business domains need a new cycle.
 
 ## T2 Audit
 
@@ -107,7 +108,7 @@ These remain below the productization waterline and cannot be described as compl
 | Root legacy bridge compatibility                 | Done    | Root tenant assignment syncs `User.enabled`, `User.deptId`, `UserRole`, and `UserPost` for existing single-mode screens.    |
 | OpenAPI/SDK/Admin consistency                    | Done    | OpenAPI exports member DTOs; SDK adds list/update calls; `/system/tenants` edits current-tenant assignments from live APIs. |
 | Smoke/guard                                      | Done    | Added `smoke:core-tenant-member` and `guard:tenant-member-assignment`, both wired into local/deploy smoke scripts.          |
-| Tenant Member CRUD/invitation and switcher Admin | Pending | T3e is assignment only; full Tenant Member lifecycle and tenant switcher remain T6.                                         |
+| Tenant Member CRUD/invitation and switcher Admin | Done    | Later closed by T6c Tenant Member lifecycle and T6d Admin tenant switcher.                                                   |
 
 ## T3f Audit
 
@@ -139,7 +140,7 @@ These remain below the productization waterline and cannot be described as compl
 | No trusted tenant selector    | Done    | Create/update DTOs and controller paths have no client-controlled tenant selector; plan control is platform-scoped.                       |
 | OpenAPI/SDK/Admin consistency | Done    | OpenAPI exports plan DTOs; SDK exposes typed plan CRUD calls; `/system/tenants` uses live plan APIs for list/create/edit/delete.          |
 | Smoke/guard                   | Done    | Added `smoke:core-tenant-plan` and `guard:tenant-plan-control-plane`, both wired into local/deploy smoke scripts.                         |
-| Remaining T6 scope            | Pending | Tenant lifecycle was later closed by T6b, Tenant Member lifecycle by T6c, tenant switcher by T6d, and platform visit mode by T6e; platform visit audit remains separate T6 work. |
+| Remaining T6 scope            | Done    | Later closed by T6b/T6c/T6d/T6e/T6f.                                                                                         |
 
 ## T6b Tenant Lifecycle Control Plane
 
@@ -151,7 +152,7 @@ These remain below the productization waterline and cannot be described as compl
 | No trusted tenant selector      | Done    | Create/update DTOs and controller paths have no client-controlled tenant selector; tenant control is platform-scoped.                     |
 | OpenAPI/SDK/Admin consistency   | Done    | OpenAPI exports tenant DTOs; SDK exposes typed tenant lifecycle calls; `/system/tenants` uses live APIs for tenant list/create/edit/status. |
 | Smoke/guard                     | Done    | Added `smoke:core-tenant-lifecycle` and `guard:tenant-lifecycle-control-plane`, both wired into local/deploy smoke scripts.               |
-| Remaining T6 scope              | Pending | Tenant Member lifecycle was later closed by T6c, tenant switcher by T6d, and platform visit mode by T6e; platform visit audit remains separate T6 work. |
+| Remaining T6 scope              | Done    | Later closed by T6c/T6d/T6e/T6f.                                                                                              |
 
 ## T6c Tenant Member Lifecycle Control Plane
 
@@ -164,7 +165,7 @@ These remain below the productization waterline and cannot be described as compl
 | No trusted tenant selector        | Done   | Tenant control is bound to the platform path parameter; create/update DTOs have no body/query/header tenant selector.                     |
 | OpenAPI/SDK/Admin consistency     | Done   | OpenAPI exports member lifecycle DTOs; SDK exposes tenant member lifecycle calls; `/system/tenants` opens a live member control modal.     |
 | Smoke/guard                       | Done   | Added `smoke:core-tenant-member-lifecycle` and `guard:tenant-member-control-plane`, both wired into local/deploy smoke scripts.           |
-| Remaining T6 scope                | Pending | Tenant switcher was later closed by T6d and platform visit mode by T6e; platform visit audit remains separate T6 work.                     |
+| Remaining T6 scope                | Done   | Later closed by T6d/T6e/T6f.                                                                                                  |
 
 ## T6d Admin Tenant Switcher
 
@@ -174,7 +175,7 @@ These remain below the productization waterline and cannot be described as compl
 | Server token reissue         | Done   | Switcher calls SDK `switchTenant` through `switchOpenCoreTenant`, persists the returned token, and never mutates tenant context client-side. |
 | Tenant state reload          | Done   | Admin updates current user/permission state and reloads the page so tenant-scoped screens refetch with the new bearer token.                |
 | Smoke/guard                  | Done   | Added `smoke:core-tenant-switcher` and `guard:tenant-switcher`, both wired into local/deploy smoke scripts.                                 |
-| Remaining T6 scope           | Pending | Platform visit mode was later closed by T6e; platform visit audit remains separate T6 work.                                                  |
+| Remaining T6 scope           | Done   | Later closed by T6e/T6f.                                                                                                      |
 
 ## T6e Platform Visit Mode
 
@@ -197,7 +198,7 @@ These remain below the productization waterline and cannot be described as compl
 | Reason and request context      | Done   | Audit metadata stores reason and target tenant identifiers; standard fields store actor, request id, IP, location, user agent, and duration. |
 | No unaudited returned token      | Done   | If the dedicated audit write fails, the newly issued platform-visit token is revoked before the error is returned.                         |
 | Smoke/guard                     | Done   | `smoke:core-platform-visit` verifies the target-tenant audit row and `guard:platform-visit` locks audit wiring markers.                    |
-| Remaining T6 scope              | Done   | T6 Admin control plane is closed; remaining work is T4/T7 data-plane review and business-domain tenantization.                             |
+| Remaining T6 scope              | Done   | T6 Admin control plane is closed.                                                                                              |
 
 ## T7a Collaboration Messages
 
@@ -209,7 +210,7 @@ These remain below the productization waterline and cannot be described as compl
 | Cross-tenant API rejection         | Done    | `smoke:core-collaboration-messages` seeds a foreign tenant message and proves root-scope list/detail/read/archive/delete cannot access it.    |
 | Seed/OpenAPI/SDK/Admin             | Done    | Seed message rows, `MessageDto`, SDK `MessageSummary`, and Admin Messages expose `tenantId`.                                                  |
 | Smoke/guard                        | Done    | Added `guard:tenant-collaboration-message-scope`; existing collaboration message smoke now covers foreign-tenant message isolation.           |
-| Remaining T7 optional data scope   | Pending | Collaboration Notice, Todo, Approval Lite, ReportDefinition, and future business domains remain pending.                                      |
+| Remaining T7 optional data scope   | Done    | Later closed by T7b/T7c/T7d/T7e/T7f.                                                                                          |
 
 ## T7b Collaboration Notices
 
@@ -221,7 +222,7 @@ These remain below the productization waterline and cannot be described as compl
 | Cross-tenant API rejection         | Done    | `smoke:core-collaboration-notices` seeds a foreign tenant notice and proves root-scope list/detail/publish/archive cannot access it.          |
 | Seed/OpenAPI/SDK/Admin             | Done    | Seed notice rows, `NoticeDto`, SDK `NoticeSummary`, and Admin Notices expose `tenantId`.                                                      |
 | Smoke/guard                        | Done    | Added `guard:tenant-collaboration-notice-scope`; existing collaboration notice smoke now covers foreign-tenant notice isolation.              |
-| Remaining T7 optional data scope   | Pending | Collaboration Todo, Approval Lite, and ReportDefinition are closed; future business domains remain pending.                                    |
+| Remaining T7 optional data scope   | Done    | Later closed by T7c/T7d/T7e/T7f.                                                                                              |
 
 ## T7c Collaboration Todos
 
@@ -233,7 +234,7 @@ These remain below the productization waterline and cannot be described as compl
 | Cross-tenant API rejection         | Done    | `smoke:core-collaboration-todos` seeds a foreign tenant todo and proves root-scope list/detail/assign/complete/cancel cannot access it.       |
 | Seed/OpenAPI/SDK/Admin             | Done    | Seed todo rows, `TodoDto`, SDK `TodoSummary`, and Admin Todos expose `tenantId`.                                                              |
 | Smoke/guard                        | Done    | Added `guard:tenant-collaboration-todo-scope`; existing collaboration todo smoke now covers foreign-tenant todo isolation.                    |
-| Remaining T7 optional data scope   | Pending | Collaboration Approval Lite was closed by T7d; ReportDefinition and future business domains remain pending.                                      |
+| Remaining T7 optional data scope   | Done    | Later closed by T7d/T7e/T7f.                                                                                                  |
 
 ## T7d Collaboration Approval Lite
 
@@ -245,7 +246,7 @@ These remain below the productization waterline and cannot be described as compl
 | Cross-tenant API rejection         | Done    | `smoke:core-collaboration-approvals` seeds a foreign tenant approval and proves root-scope list/detail/approve/reject cannot access it.       |
 | Seed/OpenAPI/SDK/Admin             | Done    | Seed approval rows, `ApprovalLiteDto`, SDK `ApprovalLiteSummary`, and Admin Approvals expose `tenantId`.                                      |
 | Smoke/guard                        | Done    | `guard:tenant-collaboration-approval-scope` passed and public collaboration approval smoke verified foreign-tenant approval isolation.         |
-| Remaining T7 optional data scope   | Pending | ReportDefinition is closed by T7e; future business domains remain pending.                                                                    |
+| Remaining T7 optional data scope   | Done    | Later closed by T7e/T7f.                                                                                                      |
 
 ## T7e ReportDefinition
 
@@ -257,7 +258,16 @@ These remain below the productization waterline and cannot be described as compl
 | Cross-tenant API rejection         | Done    | `smoke:core-operations-reports` seeds a foreign tenant report and proves root-scope list/detail cannot access it.                    |
 | Seed/OpenAPI/SDK/Admin             | Done    | Seed report rows, `ReportDefinitionDto`, SDK `ReportDefinitionSummary`, and Admin Reports expose `tenantId`.                         |
 | Smoke/guard                        | Done    | `guard:tenant-report-definition-scope` passed and public operations report smoke verified foreign-tenant report isolation.            |
-| Remaining T7 optional data scope   | Pending | Future business domains remain pending.                                                                                               |
+| Remaining T7 optional data scope   | Done    | T7f business-domain admission guard closes current-codebase scope; future domains require a new cycle.                              |
+
+## T7f Business-Domain Admission
+
+| Check                                | Status | Evidence                                                                                                                                          |
+| ------------------------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| No current unadmitted business models | Done   | Current Prisma schema has no CRM/ERP/Mall/AI/payment business-domain models to tenantize in Cycle-022.                                            |
+| Registry admission guard              | Done   | Module registry keeps `industry.crm`, `industry.erp`, `industry.mall`, `integration.pay`, and `ai.*` out of the current SaaS foundation registry. |
+| OpenForge admission guard             | Done   | Manual schema validation rejects forbidden P4/P5 business module inputs before generated code can enter the repo.                                 |
+| Docs/guard                            | Done   | `guard:tenant-business-domain-admission` locks schema, registry, OpenForge, and Cycle-022 doc markers.                                            |
 
 ## T4a Audit
 
@@ -269,7 +279,7 @@ These remain below the productization waterline and cannot be described as compl
 | Seed/SDK/Admin consistency          | Done    | Seed and SDK fixtures include root tenant fields; Admin Online Users exposes access mode, tenant id, and membership id.      |
 | OpenAPI consistency                 | Done    | Online-session DTO already includes tenant fields; no endpoint shape change was required.                                    |
 | Smoke/guard                         | Done    | Added `guard:tenant-online-user-scope`; existing `smoke:core-online-user` now covers foreign-tenant session isolation.       |
-| Config/notice/file scope            | Pending | T4a only closes online sessions. Remaining T4 modules still need tenant ownership, tests, smoke, guards, and docs.           |
+| Config/notice/file scope            | Done    | Later closed by T4d/T4e/T4f/T4g/T4i.                                                                  |
 
 ## T4b Audit
 
@@ -293,7 +303,7 @@ These remain below the productization waterline and cannot be described as compl
 | Current-tenant unlock              | Done   | `/core/login-logs/unlock` clears only the authenticated bearer tenant's lockout record for the username.                                 |
 | OpenAPI/SDK                        | Done   | Unlock result DTO and SDK summary expose `tenantId`.                                                                                     |
 | Smoke/guard                        | Done   | Local deploy and public `smoke:core-login-log` cover root-vs-tenant lockout isolation; `guard:tenant-login-log-scope` locks schema, repository, smoke, and SDK markers. |
-| Remaining T4 data scope            | Pending | Other unreviewed non-org data remains pending.                                                                                          |
+| Remaining T4 data scope            | Done    | Later closed by T4i root-only legacy bridge and current core/system ownership audit.                                             |
 
 ## T4c Audit
 
@@ -305,7 +315,7 @@ These remain below the productization waterline and cannot be described as compl
 | Cross-tenant API rejection       | Done    | Prisma integration test and smoke prove foreign-tenant audit logs are hidden, cannot be detailed/deleted, and survive root clean. |
 | Seed/OpenAPI/SDK/Admin           | Done    | Seed audit logs, DTO, SDK summary fixture, and Admin Operation Logs expose `tenantId`.                                            |
 | Smoke/guard                      | Done    | Added `guard:tenant-operation-log-scope`; `smoke:core-audit-log` now covers foreign-tenant operation-audit isolation.             |
-| Remaining audit scope            | Pending | Platform visit/impersonation audit remains pending.                                                                               |
+| Remaining audit scope            | Done    | Later closed by T6f platform visit audit.                                                                                         |
 
 ## T4d Dictionaries
 
@@ -317,7 +327,7 @@ These remain below the productization waterline and cannot be described as compl
 | Cross-tenant API rejection  | Done    | Prisma integration test and smoke prove foreign-tenant dictionaries are hidden, cannot be mutated, and survive root actions. |
 | Seed/OpenAPI/SDK/Admin      | Done    | Seed dictionary rows, DTOs, SDK summaries/fixtures, and Admin Dicts expose `tenantId`.                                       |
 | Smoke/guard                 | Done    | Added `guard:tenant-dict-scope`; `smoke:core-dict` now covers foreign-tenant dictionary isolation.                           |
-| Remaining T4 data scope     | Pending | Config was completed in T4e and file assets in T4f; notice isolation remains pending.                                        |
+| Remaining T4 data scope     | Done    | Later closed by T4e/T4f/T4g/T4i.                                                                                         |
 
 ## T4e System Config
 
@@ -331,7 +341,7 @@ These remain below the productization waterline and cannot be described as compl
 | Cross-tenant API rejection    | Done    | Prisma integration test and smoke prove foreign-tenant config rows are hidden, cannot be mutated, and survive root actions.                    |
 | Seed/OpenAPI/SDK/Admin        | Done    | Seed config rows, DTOs, SDK summaries/fixtures, export previews, and Admin Config expose `tenantId`.                                           |
 | Smoke/guard                   | Done    | Added `guard:tenant-config-scope`; `smoke:core-config` now covers foreign-tenant config isolation.                                             |
-| Remaining T4 data scope       | Pending | File assets were completed in T4f; notice isolation was completed in T4g; other unreviewed non-org data remains pending.                       |
+| Remaining T4 data scope       | Done    | Later closed by T4f/T4g/T4i.                                                                                                  |
 
 ## T4f File Assets
 
@@ -344,7 +354,7 @@ These remain below the productization waterline and cannot be described as compl
 | Cross-tenant API rejection    | Done    | Prisma integration test and smoke prove foreign-tenant file rows are hidden and cannot be read, downloaded, updated, or deleted from root scope. |
 | Seed/OpenAPI/SDK/Admin        | Done    | Seed file rows, DTOs, SDK summaries/fixtures, export previews, and Admin Files expose `tenantId`.                                                |
 | Smoke/guard                   | Done    | Added `guard:tenant-file-scope`; `smoke:core-file` now covers foreign-tenant file isolation.                                                     |
-| Remaining T4 data scope       | Pending | Notice isolation was completed in T4g; other unreviewed non-org data remains pending.                                                            |
+| Remaining T4 data scope       | Done    | Later closed by T4g/T4i.                                                                                                       |
 
 ## T4g System Notices
 
@@ -357,7 +367,7 @@ These remain below the productization waterline and cannot be described as compl
 | Cross-tenant API rejection     | Done    | Prisma integration test and smoke prove foreign-tenant notice/template/delivery/receipt rows are hidden and survive root actions.                          |
 | Seed/OpenAPI/SDK/Admin         | Done    | Seed notice rows, DTOs, SDK summaries/fixtures, export previews, and Admin Notices expose `tenantId`.                                                      |
 | Smoke/guard                    | Done    | Added `guard:tenant-notice-scope`; `smoke:core-notice` now covers foreign-tenant notice isolation.                                                         |
-| Remaining T4 data scope        | Pending | Other unreviewed non-org data remains pending.                                                                                                             |
+| Remaining T4 data scope        | Done    | Later closed by T4i current core/system ownership audit.                                                                          |
 
 ## T5a Scheduler Runtime Propagation
 
@@ -393,4 +403,4 @@ These remain below the productization waterline and cannot be described as compl
 | Seed monitor-cache parity      | Done   | `SeedOperationsRepository` now resolves active tenant context and normalizes cache keys/prefixes into `opencore:tenant:{tenantId}`. |
 | Cross-tenant seed cache hiding | Done   | Focused operations repository test proves root cannot read foreign seed cache and foreign tenant can read it through logical key.   |
 | Guard coverage                 | Done   | `guard:tenant-redis-scope` now checks seed repository tenant normalization and the foreign seed cache fixture.                      |
-| Remaining runtime foundation   | Done   | T5 runtime propagation is closed; T6 platform visit/control plane and T7 optional/business tenantization remain separate slices.    |
+| Remaining runtime foundation   | Done   | T5 runtime propagation is closed; T6 control plane and T7 optional/business admission are closed for Cycle-022.       |
