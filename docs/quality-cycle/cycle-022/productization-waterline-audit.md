@@ -198,3 +198,16 @@ These remain below the productization waterline and cannot be described as compl
 | Seed/OpenAPI/SDK/Admin         | Done   | Seed notice rows, DTOs, SDK summaries/fixtures, export previews, and Admin Notices expose `tenantId`.                       |
 | Smoke/guard                    | Done   | Added `guard:tenant-notice-scope`; `smoke:core-notice` now covers foreign-tenant notice isolation.                          |
 | Remaining T4 data scope        | Pending | Other unreviewed non-org data remains pending.                                                                               |
+
+## T5a Scheduler Runtime Propagation
+
+| Check                               | Status | Evidence                                                                                                                     |
+| ----------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| Scheduler tenant ownership          | Done   | `JobDefinition` and `JobRunLog` are backfilled to `tenant_root`, constrained to `Tenant`, and keyed by `(tenantId, code)`.    |
+| Scheduler API tenant isolation      | Done   | Monitor job summary/list/detail/mutation/dispatch/claim/run-clean paths resolve the active tenant from `RequestContext`.     |
+| Worker tenant context restoration   | Done   | `SchedulerJobExecutor` wraps handler execution in tenant request context and stamps run metadata with `tenantId`.             |
+| Tenant-scoped retention side effect | Done   | The audit-log retention handler deletes only audit rows for the scheduler run tenant.                                        |
+| Cross-tenant worker rejection       | Done   | Prisma integration test and smoke prove root job APIs and worker claim do not see or consume foreign-tenant queued runs.      |
+| Seed/OpenAPI/SDK/Admin              | Done   | Seed scheduler rows, DTOs, SDK summaries/fixtures, and Admin Jobs expose `tenantId`.                                         |
+| Smoke/guard                         | Done   | Added `guard:tenant-scheduler-scope`; `smoke:core-monitor-jobs` covers foreign-tenant scheduler isolation.                   |
+| Remaining T5 runtime scope          | Pending | Redis namespace, broader BullMQ queue namespace/payload handling, Integration/outbox/OAuth, WebSocket, and broader runtime review remain pending. |

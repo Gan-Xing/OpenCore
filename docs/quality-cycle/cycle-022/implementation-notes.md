@@ -740,3 +740,44 @@ Passed after deploy:
 - No platform-admin global notice view in T4g; platform visit/control-plane behavior belongs with T6.
 - No client-driven tenant selector for notice APIs.
 - No Redis/WebSocket/outbox tenant propagation beyond notice payload metadata in this sub-slice.
+
+## Round 15: T5a Scheduler Tenant Propagation
+
+### Completed
+
+- Made scheduler rows tenant-owned:
+  - added `JobDefinition.tenantId` and `JobRunLog.tenantId` with root backfill, `(tenantId, code)` uniqueness, tenant indexes, tenant FKs, and a same-tenant run-to-job FK;
+  - seeded scheduler definitions and run logs under `tenant_root` for single/shared-root compatibility.
+- Scoped scheduler runtime operations:
+  - monitor job summary/list/detail/create/update/enable/disable/manual trigger/cron dispatch/worker claim/run list/run detail/run clean resolve the active tenant from `RequestContext`;
+  - queued worker execution restores tenant request context before invoking handlers and stamps run metadata with `tenantId`;
+  - audit-log retention deletes only audit rows belonging to the scheduler run tenant.
+- Exposed `tenantId` through scheduler records, DTOs, SDK summaries/fixtures, OpenAPI, Admin Jobs, seed, and smoke.
+- Added tenant-scope verification:
+  - Scheduler Prisma integration test creates root and foreign jobs with the same code and proves root worker claim cannot consume the foreign queued run;
+  - `smoke:core-monitor-jobs` seeds a foreign tenant scheduler job/run and proves root-scope monitor job APIs and worker claim stay inside `tenant_root`.
+- Added `guard:tenant-scheduler-scope`.
+
+### Verification Log
+
+Passed before deploy:
+
+- Prisma validation, client generation, migration deploy, and seed passed.
+- Seed typing, typed smoke compilation, tenant scheduler guard, focused scheduler tests, OpenAPI drift/registry checks, SDK contract, Admin i18n, quality docs, full lint, full typecheck, and full test suites passed.
+
+Passed after deploy:
+
+- OpenCore deploy rebuilt API/Admin, applied migrations, reseeded, restarted API `39172` and Admin `39174`, and passed deploy smoke including local monitor-jobs tenant checks.
+- Public API monitor-jobs smoke passed against `http://144.217.243.161:39172`.
+
+### Remaining Product Debt
+
+- Complete Redis namespace, broader BullMQ queue namespace/payload handling, WebSocket, Integration/outbox/OAuth, and broader runtime tenant propagation.
+- Complete T4 System/core tenant data isolation for other unreviewed non-org data.
+- Complete T6 Tenant Plan CRUD, Tenant Member CRUD/invitation, Admin switcher, platform visit mode, and platform visit audit.
+
+### Deliberate Non-Goals
+
+- No Redis key namespace or BullMQ queue-name namespace rewrite in T5a.
+- No Integration provider/outbox/OAuth/WebSocket tenant migration in this sub-slice.
+- No platform-admin global scheduler view; platform visit/control-plane behavior belongs with T6.

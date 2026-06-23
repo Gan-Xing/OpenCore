@@ -1924,6 +1924,7 @@ export default {
   'pages.monitor.jobs.fields.retryLimit': 'Retry Limit',
   'pages.monitor.jobs.fields.source': 'Source',
   'pages.monitor.jobs.fields.startedAt': 'Started At',
+  'pages.monitor.jobs.fields.tenantId': 'Tenant ID',
   'pages.monitor.jobs.fields.timeout': 'Timeout',
   'pages.monitor.jobs.fields.timeoutSeconds': 'Timeout Seconds',
   'pages.monitor.jobs.fields.trigger': 'Trigger',

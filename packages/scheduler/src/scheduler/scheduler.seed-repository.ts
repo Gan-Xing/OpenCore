@@ -20,6 +20,7 @@ import {
   normalizeSchedulerPageQuery,
   normalizeSchedulerRunCleanPolicy,
   normalizeSchedulerWorkerLimit,
+  resolveCurrentTenantId,
   SchedulerRepository,
   requireRecord,
   type ClaimQueuedSchedulerJobsInput,
@@ -45,19 +46,22 @@ export class SeedSchedulerRepository extends SchedulerRepository {
   }
 
   async getSummary() {
+    const tenantId = resolveCurrentTenantId();
     return createSchedulerSummary({
-      jobs: this.jobs,
-      jobRuns: this.runs,
+      jobs: this.jobs.filter((job) => job.tenantId === tenantId),
+      jobRuns: this.runs.filter((run) => run.tenantId === tenantId),
     });
   }
 
   async listJobs(
     query: SchedulerJobQuery = {},
   ): Promise<PageResult<SchedulerJobDefinitionRecord>> {
+    const tenantId = resolveCurrentTenantId();
     const filters = normalizeSchedulerJobFilters(query);
     const rows = this.jobs
       .filter(
         (job) =>
+          job.tenantId === tenantId &&
           matchesOptional(job.enabled, filters.enabled) &&
           matchesOptional(job.queueName, filters.queueName),
       )
@@ -77,8 +81,10 @@ export class SeedSchedulerRepository extends SchedulerRepository {
   async createJob(
     body: CreateSchedulerJobInput,
   ): Promise<SchedulerJobDefinitionRecord> {
+    const tenantId = resolveCurrentTenantId();
     const job: SchedulerJobDefinitionRecord = {
       id: `job_${body.code.replace(/[^a-zA-Z0-9]+/g, '_')}`,
+      tenantId,
       code: body.code,
       name: body.name,
       queueName: body.queueName,
@@ -135,9 +141,11 @@ export class SeedSchedulerRepository extends SchedulerRepository {
       entry,
       job,
       metadata: body.metadata,
+      tenantId: job.tenantId,
     });
     const run: SchedulerJobRunLogRecord = {
       id: `run_${code.replace(/[^a-zA-Z0-9]+/g, '_')}_${this.runs.length + 1}`,
+      tenantId: job.tenantId,
       jobCode: code,
       status: execution.status,
       trigger: 'manual',
@@ -154,6 +162,7 @@ export class SeedSchedulerRepository extends SchedulerRepository {
   }
 
   async dispatchDueJobs(body: DispatchDueSchedulerJobsInput) {
+    const tenantId = resolveCurrentTenantId();
     const now = normalizeSchedulerDispatchNow(body.now);
     const dispatchTick = createSchedulerDispatchTick(now);
     const limit = normalizeSchedulerWorkerLimit(body.limit);
@@ -163,6 +172,7 @@ export class SeedSchedulerRepository extends SchedulerRepository {
 
     for (const job of this.jobs.sort(compareJobs)) {
       if (
+        job.tenantId !== tenantId ||
         !job.enabled ||
         !job.cron ||
         (queueName && job.queueName !== queueName) ||
@@ -182,6 +192,7 @@ export class SeedSchedulerRepository extends SchedulerRepository {
 
       const run: SchedulerJobRunLogRecord = {
         id: `run_${job.code.replace(/[^a-zA-Z0-9]+/g, '_')}_${this.runs.length + 1}`,
+        tenantId,
         jobCode: job.code,
         status: 'queued',
         trigger: 'schedule',
@@ -194,6 +205,7 @@ export class SeedSchedulerRepository extends SchedulerRepository {
           executionMode: 'queued',
           queueName: job.queueName,
           scheduledAt: dispatchTick,
+          tenantId,
         },
       };
       this.runs = [run, ...this.runs];
@@ -209,10 +221,16 @@ export class SeedSchedulerRepository extends SchedulerRepository {
   }
 
   async claimQueuedJobs(body: ClaimQueuedSchedulerJobsInput) {
+    const tenantId = resolveCurrentTenantId();
     const limit = normalizeSchedulerWorkerLimit(body.limit);
     const queueName = normalizeOptionalString(body.queueName);
     const runs = this.runs
-      .filter((run) => run.status === 'queued' && run.trigger === 'schedule')
+      .filter(
+        (run) =>
+          run.tenantId === tenantId &&
+          run.status === 'queued' &&
+          run.trigger === 'schedule',
+      )
       .sort((left, right) => left.startedAt.localeCompare(right.startedAt));
     const claimedRuns: SchedulerJobRunLogRecord[] = [];
     let completedCount = 0;
@@ -247,8 +265,10 @@ export class SeedSchedulerRepository extends SchedulerRepository {
           ...(run.metadata ?? {}),
           ...(body.metadata ?? {}),
           queuedRunId: run.id,
+          tenantId: run.tenantId,
           workerQueueName: job.queueName,
         },
+        tenantId: run.tenantId,
       });
       Object.assign(run, {
         status: execution.status,
@@ -281,11 +301,14 @@ export class SeedSchedulerRepository extends SchedulerRepository {
     code: string,
     query: SchedulerRunQuery = {},
   ): Promise<PageResult<SchedulerJobRunLogRecord>> {
+    const tenantId = resolveCurrentTenantId();
     this.findJob(code);
     const rows = this.runs
       .filter(
         (run) =>
-          run.jobCode === code && matchesOptional(run.status, query.status),
+          run.tenantId === tenantId &&
+          run.jobCode === code &&
+          matchesOptional(run.status, query.status),
       )
       .sort(compareRuns);
     const pagination = normalizeSchedulerPageQuery(query, rows.length);
@@ -297,11 +320,15 @@ export class SeedSchedulerRepository extends SchedulerRepository {
   }
 
   async getJobRun(code: string, id: string): Promise<SchedulerJobRunLogRecord> {
+    const tenantId = resolveCurrentTenantId();
     this.findJob(code);
 
     return cloneRun(
       requireRecord(
-        this.runs.find((run) => run.jobCode === code && run.id === id),
+        this.runs.find(
+          (run) =>
+            run.tenantId === tenantId && run.jobCode === code && run.id === id,
+        ),
         'Job run log',
         id,
       ),
@@ -309,11 +336,12 @@ export class SeedSchedulerRepository extends SchedulerRepository {
   }
 
   async cleanJobRuns(code: string, query: SchedulerRunCleanQuery = {}) {
+    const tenantId = resolveCurrentTenantId();
     this.findJob(code);
     const policy = normalizeSchedulerRunCleanPolicy(query);
     const beforeCount = this.runs.length;
     this.runs = this.runs.filter((run) => {
-      if (run.jobCode !== code) {
+      if (run.tenantId !== tenantId || run.jobCode !== code) {
         return true;
       }
       if (!policy.statuses.includes(run.status as SchedulerRunTerminalStatus)) {
@@ -334,16 +362,19 @@ export class SeedSchedulerRepository extends SchedulerRepository {
   }
 
   private findJob(code: string): SchedulerJobDefinitionRecord {
+    const tenantId = resolveCurrentTenantId();
     return requireRecord(
-      this.jobs.find((job) => job.code === code),
+      this.jobs.find((job) => job.tenantId === tenantId && job.code === code),
       'Job definition',
       code,
     );
   }
 
   private hasScheduledRunForTick(code: string, dispatchTick: string): boolean {
+    const tenantId = resolveCurrentTenantId();
     return this.runs.some(
       (run) =>
+        run.tenantId === tenantId &&
         run.jobCode === code &&
         run.trigger === 'schedule' &&
         run.metadata?.scheduledAt === dispatchTick,
@@ -366,6 +397,7 @@ export class SeedSchedulerRepository extends SchedulerRepository {
         ...(body.metadata ?? {}),
         actor: body.actor,
         executionMode: 'worker',
+        tenantId: run.tenantId,
         result: { failed: true, skippedDisabledJob: true },
       },
     });

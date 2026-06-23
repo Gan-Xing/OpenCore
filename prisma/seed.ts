@@ -754,9 +754,11 @@ async function seedScheduler(): Promise<{
   jobRuns: number;
 }> {
   for (const job of seedSchedulerJobs) {
+    const tenantId = job.tenantId ?? ROOT_TENANT_ID;
     await prisma.jobDefinition.upsert({
-      where: { code: job.code },
+      where: { tenantId_code: { tenantId, code: job.code } },
       update: {
+        tenantId,
         name: job.name,
         queueName: job.queueName,
         cron: job.cron,
@@ -767,6 +769,7 @@ async function seedScheduler(): Promise<{
       },
       create: {
         id: job.id,
+        tenantId,
         code: job.code,
         name: job.name,
         queueName: job.queueName,
@@ -780,9 +783,11 @@ async function seedScheduler(): Promise<{
   }
 
   for (const run of seedSchedulerRuns) {
+    const tenantId = run.tenantId ?? ROOT_TENANT_ID;
     await prisma.jobRunLog.upsert({
       where: { id: run.id },
       update: {
+        tenantId,
         jobCode: run.jobCode,
         status: run.status,
         trigger: run.trigger,
@@ -795,6 +800,7 @@ async function seedScheduler(): Promise<{
       },
       create: {
         id: run.id,
+        tenantId,
         jobCode: run.jobCode,
         status: run.status,
         trigger: run.trigger,

@@ -136,6 +136,7 @@
     "guard:tenant-post-scope": "pnpm scripts:ts tools/scripts/check-tenant-post-scope.ts",
     "guard:tenant-role-scope": "pnpm scripts:ts tools/scripts/check-tenant-role-scope.ts",
     "guard:tenant-rbac": "pnpm scripts:ts tools/scripts/check-tenant-rbac.ts",
+    "guard:tenant-scheduler-scope": "pnpm scripts:ts tools/scripts/check-tenant-scheduler-scope.ts",
     "nx": "NX_DAEMON=false nx"
   },
   "devDependencies": {

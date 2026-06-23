@@ -114,6 +114,7 @@ const emptySummary: OperationsSummary = {
 };
 
 const searchFields: CurrentPageSearchField<JobDefinitionSummary>[] = [
+  'tenantId',
   'code',
   'name',
   'queueName',
@@ -154,6 +155,10 @@ function createExportColumns(
     {
       title: formatMessage('pages.monitor.jobs.fields.code', 'Code'),
       dataIndex: 'code',
+    },
+    {
+      title: formatMessage('pages.monitor.jobs.fields.tenantId', 'Tenant ID'),
+      dataIndex: 'tenantId',
     },
     {
       title: formatMessage('pages.monitor.jobs.fields.name', 'Name'),
@@ -618,6 +623,12 @@ export default function JobsPage() {
       dataIndex: 'jobCode',
     },
     {
+      title: formatMessage('pages.monitor.jobs.fields.tenantId', 'Tenant ID'),
+      dataIndex: 'tenantId',
+      width: 168,
+      ellipsis: true,
+    },
+    {
       title: formatMessage('pages.monitor.jobs.fields.name', 'Name'),
       dataIndex: 'jobName',
     },
@@ -665,6 +676,12 @@ export default function JobsPage() {
     {
       title: formatMessage('pages.monitor.jobs.fields.name', 'Name'),
       dataIndex: 'name',
+    },
+    {
+      title: formatMessage('pages.monitor.jobs.fields.tenantId', 'Tenant ID'),
+      dataIndex: 'tenantId',
+      width: 168,
+      ellipsis: true,
     },
     {
       title: formatMessage('pages.monitor.jobs.fields.queue', 'Queue'),
@@ -1044,6 +1061,13 @@ export default function JobsPage() {
           {
             label: formatMessage('pages.monitor.jobs.fields.code', 'Code'),
             value: selected?.code,
+          },
+          {
+            label: formatMessage(
+              'pages.monitor.jobs.fields.tenantId',
+              'Tenant ID',
+            ),
+            value: selected?.tenantId,
           },
           {
             label: formatMessage('pages.monitor.jobs.fields.name', 'Name'),

@@ -1755,6 +1755,7 @@ export default {
   'pages.monitor.jobs.fields.retryLimit': '重试上限',
   'pages.monitor.jobs.fields.source': '来源',
   'pages.monitor.jobs.fields.startedAt': '开始时间',
+  'pages.monitor.jobs.fields.tenantId': '租户 ID',
   'pages.monitor.jobs.fields.timeout': '超时',
   'pages.monitor.jobs.fields.timeoutSeconds': '超时秒数',
   'pages.monitor.jobs.fields.trigger': '触发方式',

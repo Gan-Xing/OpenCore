@@ -10,6 +10,7 @@ export type SchedulerJobRegistryEntry = {
 
 export type SchedulerJobDefinitionRecord = {
   id: string;
+  tenantId: string;
   code: string;
   name: string;
   queueName: string;
@@ -23,6 +24,7 @@ export type SchedulerJobDefinitionRecord = {
 
 export type SchedulerJobRunLogRecord = {
   id: string;
+  tenantId: string;
   jobCode: string;
   status: 'queued' | 'running' | 'completed' | 'failed';
   trigger: 'manual' | 'schedule';
@@ -66,6 +68,7 @@ export const schedulerJobRegistry: readonly SchedulerJobRegistryEntry[] = [
 export const seedSchedulerJobs: readonly SchedulerJobDefinitionRecord[] = [
   {
     id: 'job_openapi_drift',
+    tenantId: 'tenant_root',
     code: 'openapi.drift-check',
     name: 'OpenAPI drift check',
     queueName: 'maintenance',
@@ -78,6 +81,7 @@ export const seedSchedulerJobs: readonly SchedulerJobDefinitionRecord[] = [
   },
   {
     id: 'job_audit_log_retention_clean',
+    tenantId: 'tenant_root',
     code: 'audit-log.retention-clean',
     name: 'Audit log retention clean',
     queueName: 'maintenance',
@@ -93,6 +97,7 @@ export const seedSchedulerJobs: readonly SchedulerJobDefinitionRecord[] = [
 export const seedSchedulerRuns: readonly SchedulerJobRunLogRecord[] = [
   {
     id: 'run_openapi_drift_1',
+    tenantId: 'tenant_root',
     jobCode: 'openapi.drift-check',
     status: 'completed',
     trigger: 'manual',
@@ -106,6 +111,7 @@ export const seedSchedulerRuns: readonly SchedulerJobRunLogRecord[] = [
       attempts: 1,
       executionMode: 'in-process',
       handlerKey: 'maintenance.openapiDriftCheck',
+      tenantId: 'tenant_root',
       result: { driftCheck: 'configured' },
     },
   },

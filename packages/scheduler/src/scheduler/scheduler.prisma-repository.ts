@@ -21,6 +21,7 @@ import {
   normalizeSchedulerPageQuery,
   normalizeSchedulerRunCleanPolicy,
   normalizeSchedulerWorkerLimit,
+  resolveCurrentTenantId,
   SchedulerRepository,
   requireRecord,
   type ClaimQueuedSchedulerJobsInput,
@@ -35,6 +36,7 @@ import {
 
 type JobDefinitionRow = {
   id: string;
+  tenantId: string;
   code: string;
   name: string;
   queueName: string;
@@ -47,6 +49,7 @@ type JobDefinitionRow = {
 
 type JobRunLogRow = {
   id: string;
+  tenantId: string;
   jobCode: string;
   status: string;
   trigger: string;
@@ -68,9 +71,10 @@ export class PrismaSchedulerRepository extends SchedulerRepository {
   }
 
   async getSummary() {
+    const tenantId = resolveCurrentTenantId();
     const [jobs, jobRuns] = await Promise.all([
-      this.prisma.jobDefinition.findMany(),
-      this.prisma.jobRunLog.findMany(),
+      this.prisma.jobDefinition.findMany({ where: { tenantId } }),
+      this.prisma.jobRunLog.findMany({ where: { tenantId } }),
     ]);
 
     return createSchedulerSummary({
@@ -82,8 +86,10 @@ export class PrismaSchedulerRepository extends SchedulerRepository {
   async listJobs(
     query: SchedulerJobQuery = {},
   ): Promise<PageResult<SchedulerJobDefinitionRecord>> {
+    const tenantId = resolveCurrentTenantId();
     const filters = normalizeSchedulerJobFilters(query);
     const where = {
+      tenantId,
       enabled: filters.enabled,
       queueName: filters.queueName,
     };
@@ -109,10 +115,12 @@ export class PrismaSchedulerRepository extends SchedulerRepository {
   async createJob(
     body: CreateSchedulerJobInput,
   ): Promise<SchedulerJobDefinitionRecord> {
+    const tenantId = resolveCurrentTenantId();
     const policy = normalizePolicyInput(body);
     assertSafeJobPolicy(policy);
     const job = await this.prisma.jobDefinition.create({
       data: {
+        tenantId,
         code: body.code,
         name: body.name,
         queueName: body.queueName,
@@ -131,6 +139,7 @@ export class PrismaSchedulerRepository extends SchedulerRepository {
     code: string,
     body: UpdateSchedulerJobInput,
   ): Promise<SchedulerJobDefinitionRecord> {
+    const tenantId = resolveCurrentTenantId();
     const existing = await this.findJob(code);
     const updated = {
       code,
@@ -141,7 +150,7 @@ export class PrismaSchedulerRepository extends SchedulerRepository {
     };
     assertSafeJobPolicy(updated);
     const job = await this.prisma.jobDefinition.update({
-      where: { code },
+      where: { tenantId_code: { tenantId, code } },
       data: {
         name: body.name ?? existing.name,
         queueName: updated.queueName,
@@ -176,9 +185,11 @@ export class PrismaSchedulerRepository extends SchedulerRepository {
       job,
       metadata: body.metadata,
       prisma: this.prisma,
+      tenantId: job.tenantId,
     });
     const run = await this.prisma.jobRunLog.create({
       data: {
+        tenantId: job.tenantId,
         jobCode: code,
         status: execution.status,
         trigger: 'manual',
@@ -195,12 +206,13 @@ export class PrismaSchedulerRepository extends SchedulerRepository {
   }
 
   async dispatchDueJobs(body: DispatchDueSchedulerJobsInput) {
+    const tenantId = resolveCurrentTenantId();
     const now = normalizeSchedulerDispatchNow(body.now);
     const dispatchTick = createSchedulerDispatchTick(now);
     const limit = normalizeSchedulerWorkerLimit(body.limit);
     const queueName = normalizeOptionalString(body.queueName);
     const jobs = await this.prisma.jobDefinition.findMany({
-      where: { enabled: true, cron: { not: null }, queueName },
+      where: { tenantId, enabled: true, cron: { not: null }, queueName },
       orderBy: [{ code: 'asc' }],
     });
     const queuedRuns: SchedulerJobRunLogRecord[] = [];
@@ -214,6 +226,7 @@ export class PrismaSchedulerRepository extends SchedulerRepository {
       assertSafeJobPolicy(job);
       const scheduledRuns = await this.prisma.jobRunLog.findMany({
         where: {
+          tenantId,
           jobCode: job.code,
           trigger: 'schedule',
         },
@@ -234,6 +247,7 @@ export class PrismaSchedulerRepository extends SchedulerRepository {
 
       const run = await this.prisma.jobRunLog.create({
         data: {
+          tenantId,
           jobCode: job.code,
           status: 'queued',
           trigger: 'schedule',
@@ -246,6 +260,7 @@ export class PrismaSchedulerRepository extends SchedulerRepository {
             executionMode: 'queued',
             queueName: job.queueName,
             scheduledAt: dispatchTick,
+            tenantId,
           }),
         },
       });
@@ -261,10 +276,11 @@ export class PrismaSchedulerRepository extends SchedulerRepository {
   }
 
   async claimQueuedJobs(body: ClaimQueuedSchedulerJobsInput) {
+    const tenantId = resolveCurrentTenantId();
     const limit = normalizeSchedulerWorkerLimit(body.limit);
     const queueName = normalizeOptionalString(body.queueName);
     const queuedRows = await this.prisma.jobRunLog.findMany({
-      where: { status: 'queued', trigger: 'schedule' },
+      where: { tenantId, status: 'queued', trigger: 'schedule' },
       orderBy: [{ startedAt: 'asc' }, { id: 'asc' }],
       take: limit * 3,
     });
@@ -274,7 +290,7 @@ export class PrismaSchedulerRepository extends SchedulerRepository {
     let skippedCount = 0;
 
     for (const row of queuedRows) {
-      const job = await this.findJob(row.jobCode);
+      const job = await this.findJob(row.jobCode, row.tenantId);
       if (queueName && job.queueName !== queueName) {
         skippedCount += 1;
         continue;
@@ -305,9 +321,11 @@ export class PrismaSchedulerRepository extends SchedulerRepository {
           ...(toJobRunLogRecord(row).metadata ?? {}),
           ...(body.metadata ?? {}),
           queuedRunId: row.id,
+          tenantId: row.tenantId,
           workerQueueName: job.queueName,
         },
         prisma: this.prisma,
+        tenantId: row.tenantId,
       });
       const updated = await this.prisma.jobRunLog.update({
         where: { id: row.id },
@@ -344,8 +362,9 @@ export class PrismaSchedulerRepository extends SchedulerRepository {
     code: string,
     query: SchedulerRunQuery = {},
   ): Promise<PageResult<SchedulerJobRunLogRecord>> {
-    await this.findJob(code);
-    const where = { jobCode: code, status: query.status };
+    const tenantId = resolveCurrentTenantId();
+    await this.findJob(code, tenantId);
+    const where = { tenantId, jobCode: code, status: query.status };
     const total = await this.prisma.jobRunLog.count({ where });
     const pagination = normalizeSchedulerPageQuery(query, total);
     const rows = await this.prisma.jobRunLog.findMany({
@@ -359,11 +378,12 @@ export class PrismaSchedulerRepository extends SchedulerRepository {
   }
 
   async getJobRun(code: string, id: string): Promise<SchedulerJobRunLogRecord> {
-    await this.findJob(code);
+    const tenantId = resolveCurrentTenantId();
+    await this.findJob(code, tenantId);
 
     return requireRecord(
       await this.prisma.jobRunLog
-        .findFirst({ where: { id, jobCode: code } })
+        .findFirst({ where: { tenantId, id, jobCode: code } })
         .then((run) => (run ? toJobRunLogRecord(run) : undefined)),
       'Job run log',
       id,
@@ -371,10 +391,12 @@ export class PrismaSchedulerRepository extends SchedulerRepository {
   }
 
   async cleanJobRuns(code: string, query: SchedulerRunCleanQuery = {}) {
-    await this.findJob(code);
+    const tenantId = resolveCurrentTenantId();
+    await this.findJob(code, tenantId);
     const policy = normalizeSchedulerRunCleanPolicy(query);
     const result = await this.prisma.jobRunLog.deleteMany({
       where: {
+        tenantId,
         jobCode: code,
         startedAt: { lt: policy.cutoffBefore },
         status: { in: [...policy.statuses] },
@@ -391,10 +413,13 @@ export class PrismaSchedulerRepository extends SchedulerRepository {
     };
   }
 
-  private async findJob(code: string): Promise<SchedulerJobDefinitionRecord> {
+  private async findJob(
+    code: string,
+    tenantId = resolveCurrentTenantId(),
+  ): Promise<SchedulerJobDefinitionRecord> {
     return requireRecord(
       await this.prisma.jobDefinition
-        .findUnique({ where: { code } })
+        .findUnique({ where: { tenantId_code: { tenantId, code } } })
         .then((job) => (job ? toJobDefinitionRecord(job) : undefined)),
       'Job definition',
       code,
@@ -419,6 +444,7 @@ export class PrismaSchedulerRepository extends SchedulerRepository {
           ...(body.metadata ?? {}),
           actor: body.actor,
           executionMode: 'worker',
+          tenantId: existing.tenantId,
           result: { failed: true, skippedDisabledJob: true },
         }),
         status: 'failed',
@@ -434,6 +460,7 @@ function toJobDefinitionRecord(
 ): SchedulerJobDefinitionRecord {
   return {
     id: row.id,
+    tenantId: row.tenantId,
     code: row.code,
     name: row.name,
     queueName: row.queueName,
@@ -449,6 +476,7 @@ function toJobDefinitionRecord(
 function toJobRunLogRecord(row: JobRunLogRow): SchedulerJobRunLogRecord {
   return {
     id: row.id,
+    tenantId: row.tenantId,
     jobCode: row.jobCode,
     status: normalizeRunStatus(row.status),
     trigger: normalizeRunTrigger(row.trigger),

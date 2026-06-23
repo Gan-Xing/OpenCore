@@ -4,6 +4,9 @@ export class JobDefinitionDto {
   @ApiProperty()
   id!: string;
 
+  @ApiProperty({ example: 'tenant_root' })
+  tenantId!: string;
+
   @ApiProperty()
   code!: string;
 
@@ -177,6 +180,9 @@ export class ClaimQueuedJobsDto {
 export class JobRunLogDto {
   @ApiProperty()
   id!: string;
+
+  @ApiProperty({ example: 'tenant_root' })
+  tenantId!: string;
 
   @ApiProperty()
   jobCode!: string;

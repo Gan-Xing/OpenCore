@@ -12,15 +12,20 @@ import {
   createTypedSmokeRuntime,
   formatBody,
 } from './runtime';
+import { disconnectSmokePrisma, getSmokePrisma } from './prisma';
 
 const JOB_CODE = 'report.refresh';
+const ROOT_TENANT_ID = 'tenant_root';
 
 const smoke = createTypedSmokeRuntime();
 const { apiPrefix, baseUrl, checkDocs, login, timeoutMs, username } = smoke;
 const apiRequest = smoke.apiRequest as any;
 const request = smoke.request as any;
 const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+const runSafeId = runId.replace(/[^a-z0-9]/gi, '_').toLowerCase();
 const smokeCron = createSmokeCron(runId);
+const FOREIGN_TENANT_ID = `tenant_scheduler_foreign_${runSafeId}`;
+const FOREIGN_RUN_ID = `run_scheduler_foreign_${runSafeId}`;
 const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379/1';
 const redisKeyPrefix = normalizeRedisPrefix(
   process.env.REDIS_KEY_PREFIX || 'opencore',
@@ -59,6 +64,8 @@ async function main() {
     const loginResponse = await login();
     token = assertString(loginResponse.accessToken, 'login accessToken');
     smoke.setToken(token);
+    await seedForeignTenantSchedulerRun();
+    await assertForeignTenantSchedulerHidden();
 
     await verifyMonitorVersion();
     await seedRedisSmokeCache();
@@ -130,6 +137,7 @@ async function main() {
 
     const job = await upsertSmokeJob();
     assertEqual(job.code, JOB_CODE, 'smoke job code');
+    assertEqual(job.tenantId, ROOT_TENANT_ID, 'smoke job tenant');
     assertEqual(job.queueName, 'reports', 'smoke job queue');
     assertEqual(job.enabled, true, 'smoke job initial enabled');
 
@@ -176,6 +184,7 @@ async function main() {
       },
     );
     assertEqual(run.jobCode, JOB_CODE, 'manual run job code');
+    assertEqual(run.tenantId, ROOT_TENANT_ID, 'manual run tenant');
     assertEqual(run.status, 'completed', 'manual run status');
     assertEqual(run.trigger, 'manual', 'manual run trigger');
     assertNumberAtLeast(run.durationMs, 0, 'manual run duration');
@@ -309,6 +318,7 @@ async function main() {
     assertArray(dispatch.queuedRuns, 'scheduler dispatch queued runs');
     const queuedRun = dispatch.queuedRuns[0];
     assertEqual(queuedRun.jobCode, JOB_CODE, 'scheduler queued run job code');
+    assertEqual(queuedRun.tenantId, ROOT_TENANT_ID, 'scheduler queued run tenant');
     assertEqual(queuedRun.status, 'queued', 'scheduler queued run status');
     assertEqual(queuedRun.trigger, 'schedule', 'scheduler queued run trigger');
     assertEqual(
@@ -332,6 +342,7 @@ async function main() {
     assertArray(worker.runs, 'scheduler worker runs');
     const workerRun = worker.runs[0];
     assertEqual(workerRun.id, queuedRun.id, 'scheduler worker run id');
+    assertEqual(workerRun.tenantId, ROOT_TENANT_ID, 'scheduler worker run tenant');
     assertEqual(workerRun.status, 'completed', 'scheduler worker run status');
     assertEqual(workerRun.trigger, 'schedule', 'scheduler worker trigger');
     assertEqual(
@@ -441,6 +452,7 @@ async function main() {
           'monitor.job.registry',
           'monitor.job.audit-retention-registry',
           'monitor.job.scheduler-queues',
+          'monitor.job.foreign-hidden',
           'monitor.queue.pause',
           'monitor.queue.resume',
           'monitor.job.summary',
@@ -475,6 +487,8 @@ async function main() {
     failed = true;
   } finally {
     await cleanupRedisSmokeCache();
+    await cleanupForeignTenantSchedulerRun();
+    await disconnectSmokePrisma();
     if (failed) {
       process.exit(1);
     }
@@ -482,6 +496,130 @@ async function main() {
 }
 
 void main();
+
+async function seedForeignTenantSchedulerRun() {
+  const prisma = getSmokePrisma();
+
+  await prisma.tenant.upsert({
+    where: { id: FOREIGN_TENANT_ID },
+    update: {
+      code: FOREIGN_TENANT_ID,
+      name: 'Foreign Scheduler Smoke Tenant',
+      slug: FOREIGN_TENANT_ID,
+      status: 'active',
+    },
+    create: {
+      id: FOREIGN_TENANT_ID,
+      code: FOREIGN_TENANT_ID,
+      name: 'Foreign Scheduler Smoke Tenant',
+      slug: FOREIGN_TENANT_ID,
+      status: 'active',
+    },
+  });
+
+  await prisma.jobDefinition.upsert({
+    where: {
+      tenantId_code: {
+        tenantId: FOREIGN_TENANT_ID,
+        code: JOB_CODE,
+      },
+    },
+    update: {
+      cron: smokeCron.cron,
+      enabled: true,
+      name: `Foreign Report Refresh ${runId}`,
+      payload: { source: 'monitor.jobs.foreign-smoke', runId },
+      queueName: 'reports',
+      retryLimit: 1,
+      timeoutSeconds: 60,
+    },
+    create: {
+      id: `job_scheduler_foreign_${runSafeId}`,
+      tenantId: FOREIGN_TENANT_ID,
+      code: JOB_CODE,
+      cron: smokeCron.cron,
+      enabled: true,
+      name: `Foreign Report Refresh ${runId}`,
+      payload: { source: 'monitor.jobs.foreign-smoke', runId },
+      queueName: 'reports',
+      retryLimit: 1,
+      timeoutSeconds: 60,
+    },
+  });
+
+  await prisma.jobRunLog.upsert({
+    where: { id: FOREIGN_RUN_ID },
+    update: {
+      attempts: 0,
+      durationMs: null,
+      error: null,
+      finishedAt: null,
+      jobCode: JOB_CODE,
+      metadata: {
+        actor: 'foreign-scheduler',
+        executionMode: 'queued',
+        queueName: 'reports',
+        scheduledAt: smokeCron.now,
+        source: 'monitor.jobs.foreign-smoke',
+        tenantId: FOREIGN_TENANT_ID,
+      },
+      startedAt: new Date(smokeCron.now),
+      status: 'queued',
+      tenantId: FOREIGN_TENANT_ID,
+      trigger: 'schedule',
+    },
+    create: {
+      id: FOREIGN_RUN_ID,
+      attempts: 0,
+      jobCode: JOB_CODE,
+      metadata: {
+        actor: 'foreign-scheduler',
+        executionMode: 'queued',
+        queueName: 'reports',
+        scheduledAt: smokeCron.now,
+        source: 'monitor.jobs.foreign-smoke',
+        tenantId: FOREIGN_TENANT_ID,
+      },
+      startedAt: new Date(smokeCron.now),
+      status: 'queued',
+      tenantId: FOREIGN_TENANT_ID,
+      trigger: 'schedule',
+    },
+  });
+}
+
+async function assertForeignTenantSchedulerHidden() {
+  await apiRequest(
+    `/monitor/jobs/${encodeURIComponent(JOB_CODE)}/runs/${encodeURIComponent(
+      FOREIGN_RUN_ID,
+    )}`,
+    { expected: [404] },
+  );
+
+  const queuedRuns = await apiRequest(
+    `/monitor/jobs/${encodeURIComponent(JOB_CODE)}/runs?status=queued`,
+  );
+  assertArray(queuedRuns.items, 'queued job run list items');
+  if (queuedRuns.items.some((item) => item.id === FOREIGN_RUN_ID)) {
+    throw new Error('Root scheduler run list leaked a foreign tenant run.');
+  }
+
+  const prisma = getSmokePrisma();
+  const foreignRun = await prisma.jobRunLog.findFirst({
+    where: { id: FOREIGN_RUN_ID, tenantId: FOREIGN_TENANT_ID },
+  });
+  assertEqual(
+    foreignRun?.status,
+    'queued',
+    'foreign scheduler run preserved before root worker claim',
+  );
+}
+
+async function cleanupForeignTenantSchedulerRun() {
+  const prisma = getSmokePrisma();
+
+  await prisma.tenant.deleteMany({ where: { id: FOREIGN_TENANT_ID } });
+}
 
 async function seedRedisSmokeCache() {
   redisClient = new Redis(redisUrl, {

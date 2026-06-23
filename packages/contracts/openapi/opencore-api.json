@@ -14820,6 +14820,7 @@
         "type": "object",
         "properties": {
           "id": { "type": "string" },
+          "tenantId": { "type": "string", "example": "tenant_root" },
           "code": { "type": "string" },
           "name": { "type": "string" },
           "queueName": { "type": "string" },
@@ -14832,6 +14833,7 @@
         },
         "required": [
           "id",
+          "tenantId",
           "code",
           "name",
           "queueName",
@@ -14889,6 +14891,7 @@
         "type": "object",
         "properties": {
           "id": { "type": "string" },
+          "tenantId": { "type": "string", "example": "tenant_root" },
           "jobCode": { "type": "string" },
           "status": {
             "type": "string",
@@ -14904,6 +14907,7 @@
         },
         "required": [
           "id",
+          "tenantId",
           "jobCode",
           "status",
           "trigger",

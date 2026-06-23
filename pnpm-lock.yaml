@@ -576,6 +576,9 @@ importers:
       '@opencore/common':
         specifier: workspace:*
         version: link:../common
+      '@opencore/core':
+        specifier: workspace:*
+        version: link:../core
       '@opencore/database':
         specifier: workspace:*
         version: link:../database

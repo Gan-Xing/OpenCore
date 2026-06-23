@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { getRequestContext, runWithRequestContext } from '@opencore/core';
 import type { PrismaService } from '@opencore/database';
 import { schedulerBadRequest } from './scheduler.repository';
 import type {
@@ -13,6 +14,7 @@ export type SchedulerJobExecutionInput = {
   job: SchedulerJobDefinitionRecord;
   metadata?: Record<string, unknown>;
   prisma?: PrismaService;
+  tenantId: string;
 };
 
 export type SchedulerJobHandlerInput = SchedulerJobExecutionInput & {
@@ -62,7 +64,7 @@ export class SchedulerJobExecutor {
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
       try {
         const result = await withTimeout(
-          Promise.resolve(handler({ ...input, attempt })),
+          executeHandlerWithTenantContext(handler, input, attempt),
           input.job.timeoutSeconds,
           input.entry.handlerKey,
         );
@@ -111,14 +113,14 @@ export const defaultSchedulerJobHandlers: Readonly<
       driftCheck: 'configured',
     },
   }),
-  'maintenance.auditLogRetention': async ({ job, prisma }) => {
+  'maintenance.auditLogRetention': async ({ job, prisma, tenantId }) => {
     const retentionDays = normalizeRetentionDays(job.payload?.retentionDays);
     const cutoffBefore = new Date(
       Date.now() - retentionDays * 24 * 60 * 60 * 1000,
     );
     const result = prisma
       ? await prisma.auditLog.deleteMany({
-          where: { createdAt: { lt: cutoffBefore } },
+          where: { createdAt: { lt: cutoffBefore }, tenantId },
         })
       : { count: 0 };
 
@@ -161,6 +163,29 @@ export const defaultSchedulerJobHandlers: Readonly<
   },
 };
 
+function executeHandlerWithTenantContext(
+  handler: SchedulerJobHandler,
+  input: SchedulerJobExecutionInput,
+  attempt: number,
+): Promise<SchedulerJobHandlerResult> {
+  const currentContext = getRequestContext();
+
+  return runWithRequestContext(
+    {
+      requestId:
+        currentContext?.requestId ??
+        `scheduler:${input.tenantId}:${input.job.code}`,
+      traceId:
+        currentContext?.traceId ?? `scheduler:${input.tenantId}:${input.job.id}`,
+      actorUserId: currentContext?.actorUserId,
+      accessMode: currentContext?.accessMode ?? 'tenant',
+      membershipId: currentContext?.membershipId,
+      tenantId: input.tenantId,
+    },
+    () => Promise.resolve(handler({ ...input, attempt })),
+  );
+}
+
 function normalizeRetentionDays(value: unknown): number {
   const normalized = Number(value ?? 90);
 
@@ -185,6 +210,7 @@ function createExecutionMetadata(
     attempts,
     executionMode: input.executionMode ?? 'in-process',
     handlerKey: input.entry.handlerKey,
+    tenantId: input.tenantId,
     result: resultMetadata ?? {},
   };
 }

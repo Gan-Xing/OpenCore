@@ -4,7 +4,7 @@ Date: 2026-06-23
 Repository: `Gan-Xing/OpenCore`  
 Branch: `main`  
 Target track: `Cycle-022 / Tenant Foundation`  
-Status: **In progress; T4g system notice tenant isolation implemented; T4 core data isolation remains partial**
+Status: **In progress; T5a scheduler tenant propagation implemented; T5 runtime propagation remains partial**
 
 ## 0. Current Round Snapshot
 
@@ -12,7 +12,7 @@ Updated: 2026-06-23
 
 Current completed slice count: **4 full slices**
 
-This working tree has advanced Cycle-022 through the first four full deployable tenant foundation slices plus T4a online-session tenant isolation, T4b login-log tenant isolation, T4c operation-audit tenant isolation, T4d dictionary tenant isolation, T4e system config tenant isolation, T4f file asset tenant isolation, and T4g system notice tenant isolation:
+This working tree has advanced Cycle-022 through the first four full deployable tenant foundation slices plus T4a online-session tenant isolation, T4b login-log tenant isolation, T4c operation-audit tenant isolation, T4d dictionary tenant isolation, T4e system config tenant isolation, T4f file asset tenant isolation, T4g system notice tenant isolation, and T5a scheduler tenant propagation:
 
 - Prisma models for `TenantPlan`, `TenantPlanModule`, `Tenant`, `TenantMembership`, `TenantMembershipRole`, `TenantMembershipPost`, `PlatformRole`, `UserPlatformRole`, and `PlatformRolePermission`.
 - Migration `20260622223000_tenant_foundation` creates the `root` tenant, root `system.full` plan, root memberships for existing users, and transitional root copies of `UserRole` and `UserPost`.
@@ -99,11 +99,18 @@ This working tree has advanced Cycle-022 through the first four full deployable 
 - `smoke:core-notice` seeds a foreign tenant notice/template/delivery/receipt fixture and proves root-scope list/detail/inbox/read/delivery/template mutation operations do not cross tenants.
 - `pnpm guard:tenant-notice-scope` was added for the T4g System Notice isolation closure.
 - Refreshed deploy completed on API `39172` and Admin `39174`; local deploy smoke and public API notice smoke passed.
+- Migration `20260624001000_tenant_scoped_scheduler` makes `JobDefinition` and `JobRunLog` tenant-owned with root backfill, `(tenantId, code)` job uniqueness, tenant indexes, and a same-tenant run-to-job FK.
+- `PrismaSchedulerRepository` now resolves the active tenant from `RequestContext` and scopes job summary/list/detail/create/update/enable/disable/manual trigger/cron dispatch/worker claim/run list/run detail/run clean operations.
+- `SchedulerJobExecutor` restores tenant request context during handler execution, and the audit-log retention handler deletes only rows for the owning tenant.
+- Scheduler seed records, OpenAPI DTOs, SDK summaries/fixtures, and Admin Jobs now expose `tenantId`.
+- `smoke:core-monitor-jobs` seeds a foreign tenant scheduler job/run and proves root-scope monitor job APIs and worker claim do not cross tenants.
+- `pnpm guard:tenant-scheduler-scope` was added for the T5a Scheduler propagation closure.
+- Refreshed deploy completed on API `39172` and Admin `39174`; local deploy smoke and public API monitor-jobs smoke passed.
 
 Still not complete:
 
 - tenant-scoped System/core repositories for other unreviewed non-org data;
-- Redis/file/queue/WebSocket/Integration/OAuth/audit runtime propagation;
+- Redis/file/WebSocket/Integration/OAuth/audit runtime propagation and broader BullMQ queue namespace/payload handling;
 - Tenant Plan CRUD, Tenant Member CRUD/invitation, Admin switcher, and platform visit mode beyond active-tenant member assignment;
 - platform visit/impersonation audit.
 

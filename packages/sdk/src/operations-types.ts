@@ -4,6 +4,7 @@ export type { PageRequest, PageResponse };
 
 export type JobDefinitionSummary = {
   id: string;
+  tenantId: string;
   code: string;
   name: string;
   queueName: string;
@@ -17,6 +18,7 @@ export type JobDefinitionSummary = {
 
 export type JobRunLogSummary = {
   id: string;
+  tenantId: string;
   jobCode: string;
   status: 'completed' | 'failed' | 'queued' | 'running';
   trigger: 'manual' | 'schedule';
@@ -162,13 +164,13 @@ export type OperationsSummary = {
 
 export type CreateJobDefinitionRequest = Omit<
   JobDefinitionSummary,
-  'adapter' | 'enabled' | 'id'
+  'adapter' | 'enabled' | 'id' | 'tenantId'
 > & {
   enabled?: boolean;
 };
 
 export type UpdateJobDefinitionRequest = Partial<
-  Omit<JobDefinitionSummary, 'adapter' | 'code' | 'id'>
+  Omit<JobDefinitionSummary, 'adapter' | 'code' | 'id' | 'tenantId'>
 >;
 
 export type TriggerJobRequest = {
@@ -336,6 +338,7 @@ export function createOperationsFixtures(): OperationsFixtures {
   const jobs: readonly JobDefinitionSummary[] = [
     {
       id: 'job_openapi_drift',
+      tenantId: 'tenant_root',
       code: 'openapi.drift-check',
       name: 'OpenAPI drift check',
       queueName: 'maintenance',
@@ -348,6 +351,7 @@ export function createOperationsFixtures(): OperationsFixtures {
     },
     {
       id: 'job_audit_log_retention_clean',
+      tenantId: 'tenant_root',
       code: 'audit-log.retention-clean',
       name: 'Audit log retention clean',
       queueName: 'maintenance',
@@ -362,6 +366,7 @@ export function createOperationsFixtures(): OperationsFixtures {
   const jobRuns: readonly JobRunLogSummary[] = [
     {
       id: 'run_openapi_drift_1',
+      tenantId: 'tenant_root',
       jobCode: 'openapi.drift-check',
       status: 'completed',
       trigger: 'manual',
@@ -374,11 +379,13 @@ export function createOperationsFixtures(): OperationsFixtures {
         attempts: 1,
         executionMode: 'in-process',
         handlerKey: 'maintenance.openapiDriftCheck',
+        tenantId: 'tenant_root',
         result: { driftCheck: 'configured' },
       },
     },
     {
       id: 'run_audit_retention_worker_1',
+      tenantId: 'tenant_root',
       jobCode: 'audit-log.retention-clean',
       status: 'completed',
       trigger: 'schedule',
@@ -392,6 +399,7 @@ export function createOperationsFixtures(): OperationsFixtures {
         executionMode: 'worker',
         handlerKey: 'maintenance.auditLogRetention',
         queuedRunId: 'run_audit_retention_queued_1',
+        tenantId: 'tenant_root',
         result: {
           affected: 0,
           dryRun: true,

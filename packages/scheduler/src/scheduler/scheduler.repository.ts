@@ -7,6 +7,7 @@ import {
   type PageQueryInput,
   type PageResult,
 } from '@opencore/common';
+import { getRequestContext } from '@opencore/core';
 import type {
   JobDefinitionSummaryDto,
   JobRunSummaryDto,
@@ -20,6 +21,8 @@ import {
   type SchedulerJobRegistryEntry,
   type SchedulerJobRunLogRecord,
 } from './scheduler.records';
+
+export const ROOT_TENANT_ID = 'tenant_root';
 
 export type SchedulerJobQuery = PageQueryInput & {
   enabled?: boolean | string;
@@ -227,6 +230,10 @@ export function createSchedulerSummary(input: {
     jobs: createJobDefinitionSummary(input.jobs),
     jobRuns: createJobRunSummary(input.jobRuns),
   };
+}
+
+export function resolveCurrentTenantId(): string {
+  return getRequestContext()?.tenantId ?? ROOT_TENANT_ID;
 }
 
 export function createJobDefinitionSummary(

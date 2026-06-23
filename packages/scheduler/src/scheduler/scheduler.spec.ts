@@ -1,10 +1,14 @@
 import { Prisma } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
+import { runWithRequestContext } from '@opencore/core';
 import { PrismaService } from '@opencore/database';
 import { SchedulerJobExecutor } from './scheduler.executor';
 import { PrismaSchedulerRepository } from './scheduler.prisma-repository';
 import { SeedSchedulerRepository } from './scheduler.seed-repository';
 import { SchedulerService } from './scheduler.service';
+
+const ROOT_TENANT_ID = 'tenant_root';
+const FOREIGN_TENANT_ID = 'tenant_scheduler_foreign_spec';
 
 describe('@opencore/scheduler', () => {
   it('lists, filters, manages and triggers whitelisted seed jobs', async () => {
@@ -276,6 +280,71 @@ describe('@opencore/scheduler', () => {
     ).toBe(false);
   });
 
+  it('scopes jobs and queued worker runs by tenant context', async () => {
+    const service = new SchedulerService(new SeedSchedulerRepository());
+
+    await runAsTenant(FOREIGN_TENANT_ID, () =>
+      service.createJob({
+        code: 'report.refresh',
+        cron: '0 4 * * *',
+        name: 'Foreign refresh reports',
+        payload: { reportCode: 'foreign.runtime' },
+        queueName: 'reports',
+      }),
+    );
+
+    await expectHttpExceptionCode(
+      service.getJob('report.refresh'),
+      'SCHEDULER_RESOURCE_NOT_FOUND',
+    );
+
+    const foreignDispatch = await runAsTenant(FOREIGN_TENANT_ID, () =>
+      service.dispatchDueJobs({
+        actor: 'foreign-scheduler',
+        now: '2026-06-10T04:00:00.000Z',
+        queueName: 'reports',
+      }),
+    );
+    expect(foreignDispatch.queuedRuns).toEqual([
+      expect.objectContaining({
+        jobCode: 'report.refresh',
+        tenantId: FOREIGN_TENANT_ID,
+        metadata: expect.objectContaining({ tenantId: FOREIGN_TENANT_ID }),
+      }),
+    ]);
+
+    await expect(
+      service.claimQueuedJobs({
+        actor: 'root-scheduler',
+        queueName: 'reports',
+      }),
+    ).resolves.toMatchObject({
+      claimedCount: 0,
+      completedCount: 0,
+    });
+
+    await expect(
+      runAsTenant(FOREIGN_TENANT_ID, () =>
+        service.claimQueuedJobs({
+          actor: 'foreign-worker',
+          queueName: 'reports',
+        }),
+      ),
+    ).resolves.toMatchObject({
+      claimedCount: 1,
+      completedCount: 1,
+      runs: [
+        expect.objectContaining({
+          tenantId: FOREIGN_TENANT_ID,
+          metadata: expect.objectContaining({
+            executionMode: 'worker',
+            tenantId: FOREIGN_TENANT_ID,
+          }),
+        }),
+      ],
+    });
+  });
+
   it('rejects invalid cron and unsafe numeric policy', async () => {
     const service = new SchedulerService(new SeedSchedulerRepository());
 
@@ -327,8 +396,10 @@ describe('@opencore/scheduler', () => {
           name: 'Missing handler',
           queueName: 'maintenance',
           retryLimit: 0,
+          tenantId: ROOT_TENANT_ID,
           timeoutSeconds: 10,
         },
+        tenantId: ROOT_TENANT_ID,
       }),
       'SCHEDULER_HANDLER_NOT_FOUND',
     );
@@ -341,13 +412,17 @@ describe('@opencore/scheduler', () => {
     const testRunId = randomUUID().slice(0, 8);
     const code = `report.refresh`;
     const jobName = `Scheduler Test ${testRunId}`;
+    const foreignTenantId = `${FOREIGN_TENANT_ID}_${testRunId}`;
+    const foreignJobName = `Foreign Scheduler Test ${testRunId}`;
     const createdRunIds: string[] = [];
     let originalJob: Awaited<
       ReturnType<typeof prisma.jobDefinition.findUnique>
     >;
 
     beforeEach(async () => {
-      originalJob = await prisma.jobDefinition.findUnique({ where: { code } });
+      originalJob = await prisma.jobDefinition.findUnique({
+        where: { tenantId_code: { tenantId: ROOT_TENANT_ID, code } },
+      });
       await cleanupTestRows();
     });
 
@@ -496,6 +571,108 @@ describe('@opencore/scheduler', () => {
       });
     });
 
+    it('scopes persisted scheduler jobs and worker claims by tenant', async () => {
+      await prisma.tenant.upsert({
+        where: { id: foreignTenantId },
+        update: {
+          code: foreignTenantId,
+          name: 'Foreign Scheduler Tenant',
+          slug: foreignTenantId,
+          status: 'active',
+        },
+        create: {
+          id: foreignTenantId,
+          code: foreignTenantId,
+          name: 'Foreign Scheduler Tenant',
+          slug: foreignTenantId,
+          status: 'active',
+        },
+      });
+
+      if (originalJob) {
+        await service.updateJob(code, {
+          enabled: true,
+          name: jobName,
+          payload: { source: 'scheduler.spec.root' },
+          queueName: 'reports',
+        });
+      } else {
+        await service.createJob({
+          code,
+          enabled: true,
+          name: jobName,
+          payload: { source: 'scheduler.spec.root' },
+          queueName: 'reports',
+        });
+      }
+
+      await runAsTenant(foreignTenantId, () =>
+        service.createJob({
+          code,
+          cron: '20 4 * * *',
+          enabled: true,
+          name: foreignJobName,
+          payload: { source: 'scheduler.spec.foreign' },
+          queueName: 'reports',
+        }),
+      );
+
+      await expect(service.getJob(code)).resolves.toMatchObject({
+        name: jobName,
+        tenantId: ROOT_TENANT_ID,
+      });
+      await expect(
+        runAsTenant(foreignTenantId, () => service.getJob(code)),
+      ).resolves.toMatchObject({
+        name: foreignJobName,
+        tenantId: foreignTenantId,
+      });
+
+      const foreignDispatch = await runAsTenant(foreignTenantId, () =>
+        service.dispatchDueJobs({
+          actor: 'foreign-dispatcher',
+          now: '2026-06-10T04:20:00.000Z',
+          queueName: 'reports',
+        }),
+      );
+      createdRunIds.push(...foreignDispatch.queuedRuns.map((run) => run.id));
+      const foreignRun = foreignDispatch.queuedRuns[0];
+      expect(foreignRun).toMatchObject({
+        jobCode: code,
+        tenantId: foreignTenantId,
+        metadata: expect.objectContaining({ tenantId: foreignTenantId }),
+      });
+
+      await expectHttpExceptionCode(
+        service.getJobRun(code, foreignRun.id),
+        'SCHEDULER_RESOURCE_NOT_FOUND',
+      );
+      await expect(
+        service.claimQueuedJobs({
+          actor: 'root-worker',
+          queueName: 'reports',
+        }),
+      ).resolves.toMatchObject({ claimedCount: 0 });
+
+      await expect(
+        runAsTenant(foreignTenantId, () =>
+          service.claimQueuedJobs({
+            actor: 'foreign-worker',
+            queueName: 'reports',
+          }),
+        ),
+      ).resolves.toMatchObject({
+        claimedCount: 1,
+        completedCount: 1,
+        runs: [
+          expect.objectContaining({
+            tenantId: foreignTenantId,
+            metadata: expect.objectContaining({ tenantId: foreignTenantId }),
+          }),
+        ],
+      });
+    });
+
     async function cleanupTestRows(): Promise<void> {
       if (createdRunIds.length > 0) {
         await prisma.jobRunLog.deleteMany({
@@ -505,8 +682,9 @@ describe('@opencore/scheduler', () => {
       }
 
       await prisma.jobDefinition.deleteMany({
-        where: { code, name: jobName },
+        where: { tenantId: ROOT_TENANT_ID, code, name: jobName },
       });
+      await prisma.tenant.deleteMany({ where: { id: foreignTenantId } });
 
       if (originalJob) {
         await prisma.jobDefinition.upsert({
@@ -518,6 +696,7 @@ describe('@opencore/scheduler', () => {
             payload: toPrismaJsonInput(originalJob.payload),
             queueName: originalJob.queueName,
             retryLimit: originalJob.retryLimit,
+            tenantId: originalJob.tenantId,
             timeoutSeconds: originalJob.timeoutSeconds,
           },
           update: {
@@ -527,9 +706,15 @@ describe('@opencore/scheduler', () => {
             payload: toPrismaJsonInput(originalJob.payload),
             queueName: originalJob.queueName,
             retryLimit: originalJob.retryLimit,
+            tenantId: originalJob.tenantId,
             timeoutSeconds: originalJob.timeoutSeconds,
           },
-          where: { code: originalJob.code },
+          where: {
+            tenantId_code: {
+              tenantId: originalJob.tenantId,
+              code: originalJob.code,
+            },
+          },
         });
       }
     }
@@ -538,6 +723,18 @@ describe('@opencore/scheduler', () => {
 
 function toPrismaJsonInput(value: Prisma.JsonValue): Prisma.InputJsonValue {
   return value === null ? Prisma.JsonNull : (value as Prisma.InputJsonValue);
+}
+
+function runAsTenant<T>(tenantId: string, callback: () => T): T {
+  return runWithRequestContext(
+    {
+      requestId: `scheduler-spec:${tenantId}`,
+      traceId: `scheduler-spec:${tenantId}`,
+      accessMode: 'tenant',
+      tenantId,
+    },
+    callback,
+  );
 }
 
 async function expectHttpExceptionCode(

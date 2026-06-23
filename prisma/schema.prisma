@@ -63,37 +63,39 @@ model TenantPlanModule {
 }
 
 model Tenant {
-  id              String                 @id @default(cuid())
-  code            String                 @unique
-  slug            String                 @unique
-  name            String
-  status          String                 @default("active")
-  planId          String?
-  plan            TenantPlan?            @relation(fields: [planId], references: [id], onDelete: SetNull)
-  contactName     String?
-  contactMobile   String?
-  accountLimit    Int?
-  expiresAt       DateTime?
-  createdByUserId String?
-  createdBy       User?                  @relation("TenantCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
-  memberships     TenantMembership[]
-  membershipRoles TenantMembershipRole[]
-  membershipPosts TenantMembershipPost[]
-  roles           Role[]
-  systemConfigs   SystemConfig[]
-  dictTypes       DictType[]
-  depts           SystemDept[]
-  posts           SystemPost[]
-  fileAssets      FileAsset[]
-  systemNotices   SystemNotice[]
-  noticeTemplates SystemNoticeTemplate[]
-  noticeReceipts  SystemNoticeReadReceipt[]
+  id               String                    @id @default(cuid())
+  code             String                    @unique
+  slug             String                    @unique
+  name             String
+  status           String                    @default("active")
+  planId           String?
+  plan             TenantPlan?               @relation(fields: [planId], references: [id], onDelete: SetNull)
+  contactName      String?
+  contactMobile    String?
+  accountLimit     Int?
+  expiresAt        DateTime?
+  createdByUserId  String?
+  createdBy        User?                     @relation("TenantCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  memberships      TenantMembership[]
+  membershipRoles  TenantMembershipRole[]
+  membershipPosts  TenantMembershipPost[]
+  roles            Role[]
+  systemConfigs    SystemConfig[]
+  dictTypes        DictType[]
+  depts            SystemDept[]
+  posts            SystemPost[]
+  fileAssets       FileAsset[]
+  systemNotices    SystemNotice[]
+  noticeTemplates  SystemNoticeTemplate[]
+  noticeReceipts   SystemNoticeReadReceipt[]
   noticeDeliveries SystemNoticeDelivery[]
-  auditLogs       AuditLog[]
-  loginLogs       LoginLog[]
-  onlineSessions  OnlineUserSession[]
-  createdAt       DateTime               @default(now())
-  updatedAt       DateTime               @updatedAt
+  schedulerJobs    JobDefinition[]
+  schedulerRuns    JobRunLog[]
+  auditLogs        AuditLog[]
+  loginLogs        LoginLog[]
+  onlineSessions   OnlineUserSession[]
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
 
   @@index([planId])
   @@index([status, expiresAt])
@@ -663,7 +665,9 @@ model CollaborationApprovalLite {
 
 model JobDefinition {
   id             String      @id @default(cuid())
-  code           String      @unique
+  tenantId       String      @default("tenant_root")
+  tenant         Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  code           String
   name           String
   queueName      String
   cron           String?
@@ -674,12 +678,17 @@ model JobDefinition {
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   runs           JobRunLog[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, queueName, enabled])
 }
 
 model JobRunLog {
   id         String        @id @default(cuid())
+  tenantId   String        @default("tenant_root")
+  tenant     Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   jobCode    String
-  job        JobDefinition @relation(fields: [jobCode], references: [code], onDelete: Cascade)
+  job        JobDefinition @relation(fields: [tenantId, jobCode], references: [tenantId, code], onDelete: Cascade)
   status     String
   trigger    String
   attempts   Int           @default(1)
@@ -688,6 +697,9 @@ model JobRunLog {
   finishedAt DateTime?
   error      String?
   metadata   Json?
+
+  @@index([tenantId, status, startedAt])
+  @@index([tenantId, jobCode, status])
 }
 
 model OnlineUserSession {
