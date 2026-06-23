@@ -188,7 +188,7 @@ Completion audit:
 
 - Cycle-022 tenant-foundation code paths are closed for the current OpenCore schema and module registry.
 - Future CRM/ERP/Mall/AI/payment domains are intentionally not implemented in Cycle-022 and require a new tenant-owned admission cycle.
-- Final completion still requires the clean-worktree stop condition; unrelated Admin modifications and `.opencore/storage/` remain outside this slice and were not reverted or committed.
+- Final completion still requires the clean-worktree stop condition; unrelated Admin source modifications remain outside this slice and were not reverted or committed.
 
 ---
 
