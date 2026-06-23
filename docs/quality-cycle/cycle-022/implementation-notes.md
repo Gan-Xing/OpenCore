@@ -572,3 +572,44 @@ Passed after deploy:
 - No platform-admin global operation-log view in T4c; platform visit/control-plane behavior belongs with T6.
 - No client-driven tenant selector for operation-log APIs.
 - No dict/config/notice/file tenant isolation in this sub-slice.
+
+## Round 11: T4d Dictionary Tenant Isolation
+
+### Completed
+
+- Made dictionaries tenant-owned:
+  - added `DictType.tenantId` with root backfill, required default, tenant/code uniqueness, tenant/date indexes, and tenant FK;
+  - exposed `tenantId` through dictionary records, DTOs, SDK summaries, seed, export previews, and Admin Dicts.
+- Scoped Prisma dictionary operations:
+  - type and item list/detail/export/create/update/delete/recycle operations resolve the active tenant from `RequestContext`;
+  - import, translation, cache refresh, and public simple-list use the same repository tenant boundary with `tenant_root` fallback.
+- Added tenant-scope verification:
+  - Prisma integration test creates the same dictionary code in root and a foreign tenant and proves root context cannot read, mutate, translate, restore, or hard-delete foreign rows;
+  - `smoke:core-dict` seeds a foreign tenant dictionary and exercises the public API.
+- Added `guard:tenant-dict-scope`.
+
+### Verification Log
+
+Passed before deploy:
+
+- Prisma validation, client generation, migration deploy, and seed passed.
+- Seed typecheck, typed-smoke typecheck, OpenAPI export/drift, registry tag, and SDK checks passed.
+- Tenant dictionary, operation-log, login-log, and online-user guard scripts passed.
+- Focused system-dict spec plus full lint/typecheck/test passed.
+
+Passed after deploy:
+
+- OpenCore deploy rebuilt API/Admin, applied migrations, reseeded, restarted API `39172` and Admin `39174`, and passed deploy smoke including local dictionary tenant checks.
+- Public API dictionary smoke passed against `http://144.217.243.161:39172`.
+
+### Remaining Product Debt
+
+- Complete T4 System/core tenant data isolation for config, notice, file, and related core tables.
+- Complete T5 Redis/file/queue/WebSocket/Integration/OAuth/runtime tenant propagation.
+- Complete T6 Tenant Plan CRUD, Tenant Member CRUD/invitation, Admin switcher, platform visit mode, and platform visit audit.
+
+### Deliberate Non-Goals
+
+- No platform-admin global dictionary view in T4d; platform visit/control-plane behavior belongs with T6.
+- No client-driven tenant selector for dictionary APIs.
+- No config/notice/file tenant isolation in this sub-slice.

@@ -463,6 +463,7 @@ export default function DictsPage() {
 
   const createDetailFields = (record: DictTypeSummary): DetailField[] => [
     { label: text.fieldId, value: record.id },
+    { label: '租户 ID', value: record.tenantId },
     { label: '字典编码', value: record.code },
     { label: '字典名称', value: record.name },
     { label: '描述', value: record.description },
@@ -986,6 +987,13 @@ export default function DictsPage() {
           {record.code}
         </Typography.Link>
       ),
+    },
+    {
+      title: '租户 ID',
+      dataIndex: 'tenantId',
+      width: 152,
+      ellipsis: true,
+      search: false,
     },
     {
       title: '字典名称',

@@ -66,6 +66,7 @@ export function createDictFixtures(): PageResponse<DictTypeSummary> {
   return createPage([
     {
       id: 'dict_system_status',
+      tenantId: 'tenant_root',
       code: 'system.status',
       name: 'System Status',
       description: 'Shared status labels for enabled and disabled records.',
@@ -76,6 +77,7 @@ export function createDictFixtures(): PageResponse<DictTypeSummary> {
       items: [
         {
           id: 'dict_item_enabled',
+          tenantId: 'tenant_root',
           dictCode: 'system.status',
           label: 'Enabled',
           value: 'enabled',
@@ -87,6 +89,7 @@ export function createDictFixtures(): PageResponse<DictTypeSummary> {
         },
         {
           id: 'dict_item_disabled',
+          tenantId: 'tenant_root',
           dictCode: 'system.status',
           label: 'Disabled',
           value: 'disabled',

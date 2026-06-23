@@ -1215,7 +1215,12 @@ async function seedSystemManagement(): Promise<{
 }> {
   for (const dict of seedDictTypes) {
     const dictType = await prisma.dictType.upsert({
-      where: { code: dict.code },
+      where: {
+        tenantId_code: {
+          tenantId: dict.tenantId,
+          code: dict.code,
+        },
+      },
       update: {
         name: dict.name,
         description: dict.description,
@@ -1226,6 +1231,7 @@ async function seedSystemManagement(): Promise<{
       },
       create: {
         id: dict.id,
+        tenantId: dict.tenantId,
         code: dict.code,
         name: dict.name,
         description: dict.description,

@@ -80,6 +80,7 @@ model Tenant {
   membershipRoles TenantMembershipRole[]
   membershipPosts TenantMembershipPost[]
   roles           Role[]
+  dictTypes       DictType[]
   depts           SystemDept[]
   posts           SystemPost[]
   auditLogs       AuditLog[]
@@ -262,7 +263,9 @@ model RolePermission {
 
 model DictType {
   id          String     @id @default(cuid())
-  code        String     @unique
+  tenantId    String     @default("tenant_root")
+  tenant      Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  code        String
   name        String
   description String?
   remark      String?
@@ -273,8 +276,10 @@ model DictType {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
-  @@index([enabled, createdAt])
-  @@index([deletedAt, createdAt])
+  @@unique([tenantId, code])
+  @@unique([tenantId, id])
+  @@index([tenantId, enabled, createdAt])
+  @@index([tenantId, deletedAt, createdAt])
 }
 
 model DictItem {

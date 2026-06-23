@@ -52,6 +52,7 @@ export type LoginLogCleanSummary = {
 };
 
 export type DictItemSummary = {
+  tenantId: string;
   colorType?: string;
   cssClass?: string;
   createdAt?: string;
@@ -72,6 +73,7 @@ export type DictDataOptionSummary = DictItemSummary & {
 
 export type DictTypeSummary = {
   id: string;
+  tenantId: string;
   code: string;
   name: string;
   description?: string;

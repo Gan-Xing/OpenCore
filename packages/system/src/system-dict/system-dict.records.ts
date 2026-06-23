@@ -1,4 +1,5 @@
 export type DictItemRecord = {
+  tenantId: string;
   dictCode: string;
   id: string;
   label: string;
@@ -19,6 +20,7 @@ export type DictDataOptionRecord = DictItemRecord & {
 
 export type DictTypeRecord = {
   id: string;
+  tenantId: string;
   code: string;
   name: string;
   description?: string;
@@ -36,6 +38,7 @@ const SEED_TIMESTAMP = '2026-06-10T00:00:00.000Z';
 export const seedDictTypes: readonly DictTypeRecord[] = [
   {
     id: 'dict_system_status',
+    tenantId: 'tenant_root',
     code: 'system.status',
     name: 'System Status',
     description: 'Shared status labels for enabled and disabled records.',
@@ -46,6 +49,7 @@ export const seedDictTypes: readonly DictTypeRecord[] = [
     updatedAt: SEED_TIMESTAMP,
     items: [
       {
+        tenantId: 'tenant_root',
         dictCode: 'system.status',
         id: 'dict_item_enabled',
         label: 'Enabled',
@@ -57,6 +61,7 @@ export const seedDictTypes: readonly DictTypeRecord[] = [
         updatedAt: SEED_TIMESTAMP,
       },
       {
+        tenantId: 'tenant_root',
         dictCode: 'system.status',
         id: 'dict_item_disabled',
         label: 'Disabled',
@@ -71,6 +76,7 @@ export const seedDictTypes: readonly DictTypeRecord[] = [
   },
   {
     id: 'dict_audit_result',
+    tenantId: 'tenant_root',
     code: 'audit.result',
     name: 'Audit Result',
     description: 'Result labels used by operation and login logs.',
@@ -81,6 +87,7 @@ export const seedDictTypes: readonly DictTypeRecord[] = [
     updatedAt: SEED_TIMESTAMP,
     items: [
       {
+        tenantId: 'tenant_root',
         dictCode: 'audit.result',
         id: 'dict_item_success',
         label: 'Success',
@@ -92,6 +99,7 @@ export const seedDictTypes: readonly DictTypeRecord[] = [
         updatedAt: SEED_TIMESTAMP,
       },
       {
+        tenantId: 'tenant_root',
         dictCode: 'audit.result',
         id: 'dict_item_failure',
         label: 'Failure',
@@ -106,6 +114,7 @@ export const seedDictTypes: readonly DictTypeRecord[] = [
   },
   {
     id: 'dict_system_user_gender',
+    tenantId: 'tenant_root',
     code: 'system.user.gender',
     name: 'System User Gender',
     description: 'User gender values used by profile and user management.',
@@ -116,6 +125,7 @@ export const seedDictTypes: readonly DictTypeRecord[] = [
     updatedAt: SEED_TIMESTAMP,
     items: [
       {
+        tenantId: 'tenant_root',
         dictCode: 'system.user.gender',
         id: 'dict_item_gender_male',
         label: 'Male',
@@ -127,6 +137,7 @@ export const seedDictTypes: readonly DictTypeRecord[] = [
         updatedAt: SEED_TIMESTAMP,
       },
       {
+        tenantId: 'tenant_root',
         dictCode: 'system.user.gender',
         id: 'dict_item_gender_female',
         label: 'Female',
@@ -138,6 +149,7 @@ export const seedDictTypes: readonly DictTypeRecord[] = [
         updatedAt: SEED_TIMESTAMP,
       },
       {
+        tenantId: 'tenant_root',
         dictCode: 'system.user.gender',
         id: 'dict_item_gender_unknown',
         label: 'Unknown',
@@ -152,6 +164,7 @@ export const seedDictTypes: readonly DictTypeRecord[] = [
   },
   {
     id: 'dict_system_notice_type',
+    tenantId: 'tenant_root',
     code: 'system.notice.type',
     name: 'System Notice Type',
     description: 'Notice categories used by system notice center.',
@@ -162,6 +175,7 @@ export const seedDictTypes: readonly DictTypeRecord[] = [
     updatedAt: SEED_TIMESTAMP,
     items: [
       {
+        tenantId: 'tenant_root',
         dictCode: 'system.notice.type',
         id: 'dict_item_notice_info',
         label: 'Info',
@@ -173,6 +187,7 @@ export const seedDictTypes: readonly DictTypeRecord[] = [
         updatedAt: SEED_TIMESTAMP,
       },
       {
+        tenantId: 'tenant_root',
         dictCode: 'system.notice.type',
         id: 'dict_item_notice_maintenance',
         label: 'Maintenance',
@@ -184,6 +199,7 @@ export const seedDictTypes: readonly DictTypeRecord[] = [
         updatedAt: SEED_TIMESTAMP,
       },
       {
+        tenantId: 'tenant_root',
         dictCode: 'system.notice.type',
         id: 'dict_item_notice_release',
         label: 'Release',
@@ -198,6 +214,7 @@ export const seedDictTypes: readonly DictTypeRecord[] = [
   },
   {
     id: 'dict_system_notice_status',
+    tenantId: 'tenant_root',
     code: 'system.notice.status',
     name: 'System Notice Status',
     description: 'Notice lifecycle statuses.',
@@ -208,6 +225,7 @@ export const seedDictTypes: readonly DictTypeRecord[] = [
     updatedAt: SEED_TIMESTAMP,
     items: [
       {
+        tenantId: 'tenant_root',
         dictCode: 'system.notice.status',
         id: 'dict_item_notice_draft',
         label: 'Draft',
@@ -219,6 +237,7 @@ export const seedDictTypes: readonly DictTypeRecord[] = [
         updatedAt: SEED_TIMESTAMP,
       },
       {
+        tenantId: 'tenant_root',
         dictCode: 'system.notice.status',
         id: 'dict_item_notice_published',
         label: 'Published',
@@ -230,6 +249,7 @@ export const seedDictTypes: readonly DictTypeRecord[] = [
         updatedAt: SEED_TIMESTAMP,
       },
       {
+        tenantId: 'tenant_root',
         dictCode: 'system.notice.status',
         id: 'dict_item_notice_archived',
         label: 'Archived',

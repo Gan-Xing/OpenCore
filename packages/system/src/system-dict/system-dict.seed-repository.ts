@@ -183,6 +183,7 @@ export class SeedSystemDictRepository extends SystemDictRepository {
 
     const dict: DictTypeRecord = {
       id: `dict_${input.code.replaceAll('.', '_')}`,
+      tenantId: 'tenant_root',
       code: input.code,
       name: input.name,
       description: input.description,
@@ -193,6 +194,7 @@ export class SeedSystemDictRepository extends SystemDictRepository {
       updatedAt: now,
       items: input.items.map((item, index) => ({
         ...item,
+        tenantId: 'tenant_root',
         dictCode: input.code,
         id: item.id ?? createDictItemId(input.code, item.value, index),
         createdAt: now,
@@ -213,6 +215,7 @@ export class SeedSystemDictRepository extends SystemDictRepository {
     const now = new Date().toISOString();
     const item = {
       ...input,
+      tenantId: dict.tenantId,
       dictCode: code,
       id: input.id ?? createDictItemId(code, input.value, dict.items.length),
       createdAt: now,

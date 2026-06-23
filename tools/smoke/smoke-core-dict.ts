@@ -7,14 +7,21 @@ import {
   assertString,
   createTypedSmokeRuntime,
 } from './runtime';
+import { disconnectSmokePrisma, getSmokePrisma } from './prisma';
 
 const smoke = createTypedSmokeRuntime();
 const { apiPrefix, baseUrl, checkDocs, clients, request } = smoke;
 
 const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+const FOREIGN_TENANT_ID = 'tenant_dict_smoke_foreign';
+const FOREIGN_DICT_CODE = `opencore.smoke.dict.foreign.${runId}`;
+const FOREIGN_DICT_ID = `dict_foreign_${runId}`;
+const FOREIGN_DICT_ITEM_ID = `dict_item_foreign_${runId}`;
+const FOREIGN_DELETED_DICT_ITEM_ID = `dict_item_foreign_deleted_${runId}`;
 const dictCode = `opencore.smoke.dict.${runId}`;
 const importDictCode = `opencore.smoke.import.${runId}`;
 const createdDictCodes: string[] = [];
+let foreignDictSeeded = false;
 
 async function main() {
   let token: string | undefined;
@@ -29,6 +36,9 @@ async function main() {
 
     const loginResponse = await smoke.login();
     token = assertString(loginResponse.accessToken, 'login accessToken');
+    await seedForeignTenantDict();
+    foreignDictSeeded = true;
+    await assertForeignTenantDictHidden(token);
 
     const importTemplate = await clients.system.getDictImportTemplate(token);
     assertString(importTemplate.contentBase64, 'dict import template content');
@@ -132,9 +142,15 @@ async function main() {
 
     const dictExport = await clients.system.exportDicts(token, { code: dictCode });
     assertEqual(dictExport.rowCount, 1, 'dict export row count');
+    assertIncludes(dictExport.columns, 'tenantId', 'dict export tenant column');
 
     const itemExport = await clients.system.exportDictItems(token, { dictCode });
     assertEqual(itemExport.rowCount, 2, 'dict item export row count');
+    assertIncludes(
+      itemExport.columns,
+      'tenantId',
+      'dict item export tenant column',
+    );
 
     const betaDetail = await clients.system.getDictItem(
       token,
@@ -294,6 +310,9 @@ async function main() {
           ...(checkDocs ? ['openapi.docs-json'] : []),
           'auth.login',
           'core.dict.import-template',
+          'core.dict.foreign-tenant-hidden',
+          'core.dict.foreign-tenant-mutation-blocked',
+          'core.dict.foreign-tenant-preserved',
           'core.dict.import-preview',
           'core.dict.import-apply',
           'core.dict.translation',
@@ -329,6 +348,11 @@ async function main() {
   } catch (error) {
     await cleanupCreatedDicts(token).catch(() => undefined);
     throw error;
+  } finally {
+    if (foreignDictSeeded) {
+      await cleanupForeignTenantDict().catch(() => undefined);
+    }
+    await disconnectSmokePrisma();
   }
 }
 
@@ -339,6 +363,142 @@ async function publicSimpleList(code: string) {
   );
   assertArray(options, 'dict simple-list options');
   return options;
+}
+
+async function seedForeignTenantDict() {
+  const prisma = getSmokePrisma();
+
+  await cleanupForeignTenantDict();
+  await prisma.tenant.upsert({
+    where: { id: FOREIGN_TENANT_ID },
+    update: {
+      code: 'dict-smoke-foreign',
+      slug: 'dict-smoke-foreign',
+      name: 'Dict Smoke Foreign',
+      status: 'active',
+    },
+    create: {
+      id: FOREIGN_TENANT_ID,
+      code: 'dict-smoke-foreign',
+      slug: 'dict-smoke-foreign',
+      name: 'Dict Smoke Foreign',
+      status: 'active',
+    },
+  });
+  await prisma.dictType.create({
+    data: {
+      id: FOREIGN_DICT_ID,
+      tenantId: FOREIGN_TENANT_ID,
+      code: FOREIGN_DICT_CODE,
+      name: 'Foreign Tenant Dictionary',
+      enabled: true,
+      system: false,
+      items: {
+        create: [
+          {
+            id: FOREIGN_DICT_ITEM_ID,
+            label: 'Foreign',
+            value: 'foreign',
+            sort: 10,
+            enabled: true,
+          },
+          {
+            id: FOREIGN_DELETED_DICT_ITEM_ID,
+            label: 'Foreign Deleted',
+            value: 'foreign-deleted',
+            sort: 20,
+            enabled: true,
+            deletedAt: new Date('2000-01-01T00:00:00.000Z'),
+          },
+        ],
+      },
+    },
+  });
+}
+
+async function assertForeignTenantDictHidden(token: string) {
+  const dictPage = await clients.system.listDicts(token, {
+    code: FOREIGN_DICT_CODE,
+    page: 1,
+    pageSize: 10,
+  });
+  assertEqual(dictPage.total, 0, 'foreign tenant dict hidden from root list');
+  const itemPage = await clients.system.listDictItemsPage(token, {
+    dictCode: FOREIGN_DICT_CODE,
+    page: 1,
+    pageSize: 10,
+  });
+  assertEqual(itemPage.total, 0, 'foreign tenant dict items hidden from root list');
+  const deletedItemPage = await clients.system.listDeletedDictItemsPage(token, {
+    dictCode: FOREIGN_DICT_CODE,
+    page: 1,
+    pageSize: 10,
+  });
+  assertEqual(
+    deletedItemPage.total,
+    0,
+    'foreign tenant deleted dict items hidden from root list',
+  );
+  assertOptionValues(
+    FOREIGN_DICT_CODE,
+    await publicSimpleList(FOREIGN_DICT_CODE),
+    [],
+    'foreign tenant simple-list options',
+  );
+
+  await smoke.apiRequest(`/core/dicts/${encodeURIComponent(FOREIGN_DICT_CODE)}`, {
+    expected: [404],
+    token,
+  });
+  await smoke.apiRequest(
+    `/core/dicts/${encodeURIComponent(FOREIGN_DICT_CODE)}/items/${encodeURIComponent(
+      FOREIGN_DICT_ITEM_ID,
+    )}`,
+    { expected: [404], token },
+  );
+  await smoke.apiRequest('/core/dicts/status', {
+    body: { codes: [FOREIGN_DICT_CODE], enabled: false },
+    expected: [404],
+    method: 'PATCH',
+    token,
+  });
+  await smoke.apiRequest('/core/dict-items/batch', {
+    body: { ids: [FOREIGN_DICT_ITEM_ID] },
+    expected: [404],
+    method: 'DELETE',
+    token,
+  });
+  await smoke.apiRequest(
+    `/core/dict-items/${encodeURIComponent(FOREIGN_DELETED_DICT_ITEM_ID)}/restore`,
+    { expected: [404], method: 'PATCH', token },
+  );
+  await smoke.apiRequest(
+    `/core/dict-items/${encodeURIComponent(FOREIGN_DELETED_DICT_ITEM_ID)}/hard`,
+    { expected: [404], method: 'DELETE', token },
+  );
+
+  const translation = await clients.system.translateDictValues(token, {
+    entries: [{ dictCode: FOREIGN_DICT_CODE, values: ['foreign'] }],
+  });
+  assertEqual(translation.items[0]?.found, false, 'foreign tenant translation hidden');
+  await assertForeignTenantDictPreserved();
+}
+
+async function assertForeignTenantDictPreserved() {
+  const prisma = getSmokePrisma();
+  const dict = await prisma.dictType.findUnique({
+    where: {
+      tenantId_code: {
+        tenantId: FOREIGN_TENANT_ID,
+        code: FOREIGN_DICT_CODE,
+      },
+    },
+    include: { items: true },
+  });
+
+  if (!dict || dict.items.length !== 2) {
+    throw new Error('Foreign tenant dictionary was changed from root scope');
+  }
 }
 
 function assertOptionValues(
@@ -467,6 +627,16 @@ async function cleanupCreatedDicts(token: string | undefined) {
   }
 
   createdDictCodes.length = 0;
+}
+
+async function cleanupForeignTenantDict() {
+  const prisma = getSmokePrisma();
+
+  await prisma.dictItem.deleteMany({
+    where: { type: { tenantId: FOREIGN_TENANT_ID } },
+  });
+  await prisma.dictType.deleteMany({ where: { tenantId: FOREIGN_TENANT_ID } });
+  await prisma.tenant.deleteMany({ where: { id: FOREIGN_TENANT_ID } });
 }
 
 main().catch((error: unknown) => {

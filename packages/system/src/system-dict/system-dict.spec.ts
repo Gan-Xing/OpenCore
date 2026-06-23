@@ -1,8 +1,11 @@
 import { randomUUID } from 'node:crypto';
+import { runWithRequestContext } from '@opencore/core';
 import { PrismaService } from '@opencore/database';
 import { PrismaSystemDictRepository } from './system-dict.prisma-repository';
 import { SeedSystemDictRepository } from './system-dict.seed-repository';
 import { SystemDictService } from './system-dict.service';
+
+const ROOT_TENANT_ID = 'tenant_root';
 
 describe('@opencore/system system-dict', () => {
   it('paginates seeded dictionaries and creates current-page export previews', async () => {
@@ -19,7 +22,15 @@ describe('@opencore/system system-dict', () => {
     await expect(service.createExportPreview()).resolves.toMatchObject({
       filename: 'opencore-dicts.csv',
       scope: 'current-page',
-      columns: ['code', 'name', 'enabled', 'system', 'createdAt', 'updatedAt'],
+      columns: [
+        'tenantId',
+        'code',
+        'name',
+        'enabled',
+        'system',
+        'createdAt',
+        'updatedAt',
+      ],
       rowCount: 5,
     });
     await expect(service.getDict('system.status')).resolves.toMatchObject({
@@ -234,9 +245,33 @@ describe('@opencore/system system-dict', () => {
     const testRunId = randomUUID().slice(0, 8);
     const dictCode = `system.pkg.${testRunId}`;
     const importDictCode = `system.pkg.import.${testRunId}`;
+    const otherTenantId = `tenant_dict_${testRunId}`;
+    const sharedDictCode = `tenant.dict.shared.${testRunId}`;
+    const otherOnlyDictCode = `tenant.dict.foreign.${testRunId}`;
+    const otherOnlyItemId = `dict_item_foreign_${testRunId}`;
 
     beforeEach(async () => {
       await cleanupTestRows();
+      await prisma.tenant.upsert({
+        where: { id: ROOT_TENANT_ID },
+        update: {},
+        create: {
+          id: ROOT_TENANT_ID,
+          code: 'root',
+          slug: 'root',
+          name: 'Root Tenant',
+          status: 'active',
+        },
+      });
+      await prisma.tenant.create({
+        data: {
+          id: otherTenantId,
+          code: `dict-${testRunId}`,
+          slug: `dict-${testRunId}`,
+          name: `Dict ${testRunId}`,
+          status: 'active',
+        },
+      });
     });
 
     afterEach(async () => {
@@ -257,6 +292,127 @@ describe('@opencore/system system-dict', () => {
           ]),
         }),
       );
+    });
+
+    it('scopes Prisma dictionary operations to the request tenant', async () => {
+      await runInTenant(ROOT_TENANT_ID, () =>
+        service.createDict({
+          code: sharedDictCode,
+          name: 'Root Shared Dictionary',
+          items: [
+            {
+              id: `dict_item_root_${testRunId}`,
+              label: 'Root',
+              value: 'root',
+              sort: 10,
+            },
+          ],
+        }),
+      );
+      await runInTenant(otherTenantId, () =>
+        service.createDict({
+          code: sharedDictCode,
+          name: 'Other Shared Dictionary',
+          items: [
+            {
+              id: `dict_item_other_shared_${testRunId}`,
+              label: 'Other',
+              value: 'other',
+              sort: 10,
+            },
+          ],
+        }),
+      );
+      const otherOnly = await runInTenant(otherTenantId, () =>
+        service.createDict({
+          code: otherOnlyDictCode,
+          name: 'Foreign Dictionary',
+          items: [
+            {
+              id: otherOnlyItemId,
+              label: 'Foreign',
+              value: 'foreign',
+              sort: 10,
+            },
+          ],
+        }),
+      );
+
+      await expect(
+        runInTenant(ROOT_TENANT_ID, () => service.getDict(sharedDictCode)),
+      ).resolves.toMatchObject({
+        tenantId: ROOT_TENANT_ID,
+        code: sharedDictCode,
+        items: [expect.objectContaining({ value: 'root' })],
+      });
+      await expect(
+        runInTenant(otherTenantId, () => service.getDict(sharedDictCode)),
+      ).resolves.toMatchObject({
+        tenantId: otherTenantId,
+        code: sharedDictCode,
+        items: [expect.objectContaining({ value: 'other' })],
+      });
+      await expectHttpExceptionCode(
+        runInTenant(ROOT_TENANT_ID, () =>
+          service.createDict({
+            code: sharedDictCode,
+            name: 'Duplicate Root Shared Dictionary',
+            items: [],
+          }),
+        ),
+        'SYSTEM_DICT_ALREADY_EXISTS',
+      );
+
+      await expectHttpExceptionCode(
+        runInTenant(ROOT_TENANT_ID, () => service.getDict(otherOnlyDictCode)),
+        'SYSTEM_DICT_NOT_FOUND',
+      );
+      await expectHttpExceptionCode(
+        runInTenant(ROOT_TENANT_ID, () =>
+          service.getDictItem(otherOnlyDictCode, otherOnlyItemId),
+        ),
+        'SYSTEM_DICT_ITEM_NOT_FOUND',
+      );
+      await expect(
+        runInTenant(ROOT_TENANT_ID, () =>
+          service.listDictDataOptions({ dictCode: otherOnlyDictCode }),
+        ),
+      ).resolves.toEqual([]);
+      await expect(
+        runInTenant(ROOT_TENANT_ID, () =>
+          service.translateDictValues({
+            entries: [{ dictCode: otherOnlyDictCode, values: ['foreign'] }],
+          }),
+        ),
+      ).resolves.toMatchObject({
+        items: [expect.objectContaining({ found: false, value: 'foreign' })],
+      });
+      await expectHttpExceptionCode(
+        runInTenant(ROOT_TENANT_ID, () =>
+          service.deleteDicts({ codes: [otherOnlyDictCode] }),
+        ),
+        'SYSTEM_DICT_NOT_FOUND',
+      );
+      await expectHttpExceptionCode(
+        runInTenant(ROOT_TENANT_ID, () =>
+          service.updateDictItemStatus({
+            ids: [otherOnly.items[0]?.id ?? otherOnlyItemId],
+            enabled: false,
+          }),
+        ),
+        'SYSTEM_DICT_ITEM_NOT_FOUND',
+      );
+
+      await runInTenant(otherTenantId, () =>
+        service.deleteDictItem(otherOnlyDictCode, otherOnlyItemId),
+      );
+      await expectHttpExceptionCode(
+        runInTenant(ROOT_TENANT_ID, () => service.restoreDictItem(otherOnlyItemId)),
+        'SYSTEM_DICT_ITEM_NOT_FOUND',
+      );
+      await expect(
+        runInTenant(otherTenantId, () => service.restoreDictItem(otherOnlyItemId)),
+      ).resolves.toMatchObject({ tenantId: otherTenantId, value: 'foreign' });
     });
 
     it('persists dictionary CRUD through Prisma', async () => {
@@ -428,11 +584,32 @@ describe('@opencore/system system-dict', () => {
 
     async function cleanupTestRows(): Promise<void> {
       await prisma.dictItem.deleteMany({
-        where: { type: { code: { in: [dictCode, importDictCode] } } },
+        where: {
+          type: {
+            code: {
+              in: [
+                dictCode,
+                importDictCode,
+                sharedDictCode,
+                otherOnlyDictCode,
+              ],
+            },
+          },
+        },
       });
       await prisma.dictType.deleteMany({
-        where: { code: { in: [dictCode, importDictCode] } },
+        where: {
+          code: {
+            in: [
+              dictCode,
+              importDictCode,
+              sharedDictCode,
+              otherOnlyDictCode,
+            ],
+          },
+        },
       });
+      await prisma.tenant.deleteMany({ where: { id: otherTenantId } });
     }
   });
 });
@@ -530,4 +707,15 @@ function requireDictItem(
   }
 
   return item;
+}
+
+function runInTenant<T>(tenantId: string, callback: () => T): T {
+  return runWithRequestContext(
+    {
+      requestId: `test-${tenantId}`,
+      traceId: `test-${tenantId}`,
+      tenantId,
+    },
+    callback,
+  );
 }

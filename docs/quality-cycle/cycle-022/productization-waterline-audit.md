@@ -121,7 +121,7 @@ These remain below the productization waterline and cannot be described as compl
 | Seed/SDK/Admin consistency          | Done    | Seed and SDK fixtures include root tenant fields; Admin Online Users exposes access mode, tenant id, and membership id.      |
 | OpenAPI consistency                 | Done    | Online-session DTO already includes tenant fields; no endpoint shape change was required.                                    |
 | Smoke/guard                         | Done    | Added `guard:tenant-online-user-scope`; existing `smoke:core-online-user` now covers foreign-tenant session isolation.       |
-| Dict/config/notice/file/log scope   | Pending | T4a only closes online sessions. Remaining T4 modules still need tenant ownership, tests, smoke, guards, and docs.           |
+| Config/notice/file scope            | Pending | T4a only closes online sessions. Remaining T4 modules still need tenant ownership, tests, smoke, guards, and docs.           |
 
 ## T4b Audit
 
@@ -146,3 +146,15 @@ These remain below the productization waterline and cannot be described as compl
 | Seed/OpenAPI/SDK/Admin         | Done    | Seed audit logs, DTO, SDK summary fixture, and Admin Operation Logs expose `tenantId`.                                       |
 | Smoke/guard                    | Done    | Added `guard:tenant-operation-log-scope`; `smoke:core-audit-log` now covers foreign-tenant operation-audit isolation.        |
 | Remaining audit scope          | Pending | Platform visit/impersonation audit remains pending.                                                                          |
+
+## T4d Dictionaries
+
+| Requirement                    | Status  | Notes                                                                                                                        |
+| ------------------------------ | ------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Dictionary tenant ownership    | Done    | `DictType.tenantId` is backfilled to `tenant_root`, required, indexed, and constrained to `Tenant`.                          |
+| Tenant-code uniqueness         | Done    | Dictionary code uniqueness is now `(tenantId, code)`, allowing the same dictionary code in different tenants.                 |
+| Repository tenant isolation    | Done    | Dictionary type/item list/detail/export/create/update/delete/recycle/import/translation/simple-list use `RequestContext`.    |
+| Cross-tenant API rejection     | Done    | Prisma integration test and smoke prove foreign-tenant dictionaries are hidden, cannot be mutated, and survive root actions. |
+| Seed/OpenAPI/SDK/Admin         | Done    | Seed dictionary rows, DTOs, SDK summaries/fixtures, and Admin Dicts expose `tenantId`.                                      |
+| Smoke/guard                    | Done    | Added `guard:tenant-dict-scope`; `smoke:core-dict` now covers foreign-tenant dictionary isolation.                          |
+| Remaining T4 data scope        | Pending | Config, notice, and file isolation remain pending.                                                                           |

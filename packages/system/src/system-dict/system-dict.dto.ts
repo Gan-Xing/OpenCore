@@ -2,6 +2,9 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class DictItemDto {
   @ApiProperty()
+  tenantId!: string;
+
+  @ApiProperty()
   id!: string;
 
   @ApiProperty()
@@ -71,6 +74,9 @@ export class DictTypeQueryDto {
 export class DictTypeDto {
   @ApiProperty()
   id!: string;
+
+  @ApiProperty()
+  tenantId!: string;
 
   @ApiProperty()
   code!: string;
@@ -173,8 +179,8 @@ export class CreateDictTypeDto {
   @ApiProperty({ required: false, default: true })
   enabled?: boolean;
 
-  @ApiProperty({ required: false, type: [DictItemDto] })
-  items?: DictItemDto[];
+  @ApiProperty({ required: false, type: () => [CreateDictItemDto] })
+  items?: CreateDictItemDto[];
 }
 
 export class UpdateDictTypeDto {
@@ -190,8 +196,8 @@ export class UpdateDictTypeDto {
   @ApiProperty({ required: false })
   enabled?: boolean;
 
-  @ApiProperty({ required: false, type: [DictItemDto] })
-  items?: DictItemDto[];
+  @ApiProperty({ required: false, type: () => [CreateDictItemDto] })
+  items?: CreateDictItemDto[];
 }
 
 export class CreateDictItemDto {

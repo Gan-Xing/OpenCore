@@ -4,7 +4,7 @@ Date: 2026-06-23
 Repository: `Gan-Xing/OpenCore`  
 Branch: `main`  
 Target track: `Cycle-022 / Tenant Foundation`  
-Status: **In progress; T4c operation-audit tenant isolation implemented, deployed, and verified; T4 core data isolation remains partial**
+Status: **In progress; T4d dictionary tenant isolation implemented, deployed, and verified; T4 core data isolation remains partial**
 
 ## 0. Current Round Snapshot
 
@@ -12,7 +12,7 @@ Updated: 2026-06-23
 
 Current completed slice count: **4 full slices**
 
-This working tree has advanced Cycle-022 through the first four full deployable tenant foundation slices plus T4a online-session tenant isolation, T4b login-log tenant isolation, and T4c operation-audit tenant isolation:
+This working tree has advanced Cycle-022 through the first four full deployable tenant foundation slices plus T4a online-session tenant isolation, T4b login-log tenant isolation, T4c operation-audit tenant isolation, and T4d dictionary tenant isolation:
 
 - Prisma models for `TenantPlan`, `TenantPlanModule`, `Tenant`, `TenantMembership`, `TenantMembershipRole`, `TenantMembershipPost`, `PlatformRole`, `UserPlatformRole`, and `PlatformRolePermission`.
 - Migration `20260622223000_tenant_foundation` creates the `root` tenant, root `system.full` plan, root memberships for existing users, and transitional root copies of `UserRole` and `UserPost`.
@@ -74,10 +74,16 @@ This working tree has advanced Cycle-022 through the first four full deployable 
 - `smoke:core-audit-log` seeds a foreign tenant audit log and proves root-scope list/detail/delete/retention-clean do not cross tenants.
 - `pnpm guard:tenant-operation-log-scope` was added for the T4c Operation Audit Log isolation closure.
 - Refreshed deploy completed on API `39172` and Admin `39174`; local deploy smoke and public API operation-audit smoke passed.
+- Migration `20260623203000_tenant_scoped_dicts` makes `DictType` tenant-owned with root backfill, tenant/code uniqueness, tenant/date indexes, and a tenant FK.
+- `PrismaSystemDictRepository` now resolves the active tenant from `RequestContext` and scopes dictionary type/item list/detail/export/create/update/delete/recycle/import/translation/simple-list operations.
+- Dictionary seed records, OpenAPI DTOs, SDK summaries/fixtures, and Admin Dicts now expose `tenantId`.
+- `smoke:core-dict` seeds a foreign tenant dictionary and proves root-scope list/detail/mutation/simple-list/translation do not cross tenants.
+- `pnpm guard:tenant-dict-scope` was added for the T4d Dictionary isolation closure.
+- Refreshed deploy completed on API `39172` and Admin `39174`; local deploy smoke and public API dictionary smoke passed.
 
 Still not complete:
 
-- tenant-scoped System/core repositories for dict, config, notices, files, and other non-org data;
+- tenant-scoped System/core repositories for config, notices, files, and other non-org data;
 - Redis/file/queue/WebSocket/Integration/OAuth/audit runtime propagation;
 - Tenant Plan CRUD, Tenant Member CRUD/invitation, Admin switcher, and platform visit mode beyond active-tenant member assignment;
 - platform visit/impersonation audit.

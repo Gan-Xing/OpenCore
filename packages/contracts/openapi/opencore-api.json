@@ -12411,6 +12411,7 @@
       "DictItemDto": {
         "type": "object",
         "properties": {
+          "tenantId": { "type": "string" },
           "id": { "type": "string" },
           "dictCode": { "type": "string" },
           "label": { "type": "string" },
@@ -12425,6 +12426,7 @@
           "deletedAt": { "type": "string" }
         },
         "required": [
+          "tenantId",
           "id",
           "dictCode",
           "label",
@@ -12439,6 +12441,7 @@
         "type": "object",
         "properties": {
           "id": { "type": "string" },
+          "tenantId": { "type": "string" },
           "code": { "type": "string" },
           "name": { "type": "string" },
           "description": { "type": "string" },
@@ -12455,6 +12458,7 @@
         },
         "required": [
           "id",
+          "tenantId",
           "code",
           "name",
           "enabled",
@@ -12707,6 +12711,7 @@
       "DictDataOptionDto": {
         "type": "object",
         "properties": {
+          "tenantId": { "type": "string" },
           "id": { "type": "string" },
           "dictCode": { "type": "string" },
           "label": { "type": "string" },
@@ -12721,6 +12726,7 @@
           "deletedAt": { "type": "string" }
         },
         "required": [
+          "tenantId",
           "id",
           "dictCode",
           "label",
@@ -12730,21 +12736,6 @@
           "createdAt",
           "updatedAt"
         ]
-      },
-      "CreateDictTypeDto": {
-        "type": "object",
-        "properties": {
-          "code": { "type": "string", "example": "system.status" },
-          "name": { "type": "string", "example": "System Status" },
-          "description": { "type": "string" },
-          "remark": { "type": "string" },
-          "enabled": { "type": "boolean", "default": true },
-          "items": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/DictItemDto" }
-          }
-        },
-        "required": ["code", "name"]
       },
       "CreateDictItemDto": {
         "type": "object",
@@ -12760,6 +12751,21 @@
         },
         "required": ["label", "value"]
       },
+      "CreateDictTypeDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string", "example": "system.status" },
+          "name": { "type": "string", "example": "System Status" },
+          "description": { "type": "string" },
+          "remark": { "type": "string" },
+          "enabled": { "type": "boolean", "default": true },
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CreateDictItemDto" }
+          }
+        },
+        "required": ["code", "name"]
+      },
       "UpdateDictTypeDto": {
         "type": "object",
         "properties": {
@@ -12769,7 +12775,7 @@
           "enabled": { "type": "boolean" },
           "items": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/DictItemDto" }
+            "items": { "$ref": "#/components/schemas/CreateDictItemDto" }
           }
         }
       },

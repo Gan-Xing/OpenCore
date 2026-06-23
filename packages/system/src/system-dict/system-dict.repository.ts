@@ -296,7 +296,15 @@ export function createSystemDictExportPreview(
   return {
     filename: 'opencore-dicts.csv',
     scope: 'current-page',
-    columns: ['code', 'name', 'enabled', 'system', 'createdAt', 'updatedAt'],
+    columns: [
+      'tenantId',
+      'code',
+      'name',
+      'enabled',
+      'system',
+      'createdAt',
+      'updatedAt',
+    ],
     rowCount: page.items.length,
     generatedAt: new Date().toISOString(),
   };
@@ -309,6 +317,7 @@ export function createSystemDictItemsExportPreview(
     filename: 'opencore-dict-items.csv',
     scope: 'current-page',
     columns: [
+      'tenantId',
       'dictCode',
       'label',
       'value',
