@@ -77,6 +77,8 @@ export type VersionInfoSummary = {
 
 export type QueueStatusSummary = {
   name: string;
+  tenantId: string;
+  runtimeName: string;
   driver: string;
   waiting: number;
   active: number;
@@ -93,6 +95,8 @@ export type QueueStatusList = {
 
 export type QueueControlResultSummary = {
   name: string;
+  tenantId: string;
+  runtimeName: string;
   action: 'pause' | 'resume';
   appliedAt: string;
   queue: QueueStatusSummary;

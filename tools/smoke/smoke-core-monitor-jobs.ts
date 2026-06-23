@@ -119,6 +119,22 @@ async function main() {
       'maintenance',
       'scheduler maintenance queue',
     );
+    const maintenanceQueue = queues.queues.find(
+      (queue) => queue.name === 'maintenance',
+    );
+    if (!maintenanceQueue) {
+      throw new Error('Expected maintenance queue in monitor queue list.');
+    }
+    assertEqual(
+      maintenanceQueue.tenantId,
+      ROOT_TENANT_ID,
+      'maintenance queue tenant',
+    );
+    assertEqual(
+      maintenanceQueue.runtimeName,
+      `tenant:${ROOT_TENANT_ID}:maintenance`,
+      'maintenance queue runtime name',
+    );
     assertIncludes(
       queues.queues.map((queue) => queue.name),
       'reports',
@@ -470,6 +486,7 @@ async function main() {
           'monitor.job.foreign-hidden',
           'monitor.queue.pause',
           'monitor.queue.resume',
+          'monitor.queue.tenant-runtime-name',
           'monitor.job.summary',
           'monitor.job.list',
           'monitor.job.upsert-whitelisted',
@@ -695,6 +712,16 @@ async function verifyQueueControl() {
       },
     );
     assertEqual(resumedBefore.name, 'maintenance', 'queue pre-resume name');
+    assertEqual(
+      resumedBefore.tenantId,
+      ROOT_TENANT_ID,
+      'queue pre-resume tenant',
+    );
+    assertEqual(
+      resumedBefore.runtimeName,
+      `tenant:${ROOT_TENANT_ID}:maintenance`,
+      'queue pre-resume runtime name',
+    );
     assertEqual(resumedBefore.action, 'resume', 'queue pre-resume action');
     assertEqual(resumedBefore.queue.paused, false, 'queue pre-resume paused');
     assertEqual(
@@ -703,11 +730,31 @@ async function verifyQueueControl() {
       'queue pre-resume control mode',
     );
 
+    const rewritten = await apiRequest(
+      '/monitor/queues/tenant%3Atenant_queue_foreign%3Amaintenance/resume',
+      {
+        method: 'POST',
+      },
+    );
+    assertEqual(rewritten.name, 'maintenance', 'queue rewritten name');
+    assertEqual(rewritten.tenantId, ROOT_TENANT_ID, 'queue rewritten tenant');
+    assertEqual(
+      rewritten.runtimeName,
+      `tenant:${ROOT_TENANT_ID}:maintenance`,
+      'queue rewritten runtime name',
+    );
+
     const paused = await apiRequest('/monitor/queues/maintenance/pause', {
       method: 'POST',
     });
     needsResume = true;
     assertEqual(paused.name, 'maintenance', 'queue pause name');
+    assertEqual(paused.tenantId, ROOT_TENANT_ID, 'queue pause tenant');
+    assertEqual(
+      paused.runtimeName,
+      `tenant:${ROOT_TENANT_ID}:maintenance`,
+      'queue pause runtime name',
+    );
     assertEqual(paused.action, 'pause', 'queue pause action');
     assertString(paused.appliedAt, 'queue pause appliedAt');
     assertEqual(paused.queue.paused, true, 'queue paused state');
@@ -718,6 +765,12 @@ async function verifyQueueControl() {
     });
     needsResume = false;
     assertEqual(resumed.name, 'maintenance', 'queue resume name');
+    assertEqual(resumed.tenantId, ROOT_TENANT_ID, 'queue resume tenant');
+    assertEqual(
+      resumed.runtimeName,
+      `tenant:${ROOT_TENANT_ID}:maintenance`,
+      'queue resume runtime name',
+    );
     assertEqual(resumed.action, 'resume', 'queue resume action');
     assertString(resumed.appliedAt, 'queue resume appliedAt');
     assertEqual(resumed.queue.paused, false, 'queue resumed state');
@@ -731,6 +784,11 @@ async function verifyQueueControl() {
       throw new Error('Expected maintenance queue after resume.');
     }
     assertEqual(maintenance.paused, false, 'queue list resumed state');
+    assertEqual(
+      maintenance.runtimeName,
+      `tenant:${ROOT_TENANT_ID}:maintenance`,
+      'queue list runtime name',
+    );
   } finally {
     if (needsResume) {
       await apiRequest('/monitor/queues/maintenance/resume', {

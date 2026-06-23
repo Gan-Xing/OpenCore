@@ -12,7 +12,7 @@ describe('RuntimeDiagnosticsService integration', () => {
   it('checks PostgreSQL, Redis, BullMQ, and S3 without leaking runtime values', async () => {
     const database = await diagnostics.checkDatabase();
     const redis = await diagnostics.checkRedis();
-    const queues = await diagnostics.listQueues();
+    const queues = await diagnostics.listQueues('tenant_root');
     const s3 = await diagnostics.checkS3();
     const payload = JSON.stringify({ database, redis, queues, s3 });
 
@@ -24,6 +24,8 @@ describe('RuntimeDiagnosticsService integration', () => {
       expect.arrayContaining([
         expect.objectContaining({
           name: 'maintenance',
+          tenantId: 'tenant_root',
+          runtimeName: 'tenant:tenant_root:maintenance',
           driver: 'bullmq-redis-managed',
           controlMode: 'managed',
         }),

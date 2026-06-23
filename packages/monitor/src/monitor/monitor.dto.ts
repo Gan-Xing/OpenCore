@@ -211,6 +211,12 @@ export class QueueStatusDto {
   name!: string;
 
   @ApiProperty()
+  tenantId!: string;
+
+  @ApiProperty()
+  runtimeName!: string;
+
+  @ApiProperty()
   driver!: string;
 
   @ApiProperty()
@@ -243,6 +249,12 @@ export class QueueStatusListDto {
 export class QueueControlResultDto {
   @ApiProperty()
   name!: string;
+
+  @ApiProperty()
+  tenantId!: string;
+
+  @ApiProperty()
+  runtimeName!: string;
 
   @ApiProperty({ enum: ['pause', 'resume'] })
   action!: 'pause' | 'resume';

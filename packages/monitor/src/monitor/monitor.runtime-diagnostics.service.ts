@@ -11,7 +11,13 @@ import {
   readRedisOptionsFromEnv,
   type RedisOptionsConfig,
 } from '@opencore/redis';
-import { monitorQueueNames, type MonitorQueueName } from './monitor.records';
+import {
+  createTenantMonitorQueueIdentity,
+  createTenantMonitorQueuePrefix,
+  monitorQueueNames,
+  normalizeMonitorQueueTenantId,
+  type MonitorQueueName,
+} from './monitor.records';
 import type { DependencyStatus, QueueStatus } from './monitor.repository';
 
 export type RuntimeQueueProbe = {
@@ -25,9 +31,15 @@ export type MonitorRuntimeDiagnostics = {
   checkDatabase: () => Promise<DependencyStatus>;
   checkRedis: () => Promise<DependencyStatus>;
   checkS3: () => Promise<DependencyStatus>;
-  listQueues: () => Promise<RuntimeQueueProbe>;
-  pauseQueue: (name: MonitorQueueName) => Promise<QueueStatus>;
-  resumeQueue: (name: MonitorQueueName) => Promise<QueueStatus>;
+  listQueues: (tenantId: string) => Promise<RuntimeQueueProbe>;
+  pauseQueue: (
+    tenantId: string,
+    name: MonitorQueueName,
+  ) => Promise<QueueStatus>;
+  resumeQueue: (
+    tenantId: string,
+    name: MonitorQueueName,
+  ) => Promise<QueueStatus>;
 };
 
 export const MONITOR_RUNTIME_DIAGNOSTICS = Symbol(
@@ -77,19 +89,22 @@ export class MonitorRuntimeDiagnosticsService implements MonitorRuntimeDiagnosti
     });
   }
 
-  async listQueues(): Promise<RuntimeQueueProbe> {
+  async listQueues(tenantId: string): Promise<RuntimeQueueProbe> {
     const startedAt = Date.now();
+    const normalizedTenantId = normalizeMonitorQueueTenantId(tenantId);
 
     try {
       const queues = await Promise.all(
-        monitorQueueNames.map((name) => this.readQueue(name)),
+        monitorQueueNames.map((name) =>
+          this.readQueue(normalizedTenantId, name),
+        ),
       );
 
       return {
         status: 'ok',
         latencyMs: Date.now() - startedAt,
         message:
-          'BullMQ queues were read from Redis using the OpenCore queue prefix.',
+          'Tenant BullMQ queues were read from Redis using the OpenCore queue prefix.',
         queues,
       };
     } catch {
@@ -98,43 +113,62 @@ export class MonitorRuntimeDiagnosticsService implements MonitorRuntimeDiagnosti
         latencyMs: Date.now() - startedAt,
         message:
           'BullMQ managed queue probe failed without exposing Redis details.',
-        queues: monitorQueueNames.map((name) => ({
-          name,
-          driver: 'bullmq-redis-unavailable',
-          waiting: 0,
-          active: 0,
-          completed: 0,
-          failed: 0,
-          paused: false,
-          controlMode: 'unavailable',
-        })),
+        queues: monitorQueueNames.map((name) => {
+          const identity = createTenantMonitorQueueIdentity(
+            normalizedTenantId,
+            name,
+          );
+
+          return {
+            name: identity.name,
+            tenantId: identity.tenantId,
+            runtimeName: identity.runtimeName,
+            driver: 'bullmq-redis-unavailable',
+            waiting: 0,
+            active: 0,
+            completed: 0,
+            failed: 0,
+            paused: false,
+            controlMode: 'unavailable',
+          };
+        }),
       };
     }
   }
 
-  async pauseQueue(name: MonitorQueueName): Promise<QueueStatus> {
-    return this.controlQueue(name, 'pause');
+  async pauseQueue(
+    tenantId: string,
+    name: MonitorQueueName,
+  ): Promise<QueueStatus> {
+    return this.controlQueue(tenantId, name, 'pause');
   }
 
-  async resumeQueue(name: MonitorQueueName): Promise<QueueStatus> {
-    return this.controlQueue(name, 'resume');
+  async resumeQueue(
+    tenantId: string,
+    name: MonitorQueueName,
+  ): Promise<QueueStatus> {
+    return this.controlQueue(tenantId, name, 'resume');
   }
 
-  private async readQueue(name: MonitorQueueName): Promise<QueueStatus> {
-    const queue = this.createQueue(name);
+  private async readQueue(
+    tenantId: string,
+    name: MonitorQueueName,
+  ): Promise<QueueStatus> {
+    const queue = this.createQueue(tenantId, name);
 
     try {
-      return await this.readQueueStatus(name, queue);
+      return await this.readQueueStatus(tenantId, name, queue);
     } finally {
       await queue.close();
     }
   }
 
   private async controlQueue(
+    tenantId: string,
     name: MonitorQueueName,
     action: 'pause' | 'resume',
   ): Promise<QueueStatus> {
-    const queue = this.createQueue(name);
+    const queue = this.createQueue(tenantId, name);
 
     try {
       if (action === 'pause') {
@@ -143,16 +177,18 @@ export class MonitorRuntimeDiagnosticsService implements MonitorRuntimeDiagnosti
         await queue.resume();
       }
 
-      return await this.readQueueStatus(name, queue);
+      return await this.readQueueStatus(tenantId, name, queue);
     } finally {
       await queue.close();
     }
   }
 
   private async readQueueStatus(
+    tenantId: string,
     name: MonitorQueueName,
     queue: Queue,
   ): Promise<QueueStatus> {
+    const identity = createTenantMonitorQueueIdentity(tenantId, name);
     const counts = await queue.getJobCounts(
       'waiting',
       'active',
@@ -162,7 +198,9 @@ export class MonitorRuntimeDiagnosticsService implements MonitorRuntimeDiagnosti
     const paused = await queue.isPaused();
 
     return {
-      name,
+      name: identity.name,
+      tenantId: identity.tenantId,
+      runtimeName: identity.runtimeName,
       driver: 'bullmq-redis-managed',
       waiting: counts.waiting ?? 0,
       active: counts.active ?? 0,
@@ -173,10 +211,14 @@ export class MonitorRuntimeDiagnosticsService implements MonitorRuntimeDiagnosti
     };
   }
 
-  private createQueue(name: MonitorQueueName): Queue {
-    const queue = new Queue(name, {
+  private createQueue(tenantId: string, name: MonitorQueueName): Queue {
+    const identity = createTenantMonitorQueueIdentity(tenantId, name);
+    const queue = new Queue(identity.name, {
       connection: this.createBullMqRedisOptions(),
-      prefix: this.redisOptions.bullmqQueuePrefix,
+      prefix: createTenantMonitorQueuePrefix(
+        this.redisOptions.bullmqQueuePrefix,
+        identity.tenantId,
+      ),
       skipMetasUpdate: true,
       skipVersionCheck: false,
     });

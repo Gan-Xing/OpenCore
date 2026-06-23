@@ -14692,6 +14692,8 @@
         "type": "object",
         "properties": {
           "name": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "runtimeName": { "type": "string" },
           "driver": { "type": "string" },
           "waiting": { "type": "number" },
           "active": { "type": "number" },
@@ -14705,6 +14707,8 @@
         },
         "required": [
           "name",
+          "tenantId",
+          "runtimeName",
           "driver",
           "waiting",
           "active",
@@ -14729,11 +14733,20 @@
         "type": "object",
         "properties": {
           "name": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "runtimeName": { "type": "string" },
           "action": { "type": "string", "enum": ["pause", "resume"] },
           "appliedAt": { "type": "string" },
           "queue": { "$ref": "#/components/schemas/QueueStatusDto" }
         },
-        "required": ["name", "action", "appliedAt", "queue"]
+        "required": [
+          "name",
+          "tenantId",
+          "runtimeName",
+          "action",
+          "appliedAt",
+          "queue"
+        ]
       },
       "JobDefinitionSummaryDto": {
         "type": "object",

@@ -866,3 +866,42 @@ Passed after deploy:
 - No general-purpose application WebSocket channel implementation in T5c; this slice only scopes the existing integration diagnostics runtime.
 - No Integration provider/outbox/OAuth tenant migration in this sub-slice.
 - No platform-admin global WebSocket diagnostics view; platform visit/control-plane behavior belongs with T6.
+
+## Round 18: T5d BullMQ Monitor Queue Tenant Namespace
+
+### Completed
+
+- Scoped monitor BullMQ tenant namespaces:
+  - queue diagnostics keep logical BullMQ names (`maintenance`, `reports`) and use a tenant-specific Redis prefix from the active request tenant;
+  - public API queue names remain logical while responses expose `tenantId` and `runtimeName` such as `tenant:{tenantId}:{queue}`;
+  - queue pause/resume accepts legacy logical names and rewrites any client-supplied `tenant:*:` prefix into the active tenant namespace.
+- Exposed `tenantId` and `runtimeName` through monitor queue DTOs, SDK summaries/fixtures, OpenAPI, and smoke.
+- Added tenant-scope verification:
+  - monitor package and API monitoring tests assert tenant runtime queue metadata and foreign-prefix rewrite behavior;
+  - `smoke:core-monitor-jobs` checks root tenant queue runtime names and foreign-prefix normalization.
+- Added `guard:tenant-queue-scope`.
+
+### Verification Log
+
+Passed before deploy:
+
+- Focused monitor package and API monitoring tests passed.
+- Tenant queue guard, typed smoke compilation, SDK contract, OpenAPI export/drift, registry tag, and quality docs checks passed.
+- Full repository typecheck, lint, and test suites passed.
+
+Passed after deploy:
+
+- OpenCore deploy rebuilt API/Admin, applied migrations, reseeded, restarted API `39172` and Admin `39174`, and passed deploy smoke including local `monitor.queue.tenant-runtime-name`.
+- Public API monitor jobs smoke passed against `http://144.217.243.161:39172` with `monitor.queue.tenant-runtime-name`.
+
+### Remaining Product Debt
+
+- Complete Integration/outbox/OAuth tenant propagation and broader runtime review.
+- Complete T4 System/core tenant data isolation for other unreviewed non-org data.
+- Complete T6 Tenant Plan CRUD, Tenant Member CRUD/invitation, Admin switcher, platform visit mode, and platform visit audit.
+
+### Deliberate Non-Goals
+
+- No new BullMQ worker/enqueue implementation in T5d; this slice scopes the existing monitor queue probe/control runtime.
+- No scheduler job definition field rename; public queue filters remain logical names.
+- No Integration provider/outbox/OAuth tenant migration in this sub-slice.

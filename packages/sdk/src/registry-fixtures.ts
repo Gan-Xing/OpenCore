@@ -577,6 +577,8 @@ export function createQueueStatusFixture(): QueueStatusList {
     queues: [
       {
         name: 'maintenance',
+        tenantId: 'tenant_root',
+        runtimeName: 'tenant:tenant_root:maintenance',
         driver: 'bullmq-redis-managed',
         waiting: 0,
         active: 0,
@@ -587,6 +589,8 @@ export function createQueueStatusFixture(): QueueStatusList {
       },
       {
         name: 'reports',
+        tenantId: 'tenant_root',
+        runtimeName: 'tenant:tenant_root:reports',
         driver: 'bullmq-redis-managed',
         waiting: 0,
         active: 0,

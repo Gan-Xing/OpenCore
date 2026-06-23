@@ -5,13 +5,19 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { createApiErrorBody } from '@opencore/common';
+import { getRequestContext } from '@opencore/core';
 import { statfsSync } from 'node:fs';
 import { arch, cpus, freemem, loadavg, platform, totalmem } from 'node:os';
 import {
   MONITOR_RUNTIME_DIAGNOSTICS,
   type MonitorRuntimeDiagnostics,
 } from './monitor.runtime-diagnostics.service';
-import { monitorQueueNames, type MonitorQueueName } from './monitor.records';
+import {
+  monitorQueueNames,
+  normalizeMonitorQueueTenantId,
+  stripTenantMonitorQueueName,
+  type MonitorQueueName,
+} from './monitor.records';
 
 function monitorBadRequest(
   code: string,
@@ -112,6 +118,8 @@ export type VersionInfo = {
 
 export type QueueStatus = {
   name: string;
+  tenantId: string;
+  runtimeName: string;
   driver: string;
   waiting: number;
   active: number;
@@ -125,12 +133,15 @@ export type QueueControlAction = 'pause' | 'resume';
 
 export type QueueControlResult = {
   name: MonitorQueueName;
+  tenantId: string;
+  runtimeName: string;
   action: QueueControlAction;
   appliedAt: string;
   queue: QueueStatus;
 };
 
 const processStartedAt = new Date().toISOString();
+const ROOT_TENANT_ID = 'tenant_root';
 
 @Injectable()
 export class MonitorRepository {
@@ -140,10 +151,11 @@ export class MonitorRepository {
   ) {}
 
   async getSystemStatus(): Promise<SystemStatus> {
+    const tenantId = resolveCurrentTenantId();
     const [database, redis, queue, s3] = await Promise.all([
       this.diagnostics.checkDatabase(),
       this.diagnostics.checkRedis(),
-      this.diagnostics.listQueues(),
+      this.diagnostics.listQueues(tenantId),
       this.diagnostics.checkS3(),
     ]);
     const dependencies: DependencyStatus[] = [
@@ -217,7 +229,8 @@ export class MonitorRepository {
     checkedAt: string;
     queues: readonly QueueStatus[];
   }> {
-    const queueProbe = await this.diagnostics.listQueues();
+    const tenantId = resolveCurrentTenantId();
+    const queueProbe = await this.diagnostics.listQueues(tenantId);
 
     return {
       checkedAt: new Date().toISOString(),
@@ -226,25 +239,28 @@ export class MonitorRepository {
   }
 
   async pauseQueue(name: string): Promise<QueueControlResult> {
-    return this.controlQueue(assertMonitorQueueName(name), 'pause');
+    return this.controlQueue(resolveMonitorQueueName(name), 'pause');
   }
 
   async resumeQueue(name: string): Promise<QueueControlResult> {
-    return this.controlQueue(assertMonitorQueueName(name), 'resume');
+    return this.controlQueue(resolveMonitorQueueName(name), 'resume');
   }
 
   private async controlQueue(
     name: MonitorQueueName,
     action: QueueControlAction,
   ): Promise<QueueControlResult> {
+    const tenantId = resolveCurrentTenantId();
     try {
       const queue =
         action === 'pause'
-          ? await this.diagnostics.pauseQueue(name)
-          : await this.diagnostics.resumeQueue(name);
+          ? await this.diagnostics.pauseQueue(tenantId, name)
+          : await this.diagnostics.resumeQueue(tenantId, name);
 
       return {
         name,
+        tenantId: queue.tenantId,
+        runtimeName: queue.runtimeName,
         action,
         appliedAt: new Date().toISOString(),
         queue,
@@ -338,16 +354,23 @@ function safeRatio(numerator: number, denominator: number): number {
   return Number(Math.min(1, Math.max(0, numerator / denominator)).toFixed(6));
 }
 
-function assertMonitorQueueName(value: string): MonitorQueueName {
-  if ((monitorQueueNames as readonly string[]).includes(value)) {
-    return value as MonitorQueueName;
+function resolveCurrentTenantId(): string {
+  return normalizeMonitorQueueTenantId(
+    getRequestContext()?.tenantId ?? ROOT_TENANT_ID,
+  );
+}
+
+function resolveMonitorQueueName(value: string): MonitorQueueName {
+  const queueName = stripTenantMonitorQueueName(value);
+  if ((monitorQueueNames as readonly string[]).includes(queueName)) {
+    return queueName as MonitorQueueName;
   }
 
   throw monitorBadRequest(
     'MONITOR_QUEUE_UNSUPPORTED',
-    `Unsupported monitor queue "${value}". Allowed queues: ${monitorQueueNames.join(
+    `Unsupported monitor queue "${queueName}". Allowed queues: ${monitorQueueNames.join(
       ', ',
     )}.`,
-    { allowedQueues: monitorQueueNames, queueName: value },
+    { allowedQueues: monitorQueueNames, queueName },
   );
 }

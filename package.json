@@ -134,6 +134,7 @@
     "guard:tenant-online-user-scope": "pnpm scripts:ts tools/scripts/check-tenant-online-user-scope.ts",
     "guard:tenant-operation-log-scope": "pnpm scripts:ts tools/scripts/check-tenant-operation-log-scope.ts",
     "guard:tenant-post-scope": "pnpm scripts:ts tools/scripts/check-tenant-post-scope.ts",
+    "guard:tenant-queue-scope": "pnpm scripts:ts tools/scripts/check-tenant-queue-scope.ts",
     "guard:tenant-role-scope": "pnpm scripts:ts tools/scripts/check-tenant-role-scope.ts",
     "guard:tenant-rbac": "pnpm scripts:ts tools/scripts/check-tenant-rbac.ts",
     "guard:tenant-redis-scope": "pnpm scripts:ts tools/scripts/check-tenant-redis-scope.ts",

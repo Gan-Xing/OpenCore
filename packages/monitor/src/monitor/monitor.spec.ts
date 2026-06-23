@@ -115,6 +115,8 @@ describe('@opencore/monitor', () => {
       queues: expect.arrayContaining([
         expect.objectContaining({
           name: 'maintenance',
+          tenantId: 'tenant_root',
+          runtimeName: 'tenant:tenant_root:maintenance',
           driver: 'bullmq-redis-managed',
           controlMode: 'managed',
         }),
@@ -122,23 +124,38 @@ describe('@opencore/monitor', () => {
     });
     await expect(service.pauseQueue('maintenance')).resolves.toMatchObject({
       name: 'maintenance',
+      tenantId: 'tenant_root',
+      runtimeName: 'tenant:tenant_root:maintenance',
       action: 'pause',
       appliedAt: expect.any(String),
       queue: {
         name: 'maintenance',
+        tenantId: 'tenant_root',
+        runtimeName: 'tenant:tenant_root:maintenance',
         paused: true,
         controlMode: 'managed',
       },
     });
     await expect(service.resumeQueue('maintenance')).resolves.toMatchObject({
       name: 'maintenance',
+      tenantId: 'tenant_root',
+      runtimeName: 'tenant:tenant_root:maintenance',
       action: 'resume',
       appliedAt: expect.any(String),
       queue: {
         name: 'maintenance',
+        tenantId: 'tenant_root',
+        runtimeName: 'tenant:tenant_root:maintenance',
         paused: false,
         controlMode: 'managed',
       },
+    });
+    await expect(
+      service.pauseQueue('tenant:tenant_foreign:maintenance'),
+    ).resolves.toMatchObject({
+      name: 'maintenance',
+      tenantId: 'tenant_root',
+      runtimeName: 'tenant:tenant_root:maintenance',
     });
     await expectHttpExceptionCode(
       service.pauseQueue('unknown'),
@@ -198,7 +215,7 @@ describe('@opencore/monitor', () => {
     it('checks PostgreSQL, Redis, BullMQ, and S3 without leaking runtime values', async () => {
       const database = await diagnostics.checkDatabase();
       const redis = await diagnostics.checkRedis();
-      const queues = await diagnostics.listQueues();
+      const queues = await diagnostics.listQueues('tenant_root');
       const s3 = await diagnostics.checkS3();
       const payload = JSON.stringify({ database, redis, queues, s3 });
 
@@ -210,6 +227,8 @@ describe('@opencore/monitor', () => {
         expect.arrayContaining([
           expect.objectContaining({
             name: 'maintenance',
+            tenantId: 'tenant_root',
+            runtimeName: 'tenant:tenant_root:maintenance',
             driver: 'bullmq-redis-managed',
             controlMode: 'managed',
           }),
@@ -251,14 +270,16 @@ function createFakeDiagnostics(
       message:
         'S3 bucket is reachable and the OpenCore object prefix is listable.',
     }),
-    listQueues: async () => ({
+    listQueues: async (tenantId) => ({
       status: 'ok',
       latencyMs: 1,
       message:
-        'BullMQ queues were read from Redis using the OpenCore queue prefix.',
+        'Tenant BullMQ queues were read from Redis using the OpenCore queue prefix.',
       queues: [
         {
           name: 'maintenance',
+          tenantId,
+          runtimeName: `tenant:${tenantId}:maintenance`,
           driver: 'bullmq-redis-managed',
           waiting: 0,
           active: 0,
@@ -269,6 +290,8 @@ function createFakeDiagnostics(
         },
         {
           name: 'reports',
+          tenantId,
+          runtimeName: `tenant:${tenantId}:reports`,
           driver: 'bullmq-redis-managed',
           waiting: 0,
           active: 0,
@@ -279,13 +302,15 @@ function createFakeDiagnostics(
         },
       ],
     }),
-    pauseQueue: async (name) => {
+    pauseQueue: async (tenantId, name) => {
       if (options.queueControlThrows) {
         throw new Error('queue unavailable');
       }
 
       return {
         name,
+        tenantId,
+        runtimeName: `tenant:${tenantId}:${name}`,
         driver: 'bullmq-redis-managed',
         waiting: 0,
         active: 0,
@@ -295,13 +320,15 @@ function createFakeDiagnostics(
         controlMode: 'managed',
       };
     },
-    resumeQueue: async (name) => {
+    resumeQueue: async (tenantId, name) => {
       if (options.queueControlThrows) {
         throw new Error('queue unavailable');
       }
 
       return {
         name,
+        tenantId,
+        runtimeName: `tenant:${tenantId}:${name}`,
         driver: 'bullmq-redis-managed',
         waiting: 0,
         active: 0,

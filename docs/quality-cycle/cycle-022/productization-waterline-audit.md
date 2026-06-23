@@ -125,89 +125,89 @@ These remain below the productization waterline and cannot be described as compl
 
 ## T4b Audit
 
-| Requirement                    | Status  | Notes                                                                                                                  |
-| ------------------------------ | ------- | ---------------------------------------------------------------------------------------------------------------------- |
-| Login log tenant ownership     | Done    | `LoginLog.tenantId` is backfilled to `tenant_root`, required, indexed, and constrained to `Tenant`.                    |
-| Repository tenant isolation    | Done    | Login-log list/detail/export/delete/clean use `RequestContext.tenantId` with `tenant_root` fallback.                  |
-| Login attempt tenant recording | Done    | Successful session/self/social login events can carry the selected session tenant; public failures retain root fallback. |
+| Requirement                    | Status  | Notes                                                                                                                             |
+| ------------------------------ | ------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Login log tenant ownership     | Done    | `LoginLog.tenantId` is backfilled to `tenant_root`, required, indexed, and constrained to `Tenant`.                               |
+| Repository tenant isolation    | Done    | Login-log list/detail/export/delete/clean use `RequestContext.tenantId` with `tenant_root` fallback.                              |
+| Login attempt tenant recording | Done    | Successful session/self/social login events can carry the selected session tenant; public failures retain root fallback.          |
 | Cross-tenant API rejection     | Done    | Prisma integration test and smoke prove foreign-tenant login logs are hidden, cannot be detailed/deleted, and survive root clean. |
-| Seed/OpenAPI/SDK/Admin         | Done    | Seed login logs, DTO, SDK summary fixture, and Admin Login Logs expose `tenantId`.                                     |
-| Smoke/guard                    | Done    | Added `guard:tenant-login-log-scope`; `smoke:core-login-log` now covers foreign-tenant login-log isolation.            |
-| Remaining log scope            | Pending | Platform visit/impersonation audit remains pending.                                                                  |
+| Seed/OpenAPI/SDK/Admin         | Done    | Seed login logs, DTO, SDK summary fixture, and Admin Login Logs expose `tenantId`.                                                |
+| Smoke/guard                    | Done    | Added `guard:tenant-login-log-scope`; `smoke:core-login-log` now covers foreign-tenant login-log isolation.                       |
+| Remaining log scope            | Pending | Platform visit/impersonation audit remains pending.                                                                               |
 
 ## T4c Audit
 
-| Requirement                    | Status  | Notes                                                                                                                        |
-| ------------------------------ | ------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Operation audit tenant ownership | Done  | `AuditLog.tenantId` is backfilled to `tenant_root`, required, indexed, and constrained to `Tenant`.                          |
-| Repository tenant isolation    | Done    | Audit-log list/detail/export/delete/retention clean use `RequestContext.tenantId` with `tenant_root` fallback.               |
-| Write operation tenant recording | Done  | Interceptor-created write audit rows are stored under the active request tenant through repository fallback.                  |
-| Cross-tenant API rejection     | Done    | Prisma integration test and smoke prove foreign-tenant audit logs are hidden, cannot be detailed/deleted, and survive root clean. |
-| Seed/OpenAPI/SDK/Admin         | Done    | Seed audit logs, DTO, SDK summary fixture, and Admin Operation Logs expose `tenantId`.                                       |
-| Smoke/guard                    | Done    | Added `guard:tenant-operation-log-scope`; `smoke:core-audit-log` now covers foreign-tenant operation-audit isolation.        |
-| Remaining audit scope          | Pending | Platform visit/impersonation audit remains pending.                                                                          |
+| Requirement                      | Status  | Notes                                                                                                                             |
+| -------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Operation audit tenant ownership | Done    | `AuditLog.tenantId` is backfilled to `tenant_root`, required, indexed, and constrained to `Tenant`.                               |
+| Repository tenant isolation      | Done    | Audit-log list/detail/export/delete/retention clean use `RequestContext.tenantId` with `tenant_root` fallback.                    |
+| Write operation tenant recording | Done    | Interceptor-created write audit rows are stored under the active request tenant through repository fallback.                      |
+| Cross-tenant API rejection       | Done    | Prisma integration test and smoke prove foreign-tenant audit logs are hidden, cannot be detailed/deleted, and survive root clean. |
+| Seed/OpenAPI/SDK/Admin           | Done    | Seed audit logs, DTO, SDK summary fixture, and Admin Operation Logs expose `tenantId`.                                            |
+| Smoke/guard                      | Done    | Added `guard:tenant-operation-log-scope`; `smoke:core-audit-log` now covers foreign-tenant operation-audit isolation.             |
+| Remaining audit scope            | Pending | Platform visit/impersonation audit remains pending.                                                                               |
 
 ## T4d Dictionaries
 
-| Requirement                    | Status  | Notes                                                                                                                        |
-| ------------------------------ | ------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Dictionary tenant ownership    | Done    | `DictType.tenantId` is backfilled to `tenant_root`, required, indexed, and constrained to `Tenant`.                          |
-| Tenant-code uniqueness         | Done    | Dictionary code uniqueness is now `(tenantId, code)`, allowing the same dictionary code in different tenants.                 |
-| Repository tenant isolation    | Done    | Dictionary type/item list/detail/export/create/update/delete/recycle/import/translation/simple-list use `RequestContext`.    |
-| Cross-tenant API rejection     | Done    | Prisma integration test and smoke prove foreign-tenant dictionaries are hidden, cannot be mutated, and survive root actions. |
-| Seed/OpenAPI/SDK/Admin         | Done    | Seed dictionary rows, DTOs, SDK summaries/fixtures, and Admin Dicts expose `tenantId`.                                      |
-| Smoke/guard                    | Done    | Added `guard:tenant-dict-scope`; `smoke:core-dict` now covers foreign-tenant dictionary isolation.                          |
-| Remaining T4 data scope        | Pending | Config was completed in T4e and file assets in T4f; notice isolation remains pending.                                        |
+| Requirement                 | Status  | Notes                                                                                                                        |
+| --------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Dictionary tenant ownership | Done    | `DictType.tenantId` is backfilled to `tenant_root`, required, indexed, and constrained to `Tenant`.                          |
+| Tenant-code uniqueness      | Done    | Dictionary code uniqueness is now `(tenantId, code)`, allowing the same dictionary code in different tenants.                |
+| Repository tenant isolation | Done    | Dictionary type/item list/detail/export/create/update/delete/recycle/import/translation/simple-list use `RequestContext`.    |
+| Cross-tenant API rejection  | Done    | Prisma integration test and smoke prove foreign-tenant dictionaries are hidden, cannot be mutated, and survive root actions. |
+| Seed/OpenAPI/SDK/Admin      | Done    | Seed dictionary rows, DTOs, SDK summaries/fixtures, and Admin Dicts expose `tenantId`.                                       |
+| Smoke/guard                 | Done    | Added `guard:tenant-dict-scope`; `smoke:core-dict` now covers foreign-tenant dictionary isolation.                           |
+| Remaining T4 data scope     | Pending | Config was completed in T4e and file assets in T4f; notice isolation remains pending.                                        |
 
 ## T4e System Config
 
-| Requirement                    | Status  | Notes                                                                                                                        |
-| ------------------------------ | ------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Config tenant ownership        | Done    | `SystemConfig.tenantId` is backfilled to `tenant_root`, required, indexed, and constrained to `Tenant`.                      |
-| Tenant-key uniqueness          | Done    | System config key uniqueness is now `(tenantId, key)`, allowing the same config key in different tenants.                    |
-| Override and secret ownership  | Done    | `SystemConfigEnvironmentOverride` and `SystemConfigSecretVersion` carry tenant id and reference the same-tenant config row.  |
-| Repository tenant isolation    | Done    | Config CRUD, batch delete, value/runtime reads, cache refresh, exports, overrides, secret versions, and vault operations use `RequestContext`. |
-| Cache tenant isolation         | Done    | `SystemConfigService` value-cache keys include tenant id so same-key tenant values do not bleed across requests.             |
-| Cross-tenant API rejection     | Done    | Prisma integration test and smoke prove foreign-tenant config rows are hidden, cannot be mutated, and survive root actions.  |
-| Seed/OpenAPI/SDK/Admin         | Done    | Seed config rows, DTOs, SDK summaries/fixtures, export previews, and Admin Config expose `tenantId`.                        |
-| Smoke/guard                    | Done    | Added `guard:tenant-config-scope`; `smoke:core-config` now covers foreign-tenant config isolation.                          |
-| Remaining T4 data scope        | Pending | File assets were completed in T4f; notice isolation was completed in T4g; other unreviewed non-org data remains pending.      |
+| Requirement                   | Status  | Notes                                                                                                                                          |
+| ----------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Config tenant ownership       | Done    | `SystemConfig.tenantId` is backfilled to `tenant_root`, required, indexed, and constrained to `Tenant`.                                        |
+| Tenant-key uniqueness         | Done    | System config key uniqueness is now `(tenantId, key)`, allowing the same config key in different tenants.                                      |
+| Override and secret ownership | Done    | `SystemConfigEnvironmentOverride` and `SystemConfigSecretVersion` carry tenant id and reference the same-tenant config row.                    |
+| Repository tenant isolation   | Done    | Config CRUD, batch delete, value/runtime reads, cache refresh, exports, overrides, secret versions, and vault operations use `RequestContext`. |
+| Cache tenant isolation        | Done    | `SystemConfigService` value-cache keys include tenant id so same-key tenant values do not bleed across requests.                               |
+| Cross-tenant API rejection    | Done    | Prisma integration test and smoke prove foreign-tenant config rows are hidden, cannot be mutated, and survive root actions.                    |
+| Seed/OpenAPI/SDK/Admin        | Done    | Seed config rows, DTOs, SDK summaries/fixtures, export previews, and Admin Config expose `tenantId`.                                           |
+| Smoke/guard                   | Done    | Added `guard:tenant-config-scope`; `smoke:core-config` now covers foreign-tenant config isolation.                                             |
+| Remaining T4 data scope       | Pending | File assets were completed in T4f; notice isolation was completed in T4g; other unreviewed non-org data remains pending.                       |
 
 ## T4f File Assets
 
-| Check                         | Status | Evidence                                                                                                                    |
-| ----------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------- |
-| File asset tenant ownership   | Done   | `FileAsset.tenantId` is backfilled to `tenant_root`, required, indexed, and constrained to `Tenant`.                       |
-| Tenant storage-key uniqueness | Done   | File asset storage key uniqueness is now `(tenantId, storageKey)`, allowing tenant-local object-key ownership.              |
-| Repository tenant isolation   | Done   | File list/detail/export/create/update/delete resolve the active tenant from `RequestContext` with `tenant_root` fallback.  |
-| Object key tenant prefix      | Done   | New system file asset keys are generated under `runtime/tenant/<tenantId>/file-assets/...`.                                |
-| Cross-tenant API rejection    | Done   | Prisma integration test and smoke prove foreign-tenant file rows are hidden and cannot be read, downloaded, updated, or deleted from root scope. |
-| Seed/OpenAPI/SDK/Admin        | Done   | Seed file rows, DTOs, SDK summaries/fixtures, export previews, and Admin Files expose `tenantId`.                          |
-| Smoke/guard                   | Done   | Added `guard:tenant-file-scope`; `smoke:core-file` now covers foreign-tenant file isolation.                               |
-| Remaining T4 data scope       | Pending | Notice isolation was completed in T4g; other unreviewed non-org data remains pending.                                      |
+| Check                         | Status  | Evidence                                                                                                                                         |
+| ----------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| File asset tenant ownership   | Done    | `FileAsset.tenantId` is backfilled to `tenant_root`, required, indexed, and constrained to `Tenant`.                                             |
+| Tenant storage-key uniqueness | Done    | File asset storage key uniqueness is now `(tenantId, storageKey)`, allowing tenant-local object-key ownership.                                   |
+| Repository tenant isolation   | Done    | File list/detail/export/create/update/delete resolve the active tenant from `RequestContext` with `tenant_root` fallback.                        |
+| Object key tenant prefix      | Done    | New system file asset keys are generated under `runtime/tenant/<tenantId>/file-assets/...`.                                                      |
+| Cross-tenant API rejection    | Done    | Prisma integration test and smoke prove foreign-tenant file rows are hidden and cannot be read, downloaded, updated, or deleted from root scope. |
+| Seed/OpenAPI/SDK/Admin        | Done    | Seed file rows, DTOs, SDK summaries/fixtures, export previews, and Admin Files expose `tenantId`.                                                |
+| Smoke/guard                   | Done    | Added `guard:tenant-file-scope`; `smoke:core-file` now covers foreign-tenant file isolation.                                                     |
+| Remaining T4 data scope       | Pending | Notice isolation was completed in T4g; other unreviewed non-org data remains pending.                                                            |
 
 ## T4g System Notices
 
-| Check                          | Status | Evidence                                                                                                                     |
-| ------------------------------ | ------ | ---------------------------------------------------------------------------------------------------------------------------- |
-| Notice tenant ownership        | Done   | `SystemNotice`, `SystemNoticeTemplate`, `SystemNoticeReadReceipt`, and `SystemNoticeDelivery` are backfilled to `tenant_root` and constrained to `Tenant`. |
-| Tenant-local notice uniqueness | Done   | Notice templates use `(tenantId, code)` uniqueness; read receipts and deliveries include tenant id in their uniqueness.      |
-| Repository tenant isolation    | Done   | Notice list/detail/lifecycle/delete, inbox/read receipt, delivery, and template paths resolve the active tenant from `RequestContext`. |
-| Tenant delivery fanout         | Done   | Notice dispatch recipients are active memberships in the notice tenant instead of all global enabled users.                  |
-| Cross-tenant API rejection     | Done   | Prisma integration test and smoke prove foreign-tenant notice/template/delivery/receipt rows are hidden and survive root actions. |
-| Seed/OpenAPI/SDK/Admin         | Done   | Seed notice rows, DTOs, SDK summaries/fixtures, export previews, and Admin Notices expose `tenantId`.                       |
-| Smoke/guard                    | Done   | Added `guard:tenant-notice-scope`; `smoke:core-notice` now covers foreign-tenant notice isolation.                          |
-| Remaining T4 data scope        | Pending | Other unreviewed non-org data remains pending.                                                                               |
+| Check                          | Status  | Evidence                                                                                                                                                   |
+| ------------------------------ | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Notice tenant ownership        | Done    | `SystemNotice`, `SystemNoticeTemplate`, `SystemNoticeReadReceipt`, and `SystemNoticeDelivery` are backfilled to `tenant_root` and constrained to `Tenant`. |
+| Tenant-local notice uniqueness | Done    | Notice templates use `(tenantId, code)` uniqueness; read receipts and deliveries include tenant id in their uniqueness.                                    |
+| Repository tenant isolation    | Done    | Notice list/detail/lifecycle/delete, inbox/read receipt, delivery, and template paths resolve the active tenant from `RequestContext`.                     |
+| Tenant delivery fanout         | Done    | Notice dispatch recipients are active memberships in the notice tenant instead of all global enabled users.                                                |
+| Cross-tenant API rejection     | Done    | Prisma integration test and smoke prove foreign-tenant notice/template/delivery/receipt rows are hidden and survive root actions.                          |
+| Seed/OpenAPI/SDK/Admin         | Done    | Seed notice rows, DTOs, SDK summaries/fixtures, export previews, and Admin Notices expose `tenantId`.                                                      |
+| Smoke/guard                    | Done    | Added `guard:tenant-notice-scope`; `smoke:core-notice` now covers foreign-tenant notice isolation.                                                         |
+| Remaining T4 data scope        | Pending | Other unreviewed non-org data remains pending.                                                                                                             |
 
 ## T5a Scheduler Runtime Propagation
 
-| Check                               | Status | Evidence                                                                                                                     |
-| ----------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------- |
-| Scheduler tenant ownership          | Done   | `JobDefinition` and `JobRunLog` are backfilled to `tenant_root`, constrained to `Tenant`, and keyed by `(tenantId, code)`.    |
-| Scheduler API tenant isolation      | Done   | Monitor job summary/list/detail/mutation/dispatch/claim/run-clean paths resolve the active tenant from `RequestContext`.     |
-| Worker tenant context restoration   | Done   | `SchedulerJobExecutor` wraps handler execution in tenant request context and stamps run metadata with `tenantId`.             |
-| Tenant-scoped retention side effect | Done   | The audit-log retention handler deletes only audit rows for the scheduler run tenant.                                        |
-| Cross-tenant worker rejection       | Done   | Prisma integration test and smoke prove root job APIs and worker claim do not see or consume foreign-tenant queued runs.      |
-| Seed/OpenAPI/SDK/Admin              | Done   | Seed scheduler rows, DTOs, SDK summaries/fixtures, and Admin Jobs expose `tenantId`.                                         |
-| Smoke/guard                         | Done   | Added `guard:tenant-scheduler-scope`; `smoke:core-monitor-jobs` covers foreign-tenant scheduler isolation.                   |
-| Remaining T5 runtime scope          | Pending | Redis namespace, broader BullMQ queue namespace/payload handling, Integration/outbox/OAuth, WebSocket, and broader runtime review remain pending. |
+| Check                               | Status  | Evidence                                                                                                                                                                |
+| ----------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Scheduler tenant ownership          | Done    | `JobDefinition` and `JobRunLog` are backfilled to `tenant_root`, constrained to `Tenant`, and keyed by `(tenantId, code)`.                                              |
+| Scheduler API tenant isolation      | Done    | Monitor job summary/list/detail/mutation/dispatch/claim/run-clean paths resolve the active tenant from `RequestContext`.                                                |
+| Worker tenant context restoration   | Done    | `SchedulerJobExecutor` wraps handler execution in tenant request context and stamps run metadata with `tenantId`.                                                       |
+| Tenant-scoped retention side effect | Done    | The audit-log retention handler deletes only audit rows for the scheduler run tenant.                                                                                   |
+| Cross-tenant worker rejection       | Done    | Prisma integration test and smoke prove root job APIs and worker claim do not see or consume foreign-tenant queued runs.                                                |
+| Seed/OpenAPI/SDK/Admin              | Done    | Seed scheduler rows, DTOs, SDK summaries/fixtures, and Admin Jobs expose `tenantId`.                                                                                    |
+| Smoke/guard                         | Done    | Added `guard:tenant-scheduler-scope`; `smoke:core-monitor-jobs` covers foreign-tenant scheduler isolation.                                                              |
+| Remaining T5 runtime scope          | Pending | Redis cache namespace, WebSocket runtime rooms/events, and BullMQ monitor queue namespace are done; Integration/outbox/OAuth and broader runtime review remain pending. |
