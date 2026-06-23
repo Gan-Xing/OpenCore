@@ -68,3 +68,17 @@ These remain below the productization waterline and cannot be described as compl
 | Smoke/guard                                      | Done    | Added `smoke:core-tenant-role` and `guard:tenant-role-scope`.                                                |
 | Tenant-owned Dept/Post CRUD                      | Pending | Department and Post repositories still use global code uniqueness.                                           |
 | Non-root membership role/post assignment Admin   | Pending | T3b does not add control-plane assignment APIs; existing user-role assignment is root legacy only.           |
+
+## T3c Audit
+
+| Requirement                                      | Status  | Notes                                                                                                         |
+| ------------------------------------------------ | ------- | ------------------------------------------------------------------------------------------------------------- |
+| Post ownership by tenant                         | Done    | `SystemPost` now has `tenantId` and belongs to `Tenant`; existing posts backfill to `tenant_root`.           |
+| Post code uniqueness by tenant                   | Done    | Dropped global `SystemPost.code` uniqueness and added `(tenantId, code)` plus `(tenantId, id)`.              |
+| Membership post cannot cross tenant post owner   | Done    | `TenantMembershipPost(tenantId, postId)` now references `SystemPost(tenantId, id)`.                         |
+| Post repository uses authenticated tenant context | Done    | `PrismaSystemPostRepository` scopes list/options/get/create/update/delete/batch/order by `RequestContext`.  |
+| Root legacy bridge compatibility                 | Done    | `SystemUser` legacy `UserPost` reads/writes stay pinned to `tenant_root` for single-mode compatibility.      |
+| Seed/OpenAPI/SDK/Admin consistency               | Done    | Seed upserts root posts by `(tenant_root, code)`; OpenAPI/SDK/Admin shapes are unchanged and remain live.    |
+| Smoke/guard                                      | Done    | Added `smoke:core-tenant-post` and `guard:tenant-post-scope`.                                                |
+| Tenant-owned Department CRUD                     | Pending | Department repositories still use global code uniqueness and tree ownership.                                 |
+| Non-root membership role/post assignment Admin   | Pending | T3c does not add control-plane assignment APIs; existing user-post assignment is root legacy only.           |

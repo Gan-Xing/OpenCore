@@ -216,7 +216,14 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
         },
         posts: {
           create: input.postCodes.map((postCode) => ({
-            post: { connect: { code: postCode } },
+            post: {
+              connect: {
+                tenantId_code: {
+                  tenantId: ROOT_TENANT_ID,
+                  code: postCode,
+                },
+              },
+            },
           })),
         },
       },
@@ -299,7 +306,14 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
               posts: {
                 deleteMany: {},
                 create: input.postCodes.map((postCode) => ({
-                  post: { connect: { code: postCode } },
+                  post: {
+                    connect: {
+                      tenantId_code: {
+                        tenantId: ROOT_TENANT_ID,
+                        code: postCode,
+                      },
+                    },
+                  },
                 })),
               },
             }),
@@ -991,7 +1005,16 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
           }
         : {},
       filters.postCode
-        ? { posts: { some: { post: { code: filters.postCode } } } }
+        ? {
+            posts: {
+              some: {
+                post: {
+                  tenantId: ROOT_TENANT_ID,
+                  code: filters.postCode,
+                },
+              },
+            },
+          }
         : {},
       filters.createdFrom || filters.createdTo
         ? {
@@ -1102,7 +1125,10 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
     }
 
     const posts = await this.prisma.systemPost.findMany({
-      where: { code: { in: [...postCodes] } },
+      where: {
+        tenantId: ROOT_TENANT_ID,
+        code: { in: [...postCodes] },
+      },
       select: { code: true },
     });
     const existing = new Set(posts.map((post) => post.code));

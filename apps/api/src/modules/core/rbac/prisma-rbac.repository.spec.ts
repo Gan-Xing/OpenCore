@@ -147,11 +147,6 @@ describe('PrismaRbacRepository integration', () => {
       where: { username: 'admin' },
       select: { id: true },
     });
-    const engineerPost = await prisma.systemPost.findUniqueOrThrow({
-      where: { code: 'engineer' },
-      select: { id: true },
-    });
-
     await prisma.tenantPlan.create({
       data: {
         id: tenantAuthzPlanId,
@@ -188,6 +183,16 @@ describe('PrismaRbacRepository integration', () => {
             },
           },
         },
+      },
+      select: { id: true },
+    });
+    const engineerPost = await prisma.systemPost.create({
+      data: {
+        tenantId: tenantAuthzId,
+        code: 'engineer',
+        name: 'Tenant Authz Engineer',
+        order: 20,
+        description: 'Tenant authz test post',
       },
       select: { id: true },
     });

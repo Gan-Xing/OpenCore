@@ -1040,7 +1040,10 @@ async function seedUsers(bootstrapPassword: string): Promise<number> {
     }
 
     const posts = await prisma.systemPost.findMany({
-      where: { code: { in: [...userDefinition.postCodes] } },
+      where: {
+        tenantId: ROOT_TENANT_ID,
+        code: { in: [...userDefinition.postCodes] },
+      },
       select: { id: true, code: true },
     });
     const knownPostCodes = new Set(posts.map((post) => post.code));
@@ -1184,7 +1187,10 @@ async function assertSeedUserPostsExist(
   }
 
   const posts = await prisma.systemPost.findMany({
-    where: { code: { in: [...postCodes] } },
+    where: {
+      tenantId: ROOT_TENANT_ID,
+      code: { in: [...postCodes] },
+    },
     select: { code: true },
   });
   const existing = new Set(posts.map((post) => post.code));
@@ -1425,7 +1431,12 @@ async function seedSystemManagement(): Promise<{
 
   for (const post of seedSystemPosts) {
     await prisma.systemPost.upsert({
-      where: { code: post.code },
+      where: {
+        tenantId_code: {
+          tenantId: ROOT_TENANT_ID,
+          code: post.code,
+        },
+      },
       update: {
         name: post.name,
         order: post.order,
@@ -1435,6 +1446,7 @@ async function seedSystemManagement(): Promise<{
       },
       create: {
         id: post.id,
+        tenantId: ROOT_TENANT_ID,
         code: post.code,
         name: post.name,
         order: post.order,

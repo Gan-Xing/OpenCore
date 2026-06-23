@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { runWithRequestContext } from '@opencore/core';
 import { PrismaService } from '@opencore/database';
 import { PrismaSystemPostRepository } from './system-post.prisma-repository';
 import { SeedSystemPostRepository } from './system-post.seed-repository';
@@ -181,6 +182,7 @@ describe('@opencore/system system-post', () => {
     );
     const testRunId = randomUUID().slice(0, 8);
     const code = `post_${testRunId}`;
+    const tenantId = `tenant_post_${testRunId}`;
     const batchCodeA = `${code}_batch_a`;
     const batchCodeB = `${code}_batch_b`;
     const orderCodeA = `${code}_order_a`;
@@ -349,15 +351,114 @@ describe('@opencore/system system-post', () => {
       );
     });
 
+    it('scopes post codes to the active tenant context', async () => {
+      await prisma.tenant.create({
+        data: {
+          id: tenantId,
+          code: tenantId,
+          slug: tenantId,
+          name: 'Tenant Post Scope Test',
+        },
+      });
+      await service.createPost({
+        code,
+        name: 'Root Scoped Post',
+        order: 30,
+        enabled: true,
+      });
+      await runInTenant(tenantId, () =>
+        service.createPost({
+          code,
+          name: 'Tenant Scoped Post',
+          order: 40,
+          enabled: true,
+        }),
+      );
+
+      await expect(service.getPost(code)).resolves.toMatchObject({
+        code,
+        name: 'Root Scoped Post',
+      });
+      await expect(
+        runInTenant(tenantId, () => service.getPost(code)),
+      ).resolves.toMatchObject({
+        code,
+        name: 'Tenant Scoped Post',
+      });
+      await expect(
+        runInTenant(tenantId, () =>
+          service.listPosts({ page: 1, pageSize: 20 }),
+        ),
+      ).resolves.toEqual(
+        expect.objectContaining({
+          items: [
+            expect.objectContaining({
+              code,
+              name: 'Tenant Scoped Post',
+            }),
+          ],
+        }),
+      );
+      await expect(
+        runInTenant(tenantId, () => service.listPostOptions()),
+      ).resolves.toEqual([
+        expect.objectContaining({
+          code,
+          name: 'Tenant Scoped Post',
+        }),
+      ]);
+      await expectHttpExceptionCode(
+        service.createPost({
+          code,
+          name: 'Duplicate Root Post',
+        }),
+        'SYSTEM_POST_ALREADY_EXISTS',
+      );
+      await expectHttpExceptionCode(
+        runInTenant(tenantId, () =>
+          service.createPost({
+            code,
+            name: 'Duplicate Tenant Post',
+          }),
+        ),
+        'SYSTEM_POST_ALREADY_EXISTS',
+      );
+      await expect(
+        prisma.systemPost.findMany({
+          where: { code },
+          select: { tenantId: true, name: true },
+        }),
+      ).resolves.toEqual(
+        expect.arrayContaining([
+          { tenantId: 'tenant_root', name: 'Root Scoped Post' },
+          { tenantId, name: 'Tenant Scoped Post' },
+        ]),
+      );
+    });
+
     async function cleanupTestRows(): Promise<void> {
       await prisma.systemPost.deleteMany({
         where: {
           code: { in: [code, batchCodeA, batchCodeB, orderCodeA, orderCodeB] },
         },
       });
+      await prisma.tenant.deleteMany({
+        where: { id: tenantId },
+      });
     }
   });
 });
+
+function runInTenant<T>(tenantId: string, callback: () => T): T {
+  return runWithRequestContext(
+    {
+      requestId: `test-${tenantId}`,
+      traceId: `test-${tenantId}`,
+      tenantId,
+    },
+    callback,
+  );
+}
 
 async function expectHttpExceptionCode(
   promise: Promise<unknown>,

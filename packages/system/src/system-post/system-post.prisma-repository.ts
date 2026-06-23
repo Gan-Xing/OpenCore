@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
+import { getRequestContext } from '@opencore/core';
 import { PrismaService } from '@opencore/database';
 import type {
   BatchDeleteSystemPostsDto,
@@ -28,6 +29,7 @@ import {
 
 type PrismaSystemPost = {
   id: string;
+  tenantId: string;
   code: string;
   name: string;
   order: number;
@@ -36,6 +38,8 @@ type PrismaSystemPost = {
   createdAt: Date;
   updatedAt: Date;
 };
+
+const ROOT_TENANT_ID = 'tenant_root';
 
 @Injectable()
 export class PrismaSystemPostRepository extends SystemPostRepository {
@@ -47,7 +51,9 @@ export class PrismaSystemPostRepository extends SystemPostRepository {
     query: SystemPostPageQuery = {},
   ): Promise<PageResult<SystemPostRecord>> {
     const filters = normalizeSystemPostFilters(query);
+    const tenantId = resolveCurrentTenantId();
     const where = {
+      tenantId,
       ...(filters.enabled === undefined ? {} : { enabled: filters.enabled }),
     };
     const total = await this.prisma.systemPost.count({ where });
@@ -63,8 +69,9 @@ export class PrismaSystemPostRepository extends SystemPostRepository {
   }
 
   async listPostOptions(): Promise<readonly SystemPostOptionRecord[]> {
+    const tenantId = resolveCurrentTenantId();
     return this.prisma.systemPost.findMany({
-      where: { enabled: true },
+      where: { tenantId, enabled: true },
       orderBy: [{ order: 'asc' }, { name: 'asc' }],
       select: {
         code: true,
@@ -80,18 +87,28 @@ export class PrismaSystemPostRepository extends SystemPostRepository {
 
   async createPost(body: CreateSystemPostDto): Promise<SystemPostRecord> {
     const input = normalizeCreateSystemPostInput(body);
+    const tenantId = resolveCurrentTenantId();
 
     if (
-      await this.prisma.systemPost.findUnique({ where: { code: input.code } })
+      await this.prisma.systemPost.findUnique({
+        where: {
+          tenantId_code: {
+            tenantId,
+            code: input.code,
+          },
+        },
+      })
     ) {
       throw systemPostConflict(
         'SYSTEM_POST_ALREADY_EXISTS',
         'System post already exists.',
-        { code: input.code },
+        { code: input.code, tenantId },
       );
     }
 
-    const post = await this.prisma.systemPost.create({ data: input });
+    const post = await this.prisma.systemPost.create({
+      data: { ...input, tenantId },
+    });
     return toSystemPostRecord(post);
   }
 
@@ -99,9 +116,15 @@ export class PrismaSystemPostRepository extends SystemPostRepository {
     code: string,
     body: UpdateSystemPostDto,
   ): Promise<SystemPostRecord> {
-    const existing = toSystemPostRecord(await this.findPostByCode(code));
+    const existingEntity = await this.findPostByCode(code);
+    const existing = toSystemPostRecord(existingEntity);
     const post = await this.prisma.systemPost.update({
-      where: { code },
+      where: {
+        tenantId_code: {
+          tenantId: existingEntity.tenantId,
+          code,
+        },
+      },
       data: normalizeUpdateSystemPostInput(existing, body),
     });
 
@@ -109,8 +132,8 @@ export class PrismaSystemPostRepository extends SystemPostRepository {
   }
 
   async deletePost(code: string): Promise<{ deleted: true }> {
-    await this.findPostByCode(code);
-    await this.prisma.systemPost.delete({ where: { code } });
+    const post = await this.findPostByCode(code);
+    await this.prisma.systemPost.delete({ where: { id: post.id } });
     return { deleted: true };
   }
 
@@ -118,9 +141,10 @@ export class PrismaSystemPostRepository extends SystemPostRepository {
     body: BatchDeleteSystemPostsDto,
   ): Promise<SystemPostBatchMutationRecord> {
     const codes = normalizeBatchDeleteSystemPostsInput(body);
+    const tenantId = resolveCurrentTenantId();
     const posts = await this.prisma.systemPost.findMany({
-      where: { code: { in: [...codes] } },
-      select: { code: true },
+      where: { tenantId, code: { in: [...codes] } },
+      select: { id: true, code: true },
     });
     const existingCodes = new Set(posts.map((post) => post.code));
     const missing = codes.find((code) => !existingCodes.has(code));
@@ -134,7 +158,7 @@ export class PrismaSystemPostRepository extends SystemPostRepository {
     }
 
     await this.prisma.systemPost.deleteMany({
-      where: { code: { in: [...codes] } },
+      where: { id: { in: posts.map((post) => post.id) } },
     });
 
     return {
@@ -149,9 +173,10 @@ export class PrismaSystemPostRepository extends SystemPostRepository {
   ): Promise<SystemPostOrderMutationResult> {
     const input = normalizeUpdateSystemPostOrderInput(body);
     const codes = input.map((item) => item.code);
+    const tenantId = resolveCurrentTenantId();
     const posts = (
       await this.prisma.systemPost.findMany({
-        where: { code: { in: codes } },
+        where: { tenantId, code: { in: codes } },
       })
     ).map(toSystemPostRecord);
 
@@ -160,7 +185,12 @@ export class PrismaSystemPostRepository extends SystemPostRepository {
     const updated = await this.prisma.$transaction(
       input.map((item) =>
         this.prisma.systemPost.update({
-          where: { code: item.code },
+          where: {
+            tenantId_code: {
+              tenantId,
+              code: item.code,
+            },
+          },
           data: { order: item.order },
         }),
       ),
@@ -173,7 +203,15 @@ export class PrismaSystemPostRepository extends SystemPostRepository {
   }
 
   private async findPostByCode(code: string): Promise<PrismaSystemPost> {
-    const post = await this.prisma.systemPost.findUnique({ where: { code } });
+    const tenantId = resolveCurrentTenantId();
+    const post = await this.prisma.systemPost.findUnique({
+      where: {
+        tenantId_code: {
+          tenantId,
+          code,
+        },
+      },
+    });
 
     if (!post) {
       throw systemPostNotFound(
@@ -181,12 +219,17 @@ export class PrismaSystemPostRepository extends SystemPostRepository {
         'System post not found.',
         {
           code,
+          tenantId,
         },
       );
     }
 
     return post;
   }
+}
+
+function resolveCurrentTenantId(): string {
+  return getRequestContext()?.tenantId ?? ROOT_TENANT_ID;
 }
 
 function toSystemPostRecord(post: PrismaSystemPost): SystemPostRecord {

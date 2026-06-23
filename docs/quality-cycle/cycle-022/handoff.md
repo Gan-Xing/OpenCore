@@ -4,15 +4,15 @@ Date: 2026-06-23
 Repository: `Gan-Xing/OpenCore`  
 Branch: `main`  
 Target track: `Cycle-022 / Tenant Foundation`  
-Status: **In progress; T3b tenant-scoped Role catalog implemented, deployed, and verified**
+Status: **In progress; T3c tenant-scoped Post catalog implemented, deployed, and verified**
 
 ## 0. Current Round Snapshot
 
 Updated: 2026-06-23
 
-Current completed slice count: **3 full slices + 2 T3 sub-slices**
+Current completed slice count: **3 full slices + 3 T3 sub-slices**
 
-This working tree has advanced Cycle-022 through the first two full deployable tenant foundation slices and the first two T3 authorization/RBAC sub-slices:
+This working tree has advanced Cycle-022 through the first two full deployable tenant foundation slices and the first three T3 authorization/RBAC/org sub-slices:
 
 - Prisma models for `TenantPlan`, `TenantPlanModule`, `Tenant`, `TenantMembership`, `TenantMembershipRole`, `TenantMembershipPost`, `PlatformRole`, `UserPlatformRole`, and `PlatformRolePermission`.
 - Migration `20260622223000_tenant_foundation` creates the `root` tenant, root `system.full` plan, root memberships for existing users, and transitional root copies of `UserRole` and `UserPost`.
@@ -40,10 +40,15 @@ This working tree has advanced Cycle-022 through the first two full deployable t
 - Seeded roles upsert by `(tenant_root, code)`; seeded users attach only root roles.
 - `pnpm guard:tenant-role-scope` and `pnpm smoke:core-tenant-role` were added for the T3b Role catalog closure.
 - Refreshed deploy completed on API `39172` and Admin `39174`; tenant foundation/auth/RBAC/role smokes passed against local and public API.
+- Migration `20260623113000_tenant_scoped_posts` makes `SystemPost` tenant-owned, rewrites post code uniqueness to `(tenantId, code)`, and enforces `TenantMembershipPost(tenantId, postId)` against `SystemPost(tenantId, id)`.
+- `PrismaSystemPostRepository` now resolves the active tenant from `RequestContext`, scopes Post list/options/get/create/update/delete/batch/order operations by tenant, and keeps the legacy user-post bridge pinned to `tenant_root`.
+- Seeded posts upsert by `(tenant_root, code)`; seeded users attach only root posts.
+- `pnpm guard:tenant-post-scope` and `pnpm smoke:core-tenant-post` were added for the T3c Post catalog closure.
+- Refreshed deploy completed on API `39172` and Admin `39174`; tenant foundation/auth/RBAC/role/post smokes passed against local and public API.
 
 Still not complete:
 
-- tenant-owned Department/Post CRUD and unique constraint rewrites;
+- tenant-owned Department CRUD and unique constraint rewrites;
 - tenant membership role/post assignment APIs that manage non-root tenants directly;
 - tenant-scoped System repositories for user/org management beyond authz bridge reads;
 - Redis/file/queue/WebSocket/Integration/OAuth/audit runtime propagation;
