@@ -2152,6 +2152,7 @@ export default {
   'pages.optional.reports.fields.name': '名称',
   'pages.optional.reports.fields.owner': '负责人',
   'pages.optional.reports.fields.querySchema': '查询 Schema',
+  'pages.optional.reports.fields.tenantId': '租户 ID',
   'pages.optional.reports.search.placeholder': '搜索报表',
   'pages.optional.reports.status.disabled': '停用',
   'pages.optional.reports.status.enabled': '启用',

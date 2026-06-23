@@ -224,7 +224,19 @@ These remain below the productization waterline and cannot be described as compl
 | Cross-tenant API rejection         | Done    | `smoke:core-collaboration-approvals` seeds a foreign tenant approval and proves root-scope list/detail/approve/reject cannot access it.       |
 | Seed/OpenAPI/SDK/Admin             | Done    | Seed approval rows, `ApprovalLiteDto`, SDK `ApprovalLiteSummary`, and Admin Approvals expose `tenantId`.                                      |
 | Smoke/guard                        | Done    | `guard:tenant-collaboration-approval-scope` passed and public collaboration approval smoke verified foreign-tenant approval isolation.         |
-| Remaining T7 optional data scope   | Pending | ReportDefinition and future business domains remain pending.                                                                                  |
+| Remaining T7 optional data scope   | Pending | ReportDefinition is being closed by T7e; future business domains remain pending.                                                              |
+
+## T7e ReportDefinition
+
+| Check                              | Status  | Evidence                                                                                                                              |
+| ---------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| ReportDefinition tenant ownership  | Done    | `ReportDefinition.tenantId` is backfilled to `tenant_root`, defaults to root, and is constrained to `Tenant`.                         |
+| Tenant-local report code           | Done    | `ReportDefinition.code` uniqueness is now `(tenantId, code)` and enabled/owner lookup is tenant-prefixed.                            |
+| Repository tenant isolation        | Done    | Operations summary/list/detail/create resolve the active tenant from `RequestContext` with root fallback.                            |
+| Cross-tenant API rejection         | Done    | `smoke:core-operations-reports` seeds a foreign tenant report and proves root-scope list/detail cannot access it.                    |
+| Seed/OpenAPI/SDK/Admin             | Done    | Seed report rows, `ReportDefinitionDto`, SDK `ReportDefinitionSummary`, and Admin Reports expose `tenantId`.                         |
+| Smoke/guard                        | Done    | `guard:tenant-report-definition-scope` passed and public operations report smoke verified foreign-tenant report isolation.            |
+| Remaining T7 optional data scope   | Pending | Future business domains remain pending.                                                                                               |
 
 ## T4a Audit
 

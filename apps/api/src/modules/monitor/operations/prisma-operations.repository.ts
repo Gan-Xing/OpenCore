@@ -51,6 +51,7 @@ const SENSITIVE_VALUE_TEXT_PATTERN =
 
 type ReportRow = {
   id: string;
+  tenantId: string;
   code: string;
   name: string;
   description: string | null;
@@ -72,8 +73,9 @@ export class PrismaOperationsRepository extends OperationsRepository {
     scheduler: SchedulerSummaryDto,
     onlineUsers: OnlineUserSummaryDto,
   ) {
+    const tenantId = resolveCurrentTenantId();
     const [reports, cache] = await Promise.all([
-      this.prisma.reportDefinition.findMany(),
+      this.prisma.reportDefinition.findMany({ where: { tenantId } }),
       this.collectCacheRecords(),
     ]);
 
@@ -222,9 +224,10 @@ export class PrismaOperationsRepository extends OperationsRepository {
   async listReports(
     query: ReportQueryDto = {},
   ): Promise<PageResult<ReportDefinitionRecord>> {
+    const tenantId = resolveCurrentTenantId();
     const enabled = normalizeOptionalBoolean(query.enabled);
     const rows = await this.prisma.reportDefinition.findMany({
-      where: { enabled, owner: query.owner },
+      where: { tenantId, enabled, owner: query.owner },
       orderBy: [{ code: 'asc' }],
     });
 
@@ -238,8 +241,10 @@ export class PrismaOperationsRepository extends OperationsRepository {
   async createReport(
     body: CreateReportDefinitionDto,
   ): Promise<ReportDefinitionRecord> {
+    const tenantId = resolveCurrentTenantId();
     const report = await this.prisma.reportDefinition.create({
       data: {
+        tenant: { connect: { id: tenantId } },
         code: body.code,
         name: body.name,
         description: body.description,
@@ -363,9 +368,10 @@ export class PrismaOperationsRepository extends OperationsRepository {
   }
 
   private async findReport(code: string): Promise<ReportDefinitionRecord> {
+    const tenantId = resolveCurrentTenantId();
     return requireRecord(
       await this.prisma.reportDefinition
-        .findUnique({ where: { code } })
+        .findFirst({ where: { tenantId, code } })
         .then((report) => (report ? toReportRecord(report) : undefined)),
       'Report definition',
       code,
@@ -376,6 +382,7 @@ export class PrismaOperationsRepository extends OperationsRepository {
 function toReportRecord(row: ReportRow): ReportDefinitionRecord {
   return {
     id: row.id,
+    tenantId: row.tenantId,
     code: row.code,
     name: row.name,
     description: row.description ?? undefined,

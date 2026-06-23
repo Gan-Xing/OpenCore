@@ -111,6 +111,7 @@ export type OnlineUserSessionSummary = {
 
 export type ReportDefinitionSummary = {
   id: string;
+  tenantId: string;
   code: string;
   name: string;
   description?: string;
@@ -253,7 +254,7 @@ export type CleanExpiredOnlineUserSessionsResult = {
 
 export type CreateReportDefinitionRequest = Omit<
   ReportDefinitionSummary,
-  'enabled' | 'id'
+  'enabled' | 'id' | 'tenantId'
 > & {
   enabled?: boolean;
 };
@@ -453,6 +454,7 @@ export function createOperationsFixtures(): OperationsFixtures {
   const reports: readonly ReportDefinitionSummary[] = [
     {
       id: 'report_runtime_health',
+      tenantId: 'tenant_root',
       code: 'runtime.health',
       name: 'Runtime Health',
       querySchema: { source: 'monitor.status' },

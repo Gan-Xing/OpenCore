@@ -219,6 +219,9 @@ export class ReportDefinitionDto {
   id!: string;
 
   @ApiProperty()
+  tenantId!: string;
+
+  @ApiProperty()
   code!: string;
 
   @ApiProperty()

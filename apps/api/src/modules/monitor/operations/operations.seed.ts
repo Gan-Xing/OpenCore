@@ -51,6 +51,7 @@ export const seedCacheKeys: readonly CacheKeyRecord[] = [
 export const seedReports: readonly ReportDefinitionRecord[] = [
   {
     id: 'report_runtime_health',
+    tenantId: 'tenant_root',
     code: 'runtime.health',
     name: 'Runtime Health',
     description: 'Minimal report definition for runtime health snapshots.',

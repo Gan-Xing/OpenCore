@@ -2346,6 +2346,7 @@ export default {
   'pages.optional.reports.fields.name': 'Name',
   'pages.optional.reports.fields.owner': 'Owner',
   'pages.optional.reports.fields.querySchema': 'Query Schema',
+  'pages.optional.reports.fields.tenantId': 'Tenant ID',
   'pages.optional.reports.search.placeholder': 'Search reports',
   'pages.optional.reports.status.disabled': 'disabled',
   'pages.optional.reports.status.enabled': 'enabled',

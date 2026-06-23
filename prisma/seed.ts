@@ -843,8 +843,11 @@ async function seedScheduler(): Promise<{
 async function seedOperations(): Promise<{ reports: number }> {
   for (const report of seedReports) {
     await prisma.reportDefinition.upsert({
-      where: { code: report.code },
+      where: {
+        tenantId_code: { tenantId: report.tenantId, code: report.code },
+      },
       update: {
+        tenant: { connect: { id: report.tenantId } },
         name: report.name,
         description: report.description ?? null,
         querySchema: report.querySchema as Prisma.InputJsonValue,
@@ -853,6 +856,7 @@ async function seedOperations(): Promise<{ reports: number }> {
       },
       create: {
         id: report.id,
+        tenant: { connect: { id: report.tenantId } },
         code: report.code,
         name: report.name,
         description: report.description ?? null,

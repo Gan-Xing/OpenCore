@@ -15944,6 +15944,7 @@
         "type": "object",
         "properties": {
           "id": { "type": "string" },
+          "tenantId": { "type": "string" },
           "code": { "type": "string" },
           "name": { "type": "string" },
           "description": { "type": "string" },
@@ -15951,7 +15952,15 @@
           "enabled": { "type": "boolean" },
           "owner": { "type": "string" }
         },
-        "required": ["id", "code", "name", "querySchema", "enabled", "owner"]
+        "required": [
+          "id",
+          "tenantId",
+          "code",
+          "name",
+          "querySchema",
+          "enabled",
+          "owner"
+        ]
       },
       "ReportDefinitionPageDto": {
         "type": "object",

@@ -53,12 +53,13 @@ export class SeedOperationsRepository extends OperationsRepository {
     onlineUsers: OnlineUserSummaryDto,
   ) {
     const cacheKeys = this.getTenantCacheKeys();
+    const reports = this.getTenantReports();
 
     return buildOperationsSummary({
       scheduler,
       cacheKeys,
       onlineUsers,
-      reports: this.reports,
+      reports,
       exportJobDesign,
     });
   }
@@ -173,9 +174,10 @@ export class SeedOperationsRepository extends OperationsRepository {
   async listReports(
     query: ReportQueryDto = {},
   ): Promise<PageResult<ReportDefinitionRecord>> {
+    const reports = this.getTenantReports();
     const enabled = normalizeOptionalBoolean(query.enabled);
     return createPage(
-      this.reports.filter(
+      reports.filter(
         (report) =>
           matchesOptional(report.enabled, enabled) &&
           matchesOptional(report.owner, query.owner),
@@ -193,6 +195,7 @@ export class SeedOperationsRepository extends OperationsRepository {
   ): Promise<ReportDefinitionRecord> {
     const report: ReportDefinitionRecord = {
       id: `report_${body.code.replace(/[^a-zA-Z0-9]+/g, '_')}`,
+      tenantId: resolveCurrentTenantId(),
       code: body.code,
       name: body.name,
       description: body.description,
@@ -216,9 +219,17 @@ export class SeedOperationsRepository extends OperationsRepository {
     );
   }
 
+  private getTenantReports(): ReportDefinitionRecord[] {
+    const tenantId = resolveCurrentTenantId();
+    return this.reports.filter((report) => report.tenantId === tenantId);
+  }
+
   private findReport(code: string): ReportDefinitionRecord {
+    const tenantId = resolveCurrentTenantId();
     return requireRecord(
-      this.reports.find((report) => report.code === code),
+      this.reports.find(
+        (report) => report.tenantId === tenantId && report.code === code,
+      ),
       'Report definition',
       code,
     );

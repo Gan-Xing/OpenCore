@@ -1396,3 +1396,40 @@ Passed after deploy:
 
 - No client-supplied tenant selector was added.
 - No requester/approver identity redesign in T7d; this round only closes row ownership and access isolation.
+
+## Round 31: T7e ReportDefinition Tenant Isolation
+
+### Completed
+
+- Added migration `20260624063000_tenant_scoped_report_definitions`:
+  - adds `ReportDefinition.tenantId`;
+  - backfills existing report definitions to `tenant_root`;
+  - adds the tenant foreign key;
+  - rewrites report code uniqueness to `(tenantId, code)`;
+  - replaces the global enabled/owner lookup with a tenant-prefixed index.
+- Updated Prisma schema with `Tenant.reportDefinitions` and `ReportDefinition.tenant`.
+- Updated Operations repositories:
+  - Prisma summary/list/detail/create resolve `RequestContext.tenantId`;
+  - seed repository mirrors the same tenant fallback so tests cannot bypass isolation.
+- Updated public/admin surfaces:
+  - seed report includes `tenantId`;
+  - `ReportDefinitionDto` and SDK `ReportDefinitionSummary` expose `tenantId`;
+  - Admin Reports displays and exports `tenantId`.
+- Added `smoke:core-operations-reports`:
+  - creates a foreign tenant report through Prisma;
+  - proves root token list/detail cannot access it;
+  - verifies the foreign row remains owned by the foreign tenant.
+- Added `guard:tenant-report-definition-scope`.
+
+### Verification Log
+
+Passed Prisma validation/generation, seed and typed-smoke checks, OpenAPI/SDK drift checks, the focused operations repository spec, API/Admin/SDK/full typechecks, lint, full tests, refreshed deploy, and public ReportDefinition smoke including `operations.reports.foreign-hidden`.
+
+### Remaining Product Debt
+
+- Continue tenantization for future business domains as they are introduced.
+
+### Deliberate Non-Goals
+
+- No client-supplied tenant selector was added.
+- No report designer or async report execution behavior was added in T7e; this round only closes row ownership and access isolation.

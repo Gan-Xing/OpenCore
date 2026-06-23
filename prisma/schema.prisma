@@ -103,6 +103,7 @@ model Tenant {
   collaborationNotices   CollaborationNotice[]
   collaborationTodos     CollaborationTodo[]
   collaborationApprovals CollaborationApprovalLite[]
+  reportDefinitions      ReportDefinition[]
   auditLogs              AuditLog[]
   loginLogs              LoginLog[]
   onlineSessions         OnlineUserSession[]
@@ -747,7 +748,9 @@ model OnlineUserSession {
 
 model ReportDefinition {
   id          String   @id @default(cuid())
-  code        String   @unique
+  tenantId    String   @default("tenant_root")
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  code        String
   name        String
   description String?
   querySchema Json
@@ -755,6 +758,9 @@ model ReportDefinition {
   owner       String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@unique([tenantId, code])
+  @@index([tenantId, enabled, owner])
 }
 
 model IntegrationProvider {

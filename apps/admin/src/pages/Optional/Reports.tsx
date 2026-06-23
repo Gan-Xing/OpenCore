@@ -25,6 +25,7 @@ import { ReadOnlyDetailDrawer } from '../shared/ReadOnlyDetailDrawer';
 
 const rows = createOperationsFixtures().reports;
 const searchFields: CurrentPageSearchField<ReportDefinitionSummary>[] = [
+  'tenantId',
   'code',
   'name',
   'owner',
@@ -66,6 +67,13 @@ export default function ReportsPage() {
         {
           title: formatMessage('pages.optional.common.fields.id', 'ID'),
           dataIndex: 'id',
+        },
+        {
+          title: formatMessage(
+            'pages.optional.reports.fields.tenantId',
+            'Tenant ID',
+          ),
+          dataIndex: 'tenantId',
         },
         {
           title: formatMessage('pages.optional.reports.fields.code', 'Code'),
@@ -148,6 +156,14 @@ export default function ReportsPage() {
 
   const columns: ProColumns<ReportDefinitionSummary>[] = [
     {
+      title: formatMessage(
+        'pages.optional.reports.fields.tenantId',
+        'Tenant ID',
+      ),
+      dataIndex: 'tenantId',
+      width: 160,
+    },
+    {
       title: formatMessage('pages.optional.reports.fields.code', 'Code'),
       dataIndex: 'code',
       render: (_, record) => (
@@ -207,6 +223,13 @@ export default function ReportsPage() {
       />
       <ReadOnlyDetailDrawer
         fields={[
+          {
+            label: formatMessage(
+              'pages.optional.reports.fields.tenantId',
+              'Tenant ID',
+            ),
+            value: selected?.tenantId,
+          },
           {
             label: formatMessage('pages.optional.reports.fields.code', 'Code'),
             value: selected?.code,

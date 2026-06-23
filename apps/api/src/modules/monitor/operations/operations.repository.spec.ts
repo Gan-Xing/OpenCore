@@ -192,6 +192,87 @@ describe('OperationsRepository', () => {
     });
   });
 
+  it('scopes report definitions by the active tenant context', async () => {
+    const repository = new PrismaOperationsRepository(
+      createPrismaMock([
+        {
+          id: 'report_root_runtime',
+          tenantId: ROOT_TENANT_ID,
+          code: 'runtime.health',
+          name: 'Runtime Health',
+          description: null,
+          querySchema: { source: 'monitor.status' },
+          enabled: true,
+          owner: 'admin',
+        },
+        {
+          id: 'report_foreign_runtime',
+          tenantId: FOREIGN_TENANT_ID,
+          code: 'runtime.health',
+          name: 'Foreign Runtime Health',
+          description: null,
+          querySchema: { source: 'foreign.status' },
+          enabled: true,
+          owner: 'foreign-admin',
+        },
+        {
+          id: 'report_foreign_only',
+          tenantId: FOREIGN_TENANT_ID,
+          code: 'foreign.only',
+          name: 'Foreign Only',
+          description: null,
+          querySchema: { source: 'foreign.only' },
+          enabled: true,
+          owner: 'foreign-admin',
+        },
+      ]),
+      createRedisMock({}),
+    );
+
+    await expect(
+      runAsTenant(ROOT_TENANT_ID, () => repository.listReports()),
+    ).resolves.toMatchObject({
+      total: 1,
+      items: [
+        expect.objectContaining({
+          tenantId: ROOT_TENANT_ID,
+          code: 'runtime.health',
+          owner: 'admin',
+        }),
+      ],
+    });
+    await expect(
+      runAsTenant(ROOT_TENANT_ID, () =>
+        repository.listReports({ owner: 'foreign-admin' }),
+      ),
+    ).resolves.toMatchObject({ total: 0 });
+    await expectHttpExceptionCode(
+      runAsTenant(ROOT_TENANT_ID, () => repository.getReport('foreign.only')),
+      'MONITOR_OPERATIONS_RESOURCE_NOT_FOUND',
+    );
+    await expect(
+      runAsTenant(FOREIGN_TENANT_ID, () =>
+        repository.getReport('runtime.health'),
+      ),
+    ).resolves.toMatchObject({
+      tenantId: FOREIGN_TENANT_ID,
+      name: 'Foreign Runtime Health',
+    });
+    await expect(
+      runAsTenant(ROOT_TENANT_ID, () =>
+        repository.createReport({
+          code: 'root.created',
+          name: 'Root Created',
+          querySchema: { source: 'root.created' },
+          owner: 'admin',
+        }),
+      ),
+    ).resolves.toMatchObject({
+      tenantId: ROOT_TENANT_ID,
+      code: 'root.created',
+    });
+  });
+
   it('uses Redis for cache listing, safe value preview and confirmed deletion', async () => {
     const rootSystemKey = 'opencore:tenant:tenant_root:system:config';
     const foreignSystemKey = 'opencore:tenant:tenant_foreign:system:config';
@@ -349,13 +430,44 @@ async function createSeedOnlineUserSummary() {
   return new OnlineUserService(new SeedOnlineUserRepository()).getSummary();
 }
 
-function createPrismaMock() {
+type ReportDefinitionMockRow = {
+  id: string;
+  tenantId: string;
+  code: string;
+  name: string;
+  description: string | null;
+  querySchema: Record<string, unknown>;
+  enabled: boolean;
+  owner: string;
+};
+
+function createPrismaMock(reportRows: ReportDefinitionMockRow[] = []) {
+  const reports = [...reportRows];
+
   return {
     reportDefinition: {
-      findMany: async () => [],
-      findUnique: async () => undefined,
+      findMany: async (input?: {
+        where?: { tenantId?: string; enabled?: boolean; owner?: string };
+      }) =>
+        reports.filter(
+          (report) =>
+            report.tenantId === input?.where?.tenantId &&
+            (input?.where?.enabled === undefined ||
+              report.enabled === input.where.enabled) &&
+            (input?.where?.owner === undefined ||
+              report.owner === input.where.owner),
+        ),
+      findFirst: async (input?: {
+        where?: { tenantId?: string; code?: string };
+      }) =>
+        reports.find(
+          (report) =>
+            report.tenantId === input?.where?.tenantId &&
+            report.code === input?.where?.code,
+        ),
       create: async (input: {
         data: {
+          tenant: { connect: { id: string } };
           code: string;
           name: string;
           description?: string;
@@ -365,7 +477,13 @@ function createPrismaMock() {
         };
       }) => ({
         id: `report_${input.data.code}`,
-        ...input.data,
+        tenantId: input.data.tenant.connect.id,
+        code: input.data.code,
+        name: input.data.name,
+        description: input.data.description ?? null,
+        querySchema: input.data.querySchema,
+        enabled: input.data.enabled,
+        owner: input.data.owner,
       }),
     },
   } as never;
