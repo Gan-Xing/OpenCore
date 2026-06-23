@@ -10,16 +10,20 @@ import {
   type PrismaTransactionClient,
 } from '@opencore/database';
 import { listModules } from '@opencore/module-registry';
+import { hashSystemUserPassword } from '@opencore/system';
 import type { Prisma } from '@prisma/client';
 import type {
+  CreateTenantMemberDto,
   CreateTenantPlanDto,
   CreateTenantDto,
   SetTenantStatusDto,
   TenantFoundationSummaryDto,
+  TenantMemberDeleteResultDto,
   TenantMemberDto,
   TenantPlanDeleteResultDto,
   TenantPlanDto,
   TenantDto,
+  UpdateTenantMemberDto,
   UpdateTenantPlanDto,
   UpdateTenantDto,
   UpdateTenantMemberAssignmentsDto,
@@ -30,9 +34,11 @@ const ROOT_TENANT_ID = 'tenant_root';
 const PLAN_CODE_PATTERN = /^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/;
 const TENANT_CODE_PATTERN = /^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/;
 const TENANT_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const USERNAME_PATTERN = /^[a-z][a-z0-9_.-]*$/;
 const registeredModuleCodes: ReadonlySet<string> = new Set(
   listModules().map((moduleDefinition) => moduleDefinition.code),
 );
+type TenantMemberStatus = 'active' | 'invited' | 'left' | 'suspended';
 
 @Injectable()
 export class TenantFoundationService {
@@ -489,6 +495,309 @@ export class TenantFoundationService {
     return memberships.map(toTenantMemberDto);
   }
 
+  async listTenantMembers(tenantId: string): Promise<TenantMemberDto[]> {
+    const id = normalizeTenantRecordId(tenantId);
+    await this.assertTenantExists(id);
+
+    const memberships = await this.prisma.tenantMembership.findMany({
+      where: { tenantId: id },
+      include: memberIncludes,
+      orderBy: [{ isOwner: 'desc' }, { createdAt: 'asc' }],
+    });
+
+    return memberships.map(toTenantMemberDto);
+  }
+
+  async createTenantMember(
+    tenantId: string,
+    body: CreateTenantMemberDto,
+  ): Promise<TenantMemberDto> {
+    const id = normalizeTenantRecordId(tenantId);
+    const tenant = await this.findTenantForMemberControl(id);
+    const status = normalizeMemberLifecycleStatus(body.status ?? 'invited');
+    if (status === 'left') {
+      throw tenantMemberBadRequest(
+        'TENANT_MEMBER_STATUS_INVALID',
+        'New tenant member cannot start in left status.',
+        { status },
+      );
+    }
+    const isOwner = normalizeMemberBoolean(body.isOwner, false, 'isOwner');
+    const deptId = normalizeOptionalMemberId(body.deptId, 'deptId') ?? null;
+    const roleCodes = normalizeCodes(body.roleCodes ?? [], 'roleCodes');
+    const postCodes = normalizeCodes(body.postCodes ?? [], 'postCodes');
+    const actorUserId = getRequestContext()?.actorUserId;
+
+    await this.assertMemberDeptExists(id, deptId);
+    const [roles, posts, userInput] = await Promise.all([
+      this.findRolesByCodes(id, roleCodes),
+      this.findPostsByCodes(id, postCodes),
+      this.resolveTenantMemberUser(body),
+    ]);
+
+    return this.prisma.$transaction(async (tx) => {
+      const user =
+        userInput.kind === 'existing'
+          ? userInput.user
+          : await tx.user.create({
+              data: {
+                displayName: userInput.displayName,
+                email: userInput.email,
+                enabled: true,
+                forcePasswordChange: true,
+                mobile: userInput.mobile,
+                passwordHash: userInput.passwordHash,
+                username: userInput.username,
+              },
+              select: { id: true, username: true },
+            });
+
+      const existing = await tx.tenantMembership.findUnique({
+        where: { tenantId_userId: { tenantId: id, userId: user.id } },
+        select: {
+          id: true,
+          isOwner: true,
+          joinedAt: true,
+          status: true,
+          userId: true,
+        },
+      });
+
+      if (existing && existing.status !== 'left') {
+        throw tenantMemberBadRequest(
+          'TENANT_MEMBER_ALREADY_EXISTS',
+          'User is already a member of this tenant.',
+          { tenantId: id, userId: user.id, username: user.username },
+        );
+      }
+
+      await assertTenantMemberCapacity(tx, id, tenant.accountLimit, {
+        ignoredMembershipId: existing?.id,
+      });
+
+      const joinedAt =
+        status === 'active' ? (existing?.joinedAt ?? new Date()) : null;
+      const membership = existing
+        ? await tx.tenantMembership.update({
+            where: { id: existing.id },
+            data: {
+              deptId,
+              invitedByUserId: actorUserId,
+              isOwner,
+              joinedAt,
+              status,
+            },
+            select: { id: true, userId: true },
+          })
+        : await tx.tenantMembership.create({
+            data: {
+              deptId,
+              invitedByUserId: actorUserId,
+              isOwner,
+              joinedAt,
+              status,
+              tenantId: id,
+              userId: user.id,
+            },
+            select: { id: true, userId: true },
+          });
+
+      await writeMemberRoleBindings(tx, id, membership.id, roles);
+      await writeMemberPostBindings(tx, id, membership.id, posts);
+
+      if (id === ROOT_TENANT_ID) {
+        await syncRootLegacyUser(tx, membership.userId, {
+          deptId,
+          deptProvided: true,
+          postIds: posts.map((post) => post.id),
+          roleIds: roles.map((role) => role.id),
+          status,
+        });
+      }
+
+      return findMemberDto(tx, id, membership.id);
+    });
+  }
+
+  async updateTenantMember(
+    tenantId: string,
+    membershipId: string,
+    body: UpdateTenantMemberDto,
+  ): Promise<TenantMemberDto> {
+    const id = normalizeTenantRecordId(tenantId);
+    const normalizedMembershipId = normalizeMemberRecordId(
+      membershipId,
+      'membershipId',
+    );
+    const tenant = await this.findTenantForMemberControl(id);
+    const membership = await this.prisma.tenantMembership.findFirst({
+      where: { id: normalizedMembershipId, tenantId: id },
+      select: {
+        id: true,
+        isOwner: true,
+        joinedAt: true,
+        status: true,
+        userId: true,
+      },
+    });
+
+    if (!membership) {
+      throw tenantMemberNotFound(
+        'TENANT_MEMBER_NOT_FOUND',
+        'Tenant member not found.',
+        { membershipId: normalizedMembershipId, tenantId: id },
+      );
+    }
+
+    const statusProvided = hasOwn(body, 'status');
+    const ownerProvided = hasOwn(body, 'isOwner');
+    const deptProvided = hasOwn(body, 'deptId');
+    const roleCodesProvided = hasOwn(body, 'roleCodes');
+    const postCodesProvided = hasOwn(body, 'postCodes');
+    const nextStatus = statusProvided
+      ? normalizeMemberLifecycleStatus(body.status)
+      : undefined;
+    const normalizedOwner = ownerProvided
+      ? normalizeMemberBoolean(body.isOwner, false, 'isOwner')
+      : undefined;
+    const nextIsOwner =
+      nextStatus === 'left' ? false : (normalizedOwner ?? membership.isOwner);
+    const nextDeptId =
+      nextStatus === 'left'
+        ? null
+        : deptProvided
+          ? (normalizeOptionalMemberId(body.deptId, 'deptId') ?? null)
+          : undefined;
+    const roleCodes =
+      nextStatus === 'left'
+        ? []
+        : roleCodesProvided
+          ? normalizeCodes(body.roleCodes ?? [], 'roleCodes')
+          : undefined;
+    const postCodes =
+      nextStatus === 'left'
+        ? []
+        : postCodesProvided
+          ? normalizeCodes(body.postCodes ?? [], 'postCodes')
+          : undefined;
+
+    await this.assertMemberDeptExists(id, nextDeptId);
+    const roles =
+      roleCodes === undefined
+        ? undefined
+        : await this.findRolesByCodes(id, roleCodes);
+    const posts =
+      postCodes === undefined
+        ? undefined
+        : await this.findPostsByCodes(id, postCodes);
+
+    return this.prisma.$transaction(async (tx) => {
+      await assertNotLastActiveOwnerChange(tx, id, membership, {
+        isOwner: nextIsOwner,
+        status: nextStatus ?? membership.status,
+      });
+
+      if (membership.status === 'left' && (nextStatus ?? 'left') !== 'left') {
+        await assertTenantMemberCapacity(tx, id, tenant.accountLimit, {
+          ignoredMembershipId: membership.id,
+        });
+      }
+
+      await tx.tenantMembership.update({
+        where: { id: membership.id },
+        data: {
+          ...(nextDeptId === undefined ? {} : { deptId: nextDeptId }),
+          ...(ownerProvided || nextStatus === 'left'
+            ? { isOwner: nextIsOwner }
+            : {}),
+          ...(nextStatus === undefined
+            ? {}
+            : {
+                joinedAt:
+                  nextStatus === 'active'
+                    ? (membership.joinedAt ?? new Date())
+                    : membership.joinedAt,
+                status: nextStatus,
+              }),
+        },
+      });
+
+      if (roles) {
+        await writeMemberRoleBindings(tx, id, membership.id, roles);
+      }
+      if (posts) {
+        await writeMemberPostBindings(tx, id, membership.id, posts);
+      }
+
+      if (id === ROOT_TENANT_ID) {
+        await syncRootLegacyUser(tx, membership.userId, {
+          deptId: nextDeptId,
+          deptProvided: nextDeptId !== undefined,
+          postIds: posts?.map((post) => post.id),
+          roleIds: roles?.map((role) => role.id),
+          status: nextStatus,
+        });
+      }
+
+      return findMemberDto(tx, id, membership.id);
+    });
+  }
+
+  async removeTenantMember(
+    tenantId: string,
+    membershipId: string,
+  ): Promise<TenantMemberDeleteResultDto> {
+    const id = normalizeTenantRecordId(tenantId);
+    const normalizedMembershipId = normalizeMemberRecordId(
+      membershipId,
+      'membershipId',
+    );
+    await this.assertTenantExists(id);
+    const membership = await this.prisma.tenantMembership.findFirst({
+      where: { id: normalizedMembershipId, tenantId: id },
+      include: { user: { select: { username: true } } },
+    });
+
+    if (!membership) {
+      throw tenantMemberNotFound(
+        'TENANT_MEMBER_NOT_FOUND',
+        'Tenant member not found.',
+        { membershipId: normalizedMembershipId, tenantId: id },
+      );
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await assertNotLastActiveOwnerChange(tx, id, membership, {
+        isOwner: false,
+        status: 'left',
+      });
+      await tx.tenantMembership.update({
+        where: { id: membership.id },
+        data: { deptId: null, isOwner: false, status: 'left' },
+      });
+      await writeMemberRoleBindings(tx, id, membership.id, []);
+      await writeMemberPostBindings(tx, id, membership.id, []);
+
+      if (id === ROOT_TENANT_ID) {
+        await syncRootLegacyUser(tx, membership.userId, {
+          deptId: null,
+          deptProvided: true,
+          postIds: [],
+          roleIds: [],
+          status: 'left',
+        });
+      }
+    });
+
+    return {
+      deleted: true,
+      id: membership.id,
+      tenantId: id,
+      userId: membership.userId,
+      username: membership.user.username,
+    };
+  }
+
   async updateMemberAssignments(
     membershipId: string,
     body: UpdateTenantMemberAssignmentsDto,
@@ -658,6 +967,168 @@ export class TenantFoundationService {
     }
 
     return posts;
+  }
+
+  private async assertTenantExists(tenantId: string): Promise<void> {
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { id: true },
+    });
+
+    if (!tenant) {
+      throw tenantNotFound(tenantId);
+    }
+  }
+
+  private async findTenantForMemberControl(tenantId: string): Promise<{
+    accountLimit: number | null;
+    id: string;
+  }> {
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { accountLimit: true, id: true },
+    });
+
+    if (!tenant) {
+      throw tenantNotFound(tenantId);
+    }
+
+    return tenant;
+  }
+
+  private async assertMemberDeptExists(
+    tenantId: string,
+    deptId: string | null | undefined,
+  ): Promise<void> {
+    if (!deptId) {
+      return;
+    }
+
+    const dept = await this.prisma.systemDept.findFirst({
+      where: { id: deptId, tenantId },
+      select: { id: true },
+    });
+
+    if (!dept) {
+      throw tenantMemberNotFound(
+        'TENANT_MEMBER_DEPT_NOT_FOUND',
+        'System dept not found.',
+        {
+          deptId,
+          tenantId,
+        },
+      );
+    }
+  }
+
+  private async resolveTenantMemberUser(
+    body: CreateTenantMemberDto,
+  ): Promise<TenantMemberUserInput> {
+    const userIdProvided = hasOwn(body, 'userId') && body.userId !== undefined;
+    const usernameProvided =
+      hasOwn(body, 'username') && body.username !== undefined;
+
+    if (userIdProvided) {
+      const userId = normalizeMemberRecordId(body.userId, 'userId');
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, username: true },
+      });
+
+      if (!user) {
+        throw tenantMemberNotFound(
+          'TENANT_MEMBER_USER_NOT_FOUND',
+          'System user not found.',
+          { userId },
+        );
+      }
+
+      if (usernameProvided) {
+        const username = normalizeMemberUsername(body.username);
+        if (username !== user.username) {
+          throw tenantMemberBadRequest(
+            'TENANT_MEMBER_USER_MISMATCH',
+            'Tenant member userId and username refer to different users.',
+            { userId, username },
+          );
+        }
+      }
+
+      return { kind: 'existing', user };
+    }
+
+    if (!usernameProvided) {
+      throw tenantMemberBadRequest(
+        'TENANT_MEMBER_USER_REQUIRED',
+        'Tenant member requires either userId or username.',
+      );
+    }
+
+    const username = normalizeMemberUsername(body.username);
+    const existing = await this.prisma.user.findUnique({
+      where: { username },
+      select: { id: true, username: true },
+    });
+
+    if (existing) {
+      return { kind: 'existing', user: existing };
+    }
+
+    const displayName = normalizeMemberRequiredText(
+      body.displayName,
+      'displayName',
+    );
+    const password = normalizeMemberRequiredText(body.password, 'password');
+    const mobile = hasOwn(body, 'mobile')
+      ? normalizeMemberNullableMobile(body.mobile)
+      : null;
+    const email = hasOwn(body, 'email')
+      ? normalizeMemberNullableEmail(body.email)
+      : null;
+
+    await this.assertUniqueMemberUserContact(mobile, email);
+
+    return {
+      displayName,
+      email,
+      kind: 'create',
+      mobile,
+      passwordHash: hashSystemUserPassword(password),
+      username,
+    };
+  }
+
+  private async assertUniqueMemberUserContact(
+    mobile: string | null,
+    email: string | null,
+  ): Promise<void> {
+    if (!mobile && !email) {
+      return;
+    }
+
+    const duplicate = await this.prisma.user.findFirst({
+      where: {
+        OR: [
+          ...(mobile ? [{ mobile }] : []),
+          ...(email ? [{ email }] : []),
+        ],
+      },
+      select: { email: true, mobile: true, username: true },
+    });
+
+    if (!duplicate) {
+      return;
+    }
+
+    throw tenantMemberBadRequest(
+      'TENANT_MEMBER_USER_CONTACT_EXISTS',
+      'System user contact already exists.',
+      {
+        email,
+        mobile,
+        username: duplicate.username,
+      },
+    );
   }
 
   private async findTenantPlanDto(planId: string): Promise<TenantPlanDto> {
@@ -847,6 +1318,7 @@ async function writePlanModules(
 
 const memberIncludes = {
   dept: { select: { id: true, name: true } },
+  invitedBy: { select: { username: true } },
   posts: { include: { post: { select: { code: true } } } },
   roles: { include: { role: { select: { code: true } } } },
   user: { select: { displayName: true, id: true, username: true } },
@@ -855,6 +1327,23 @@ const memberIncludes = {
 type TenantMemberWithIncludes = Prisma.TenantMembershipGetPayload<{
   include: typeof memberIncludes;
 }>;
+
+type TenantMemberUserInput =
+  | {
+      kind: 'existing';
+      user: {
+        id: string;
+        username: string;
+      };
+    }
+  | {
+      displayName: string;
+      email: string | null;
+      kind: 'create';
+      mobile: string | null;
+      passwordHash: string;
+      username: string;
+    };
 
 function resolveCurrentTenantId(): string {
   return getRequestContext()?.tenantId ?? ROOT_TENANT_ID;
@@ -900,9 +1389,29 @@ function toTenantMemberDto(member: TenantMemberWithIncludes): TenantMemberDto {
     postCodes: member.posts
       .map((membershipPost) => membershipPost.post.code)
       .sort((left, right) => left.localeCompare(right)),
+    invitedByUsername: member.invitedBy?.username ?? null,
+    joinedAt: member.joinedAt?.toISOString() ?? null,
+    lastActiveAt: member.lastActiveAt?.toISOString() ?? null,
     createdAt: member.createdAt.toISOString(),
     updatedAt: member.updatedAt.toISOString(),
   };
+}
+
+function normalizeMemberLifecycleStatus(status: unknown): TenantMemberStatus {
+  if (
+    status === 'active' ||
+    status === 'invited' ||
+    status === 'left' ||
+    status === 'suspended'
+  ) {
+    return status;
+  }
+
+  throw tenantMemberBadRequest(
+    'TENANT_MEMBER_STATUS_INVALID',
+    'Invalid member status.',
+    { status },
+  );
 }
 
 function normalizeStatus(
@@ -974,6 +1483,243 @@ function normalizeCodes(
   }
 
   return codes;
+}
+
+function normalizeMemberBoolean(
+  value: unknown,
+  fallback: boolean,
+  field: string,
+): boolean {
+  if (value === undefined) {
+    return fallback;
+  }
+
+  if (typeof value !== 'boolean') {
+    throw tenantMemberBadRequest(
+      'TENANT_MEMBER_FIELD_INVALID',
+      'Tenant member field is invalid.',
+      { field },
+    );
+  }
+
+  return value;
+}
+
+function normalizeMemberRecordId(value: unknown, field: string): string {
+  if (typeof value !== 'string' || value.trim() === '') {
+    throw tenantMemberBadRequest(
+      'TENANT_MEMBER_FIELD_INVALID',
+      'Tenant member field is invalid.',
+      { field },
+    );
+  }
+
+  return value.trim();
+}
+
+function normalizeOptionalMemberId(
+  value: unknown,
+  field: string,
+): string | undefined {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+
+  if (typeof value !== 'string' || value.trim() === '') {
+    throw tenantMemberBadRequest(
+      'TENANT_MEMBER_FIELD_INVALID',
+      'Tenant member field is invalid.',
+      { field },
+    );
+  }
+
+  return value.trim();
+}
+
+function normalizeMemberUsername(value: unknown): string {
+  const username = normalizeMemberRequiredText(value, 'username');
+
+  if (!USERNAME_PATTERN.test(username)) {
+    throw tenantMemberBadRequest(
+      'TENANT_MEMBER_USERNAME_INVALID',
+      'Tenant member username must start with a lowercase letter and contain only lowercase letters, numbers, dot, underscore or dash.',
+      { username },
+    );
+  }
+
+  return username;
+}
+
+function normalizeMemberRequiredText(value: unknown, field: string): string {
+  if (typeof value !== 'string' || value.trim() === '') {
+    throw tenantMemberBadRequest(
+      'TENANT_MEMBER_FIELD_REQUIRED',
+      'Tenant member field is required.',
+      { field },
+    );
+  }
+
+  return value.trim();
+}
+
+function normalizeMemberNullableText(
+  value: unknown,
+  field: string,
+): string | null {
+  if (value === undefined || value === null || value === '') {
+    return null;
+  }
+
+  if (typeof value !== 'string') {
+    throw tenantMemberBadRequest(
+      'TENANT_MEMBER_FIELD_INVALID',
+      'Tenant member field is invalid.',
+      { field },
+    );
+  }
+
+  const normalized = value.trim();
+  return normalized === '' ? null : normalized;
+}
+
+function normalizeMemberNullableEmail(value: unknown): string | null {
+  const email = normalizeMemberNullableText(value, 'email');
+  if (!email) {
+    return null;
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw tenantMemberBadRequest(
+      'TENANT_MEMBER_EMAIL_INVALID',
+      'Tenant member email is invalid.',
+      { email },
+    );
+  }
+
+  return email;
+}
+
+function normalizeMemberNullableMobile(value: unknown): string | null {
+  const mobile = normalizeMemberNullableText(value, 'mobile');
+  if (!mobile) {
+    return null;
+  }
+
+  if (!/^\+?[0-9][0-9 ().-]{5,24}$/.test(mobile)) {
+    throw tenantMemberBadRequest(
+      'TENANT_MEMBER_MOBILE_INVALID',
+      'Tenant member mobile is invalid.',
+      { mobile },
+    );
+  }
+
+  return mobile;
+}
+
+async function writeMemberRoleBindings(
+  tx: PrismaTransactionClient,
+  tenantId: string,
+  membershipId: string,
+  roles: readonly { id: string }[],
+): Promise<void> {
+  await tx.tenantMembershipRole.deleteMany({
+    where: { membershipId, tenantId },
+  });
+  if (roles.length === 0) {
+    return;
+  }
+
+  await tx.tenantMembershipRole.createMany({
+    data: roles.map((role) => ({
+      membershipId,
+      roleId: role.id,
+      tenantId,
+    })),
+  });
+}
+
+async function writeMemberPostBindings(
+  tx: PrismaTransactionClient,
+  tenantId: string,
+  membershipId: string,
+  posts: readonly { id: string }[],
+): Promise<void> {
+  await tx.tenantMembershipPost.deleteMany({
+    where: { membershipId, tenantId },
+  });
+  if (posts.length === 0) {
+    return;
+  }
+
+  await tx.tenantMembershipPost.createMany({
+    data: posts.map((post) => ({
+      membershipId,
+      postId: post.id,
+      tenantId,
+    })),
+  });
+}
+
+async function assertTenantMemberCapacity(
+  tx: PrismaTransactionClient,
+  tenantId: string,
+  accountLimit: number | null,
+  options: { ignoredMembershipId?: string } = {},
+): Promise<void> {
+  if (accountLimit === null) {
+    return;
+  }
+
+  const membershipCount = await tx.tenantMembership.count({
+    where: {
+      tenantId,
+      status: { not: 'left' },
+      ...(options.ignoredMembershipId
+        ? { id: { not: options.ignoredMembershipId } }
+        : {}),
+    },
+  });
+
+  if (membershipCount >= accountLimit) {
+    throw tenantMemberBadRequest(
+      'TENANT_MEMBER_ACCOUNT_LIMIT_REACHED',
+      'Tenant account limit has been reached.',
+      { accountLimit, tenantId },
+    );
+  }
+}
+
+async function assertNotLastActiveOwnerChange(
+  tx: PrismaTransactionClient,
+  tenantId: string,
+  current: {
+    id: string;
+    isOwner: boolean;
+    status: string;
+  },
+  next: {
+    isOwner: boolean;
+    status: string;
+  },
+): Promise<void> {
+  const currentIsActiveOwner =
+    current.isOwner && current.status === 'active';
+  const nextIsActiveOwner = next.isOwner && next.status === 'active';
+  if (!currentIsActiveOwner || nextIsActiveOwner) {
+    return;
+  }
+
+  const activeOwnerCount = await tx.tenantMembership.count({
+    where: { isOwner: true, status: 'active', tenantId },
+  });
+
+  if (activeOwnerCount <= 1) {
+    throw tenantMemberBadRequest(
+      'TENANT_MEMBER_LAST_OWNER',
+      'Tenant must keep at least one active owner.',
+      { membershipId: current.id, tenantId },
+    );
+  }
 }
 
 function normalizeId(value: unknown, field: string): string {
@@ -1245,7 +1991,7 @@ async function syncRootLegacyUser(
     deptProvided: boolean;
     postIds?: readonly string[];
     roleIds?: readonly string[];
-    status?: 'active' | 'suspended';
+    status?: TenantMemberStatus;
   },
 ): Promise<void> {
   if (input.status !== undefined || input.deptProvided) {

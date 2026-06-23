@@ -24,7 +24,7 @@ Cycle-022 may only count a slice when it is code-backed, migrated, seeded, visib
 ## Below Waterline
 
 - Platform visit/impersonation is not done.
-- Tenant Member CRUD/invitation, Admin switcher, and platform visit mode are not done.
+- Admin switcher and platform visit mode are not done.
 - Remaining optional/business data-plane isolation is not done.
 
 These remain below the productization waterline and cannot be described as complete SaaS multi-tenancy.
@@ -120,7 +120,7 @@ These remain below the productization waterline and cannot be described as compl
 | No trusted tenant selector    | Done    | Create/update DTOs and controller paths have no client-controlled tenant selector; plan control is platform-scoped.                       |
 | OpenAPI/SDK/Admin consistency | Done    | OpenAPI exports plan DTOs; SDK exposes typed plan CRUD calls; `/system/tenants` uses live plan APIs for list/create/edit/delete.          |
 | Smoke/guard                   | Done    | Added `smoke:core-tenant-plan` and `guard:tenant-plan-control-plane`, both wired into local/deploy smoke scripts.                         |
-| Remaining T6 scope            | Pending | Tenant CRUD, Tenant Member lifecycle/invitation, tenant switcher, platform visit mode, and platform visit audit remain separate T6 work. |
+| Remaining T6 scope            | Pending | Tenant lifecycle was later closed by T6b and Tenant Member lifecycle by T6c; tenant switcher, platform visit mode, and platform visit audit remain separate T6 work. |
 
 ## T6b Tenant Lifecycle Control Plane
 
@@ -132,7 +132,20 @@ These remain below the productization waterline and cannot be described as compl
 | No trusted tenant selector      | Done    | Create/update DTOs and controller paths have no client-controlled tenant selector; tenant control is platform-scoped.                     |
 | OpenAPI/SDK/Admin consistency   | Done    | OpenAPI exports tenant DTOs; SDK exposes typed tenant lifecycle calls; `/system/tenants` uses live APIs for tenant list/create/edit/status. |
 | Smoke/guard                     | Done    | Added `smoke:core-tenant-lifecycle` and `guard:tenant-lifecycle-control-plane`, both wired into local/deploy smoke scripts.               |
-| Remaining T6 scope              | Pending | Tenant Member lifecycle/invitation, tenant switcher, platform visit mode, and platform visit audit remain separate T6 work.              |
+| Remaining T6 scope              | Pending | Tenant Member lifecycle was later closed by T6c; tenant switcher, platform visit mode, and platform visit audit remain separate T6 work. |
+
+## T6c Tenant Member Lifecycle Control Plane
+
+| Requirement                       | Status | Notes                                                                                                                                     |
+| --------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Live Tenant Member APIs           | Done   | Added list/create/update/soft-remove under `/api/core/tenancy/tenants/:tenantId/members` with `platform:tenant-member:*` permissions.     |
+| Existing/new user invitation      | Done   | Member create accepts existing `userId`/`username` or creates a new global user with forced password change before adding membership.      |
+| Lifecycle and assignment controls | Done   | Member status supports `invited`, `active`, `suspended`, and `left`; updates validate tenant-owned dept/role/post assignments.            |
+| Safety guards                     | Done   | Service enforces tenant account limits, rejects duplicate active memberships, and blocks removing/suspending the last active owner.        |
+| No trusted tenant selector        | Done   | Tenant control is bound to the platform path parameter; create/update DTOs have no body/query/header tenant selector.                     |
+| OpenAPI/SDK/Admin consistency     | Done   | OpenAPI exports member lifecycle DTOs; SDK exposes tenant member lifecycle calls; `/system/tenants` opens a live member control modal.     |
+| Smoke/guard                       | Done   | Added `smoke:core-tenant-member-lifecycle` and `guard:tenant-member-control-plane`, both wired into local/deploy smoke scripts.           |
+| Remaining T6 scope                | Pending | Tenant switcher, platform visit mode, and platform visit audit remain separate T6 work.                                                   |
 
 ## T4a Audit
 

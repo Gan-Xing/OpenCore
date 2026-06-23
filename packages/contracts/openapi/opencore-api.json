@@ -3769,6 +3769,135 @@
         "tags": ["Core Tenancy"]
       }
     },
+    "/api/core/tenancy/tenants/{tenantId}/members": {
+      "get": {
+        "operationId": "TenantController_listTenantMembers",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/TenantMemberDto" }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core Tenancy"]
+      },
+      "post": {
+        "operationId": "TenantController_createTenantMember",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateTenantMemberDto" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TenantMemberDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core Tenancy"]
+      }
+    },
+    "/api/core/tenancy/tenants/{tenantId}/members/{membershipId}": {
+      "patch": {
+        "operationId": "TenantController_updateTenantMember",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "membershipId",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateTenantMemberDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TenantMemberDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core Tenancy"]
+      },
+      "delete": {
+        "operationId": "TenantController_removeTenantMember",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "membershipId",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TenantMemberDeleteResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core Tenancy"]
+      }
+    },
     "/api/core/tenancy/plans": {
       "get": {
         "operationId": "TenantPlanController_listPlans",
@@ -12758,6 +12887,84 @@
         },
         "required": ["status"]
       },
+      "TenantMemberDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "userId": { "type": "string" },
+          "username": { "type": "string" },
+          "displayName": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["active", "invited", "left", "suspended"]
+          },
+          "isOwner": { "type": "boolean" },
+          "deptId": { "type": "string", "nullable": true },
+          "deptName": { "type": "string", "nullable": true },
+          "roleCodes": { "type": "array", "items": { "type": "string" } },
+          "postCodes": { "type": "array", "items": { "type": "string" } },
+          "invitedByUsername": { "type": "object", "nullable": true },
+          "joinedAt": { "type": "object", "nullable": true },
+          "lastActiveAt": { "type": "object", "nullable": true },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "userId",
+          "username",
+          "displayName",
+          "status",
+          "isOwner",
+          "roleCodes",
+          "postCodes",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CreateTenantMemberDto": {
+        "type": "object",
+        "properties": {
+          "userId": { "type": "string" },
+          "username": { "type": "string" },
+          "displayName": { "type": "string" },
+          "password": { "type": "string" },
+          "mobile": { "type": "object", "nullable": true },
+          "email": { "type": "object", "nullable": true },
+          "status": {
+            "type": "string",
+            "enum": ["active", "invited", "left", "suspended"]
+          },
+          "isOwner": { "type": "boolean" },
+          "deptId": { "type": "string", "nullable": true },
+          "roleCodes": { "type": "array", "items": { "type": "string" } },
+          "postCodes": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "UpdateTenantMemberDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["active", "invited", "left", "suspended"]
+          },
+          "isOwner": { "type": "boolean" },
+          "deptId": { "type": "string", "nullable": true },
+          "roleCodes": { "type": "array", "items": { "type": "string" } },
+          "postCodes": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "TenantMemberDeleteResultDto": {
+        "type": "object",
+        "properties": {
+          "deleted": { "type": "boolean" },
+          "id": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "userId": { "type": "string" },
+          "username": { "type": "string" }
+        },
+        "required": ["deleted", "id", "tenantId", "userId", "username"]
+      },
       "TenantPlanUsageTenantDto": {
         "type": "object",
         "properties": {
@@ -12833,35 +13040,6 @@
           "code": { "type": "string" }
         },
         "required": ["deleted", "id", "code"]
-      },
-      "TenantMemberDto": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string" },
-          "userId": { "type": "string" },
-          "username": { "type": "string" },
-          "displayName": { "type": "string" },
-          "status": { "type": "string", "enum": ["active", "suspended"] },
-          "isOwner": { "type": "boolean" },
-          "deptId": { "type": "string", "nullable": true },
-          "deptName": { "type": "string", "nullable": true },
-          "roleCodes": { "type": "array", "items": { "type": "string" } },
-          "postCodes": { "type": "array", "items": { "type": "string" } },
-          "createdAt": { "type": "string" },
-          "updatedAt": { "type": "string" }
-        },
-        "required": [
-          "id",
-          "userId",
-          "username",
-          "displayName",
-          "status",
-          "isOwner",
-          "roleCodes",
-          "postCodes",
-          "createdAt",
-          "updatedAt"
-        ]
       },
       "UpdateTenantMemberAssignmentsDto": {
         "type": "object",

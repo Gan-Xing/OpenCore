@@ -1,13 +1,16 @@
 import type { SdkRequest } from './rbac-client';
 import type {
+  CreateTenantMemberRequest,
   CreateTenantPlanRequest,
   CreateTenantRequest,
   SetTenantStatusRequest,
   TenancyFoundationSummary,
+  TenantMemberDeleteResultSummary,
   TenantMemberSummary,
   TenantPlanDeleteResultSummary,
   TenantPlanSummary,
   TenantSummary,
+  UpdateTenantMemberRequest,
   UpdateTenantPlanRequest,
   UpdateTenantRequest,
   UpdateTenantMemberAssignmentsRequest,
@@ -46,6 +49,26 @@ export type TenancyClient = {
     token: string,
     planId: string,
   ) => Promise<TenantPlanDeleteResultSummary>;
+  listTenantMembers: (
+    token: string,
+    tenantId: string,
+  ) => Promise<readonly TenantMemberSummary[]>;
+  createTenantMember: (
+    token: string,
+    tenantId: string,
+    body: CreateTenantMemberRequest,
+  ) => Promise<TenantMemberSummary>;
+  updateTenantMember: (
+    token: string,
+    tenantId: string,
+    membershipId: string,
+    body: UpdateTenantMemberRequest,
+  ) => Promise<TenantMemberSummary>;
+  removeTenantMember: (
+    token: string,
+    tenantId: string,
+    membershipId: string,
+  ) => Promise<TenantMemberDeleteResultSummary>;
   listMembers: (token: string) => Promise<readonly TenantMemberSummary[]>;
   updateMemberAssignments: (
     token: string,
@@ -120,6 +143,37 @@ export function createTenancyClient(request: SdkRequest): TenancyClient {
     deleteTenantPlan: (token, planId) =>
       request<TenantPlanDeleteResultSummary>(
         `/core/tenancy/plans/${encodeURIComponent(planId)}`,
+        {
+          method: 'DELETE',
+          token,
+        },
+      ),
+    listTenantMembers: (token, tenantId) =>
+      request<readonly TenantMemberSummary[]>(
+        `/core/tenancy/tenants/${encodeURIComponent(tenantId)}/members`,
+        { token },
+      ),
+    createTenantMember: (token, tenantId, body) =>
+      request<TenantMemberSummary>(
+        `/core/tenancy/tenants/${encodeURIComponent(tenantId)}/members`,
+        {
+          body,
+          method: 'POST',
+          token,
+        },
+      ),
+    updateTenantMember: (token, tenantId, membershipId, body) =>
+      request<TenantMemberSummary>(
+        `/core/tenancy/tenants/${encodeURIComponent(tenantId)}/members/${encodeURIComponent(membershipId)}`,
+        {
+          body,
+          method: 'PATCH',
+          token,
+        },
+      ),
+    removeTenantMember: (token, tenantId, membershipId) =>
+      request<TenantMemberDeleteResultSummary>(
+        `/core/tenancy/tenants/${encodeURIComponent(tenantId)}/members/${encodeURIComponent(membershipId)}`,
         {
           method: 'DELETE',
           token,

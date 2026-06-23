@@ -4,6 +4,7 @@ import {
   PlusOutlined,
   ReloadOutlined,
   SafetyCertificateOutlined,
+  TeamOutlined,
 } from '@ant-design/icons';
 import {
   PageContainer,
@@ -40,9 +41,11 @@ import {
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   createOpenCoreTenant,
+  createOpenCoreTenantMember,
   createOpenCoreTenantPlan,
   deleteOpenCoreTenantPlan,
   getOpenCoreTenancyFoundation,
+  listOpenCoreTenantControlMembers,
   listOpenCoreTenantPlans,
   listOpenCoreTenants,
   listOpenCoreRoles,
@@ -51,8 +54,10 @@ import {
   listOpenCoreTenantMembers,
   setOpenCoreTenantStatus,
   updateOpenCoreTenant,
+  updateOpenCoreTenantMember,
   updateOpenCoreTenantPlan,
   updateOpenCoreTenantMemberAssignments,
+  removeOpenCoreTenantMember,
 } from '@/services/opencore/platform';
 
 type FormatMessage = (
@@ -92,9 +97,31 @@ type MemberAssignmentFormValues = {
   status: 'active' | 'suspended';
 };
 
+type TenantMemberFormValues = {
+  deptId?: string;
+  displayName?: string;
+  email?: string;
+  isOwner?: boolean;
+  mobile?: string;
+  password?: string;
+  postCodes?: string[];
+  roleCodes?: string[];
+  status: 'active' | 'invited' | 'left' | 'suspended';
+  userId?: string;
+  username?: string;
+};
+
 function statusColor(status: string): string {
   if (status === 'active') {
     return 'green';
+  }
+
+  if (status === 'invited') {
+    return 'blue';
+  }
+
+  if (status === 'left') {
+    return 'default';
   }
 
   if (status === 'expired') {
@@ -152,10 +179,14 @@ export default function TenantsPage() {
   const [tenantForm] = Form.useForm<TenantFormValues>();
   const [planForm] = Form.useForm<PlanFormValues>();
   const [form] = Form.useForm<MemberAssignmentFormValues>();
+  const [memberForm] = Form.useForm<TenantMemberFormValues>();
   const [summary, setSummary] = useState<TenancyFoundationSummary>();
   const [tenants, setTenants] = useState<readonly TenantSummary[]>([]);
   const [plans, setPlans] = useState<readonly TenantPlanSummary[]>([]);
   const [members, setMembers] = useState<readonly TenantMemberSummary[]>([]);
+  const [tenantControlMembers, setTenantControlMembers] = useState<
+    readonly TenantMemberSummary[]
+  >([]);
   const [roles, setRoles] = useState<readonly RoleSummary[]>([]);
   const [deptOptionsRows, setDeptOptionsRows] = useState<
     readonly SystemDeptOptionSummary[]
@@ -172,6 +203,14 @@ export default function TenantsPage() {
   const [deletingPlanId, setDeletingPlanId] = useState<string>();
   const [editingMember, setEditingMember] = useState<TenantMemberSummary>();
   const [savingMember, setSavingMember] = useState(false);
+  const [managingTenant, setManagingTenant] = useState<TenantSummary | null>();
+  const [loadingTenantMembers, setLoadingTenantMembers] = useState(false);
+  const [editingControlMember, setEditingControlMember] = useState<
+    TenantMemberSummary | null
+  >();
+  const [savingControlMember, setSavingControlMember] = useState(false);
+  const [removingControlMemberId, setRemovingControlMemberId] =
+    useState<string>();
   const formatMessage: FormatMessage = useCallback(
     (id, defaultMessage, values) =>
       values
@@ -343,6 +382,46 @@ export default function TenantsPage() {
     });
   }, [tenantForm]);
 
+  const loadTenantControlMembers = useCallback(
+    async (tenant: TenantSummary) => {
+      setLoadingTenantMembers(true);
+      try {
+        const nextMembers = await listOpenCoreTenantControlMembers(tenant.id);
+        setTenantControlMembers(nextMembers);
+      } finally {
+        setLoadingTenantMembers(false);
+      }
+    },
+    [],
+  );
+
+  const openTenantMembers = useCallback(
+    (tenant: TenantSummary) => {
+      setManagingTenant(tenant);
+      setEditingControlMember(undefined);
+      memberForm.resetFields();
+      void loadTenantControlMembers(tenant);
+    },
+    [loadTenantControlMembers, memberForm],
+  );
+
+  const openCreateTenantMember = useCallback(() => {
+    setEditingControlMember(null);
+    memberForm.setFieldsValue({
+      deptId: undefined,
+      displayName: undefined,
+      email: undefined,
+      isOwner: false,
+      mobile: undefined,
+      password: undefined,
+      postCodes: [],
+      roleCodes: [],
+      status: 'invited',
+      userId: undefined,
+      username: undefined,
+    });
+  }, [memberForm]);
+
   const deletePlan = useCallback(
     async (record: TenantPlanSummary) => {
       setDeletingPlanId(record.id);
@@ -408,42 +487,61 @@ export default function TenantsPage() {
         title: formatMessage('pages.system.tenants.fields.actions', 'Actions'),
         valueType: 'option',
         render: (_, record) => (
-          <Tooltip
-            title={formatMessage(
-              'pages.system.tenants.actions.editTenant',
-              'Edit tenant',
-            )}
-          >
-            <Button
-              aria-label={formatMessage(
-                'pages.system.tenants.actions.editTenantAria',
+          <Space size="small">
+            <Tooltip
+              title={formatMessage(
+                'pages.system.tenants.actions.editTenant',
                 'Edit tenant',
               )}
-              icon={<EditOutlined />}
-              onClick={() => {
-                setEditingTenant(record);
-                tenantForm.setFieldsValue({
-                  accountLimit: record.accountLimit ?? null,
-                  code: record.code,
-                  contactMobile: record.contactMobile ?? undefined,
-                  contactName: record.contactName ?? undefined,
-                  expiresAt: record.expiresAt ?? undefined,
-                  name: record.name,
-                  planCode: record.planCode ?? undefined,
-                  slug: record.slug,
-                  status:
-                    record.status === 'expired' || record.status === 'suspended'
-                      ? record.status
-                      : 'active',
-                });
-              }}
-              type="link"
-            />
-          </Tooltip>
+            >
+              <Button
+                aria-label={formatMessage(
+                  'pages.system.tenants.actions.editTenantAria',
+                  'Edit tenant',
+                )}
+                icon={<EditOutlined />}
+                onClick={() => {
+                  setEditingTenant(record);
+                  tenantForm.setFieldsValue({
+                    accountLimit: record.accountLimit ?? null,
+                    code: record.code,
+                    contactMobile: record.contactMobile ?? undefined,
+                    contactName: record.contactName ?? undefined,
+                    expiresAt: record.expiresAt ?? undefined,
+                    name: record.name,
+                    planCode: record.planCode ?? undefined,
+                    slug: record.slug,
+                    status:
+                      record.status === 'expired' ||
+                      record.status === 'suspended'
+                        ? record.status
+                        : 'active',
+                  });
+                }}
+                type="link"
+              />
+            </Tooltip>
+            <Tooltip
+              title={formatMessage(
+                'pages.system.tenants.actions.manageMembers',
+                'Manage members',
+              )}
+            >
+              <Button
+                aria-label={formatMessage(
+                  'pages.system.tenants.actions.manageMembersAria',
+                  'Manage members',
+                )}
+                icon={<TeamOutlined />}
+                onClick={() => openTenantMembers(record)}
+                type="link"
+              />
+            </Tooltip>
+          </Space>
         ),
       },
     ],
-    [formatMessage, tenantForm],
+    [formatMessage, openTenantMembers, tenantForm],
   );
 
   const planColumns = useMemo<ProColumns<TenantPlanSummary>[]>(
@@ -632,6 +730,168 @@ export default function TenantsPage() {
     [formatMessage, form],
   );
 
+  const removeControlMember = useCallback(
+    async (record: TenantMemberSummary) => {
+      if (!managingTenant) {
+        return;
+      }
+
+      setRemovingControlMemberId(record.id);
+      try {
+        await removeOpenCoreTenantMember(managingTenant.id, record.id);
+        message.success(
+          formatMessage(
+            'pages.system.tenants.actions.removeMemberSuccess',
+            'Member removed.',
+          ),
+        );
+        await loadTenantControlMembers(managingTenant);
+        await loadSummary();
+      } finally {
+        setRemovingControlMemberId(undefined);
+      }
+    },
+    [formatMessage, loadSummary, loadTenantControlMembers, managingTenant],
+  );
+
+  const controlMemberColumns = useMemo<ProColumns<TenantMemberSummary>[]>(
+    () => [
+      {
+        title: formatMessage('pages.system.tenants.fields.username', 'User'),
+        dataIndex: 'username',
+        render: (_, record) => `${record.displayName} (${record.username})`,
+      },
+      {
+        title: formatMessage('pages.system.tenants.fields.status', 'Status'),
+        dataIndex: 'status',
+        render: (_, record) => (
+          <Tag color={statusColor(record.status)}>{record.status}</Tag>
+        ),
+      },
+      {
+        title: formatMessage('pages.system.tenants.fields.owner', 'Owner'),
+        dataIndex: 'isOwner',
+        render: (_, record) => (
+          <Tag color={record.isOwner ? 'green' : 'default'}>
+            {record.isOwner ? 'true' : 'false'}
+          </Tag>
+        ),
+      },
+      {
+        title: formatMessage(
+          'pages.system.tenants.fields.department',
+          'Department',
+        ),
+        dataIndex: 'deptName',
+        renderText: (value, record) => value ?? record.deptId ?? '-',
+      },
+      {
+        title: formatMessage('pages.system.tenants.fields.roles', 'Roles'),
+        dataIndex: 'roleCodes',
+        render: (_, record) =>
+          record.roleCodes.length > 0 ? (
+            <Space size={[0, 4]} wrap>
+              {record.roleCodes.map((code) => (
+                <Tag key={code}>{code}</Tag>
+              ))}
+            </Space>
+          ) : (
+            '-'
+          ),
+      },
+      {
+        title: formatMessage('pages.system.tenants.fields.posts', 'Posts'),
+        dataIndex: 'postCodes',
+        render: (_, record) =>
+          record.postCodes.length > 0 ? (
+            <Space size={[0, 4]} wrap>
+              {record.postCodes.map((code) => (
+                <Tag key={code}>{code}</Tag>
+              ))}
+            </Space>
+          ) : (
+            '-'
+          ),
+      },
+      {
+        title: formatMessage('pages.system.tenants.fields.actions', 'Actions'),
+        valueType: 'option',
+        render: (_, record) => (
+          <Space size="small">
+            <Tooltip
+              title={formatMessage(
+                'pages.system.tenants.actions.editMember',
+                'Edit member assignments',
+              )}
+            >
+              <Button
+                aria-label={formatMessage(
+                  'pages.system.tenants.actions.editMemberAria',
+                  'Edit member assignments',
+                )}
+                icon={<EditOutlined />}
+                onClick={() => {
+                  setEditingControlMember(record);
+                  memberForm.setFieldsValue({
+                    deptId: record.deptId ?? undefined,
+                    displayName: record.displayName,
+                    email: undefined,
+                    isOwner: record.isOwner,
+                    mobile: undefined,
+                    password: undefined,
+                    postCodes: [...record.postCodes],
+                    roleCodes: [...record.roleCodes],
+                    status:
+                      record.status === 'invited' ||
+                      record.status === 'left' ||
+                      record.status === 'suspended'
+                        ? record.status
+                        : 'active',
+                    userId: record.userId,
+                    username: record.username,
+                  });
+                }}
+                type="link"
+              />
+            </Tooltip>
+            <Popconfirm
+              okButtonProps={{ danger: true }}
+              onConfirm={() => void removeControlMember(record)}
+              title={formatMessage(
+                'pages.system.tenants.actions.removeMemberConfirm',
+                'Remove this tenant member?',
+              )}
+            >
+              <Tooltip
+                title={formatMessage(
+                  'pages.system.tenants.actions.removeMember',
+                  'Remove member',
+                )}
+              >
+                <Button
+                  aria-label={formatMessage(
+                    'pages.system.tenants.actions.removeMemberAria',
+                    'Remove member',
+                  )}
+                  danger
+                  icon={<DeleteOutlined />}
+                  loading={removingControlMemberId === record.id}
+                  type="link"
+                />
+              </Tooltip>
+            </Popconfirm>
+          </Space>
+        ),
+      },
+    ],
+    [
+      formatMessage,
+      memberForm,
+      removeControlMember,
+      removingControlMemberId,
+    ],
+  );
+
   const saveTenant = async () => {
     const values = await tenantForm.validateFields();
     const body = {
@@ -734,6 +994,56 @@ export default function TenantsPage() {
       await loadSummary();
     } finally {
       setSavingMember(false);
+    }
+  };
+
+  const saveControlMember = async () => {
+    if (!managingTenant) {
+      return;
+    }
+
+    const values = await memberForm.validateFields();
+    setSavingControlMember(true);
+    try {
+      if (editingControlMember) {
+        await updateOpenCoreTenantMember(
+          managingTenant.id,
+          editingControlMember.id,
+          {
+            deptId: values.deptId ?? null,
+            isOwner: values.isOwner ?? false,
+            postCodes: values.postCodes ?? [],
+            roleCodes: values.roleCodes ?? [],
+            status: values.status,
+          },
+        );
+      } else {
+        await createOpenCoreTenantMember(managingTenant.id, {
+          deptId: values.deptId?.trim() || null,
+          displayName: values.displayName?.trim() || undefined,
+          email: values.email?.trim() || null,
+          isOwner: values.isOwner ?? false,
+          mobile: values.mobile?.trim() || null,
+          password: values.password?.trim() || undefined,
+          postCodes: values.postCodes ?? [],
+          roleCodes: values.roleCodes ?? [],
+          status: values.status === 'left' ? 'invited' : values.status,
+          userId: values.userId?.trim() || undefined,
+          username: values.username?.trim() || undefined,
+        });
+      }
+      message.success(
+        formatMessage(
+          'pages.system.tenants.actions.saveMemberSuccess',
+          'Tenant member saved.',
+        ),
+      );
+      setEditingControlMember(undefined);
+      memberForm.resetFields();
+      await loadTenantControlMembers(managingTenant);
+      await loadSummary();
+    } finally {
+      setSavingControlMember(false);
     }
   };
 
@@ -934,6 +1244,202 @@ export default function TenantsPage() {
         search={false}
         toolBarRender={false}
       />
+
+      <Modal
+        destroyOnClose
+        footer={null}
+        onCancel={() => {
+          setManagingTenant(undefined);
+          setTenantControlMembers([]);
+          setEditingControlMember(undefined);
+          memberForm.resetFields();
+        }}
+        open={Boolean(managingTenant)}
+        title={
+          managingTenant
+            ? `${formatMessage(
+                'pages.system.tenants.actions.manageMembers',
+                'Manage members',
+              )}: ${managingTenant.name}`
+            : formatMessage(
+                'pages.system.tenants.actions.manageMembers',
+                'Manage members',
+              )
+        }
+        width={1040}
+      >
+        <ProTable<TenantMemberSummary>
+          columns={controlMemberColumns}
+          dataSource={[...tenantControlMembers]}
+          loading={loadingTenantMembers}
+          pagination={false}
+          rowKey="id"
+          search={false}
+          toolBarRender={() => [
+            <Tooltip
+              key="create"
+              title={formatMessage(
+                'pages.system.tenants.actions.createMember',
+                'Create member',
+              )}
+            >
+              <Button
+                aria-label={formatMessage(
+                  'pages.system.tenants.actions.createMemberAria',
+                  'Create member',
+                )}
+                icon={<PlusOutlined />}
+                onClick={openCreateTenantMember}
+                type="primary"
+              />
+            </Tooltip>,
+          ]}
+        />
+      </Modal>
+
+      <Modal
+        destroyOnClose
+        confirmLoading={savingControlMember}
+        onCancel={() => {
+          setEditingControlMember(undefined);
+          memberForm.resetFields();
+        }}
+        onOk={() => void saveControlMember()}
+        open={editingControlMember !== undefined}
+        title={
+          editingControlMember
+            ? formatMessage(
+                'pages.system.tenants.actions.editMember',
+                'Edit member assignments',
+              )
+            : formatMessage(
+                'pages.system.tenants.actions.createMember',
+                'Create member',
+              )
+        }
+      >
+        <Form form={memberForm} layout="vertical">
+          {!editingControlMember ? (
+            <>
+              <Form.Item
+                label={formatMessage(
+                  'pages.system.tenants.fields.userId',
+                  'User ID',
+                )}
+                name="userId"
+              >
+                <Input autoComplete="off" />
+              </Form.Item>
+              <Form.Item
+                label={formatMessage(
+                  'pages.system.tenants.fields.username',
+                  'User',
+                )}
+                name="username"
+              >
+                <Input autoComplete="off" />
+              </Form.Item>
+              <Form.Item
+                label={formatMessage(
+                  'pages.system.tenants.fields.displayName',
+                  'Display name',
+                )}
+                name="displayName"
+              >
+                <Input autoComplete="off" />
+              </Form.Item>
+              <Form.Item
+                label={formatMessage(
+                  'pages.system.tenants.fields.password',
+                  'Password',
+                )}
+                name="password"
+              >
+                <Input.Password autoComplete="new-password" />
+              </Form.Item>
+              <Form.Item
+                label={formatMessage(
+                  'pages.system.tenants.fields.mobile',
+                  'Mobile',
+                )}
+                name="mobile"
+              >
+                <Input autoComplete="off" />
+              </Form.Item>
+              <Form.Item
+                label={formatMessage(
+                  'pages.system.tenants.fields.email',
+                  'Email',
+                )}
+                name="email"
+              >
+                <Input autoComplete="off" />
+              </Form.Item>
+            </>
+          ) : null}
+          <Form.Item
+            label={formatMessage(
+              'pages.system.tenants.fields.status',
+              'Status',
+            )}
+            name="status"
+            rules={[{ required: true }]}
+          >
+            <Select
+              options={[
+                { label: 'active', value: 'active' },
+                { label: 'invited', value: 'invited' },
+                { label: 'suspended', value: 'suspended' },
+                ...(editingControlMember
+                  ? [{ label: 'left', value: 'left' }]
+                  : []),
+              ]}
+            />
+          </Form.Item>
+          <Form.Item
+            label={formatMessage('pages.system.tenants.fields.owner', 'Owner')}
+            name="isOwner"
+            valuePropName="checked"
+          >
+            <Switch />
+          </Form.Item>
+          <Form.Item
+            label={formatMessage(
+              'pages.system.tenants.fields.department',
+              'Department',
+            )}
+            name="deptId"
+          >
+            <Input autoComplete="off" />
+          </Form.Item>
+          <Form.Item
+            label={formatMessage('pages.system.tenants.fields.roles', 'Roles')}
+            name="roleCodes"
+            rules={[{ type: 'array' }]}
+          >
+            <Select
+              allowClear
+              mode="tags"
+              optionFilterProp="label"
+              options={roleOptions}
+              showSearch
+            />
+          </Form.Item>
+          <Form.Item
+            label={formatMessage('pages.system.tenants.fields.posts', 'Posts')}
+            name="postCodes"
+            rules={[{ type: 'array' }]}
+          >
+            <Select
+              allowClear
+              mode="tags"
+              optionFilterProp="label"
+              options={postOptions}
+              showSearch
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
 
       <Modal
         destroyOnClose

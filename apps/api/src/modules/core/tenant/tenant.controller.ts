@@ -15,13 +15,17 @@ import {
 } from '@nestjs/swagger';
 import { RequirePermission } from '../rbac/permissions.decorator';
 import {
+  CreateTenantMemberDto,
   CreateTenantPlanDto,
   CreateTenantDto,
   SetTenantStatusDto,
   TenantFoundationSummaryDto,
+  TenantMemberDeleteResultDto,
+  TenantMemberDto,
   TenantPlanDeleteResultDto,
   TenantPlanDto,
   TenantDto,
+  UpdateTenantMemberDto,
   UpdateTenantPlanDto,
   UpdateTenantDto,
 } from './tenant.dto';
@@ -86,6 +90,46 @@ export class TenantController {
     @Body() body: SetTenantStatusDto,
   ): Promise<TenantDto> {
     return this.tenancy.setTenantStatus(tenantId, body);
+  }
+
+  @Get(':tenantId/members')
+  @RequirePermission('platform:tenant-member:read')
+  @ApiOkResponse({ type: [TenantMemberDto] })
+  listTenantMembers(
+    @Param('tenantId') tenantId: string,
+  ): Promise<TenantMemberDto[]> {
+    return this.tenancy.listTenantMembers(tenantId);
+  }
+
+  @Post(':tenantId/members')
+  @RequirePermission('platform:tenant-member:manage')
+  @ApiCreatedResponse({ type: TenantMemberDto })
+  createTenantMember(
+    @Param('tenantId') tenantId: string,
+    @Body() body: CreateTenantMemberDto,
+  ): Promise<TenantMemberDto> {
+    return this.tenancy.createTenantMember(tenantId, body);
+  }
+
+  @Patch(':tenantId/members/:membershipId')
+  @RequirePermission('platform:tenant-member:manage')
+  @ApiOkResponse({ type: TenantMemberDto })
+  updateTenantMember(
+    @Param('tenantId') tenantId: string,
+    @Param('membershipId') membershipId: string,
+    @Body() body: UpdateTenantMemberDto,
+  ): Promise<TenantMemberDto> {
+    return this.tenancy.updateTenantMember(tenantId, membershipId, body);
+  }
+
+  @Delete(':tenantId/members/:membershipId')
+  @RequirePermission('platform:tenant-member:manage')
+  @ApiOkResponse({ type: TenantMemberDeleteResultDto })
+  removeTenantMember(
+    @Param('tenantId') tenantId: string,
+    @Param('membershipId') membershipId: string,
+  ): Promise<TenantMemberDeleteResultDto> {
+    return this.tenancy.removeTenantMember(tenantId, membershipId);
   }
 }
 

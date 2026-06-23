@@ -140,14 +140,47 @@ export type TenantMemberSummary = {
   userId: string;
   username: string;
   displayName: string;
-  status: 'active' | 'suspended' | string;
+  status: 'active' | 'invited' | 'left' | 'suspended' | string;
   isOwner: boolean;
   deptId?: string | null;
   deptName?: string | null;
   roleCodes: readonly string[];
   postCodes: readonly string[];
+  invitedByUsername?: string | null;
+  joinedAt?: string | null;
+  lastActiveAt?: string | null;
   createdAt: string;
   updatedAt: string;
+};
+
+export type CreateTenantMemberRequest = {
+  userId?: string;
+  username?: string;
+  displayName?: string;
+  password?: string;
+  mobile?: string | null;
+  email?: string | null;
+  status?: 'active' | 'invited' | 'suspended';
+  isOwner?: boolean;
+  deptId?: string | null;
+  roleCodes?: readonly string[];
+  postCodes?: readonly string[];
+};
+
+export type UpdateTenantMemberRequest = {
+  status?: 'active' | 'invited' | 'left' | 'suspended';
+  isOwner?: boolean;
+  deptId?: string | null;
+  roleCodes?: readonly string[];
+  postCodes?: readonly string[];
+};
+
+export type TenantMemberDeleteResultSummary = {
+  deleted: true;
+  id: string;
+  tenantId: string;
+  userId: string;
+  username: string;
 };
 
 export type UpdateTenantMemberAssignmentsRequest = {

@@ -53,6 +53,7 @@ import {
   type CleanAuditLogsRequest,
   type ClaimQueuedJobsRequest,
   type CreateTenantPlanRequest,
+  type CreateTenantMemberRequest,
   type CreateTenantRequest,
   type CreateExportPreviewRequest,
   type CreateDictItemRequest,
@@ -108,6 +109,7 @@ import {
   type SetRoleStatusRequest,
   type SystemStatusSummary,
   type TenancyFoundationSummary,
+  type TenantMemberDeleteResultSummary,
   type TenantMemberSummary,
   type TenantPlanDeleteResultSummary,
   type TenantPlanSummary,
@@ -250,6 +252,7 @@ import {
   type UpdateSystemPostOrderRequest,
   type UpdateSystemPostRequest,
   type UploadFileAssetRequest,
+  type UpdateTenantMemberRequest,
   type UpdateMenuRequest,
   type UpdatePermissionRequest,
   type UpdateRoleRequest,
@@ -332,6 +335,47 @@ export function deleteOpenCoreTenantPlan(
   planId: string,
 ): Promise<TenantPlanDeleteResultSummary> {
   return tenancyClient.deleteTenantPlan(getRequiredAdminToken(), planId);
+}
+
+export function listOpenCoreTenantControlMembers(
+  tenantId: string,
+): Promise<readonly TenantMemberSummary[]> {
+  return tenancyClient.listTenantMembers(getRequiredAdminToken(), tenantId);
+}
+
+export function createOpenCoreTenantMember(
+  tenantId: string,
+  body: CreateTenantMemberRequest,
+): Promise<TenantMemberSummary> {
+  return tenancyClient.createTenantMember(
+    getRequiredAdminToken(),
+    tenantId,
+    body,
+  );
+}
+
+export function updateOpenCoreTenantMember(
+  tenantId: string,
+  membershipId: string,
+  body: UpdateTenantMemberRequest,
+): Promise<TenantMemberSummary> {
+  return tenancyClient.updateTenantMember(
+    getRequiredAdminToken(),
+    tenantId,
+    membershipId,
+    body,
+  );
+}
+
+export function removeOpenCoreTenantMember(
+  tenantId: string,
+  membershipId: string,
+): Promise<TenantMemberDeleteResultSummary> {
+  return tenancyClient.removeTenantMember(
+    getRequiredAdminToken(),
+    tenantId,
+    membershipId,
+  );
 }
 
 export function listOpenCoreTenantMembers(): Promise<

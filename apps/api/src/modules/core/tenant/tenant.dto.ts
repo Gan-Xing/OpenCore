@@ -316,7 +316,7 @@ export class TenantMemberDto {
   @ApiProperty()
   displayName!: string;
 
-  @ApiProperty({ enum: ['active', 'suspended'] })
+  @ApiProperty({ enum: ['active', 'invited', 'left', 'suspended'] })
   status!: string;
 
   @ApiProperty()
@@ -334,11 +334,95 @@ export class TenantMemberDto {
   @ApiProperty({ type: [String] })
   postCodes!: readonly string[];
 
+  @ApiProperty({ required: false, nullable: true })
+  invitedByUsername?: string | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  joinedAt?: string | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  lastActiveAt?: string | null;
+
   @ApiProperty()
   createdAt!: string;
 
   @ApiProperty()
   updatedAt!: string;
+}
+
+export class CreateTenantMemberDto {
+  @ApiProperty({ required: false })
+  userId?: string;
+
+  @ApiProperty({ required: false })
+  username?: string;
+
+  @ApiProperty({ required: false })
+  displayName?: string;
+
+  @ApiProperty({ required: false })
+  password?: string;
+
+  @ApiProperty({ required: false, nullable: true })
+  mobile?: string | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  email?: string | null;
+
+  @ApiProperty({
+    required: false,
+    enum: ['active', 'invited', 'left', 'suspended'],
+  })
+  status?: string;
+
+  @ApiProperty({ required: false })
+  isOwner?: boolean;
+
+  @ApiProperty({ required: false, nullable: true, type: String })
+  deptId?: string | null;
+
+  @ApiProperty({ required: false, type: [String] })
+  roleCodes?: readonly string[];
+
+  @ApiProperty({ required: false, type: [String] })
+  postCodes?: readonly string[];
+}
+
+export class UpdateTenantMemberDto {
+  @ApiProperty({
+    required: false,
+    enum: ['active', 'invited', 'left', 'suspended'],
+  })
+  status?: string;
+
+  @ApiProperty({ required: false })
+  isOwner?: boolean;
+
+  @ApiProperty({ required: false, nullable: true, type: String })
+  deptId?: string | null;
+
+  @ApiProperty({ required: false, type: [String] })
+  roleCodes?: readonly string[];
+
+  @ApiProperty({ required: false, type: [String] })
+  postCodes?: readonly string[];
+}
+
+export class TenantMemberDeleteResultDto {
+  @ApiProperty()
+  deleted!: true;
+
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  tenantId!: string;
+
+  @ApiProperty()
+  userId!: string;
+
+  @ApiProperty()
+  username!: string;
 }
 
 export class UpdateTenantMemberAssignmentsDto {

@@ -1068,3 +1068,46 @@ Passed after deploy:
 - No hard-delete tenant API in T6b.
 - No Tenant Member invitation or global-user creation flow in T6b.
 - No platform visit/impersonation runtime in T6b.
+
+## Round 23: T6c Tenant Member Lifecycle Control Plane
+
+### Completed
+
+- Added platform-scoped Tenant Member lifecycle APIs under `/api/core/tenancy/tenants/:tenantId/members`:
+  - list members for a specified tenant;
+  - invite an existing global user by `userId`/`username`;
+  - create a new global user with `forcePasswordChange` and add membership;
+  - update status, owner flag, department, roles, and posts;
+  - soft-remove members by marking status `left` and clearing assignments.
+- Added lifecycle safety:
+  - statuses support `invited`, `active`, `suspended`, and `left`;
+  - service enforces tenant account limits;
+  - duplicate active memberships are rejected;
+  - removing or deactivating the last active owner is blocked.
+- OpenAPI and SDK now expose typed Tenant Member lifecycle contracts.
+- The live `/system/tenants` Admin page now opens a per-tenant member control modal for list/create/edit/remove without adding a body/header/query tenant selector.
+- Added focused API service tests, typed smoke coverage, and a static member control-plane guard for T6c.
+
+### Verification Log
+
+Passed before deploy:
+
+- Focused tenant service tests covered member create/invite/update/remove, account limit, duplicate membership, and last active owner protection.
+- Tenant member control-plane guard, SDK contract check, OpenAPI export/drift/tag checks, API error-code guard, full typecheck, lint, and test suite passed.
+
+Passed after deploy:
+
+- Refreshed OpenCore deploy rebuilt API/Admin, reseeded, restarted API `39172` and Admin `39174`, and passed deploy smoke including local Tenant Member lifecycle checks.
+- Public API Tenant Member lifecycle smoke passed against `http://144.217.243.161:39172`.
+
+### Remaining Product Debt
+
+- Complete Admin tenant switcher.
+- Complete platform visit mode and platform visit audit.
+- Complete T7 optional/business model tenantization.
+
+### Deliberate Non-Goals
+
+- No Admin header tenant switcher in T6c.
+- No platform visit/impersonation runtime in T6c.
+- No email/SMS invitation delivery workflow in T6c; the control plane records invited memberships and can create users.

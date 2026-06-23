@@ -23,6 +23,9 @@ describe('TenantFoundationService membership assignments', () => {
   const updatedManagedTenantCode = `tenant.lifecycle.updated.${runId}`;
   const managedTenantSlug = `tenant-lifecycle-${runId}`;
   const updatedManagedTenantSlug = `tenant-lifecycle-updated-${runId}`;
+  const ownerUsername = `tenant_owner_${runId}`;
+  const invitedUsername = `tenant_invited_${runId}`;
+  const overflowUsername = `tenant_overflow_${runId}`;
 
   beforeEach(async () => {
     await cleanup();
@@ -222,6 +225,93 @@ describe('TenantFoundationService membership assignments', () => {
     );
   });
 
+  it('manages tenant members from the platform tenant path', async () => {
+    await prisma.tenant.update({
+      where: { id: tenantId },
+      data: { accountLimit: 3 },
+    });
+
+    const owner = await service.createTenantMember(tenantId, {
+      deptId,
+      displayName: 'Tenant Owner',
+      isOwner: true,
+      password: 'OwnerPassword1!',
+      postCodes: [postCode],
+      roleCodes: [roleCode],
+      status: 'active',
+      username: ownerUsername,
+    });
+    expect(owner).toMatchObject({
+      deptId,
+      isOwner: true,
+      postCodes: [postCode],
+      roleCodes: [roleCode],
+      status: 'active',
+      username: ownerUsername,
+    });
+    expect(owner.joinedAt).toBeTruthy();
+
+    const invited = await service.createTenantMember(tenantId, {
+      displayName: 'Tenant Invited',
+      password: 'InvitedPassword1!',
+      status: 'invited',
+      username: invitedUsername,
+    });
+    expect(invited).toMatchObject({
+      isOwner: false,
+      status: 'invited',
+      username: invitedUsername,
+    });
+
+    await expectHttpExceptionCode(
+      service.createTenantMember(tenantId, {
+        displayName: 'Tenant Overflow',
+        password: 'OverflowPassword1!',
+        status: 'invited',
+        username: overflowUsername,
+      }),
+      'TENANT_MEMBER_ACCOUNT_LIMIT_REACHED',
+    );
+
+    const updated = await service.updateTenantMember(tenantId, invited.id, {
+      deptId,
+      postCodes: [postCode],
+      roleCodes: [roleCode],
+      status: 'suspended',
+    });
+    expect(updated).toMatchObject({
+      deptId,
+      postCodes: [postCode],
+      roleCodes: [roleCode],
+      status: 'suspended',
+    });
+
+    await expectHttpExceptionCode(
+      service.createTenantMember(tenantId, {
+        status: 'active',
+        userId: owner.userId,
+      }),
+      'TENANT_MEMBER_ALREADY_EXISTS',
+    );
+
+    await expectHttpExceptionCode(
+      service.removeTenantMember(tenantId, owner.id),
+      'TENANT_MEMBER_LAST_OWNER',
+    );
+
+    await expect(service.removeTenantMember(tenantId, invited.id)).resolves
+      .toMatchObject({
+        deleted: true,
+        id: invited.id,
+        tenantId,
+        username: invitedUsername,
+      });
+    const members = await service.listTenantMembers(tenantId);
+    expect(members.find((member) => member.id === invited.id)).toMatchObject({
+      status: 'left',
+    });
+  });
+
   async function seedRows(): Promise<void> {
     await prisma.tenant.createMany({
       data: [
@@ -295,6 +385,11 @@ describe('TenantFoundationService membership assignments', () => {
       },
     });
     await prisma.user.deleteMany({ where: { username } });
+    await prisma.user.deleteMany({
+      where: {
+        username: { in: [ownerUsername, invitedUsername, overflowUsername] },
+      },
+    });
     await prisma.tenantPlan.deleteMany({
       where: { code: { in: [planCode, updatedPlanCode] } },
     });
