@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { getRequestContext } from '@opencore/core';
 import { PrismaService } from '@opencore/database';
 import type {
   AssignTodoDto,
@@ -40,6 +41,7 @@ import {
 
 type MessageRow = {
   id: string;
+  tenantId: string;
   title: string;
   body: string;
   sender: string;
@@ -52,6 +54,8 @@ type MessageRow = {
   deletedAt: Date | null;
   createdAt: Date;
 };
+
+const ROOT_TENANT_ID = 'tenant_root';
 
 type NoticeRow = {
   id: string;
@@ -103,9 +107,10 @@ export class PrismaCollaborationRepository extends CollaborationRepository {
   }
 
   async getSummary() {
+    const tenantId = resolveCurrentTenantId();
     const [messages, notices, todos, approvals] = await Promise.all([
       this.prisma.collaborationMessage.findMany({
-        where: { deletedAt: null },
+        where: { tenantId, deletedAt: null },
       }),
       this.prisma.collaborationNotice.findMany(),
       this.prisma.collaborationTodo.findMany(),
@@ -123,8 +128,10 @@ export class PrismaCollaborationRepository extends CollaborationRepository {
   async listMessages(
     query: MessageQueryDto = {},
   ): Promise<PageResult<MessageRecord>> {
+    const tenantId = resolveCurrentTenantId();
     const rows = await this.prisma.collaborationMessage.findMany({
       where: {
+        tenantId,
         deletedAt: null,
         status: query.status,
         recipient: query.recipient,
@@ -136,8 +143,10 @@ export class PrismaCollaborationRepository extends CollaborationRepository {
   }
 
   async createMessage(body: CreateMessageDto): Promise<MessageRecord> {
+    const tenantId = resolveCurrentTenantId();
     const message = await this.prisma.collaborationMessage.create({
       data: {
+        tenantId,
         title: body.title,
         body: body.body,
         sender: body.sender,
@@ -151,8 +160,9 @@ export class PrismaCollaborationRepository extends CollaborationRepository {
   }
 
   async getMessage(id: string): Promise<MessageRecord> {
+    const tenantId = resolveCurrentTenantId();
     const message = await this.prisma.collaborationMessage
-      .findUnique({ where: { id } })
+      .findFirst({ where: { id, tenantId } })
       .then((row) => (row ? toMessageRecord(row) : undefined));
 
     return requireVisibleMessage(message, id);
@@ -416,9 +426,10 @@ export class PrismaCollaborationRepository extends CollaborationRepository {
   }
 
   private async findMessage(id: string): Promise<MessageRecord> {
+    const tenantId = resolveCurrentTenantId();
     return requireRecord(
       await this.prisma.collaborationMessage
-        .findUnique({ where: { id } })
+        .findFirst({ where: { id, tenantId } })
         .then((message) => (message ? toMessageRecord(message) : undefined)),
       'Message',
       id,
@@ -461,6 +472,7 @@ export class PrismaCollaborationRepository extends CollaborationRepository {
 function toMessageRecord(row: MessageRow): MessageRecord {
   return {
     id: row.id,
+    tenantId: row.tenantId,
     title: row.title,
     body: row.body,
     sender: row.sender,
@@ -473,6 +485,10 @@ function toMessageRecord(row: MessageRow): MessageRecord {
     deletedAt: row.deletedAt?.toISOString(),
     createdAt: row.createdAt.toISOString(),
   };
+}
+
+function resolveCurrentTenantId(): string {
+  return getRequestContext()?.tenantId ?? ROOT_TENANT_ID;
 }
 
 function toNoticeRecord(row: NoticeRow): NoticeRecord {

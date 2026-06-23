@@ -75,6 +75,7 @@ const emptySummary: CollaborationSummary = {
 };
 
 const searchFields: CurrentPageSearchField<MessageSummary>[] = [
+  'tenantId',
   'title',
   'sender',
   'recipient',
@@ -97,6 +98,13 @@ function createExportColumns(
     {
       title: formatMessage('pages.collaboration.common.fields.id', 'ID'),
       dataIndex: 'id',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.messages.fields.tenantId',
+        'Tenant ID',
+      ),
+      dataIndex: 'tenantId',
     },
     {
       title: formatMessage(
@@ -440,6 +448,14 @@ export default function MessagesPage() {
   const columns: ProColumns<MessageSummary>[] = [
     {
       title: formatMessage(
+        'pages.collaboration.messages.fields.tenantId',
+        'Tenant ID',
+      ),
+      dataIndex: 'tenantId',
+      width: 160,
+    },
+    {
+      title: formatMessage(
         'pages.collaboration.messages.fields.title',
         'Title',
       ),
@@ -666,6 +682,13 @@ export default function MessagesPage() {
           {
             label: formatMessage('pages.collaboration.common.fields.id', 'ID'),
             value: selected?.id,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.messages.fields.tenantId',
+              'Tenant ID',
+            ),
+            value: selected?.tenantId,
           },
           {
             label: formatMessage(

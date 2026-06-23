@@ -15,6 +15,7 @@ export type TimelineEntryRecord = CollaborationTimelineEntryDto;
 export const seedMessages: readonly MessageRecord[] = [
   {
     id: 'msg_welcome_admin',
+    tenantId: 'tenant_root',
     title: 'Welcome to OpenCore',
     body: 'Initial collaboration message for the admin user.',
     sender: 'system',

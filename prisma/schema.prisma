@@ -99,6 +99,7 @@ model Tenant {
   integrationOAuthFlows  IntegrationOAuthFlow[]
   integrationOAuthAudits IntegrationOAuthCallbackAudit[]
   webSocketRuntimeEvents IntegrationWebSocketRuntimeEvent[]
+  collaborationMessages  CollaborationMessage[]
   auditLogs              AuditLog[]
   loginLogs              LoginLog[]
   onlineSessions         OnlineUserSession[]
@@ -595,6 +596,8 @@ model LoginLockout {
 
 model CollaborationMessage {
   id           String    @id @default(cuid())
+  tenantId     String    @default("tenant_root")
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   title        String
   body         String
   sender       String
@@ -608,10 +611,10 @@ model CollaborationMessage {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  @@index([recipient, status, createdAt])
-  @@index([sender, createdAt])
-  @@index([businessType, businessId])
-  @@index([deletedAt])
+  @@index([tenantId, recipient, status, createdAt])
+  @@index([tenantId, sender, createdAt])
+  @@index([tenantId, businessType, businessId])
+  @@index([tenantId, deletedAt])
 }
 
 model CollaborationNotice {

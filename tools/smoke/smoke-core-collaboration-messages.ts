@@ -6,10 +6,15 @@ import {
   assertString,
   createTypedSmokeRuntime,
 } from './runtime';
+import { disconnectSmokePrisma, getSmokePrisma } from './prisma';
 
 const smoke = createTypedSmokeRuntime();
 const { apiPrefix, baseUrl, checkDocs, clients, request, username } = smoke;
 const runId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+const runSafeId = runId.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+const ROOT_TENANT_ID = 'tenant_root';
+const FOREIGN_TENANT_ID = 'tenant_collaboration_message_smoke_foreign';
+const FOREIGN_MESSAGE_ID = `msg_foreign_${runSafeId}`;
 let token: string | undefined;
 let createdMessageId: string | undefined;
 
@@ -31,6 +36,8 @@ async function main() {
 
     const loginResponse = await smoke.login();
     token = assertString(loginResponse.accessToken, 'login accessToken');
+    await seedForeignTenantMessage();
+    await assertForeignTenantMessageHidden(token);
 
     const summary = await clients.collaboration.getSummary(token);
     assertNumberAtLeast(summary.messages.total, 1, 'seeded message total');
@@ -55,6 +62,11 @@ async function main() {
       'msg_welcome_admin',
       'seeded message detail id',
     );
+    assertEqual(
+      seededDetail.tenantId,
+      ROOT_TENANT_ID,
+      'seeded message tenant id',
+    );
     assertEqual(seededDetail.status, 'unread', 'seeded message status');
 
     const created = await clients.collaboration.createMessage(token, {
@@ -66,6 +78,7 @@ async function main() {
       title: `Smoke message ${runId}`,
     });
     createdMessageId = assertString(created.id, 'created message id');
+    assertEqual(created.tenantId, ROOT_TENANT_ID, 'created message tenant id');
     assertEqual(created.status, 'unread', 'created message status');
     assertEqual(created.businessId, runId, 'created message business id');
 
@@ -148,6 +161,7 @@ async function main() {
               ]
             : []),
           'auth.login',
+          'collaboration.messages.foreign-hidden',
           'collaboration.summary.seeded',
           'collaboration.messages.seeded-list-detail',
           'collaboration.messages.create',
@@ -163,6 +177,8 @@ async function main() {
     );
   } finally {
     await cleanupCreatedMessage();
+    await cleanupForeignTenantMessage().catch(() => undefined);
+    await disconnectSmokePrisma().catch(() => undefined);
   }
 }
 
@@ -179,6 +195,86 @@ async function cleanupCreatedMessage() {
       token,
     },
   );
+}
+
+async function seedForeignTenantMessage() {
+  const prisma = getSmokePrisma();
+
+  await cleanupForeignTenantMessage();
+  await prisma.tenant.upsert({
+    where: { id: FOREIGN_TENANT_ID },
+    update: {
+      code: 'collab-message-smoke-foreign',
+      slug: 'collab-message-smoke-foreign',
+      name: 'Collaboration Message Smoke Foreign',
+      status: 'active',
+    },
+    create: {
+      id: FOREIGN_TENANT_ID,
+      code: 'collab-message-smoke-foreign',
+      slug: 'collab-message-smoke-foreign',
+      name: 'Collaboration Message Smoke Foreign',
+      status: 'active',
+    },
+  });
+  await prisma.collaborationMessage.create({
+    data: {
+      id: FOREIGN_MESSAGE_ID,
+      tenantId: FOREIGN_TENANT_ID,
+      title: `Foreign smoke message ${runId}`,
+      body: 'Foreign tenant message body.',
+      sender: 'foreign-admin',
+      recipient: 'admin',
+      status: 'unread',
+      businessType: 'smoke',
+      businessId: `foreign-${runId}`,
+    },
+  });
+}
+
+async function assertForeignTenantMessageHidden(rootToken: string) {
+  const list = await clients.collaboration.listMessages(rootToken, {
+    recipient: 'admin',
+    status: 'unread',
+  });
+  assertPageExcludesId(list, FOREIGN_MESSAGE_ID, 'foreign message list');
+
+  await smoke.apiRequest(
+    `/collaboration/messages/${encodeURIComponent(FOREIGN_MESSAGE_ID)}`,
+    { expected: [404], token: rootToken },
+  );
+  await smoke.apiRequest(
+    `/collaboration/messages/${encodeURIComponent(FOREIGN_MESSAGE_ID)}/read`,
+    { expected: [404], method: 'PATCH', token: rootToken },
+  );
+  await smoke.apiRequest(
+    `/collaboration/messages/${encodeURIComponent(FOREIGN_MESSAGE_ID)}/archive`,
+    { expected: [404], method: 'PATCH', token: rootToken },
+  );
+  await smoke.apiRequest(
+    `/collaboration/messages/${encodeURIComponent(FOREIGN_MESSAGE_ID)}`,
+    { expected: [404], method: 'DELETE', token: rootToken },
+  );
+  await assertForeignTenantMessagePreserved();
+}
+
+async function assertForeignTenantMessagePreserved() {
+  const message = await getSmokePrisma().collaborationMessage.findUnique({
+    where: { id: FOREIGN_MESSAGE_ID },
+  });
+
+  if (!message || message.tenantId !== FOREIGN_TENANT_ID) {
+    throw new Error('Foreign tenant collaboration message was changed');
+  }
+}
+
+async function cleanupForeignTenantMessage() {
+  const prisma = getSmokePrisma();
+
+  await prisma.collaborationMessage.deleteMany({
+    where: { id: FOREIGN_MESSAGE_ID },
+  });
+  await prisma.tenant.deleteMany({ where: { id: FOREIGN_TENANT_ID } });
 }
 
 function assertPageContainsId(

@@ -24,6 +24,9 @@ export class MessageDto {
   id!: string;
 
   @ApiProperty()
+  tenantId!: string;
+
+  @ApiProperty()
   title!: string;
 
   @ApiProperty()

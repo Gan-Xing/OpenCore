@@ -10,6 +10,7 @@ export type CollaborationTimelineEntry = {
 
 export type MessageSummary = {
   id: string;
+  tenantId: string;
   title: string;
   body: string;
   sender: string;
@@ -170,6 +171,7 @@ export function createCollaborationFixtures(): CollaborationFixtures {
   const messages: readonly MessageSummary[] = [
     {
       id: 'msg_welcome_admin',
+      tenantId: 'tenant_root',
       title: 'Welcome to OpenCore',
       body: 'Initial collaboration message for the admin user.',
       sender: 'system',

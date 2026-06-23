@@ -1225,3 +1225,48 @@ Passed after deploy:
 
 - No new audit table in T6f; the existing tenant-owned `AuditLog` surface is sufficient for platform visit traceability.
 - No platform visit recording on failed authorization; this round records successful cross-tenant access.
+
+## Round 27: T7a Collaboration Message Tenant Isolation
+
+### Completed
+
+- Added migration `20260624023000_tenant_scoped_collaboration_messages`:
+  - adds `CollaborationMessage.tenantId`;
+  - backfills existing messages to `tenant_root`;
+  - adds the tenant foreign key;
+  - replaces global message lookup indexes with tenant-prefixed indexes.
+- Updated Prisma schema with `Tenant.collaborationMessages` and `CollaborationMessage.tenant`.
+- Updated Collaboration Message repositories:
+  - Prisma summary/list/detail/create/read/archive/delete resolve `RequestContext.tenantId`;
+  - seed repository mirrors the same tenant fallback so tests cannot bypass isolation.
+- Updated public/admin surfaces:
+  - seed message includes `tenantId`;
+  - `MessageDto` and SDK `MessageSummary` expose `tenantId`;
+  - Admin Messages displays and exports `tenantId`.
+- Extended `smoke:core-collaboration-messages`:
+  - creates a foreign tenant message through Prisma;
+  - proves root token list/detail/read/archive/delete cannot access it;
+  - verifies the foreign row remains owned by the foreign tenant.
+- Added `guard:tenant-collaboration-message-scope`.
+
+### Verification Log
+
+Passed before deploy:
+
+- Prisma client generation and schema validation.
+- Tenant collaboration message guard, seed typecheck, typed smoke typecheck, OpenAPI export/check, SDK check, and registry tag check.
+- Focused API Collaboration repository test, focused API/SDK/Admin typechecks, full typecheck, full lint, and full test suite.
+
+Passed after deploy:
+
+- Refreshed OpenCore deploy rebuilt API/Admin, applied migration `20260624023000_tenant_scoped_collaboration_messages`, reseeded, restarted API `39172` and Admin `39174`, and passed deploy smoke including Collaboration Message foreign-tenant checks.
+- Public API Collaboration Message smoke passed against `http://144.217.243.161:39172`.
+
+### Remaining Product Debt
+
+- Complete T7 tenantization for Collaboration Notice, Collaboration Todo, Collaboration Approval Lite, ReportDefinition, and future business domains.
+
+### Deliberate Non-Goals
+
+- No client-supplied tenant selector was added.
+- No sender/recipient identity redesign in T7a; this round only closes row ownership and access isolation.

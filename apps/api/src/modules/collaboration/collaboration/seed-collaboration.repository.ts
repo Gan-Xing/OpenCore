@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { getRequestContext } from '@opencore/core';
 import type {
   AssignTodoDto,
   ApprovalLiteQueryDto,
@@ -40,6 +41,8 @@ import {
   type PageResult,
 } from './collaboration.repository';
 
+const ROOT_TENANT_ID = 'tenant_root';
+
 @Injectable()
 export class SeedCollaborationRepository extends CollaborationRepository {
   private messages: MessageRecord[] = seedMessages.map((message) => ({
@@ -53,8 +56,12 @@ export class SeedCollaborationRepository extends CollaborationRepository {
     seedApprovalLiteRequests.map(cloneApproval);
 
   async getSummary() {
+    const tenantId = resolveCurrentTenantId();
     return buildCollaborationSummary({
-      messages: this.messages.filter((message) => message.status !== 'deleted'),
+      messages: this.messages.filter(
+        (message) =>
+          message.tenantId === tenantId && message.status !== 'deleted',
+      ),
       notices: this.notices,
       todos: this.todos,
       approvals: this.approvals,
@@ -64,9 +71,11 @@ export class SeedCollaborationRepository extends CollaborationRepository {
   async listMessages(
     query: MessageQueryDto = {},
   ): Promise<PageResult<MessageRecord>> {
+    const tenantId = resolveCurrentTenantId();
     return createPage(
       this.messages.filter(
         (message) =>
+          message.tenantId === tenantId &&
           message.status !== 'deleted' &&
           matchesOptional(message.status, query.status) &&
           matchesOptional(message.recipient, query.recipient),
@@ -76,8 +85,10 @@ export class SeedCollaborationRepository extends CollaborationRepository {
   }
 
   async createMessage(body: CreateMessageDto): Promise<MessageRecord> {
+    const tenantId = resolveCurrentTenantId();
     const message: MessageRecord = {
       id: `msg_${this.messages.length + 1}`,
+      tenantId,
       title: body.title,
       body: body.body,
       sender: body.sender,
@@ -291,8 +302,11 @@ export class SeedCollaborationRepository extends CollaborationRepository {
   }
 
   private findMessage(id: string): MessageRecord {
+    const tenantId = resolveCurrentTenantId();
     return requireRecord(
-      this.messages.find((message) => message.id === id),
+      this.messages.find(
+        (message) => message.id === id && message.tenantId === tenantId,
+      ),
       'Message',
       id,
     );
@@ -321,6 +335,10 @@ export class SeedCollaborationRepository extends CollaborationRepository {
       id,
     );
   }
+}
+
+function resolveCurrentTenantId(): string {
+  return getRequestContext()?.tenantId ?? ROOT_TENANT_ID;
 }
 
 function cloneTodo(todo: TodoRecord): TodoRecord {

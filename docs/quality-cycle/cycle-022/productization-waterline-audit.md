@@ -178,6 +178,18 @@ These remain below the productization waterline and cannot be described as compl
 | Smoke/guard                     | Done   | `smoke:core-platform-visit` verifies the target-tenant audit row and `guard:platform-visit` locks audit wiring markers.                    |
 | Remaining T6 scope              | Done   | T6 Admin control plane is closed; remaining work is T4/T7 data-plane review and business-domain tenantization.                             |
 
+## T7a Collaboration Messages
+
+| Check                              | Status  | Evidence                                                                                                                                      |
+| ---------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Message tenant ownership           | Done    | `CollaborationMessage.tenantId` is backfilled to `tenant_root`, defaults to root, and is constrained to `Tenant`.                            |
+| Tenant-prefixed message indexes    | Done    | Recipient/status, sender, business, and deleted indexes now include `tenantId` first.                                                        |
+| Repository tenant isolation        | Done    | Collaboration message summary/list/detail/create/read/archive/delete resolve the active tenant from `RequestContext` with root fallback.      |
+| Cross-tenant API rejection         | Done    | `smoke:core-collaboration-messages` seeds a foreign tenant message and proves root-scope list/detail/read/archive/delete cannot access it.    |
+| Seed/OpenAPI/SDK/Admin             | Done    | Seed message rows, `MessageDto`, SDK `MessageSummary`, and Admin Messages expose `tenantId`.                                                  |
+| Smoke/guard                        | Done    | Added `guard:tenant-collaboration-message-scope`; existing collaboration message smoke now covers foreign-tenant message isolation.           |
+| Remaining T7 optional data scope   | Pending | Collaboration Notice, Todo, Approval Lite, ReportDefinition, and future business domains remain pending.                                      |
+
 ## T4a Audit
 
 | Requirement                         | Status  | Notes                                                                                                                        |

@@ -571,6 +571,7 @@ async function seedCollaboration(): Promise<{
     await prisma.collaborationMessage.upsert({
       where: { id: message.id },
       update: {
+        tenantId: message.tenantId,
         title: message.title,
         body: message.body,
         sender: message.sender,
@@ -585,6 +586,7 @@ async function seedCollaboration(): Promise<{
       },
       create: {
         id: message.id,
+        tenantId: message.tenantId,
         title: message.title,
         body: message.body,
         sender: message.sender,

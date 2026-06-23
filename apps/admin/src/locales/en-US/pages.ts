@@ -2397,6 +2397,7 @@ export default {
   'pages.collaboration.messages.fields.readAt': 'Read At',
   'pages.collaboration.messages.fields.recipient': 'Recipient',
   'pages.collaboration.messages.fields.sender': 'Sender',
+  'pages.collaboration.messages.fields.tenantId': 'Tenant ID',
   'pages.collaboration.messages.fields.title': 'Title',
   'pages.collaboration.messages.load.failure': 'Unable to load messages.',
   'pages.collaboration.messages.load.liveFailure':

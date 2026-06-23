@@ -1,3 +1,4 @@
+import { runWithRequestContext } from '@opencore/core';
 import { SeedCollaborationRepository } from './seed-collaboration.repository';
 
 describe('CollaborationRepository', () => {
@@ -30,6 +31,39 @@ describe('CollaborationRepository', () => {
     await expect(
       repository.listNotices({ status: 'published' }),
     ).resolves.toMatchObject({ total: 0 });
+  });
+
+  it('scopes messages by the active tenant context', async () => {
+    const repository = new SeedCollaborationRepository();
+    const foreignMessage = await runInTenant('tenant_foreign', () =>
+      repository.createMessage({
+        title: 'Foreign message',
+        body: 'Foreign body',
+        sender: 'foreign',
+        recipient: 'admin',
+      }),
+    );
+
+    await expect(repository.listMessages({ recipient: 'admin' })).resolves
+      .toMatchObject({
+        items: expect.not.arrayContaining([
+          expect.objectContaining({ id: foreignMessage.id }),
+        ]),
+      });
+    await expectHttpExceptionCode(
+      repository.getMessage(foreignMessage.id),
+      'COLLABORATION_RESOURCE_NOT_FOUND',
+    );
+    await expectHttpExceptionCode(
+      repository.markMessageRead(foreignMessage.id),
+      'COLLABORATION_RESOURCE_NOT_FOUND',
+    );
+    await expect(runInTenant('tenant_foreign', () =>
+      repository.getMessage(foreignMessage.id),
+    )).resolves.toMatchObject({
+      id: foreignMessage.id,
+      tenantId: 'tenant_foreign',
+    });
   });
 
   it('supports message read, archive, and delete policies', async () => {
@@ -220,4 +254,15 @@ function getHttpExceptionResponse(error: unknown): unknown {
   }
 
   return undefined;
+}
+
+function runInTenant<T>(tenantId: string, callback: () => T): T {
+  return runWithRequestContext(
+    {
+      requestId: `test-${tenantId}`,
+      traceId: `test-${tenantId}`,
+      tenantId,
+    },
+    callback,
+  );
 }

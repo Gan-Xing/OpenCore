@@ -14953,6 +14953,7 @@
         "type": "object",
         "properties": {
           "id": { "type": "string" },
+          "tenantId": { "type": "string" },
           "title": { "type": "string" },
           "body": { "type": "string" },
           "sender": { "type": "string" },
@@ -14970,6 +14971,7 @@
         },
         "required": [
           "id",
+          "tenantId",
           "title",
           "body",
           "sender",

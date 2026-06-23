@@ -2203,6 +2203,7 @@ export default {
   'pages.collaboration.messages.fields.readAt': '已读时间',
   'pages.collaboration.messages.fields.recipient': '接收人',
   'pages.collaboration.messages.fields.sender': '发送人',
+  'pages.collaboration.messages.fields.tenantId': '租户 ID',
   'pages.collaboration.messages.fields.title': '标题',
   'pages.collaboration.messages.load.failure': '无法加载消息列表。',
   'pages.collaboration.messages.load.liveFailure': '实时协作消息不可用',
