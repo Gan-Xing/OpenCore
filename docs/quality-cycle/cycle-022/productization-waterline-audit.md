@@ -23,10 +23,9 @@ Cycle-022 may only count a slice when it is code-backed, migrated, seeded, visib
 
 ## Below Waterline
 
-- Tenant data-plane isolation is not done.
 - Platform visit/impersonation is not done.
-- Tenant plan CRUD, member CRUD/invitation, Admin switcher, and platform visit mode are not done.
-- Runtime propagation is not done.
+- Tenant CRUD, member CRUD/invitation, Admin switcher, and platform visit mode are not done.
+- Remaining optional/business data-plane isolation is not done.
 
 These remain below the productization waterline and cannot be described as complete SaaS multi-tenancy.
 
@@ -110,6 +109,18 @@ These remain below the productization waterline and cannot be described as compl
 | OpenAPI/SDK/Admin consistency                    | Done    | OpenAPI exports member DTOs; SDK adds list/update calls; `/system/tenants` edits current-tenant assignments from live APIs. |
 | Smoke/guard                                      | Done    | Added `smoke:core-tenant-member` and `guard:tenant-member-assignment`, both wired into local/deploy smoke scripts.          |
 | Tenant Member CRUD/invitation and switcher Admin | Pending | T3e is assignment only; full Tenant Member lifecycle and tenant switcher remain T6.                                         |
+
+## T6a Tenant Plan Control Plane
+
+| Requirement                   | Status  | Notes                                                                                                                                     |
+| ----------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Live Tenant Plan APIs         | Done    | Added list/detail/create/update/delete under `/api/core/tenancy/plans` with `platform:tenant-plan:*` permissions.                         |
+| Module registry validation    | Done    | Plan module codes are normalized, deduplicated, and checked against `listModules()` before writes.                                        |
+| In-use delete guard           | Done    | Delete blocks assigned plans and reports tenant usage instead of removing plans still referenced by tenants.                              |
+| No trusted tenant selector    | Done    | Create/update DTOs and controller paths have no client-controlled tenant selector; plan control is platform-scoped.                       |
+| OpenAPI/SDK/Admin consistency | Done    | OpenAPI exports plan DTOs; SDK exposes typed plan CRUD calls; `/system/tenants` uses live plan APIs for list/create/edit/delete.          |
+| Smoke/guard                   | Done    | Added `smoke:core-tenant-plan` and `guard:tenant-plan-control-plane`, both wired into local/deploy smoke scripts.                         |
+| Remaining T6 scope            | Pending | Tenant CRUD, Tenant Member lifecycle/invitation, tenant switcher, platform visit mode, and platform visit audit remain separate T6 work. |
 
 ## T4a Audit
 

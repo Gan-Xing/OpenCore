@@ -15,6 +15,8 @@ describe('TenantFoundationService membership assignments', () => {
   const otherRoleCode = `role_member_other_${runId}`;
   const postCode = `post_member_${runId}`;
   const deptId = `dept_member_${runId}`;
+  const planCode = `plan.member.${runId}`;
+  const updatedPlanCode = `plan.member.updated.${runId}`;
 
   beforeEach(async () => {
     await cleanup();
@@ -56,6 +58,80 @@ describe('TenantFoundationService membership assignments', () => {
         }),
       ),
       'TENANT_MEMBER_ROLE_NOT_FOUND',
+    );
+  });
+
+  it('manages tenant plans with module registry validation', async () => {
+    const created = await service.createTenantPlan({
+      code: planCode,
+      limits: { accountLimit: 3 },
+      moduleCodes: ['core.tenant'],
+      name: 'Tenant Member Plan',
+      remark: 'created by test',
+    });
+
+    expect(created).toMatchObject({
+      code: planCode,
+      enabled: true,
+      moduleCodes: ['core.tenant'],
+      name: 'Tenant Member Plan',
+      tenantCount: 0,
+    });
+
+    const updated = await service.updateTenantPlan(created.id, {
+      code: updatedPlanCode,
+      enabled: false,
+      limits: { accountLimit: 4 },
+      moduleCodes: ['core.tenant', 'core.tenant-plan'],
+      name: 'Tenant Member Plan Updated',
+      remark: null,
+    });
+
+    expect(updated).toMatchObject({
+      code: updatedPlanCode,
+      enabled: false,
+      moduleCodes: ['core.tenant', 'core.tenant-plan'],
+      name: 'Tenant Member Plan Updated',
+      remark: null,
+    });
+
+    const listed = await service.listTenantPlans();
+    expect(listed.some((plan) => plan.id === updated.id)).toBe(true);
+
+    await expectHttpExceptionCode(
+      service.createTenantPlan({
+        code: planCode,
+        moduleCodes: ['core.missing'],
+        name: 'Invalid Tenant Member Plan',
+      }),
+      'TENANT_PLAN_MODULE_UNKNOWN',
+    );
+
+    await expect(service.deleteTenantPlan(updated.id)).resolves.toMatchObject({
+      code: updatedPlanCode,
+      deleted: true,
+      id: updated.id,
+    });
+    await expectHttpExceptionCode(
+      service.getTenantPlan(updated.id),
+      'TENANT_PLAN_NOT_FOUND',
+    );
+  });
+
+  it('blocks deleting tenant plans that are assigned to tenants', async () => {
+    const created = await service.createTenantPlan({
+      code: planCode,
+      moduleCodes: ['core.tenant'],
+      name: 'Tenant Member Assigned Plan',
+    });
+    await prisma.tenant.update({
+      where: { id: tenantId },
+      data: { planId: created.id },
+    });
+
+    await expectHttpExceptionCode(
+      service.deleteTenantPlan(created.id),
+      'TENANT_PLAN_IN_USE',
     );
   });
 
@@ -127,6 +203,9 @@ describe('TenantFoundationService membership assignments', () => {
       where: { id: { in: [tenantId, otherTenantId] } },
     });
     await prisma.user.deleteMany({ where: { username } });
+    await prisma.tenantPlan.deleteMany({
+      where: { code: { in: [planCode, updatedPlanCode] } },
+    });
   }
 });
 

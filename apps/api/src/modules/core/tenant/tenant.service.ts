@@ -9,15 +9,24 @@ import {
   PrismaService,
   type PrismaTransactionClient,
 } from '@opencore/database';
+import { listModules } from '@opencore/module-registry';
 import type { Prisma } from '@prisma/client';
 import type {
+  CreateTenantPlanDto,
   TenantFoundationSummaryDto,
   TenantMemberDto,
+  TenantPlanDeleteResultDto,
+  TenantPlanDto,
+  UpdateTenantPlanDto,
   UpdateTenantMemberAssignmentsDto,
 } from './tenant.dto';
 
 const ROOT_TENANT_CODE = 'root';
 const ROOT_TENANT_ID = 'tenant_root';
+const PLAN_CODE_PATTERN = /^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/;
+const registeredModuleCodes: ReadonlySet<string> = new Set(
+  listModules().map((moduleDefinition) => moduleDefinition.code),
+);
 
 @Injectable()
 export class TenantFoundationService {
@@ -69,9 +78,12 @@ export class TenantFoundationService {
         name: plan.name,
         enabled: plan.enabled,
         limits: plan.limits,
+        remark: plan.remark,
         moduleCodes: plan.modules
           .map((module) => module.moduleCode)
           .sort((left, right) => left.localeCompare(right)),
+        tenantCount: tenants.filter((tenant) => tenant.planId === plan.id)
+          .length,
       })),
       tenants: tenants.map((tenant) => ({
         id: tenant.id,
@@ -109,6 +121,146 @@ export class TenantFoundationService {
           }
         : undefined,
       generatedAt: new Date().toISOString(),
+    };
+  }
+
+  async listTenantPlans(): Promise<TenantPlanDto[]> {
+    const plans = await this.prisma.tenantPlan.findMany({
+      include: tenantPlanIncludes,
+      orderBy: { code: 'asc' },
+    });
+
+    return plans.map(toTenantPlanDto);
+  }
+
+  async getTenantPlan(planId: string): Promise<TenantPlanDto> {
+    return this.findTenantPlanDto(normalizeId(planId, 'planId'));
+  }
+
+  async createTenantPlan(body: CreateTenantPlanDto): Promise<TenantPlanDto> {
+    const code = normalizePlanCode(body.code);
+    const name = normalizeRequiredText(body.name, 'name');
+    const enabled = normalizeBoolean(body.enabled, true, 'enabled');
+    const remark = normalizeNullableText(body.remark);
+    const limits = normalizeLimits(body.limits);
+    const moduleCodes = normalizeModuleCodes(body.moduleCodes ?? []);
+
+    await this.assertTenantPlanCodeAvailable(code);
+
+    const plan = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.tenantPlan.create({
+        data: {
+          code,
+          enabled,
+          limits,
+          name,
+          remark,
+        },
+        select: { id: true },
+      });
+
+      await writePlanModules(tx, created.id, moduleCodes);
+
+      return created;
+    });
+
+    return this.findTenantPlanDto(plan.id);
+  }
+
+  async updateTenantPlan(
+    planId: string,
+    body: UpdateTenantPlanDto,
+  ): Promise<TenantPlanDto> {
+    const id = normalizeId(planId, 'planId');
+    const existing = await this.prisma.tenantPlan.findUnique({
+      where: { id },
+      select: { code: true, id: true },
+    });
+
+    if (!existing) {
+      throw tenantPlanNotFound(id);
+    }
+
+    const codeProvided = Object.prototype.hasOwnProperty.call(body, 'code');
+    const nameProvided = Object.prototype.hasOwnProperty.call(body, 'name');
+    const enabledProvided = Object.prototype.hasOwnProperty.call(
+      body,
+      'enabled',
+    );
+    const remarkProvided = Object.prototype.hasOwnProperty.call(body, 'remark');
+    const limitsProvided = Object.prototype.hasOwnProperty.call(body, 'limits');
+    const modulesProvided = Object.prototype.hasOwnProperty.call(
+      body,
+      'moduleCodes',
+    );
+
+    const code = codeProvided ? normalizePlanCode(body.code) : undefined;
+    if (code && code !== existing.code) {
+      await this.assertTenantPlanCodeAvailable(code);
+    }
+
+    const name = nameProvided
+      ? normalizeRequiredText(body.name, 'name')
+      : undefined;
+    const enabled = enabledProvided
+      ? normalizeBoolean(body.enabled, true, 'enabled')
+      : undefined;
+    const remark = remarkProvided
+      ? normalizeNullableText(body.remark)
+      : undefined;
+    const limits = limitsProvided ? normalizeLimits(body.limits) : undefined;
+    const moduleCodes = modulesProvided
+      ? normalizeModuleCodes(body.moduleCodes ?? [])
+      : undefined;
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.tenantPlan.update({
+        where: { id },
+        data: {
+          ...(code === undefined ? {} : { code }),
+          ...(enabled === undefined ? {} : { enabled }),
+          ...(limits === undefined ? {} : { limits }),
+          ...(name === undefined ? {} : { name }),
+          ...(remarkProvided ? { remark } : {}),
+        },
+      });
+
+      if (moduleCodes) {
+        await writePlanModules(tx, id, moduleCodes);
+      }
+    });
+
+    return this.findTenantPlanDto(id);
+  }
+
+  async deleteTenantPlan(planId: string): Promise<TenantPlanDeleteResultDto> {
+    const id = normalizeId(planId, 'planId');
+    const plan = await this.prisma.tenantPlan.findUnique({
+      where: { id },
+      include: { tenants: { select: { id: true } } },
+    });
+
+    if (!plan) {
+      throw tenantPlanNotFound(id);
+    }
+
+    if (plan.tenants.length > 0) {
+      throw tenantPlanBadRequest(
+        'TENANT_PLAN_IN_USE',
+        'Tenant plan is assigned to tenants.',
+        {
+          planId: id,
+          tenantCount: plan.tenants.length,
+        },
+      );
+    }
+
+    await this.prisma.tenantPlan.delete({ where: { id } });
+
+    return {
+      deleted: true,
+      id,
+      code: plan.code,
     };
   }
 
@@ -339,6 +491,86 @@ export class TenantFoundationService {
 
     return posts;
   }
+
+  private async findTenantPlanDto(planId: string): Promise<TenantPlanDto> {
+    const plan = await this.prisma.tenantPlan.findUnique({
+      where: { id: planId },
+      include: tenantPlanIncludes,
+    });
+
+    if (!plan) {
+      throw tenantPlanNotFound(planId);
+    }
+
+    return toTenantPlanDto(plan);
+  }
+
+  private async assertTenantPlanCodeAvailable(code: string): Promise<void> {
+    const duplicate = await this.prisma.tenantPlan.findUnique({
+      where: { code },
+      select: { id: true },
+    });
+
+    if (duplicate) {
+      throw tenantPlanBadRequest(
+        'TENANT_PLAN_CODE_EXISTS',
+        'Tenant plan code already exists.',
+        {
+          code,
+        },
+      );
+    }
+  }
+}
+
+const tenantPlanIncludes = {
+  modules: true,
+  tenants: {
+    select: { code: true, id: true, name: true, status: true },
+    orderBy: { code: 'asc' },
+  },
+} satisfies Prisma.TenantPlanInclude;
+
+type TenantPlanWithIncludes = Prisma.TenantPlanGetPayload<{
+  include: typeof tenantPlanIncludes;
+}>;
+
+function toTenantPlanDto(plan: TenantPlanWithIncludes): TenantPlanDto {
+  return {
+    id: plan.id,
+    code: plan.code,
+    name: plan.name,
+    enabled: plan.enabled,
+    limits: plan.limits,
+    remark: plan.remark,
+    moduleCodes: plan.modules
+      .map((module) => module.moduleCode)
+      .sort((left, right) => left.localeCompare(right)),
+    tenantCount: plan.tenants.length,
+    tenants: plan.tenants.map((tenant) => ({
+      id: tenant.id,
+      code: tenant.code,
+      name: tenant.name,
+      status: tenant.status,
+    })),
+    createdAt: plan.createdAt.toISOString(),
+    updatedAt: plan.updatedAt.toISOString(),
+  };
+}
+
+async function writePlanModules(
+  tx: PrismaTransactionClient,
+  planId: string,
+  moduleCodes: readonly string[],
+): Promise<void> {
+  await tx.tenantPlanModule.deleteMany({ where: { planId } });
+  if (moduleCodes.length === 0) {
+    return;
+  }
+
+  await tx.tenantPlanModule.createMany({
+    data: moduleCodes.map((moduleCode) => ({ moduleCode, planId })),
+  });
 }
 
 const memberIncludes = {
@@ -472,6 +704,151 @@ function normalizeCodes(
   return codes;
 }
 
+function normalizeId(value: unknown, field: string): string {
+  if (typeof value !== 'string' || value.trim() === '') {
+    throw tenantPlanBadRequest(
+      'TENANT_PLAN_ID_INVALID',
+      'Tenant plan id must be a non-empty string.',
+      { field },
+    );
+  }
+
+  return value.trim();
+}
+
+function normalizePlanCode(value: unknown): string {
+  const code = normalizeRequiredText(value, 'code');
+
+  if (!PLAN_CODE_PATTERN.test(code)) {
+    throw tenantPlanBadRequest(
+      'TENANT_PLAN_CODE_INVALID',
+      'Tenant plan code is invalid.',
+      { code },
+    );
+  }
+
+  return code;
+}
+
+function normalizeRequiredText(value: unknown, field: string): string {
+  if (typeof value !== 'string' || value.trim() === '') {
+    throw tenantPlanBadRequest(
+      'TENANT_PLAN_FIELD_REQUIRED',
+      'Tenant plan field is required.',
+      { field },
+    );
+  }
+
+  return value.trim();
+}
+
+function normalizeNullableText(value: unknown): string | null {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  if (typeof value !== 'string') {
+    throw tenantPlanBadRequest(
+      'TENANT_PLAN_FIELD_INVALID',
+      'Tenant plan field is invalid.',
+      { field: 'remark' },
+    );
+  }
+
+  const normalized = value.trim();
+  return normalized === '' ? null : normalized;
+}
+
+function normalizeBoolean(
+  value: unknown,
+  fallback: boolean,
+  field: string,
+): boolean {
+  if (value === undefined) {
+    return fallback;
+  }
+
+  if (typeof value !== 'boolean') {
+    throw tenantPlanBadRequest(
+      'TENANT_PLAN_FIELD_INVALID',
+      'Tenant plan field is invalid.',
+      { field },
+    );
+  }
+
+  return value;
+}
+
+function normalizeLimits(value: unknown): Prisma.InputJsonValue {
+  if (value === undefined) {
+    return {};
+  }
+
+  if (
+    !value ||
+    typeof value !== 'object' ||
+    Array.isArray(value) ||
+    value instanceof Date
+  ) {
+    throw tenantPlanBadRequest(
+      'TENANT_PLAN_LIMITS_INVALID',
+      'Tenant plan limits must be a JSON object.',
+    );
+  }
+
+  return value as Prisma.InputJsonValue;
+}
+
+function normalizeModuleCodes(value: unknown): readonly string[] {
+  if (!Array.isArray(value)) {
+    throw tenantPlanBadRequest(
+      'TENANT_PLAN_MODULES_INVALID',
+      'Tenant plan module codes must be an array.',
+    );
+  }
+
+  const codes = value.map((moduleCode) => {
+    if (typeof moduleCode !== 'string' || moduleCode.trim() === '') {
+      throw tenantPlanBadRequest(
+        'TENANT_PLAN_MODULES_INVALID',
+        'Tenant plan module code must be a non-empty string.',
+      );
+    }
+
+    return moduleCode.trim();
+  });
+  const seen = new Set<string>();
+  const duplicate = codes.find((moduleCode) => {
+    if (seen.has(moduleCode)) {
+      return true;
+    }
+
+    seen.add(moduleCode);
+    return false;
+  });
+
+  if (duplicate) {
+    throw tenantPlanBadRequest(
+      'TENANT_PLAN_MODULE_DUPLICATE',
+      'Tenant plan module codes must be unique.',
+      { moduleCode: duplicate },
+    );
+  }
+
+  const missing = codes.find(
+    (moduleCode) => !registeredModuleCodes.has(moduleCode),
+  );
+  if (missing) {
+    throw tenantPlanBadRequest(
+      'TENANT_PLAN_MODULE_UNKNOWN',
+      'Tenant plan module code is not registered.',
+      { moduleCode: missing },
+    );
+  }
+
+  return codes;
+}
+
 async function syncRootLegacyUser(
   tx: PrismaTransactionClient,
   userId: string,
@@ -530,4 +907,24 @@ function tenantMemberNotFound(
   details?: Record<string, unknown>,
 ): NotFoundException {
   return new NotFoundException(createApiErrorBody({ code, message, details }));
+}
+
+function tenantPlanBadRequest(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): BadRequestException {
+  return new BadRequestException(
+    createApiErrorBody({ code, message, details }),
+  );
+}
+
+function tenantPlanNotFound(planId: string): NotFoundException {
+  return new NotFoundException(
+    createApiErrorBody({
+      code: 'TENANT_PLAN_NOT_FOUND',
+      message: 'Tenant plan not found.',
+      details: { planId },
+    }),
+  );
 }

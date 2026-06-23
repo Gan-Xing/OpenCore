@@ -7,6 +7,45 @@ export type TenantPlanFoundationSummary = {
   enabled: boolean;
   limits: unknown;
   moduleCodes: readonly string[];
+  tenantCount: number;
+  remark?: string | null;
+};
+
+export type TenantPlanUsageTenantSummary = {
+  id: string;
+  code: string;
+  name: string;
+  status: 'active' | 'expired' | 'suspended' | string;
+};
+
+export type TenantPlanSummary = TenantPlanFoundationSummary & {
+  tenants: readonly TenantPlanUsageTenantSummary[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CreateTenantPlanRequest = {
+  code: string;
+  name: string;
+  enabled?: boolean;
+  remark?: string | null;
+  limits?: unknown;
+  moduleCodes?: readonly string[];
+};
+
+export type UpdateTenantPlanRequest = {
+  code?: string;
+  name?: string;
+  enabled?: boolean;
+  remark?: string | null;
+  limits?: unknown;
+  moduleCodes?: readonly string[];
+};
+
+export type TenantPlanDeleteResultSummary = {
+  deleted: true;
+  id: string;
+  code: string;
 };
 
 export type TenantFoundationSummary = {

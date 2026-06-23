@@ -991,3 +991,41 @@ Passed after deploy:
 - No new production Redis namespace abstraction in T5f; T5b already added the runtime helper and this round closes seed parity.
 - No tenantization of Collaboration/Report optional data in T5f; those belong to T7.
 - No platform-admin visit mode or cross-tenant control-plane behavior in T5f; that belongs to T6.
+
+## Round 21: T6a Tenant Plan Control Plane
+
+### Completed
+
+- Added platform-scoped Tenant Plan control-plane APIs:
+  - list and detail expose plan modules, limits, tenant usage, and timestamps;
+  - create/update normalize code/name/remark/enabled/limits/module fields;
+  - delete blocks assigned plans instead of removing plans still referenced by tenants.
+- Plan module writes validate against the module registry and reject unknown or duplicate module codes before touching Prisma.
+- OpenAPI and SDK now expose typed Tenant Plan list/detail/create/update/delete contracts.
+- The live `/system/tenants` Admin page now loads plans through the new SDK calls and provides create/edit/delete controls without adding a tenant selector.
+- Added focused API service tests, typed smoke coverage, and a static control-plane guard for T6a.
+
+### Verification Log
+
+Passed before deploy:
+
+- Focused tenant service tests covered Tenant Plan create/update/delete, module validation, and in-use delete blocking.
+- Tenant Plan control-plane guard, SDK contract check, OpenAPI export/drift/tag checks, API error-code guard, full typecheck, lint, and test suite passed.
+
+Passed after deploy:
+
+- Refreshed OpenCore deploy rebuilt API/Admin, reseeded, restarted API `39172` and Admin `39174`, and passed deploy smoke including local Tenant Plan checks.
+- Public API Tenant Plan smoke passed against `http://144.217.243.161:39172`, including create/update/detail/delete, invalid module rejection, and in-use delete blocking.
+
+### Remaining Product Debt
+
+- Complete Tenant CRUD and tenant lifecycle actions.
+- Complete Tenant Member CRUD/invitation beyond active-tenant assignment.
+- Complete Admin tenant switcher, platform visit mode, and platform visit audit.
+- Complete T7 optional/business model tenantization.
+
+### Deliberate Non-Goals
+
+- No platform visit/impersonation runtime in T6a.
+- No tenant assignment or plan-change impact preview workflow in T6a.
+- No Tenant Member invitation or global-user creation flow in T6a.

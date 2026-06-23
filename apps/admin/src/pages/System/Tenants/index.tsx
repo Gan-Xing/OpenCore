@@ -1,5 +1,7 @@
 import {
+  DeleteOutlined,
   EditOutlined,
+  PlusOutlined,
   ReloadOutlined,
   SafetyCertificateOutlined,
 } from '@ant-design/icons';
@@ -14,7 +16,7 @@ import type {
   SystemPostOptionSummary,
   TenantFoundationSummary,
   TenantMemberSummary,
-  TenantPlanFoundationSummary,
+  TenantPlanSummary,
   TenancyFoundationSummary,
 } from '@opencore/sdk';
 import { useIntl } from '@umijs/max';
@@ -23,21 +25,28 @@ import {
   Button,
   Descriptions,
   Form,
+  Input,
   Modal,
+  Popconfirm,
   Select,
   Space,
   Statistic,
+  Switch,
   Tag,
   Tooltip,
   message,
 } from 'antd';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  createOpenCoreTenantPlan,
+  deleteOpenCoreTenantPlan,
   getOpenCoreTenancyFoundation,
+  listOpenCoreTenantPlans,
   listOpenCoreRoles,
   listOpenCoreSystemDeptOptions,
   listOpenCoreSystemPostOptions,
   listOpenCoreTenantMembers,
+  updateOpenCoreTenantPlan,
   updateOpenCoreTenantMemberAssignments,
 } from '@/services/opencore/platform';
 
@@ -48,6 +57,15 @@ type FormatMessage = (
 ) => string;
 
 const TENANT_READ_PERMISSION_MARKER = 'platform:tenant:read';
+
+type PlanFormValues = {
+  code: string;
+  enabled: boolean;
+  limitsJson: string;
+  moduleCodes?: string[];
+  name: string;
+  remark?: string;
+};
 
 type MemberAssignmentFormValues = {
   deptId?: string;
@@ -101,10 +119,22 @@ function createPostOptions(rows: readonly SystemPostOptionSummary[]) {
     }));
 }
 
+function parsePlanLimitsJson(value: string): Record<string, unknown> {
+  const parsed = JSON.parse(value || '{}') as unknown;
+
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error('Tenant plan limits must be a JSON object.');
+  }
+
+  return parsed as Record<string, unknown>;
+}
+
 export default function TenantsPage() {
   const intl = useIntl();
+  const [planForm] = Form.useForm<PlanFormValues>();
   const [form] = Form.useForm<MemberAssignmentFormValues>();
   const [summary, setSummary] = useState<TenancyFoundationSummary>();
+  const [plans, setPlans] = useState<readonly TenantPlanSummary[]>([]);
   const [members, setMembers] = useState<readonly TenantMemberSummary[]>([]);
   const [roles, setRoles] = useState<readonly RoleSummary[]>([]);
   const [deptOptionsRows, setDeptOptionsRows] = useState<
@@ -115,6 +145,9 @@ export default function TenantsPage() {
   >([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
+  const [editingPlan, setEditingPlan] = useState<TenantPlanSummary | null>();
+  const [savingPlan, setSavingPlan] = useState(false);
+  const [deletingPlanId, setDeletingPlanId] = useState<string>();
   const [editingMember, setEditingMember] = useState<TenantMemberSummary>();
   const [savingMember, setSavingMember] = useState(false);
   const formatMessage: FormatMessage = useCallback(
@@ -128,16 +161,24 @@ export default function TenantsPage() {
   const loadSummary = useCallback(async () => {
     setLoading(true);
     try {
-      const [nextSummary, nextMembers, nextRoles, nextDeptOptions, nextPosts] =
-        await Promise.all([
-          getOpenCoreTenancyFoundation(),
-          listOpenCoreTenantMembers(),
-          listOpenCoreRoles(),
-          listOpenCoreSystemDeptOptions(),
-          listOpenCoreSystemPostOptions(),
-        ]);
+      const [
+        nextSummary,
+        nextPlans,
+        nextMembers,
+        nextRoles,
+        nextDeptOptions,
+        nextPosts,
+      ] = await Promise.all([
+        getOpenCoreTenancyFoundation(),
+        listOpenCoreTenantPlans(),
+        listOpenCoreTenantMembers(),
+        listOpenCoreRoles(),
+        listOpenCoreSystemDeptOptions(),
+        listOpenCoreSystemPostOptions(),
+      ]);
 
       setSummary(nextSummary);
+      setPlans(nextPlans);
       setMembers(nextMembers);
       setRoles(nextRoles);
       setDeptOptionsRows(nextDeptOptions);
@@ -170,6 +211,21 @@ export default function TenantsPage() {
     () => createPostOptions(postOptionsRows),
     [postOptionsRows],
   );
+  const moduleOptions = useMemo(() => {
+    const moduleCodes = new Set<string>();
+    for (const plan of summary?.plans ?? []) {
+      for (const moduleCode of plan.moduleCodes) {
+        moduleCodes.add(moduleCode);
+      }
+    }
+
+    return [...moduleCodes]
+      .sort((left, right) => left.localeCompare(right))
+      .map((moduleCode) => ({
+        label: moduleCode,
+        value: moduleCode,
+      }));
+  }, [summary]);
 
   const backfillWarnings = useMemo(() => {
     if (!summary) {
@@ -225,6 +281,37 @@ export default function TenantsPage() {
     return warnings;
   }, [formatMessage, summary]);
 
+  const openCreatePlan = useCallback(() => {
+    setEditingPlan(null);
+    planForm.setFieldsValue({
+      code: '',
+      enabled: true,
+      limitsJson: '{}',
+      moduleCodes: [],
+      name: '',
+      remark: undefined,
+    });
+  }, [planForm]);
+
+  const deletePlan = useCallback(
+    async (record: TenantPlanSummary) => {
+      setDeletingPlanId(record.id);
+      try {
+        await deleteOpenCoreTenantPlan(record.id);
+        message.success(
+          formatMessage(
+            'pages.system.tenants.actions.deletePlanSuccess',
+            'Tenant plan deleted.',
+          ),
+        );
+        await loadSummary();
+      } finally {
+        setDeletingPlanId(undefined);
+      }
+    },
+    [formatMessage, loadSummary],
+  );
+
   const tenantColumns = useMemo<ProColumns<TenantFoundationSummary>[]>(
     () => [
       {
@@ -263,7 +350,7 @@ export default function TenantsPage() {
     [formatMessage],
   );
 
-  const planColumns = useMemo<ProColumns<TenantPlanFoundationSummary>[]>(
+  const planColumns = useMemo<ProColumns<TenantPlanSummary>[]>(
     () => [
       {
         title: formatMessage('pages.system.tenants.fields.code', 'Code'),
@@ -287,8 +374,81 @@ export default function TenantsPage() {
         dataIndex: 'moduleCodes',
         render: (_, record) => record.moduleCodes.length,
       },
+      {
+        title: formatMessage('pages.system.tenants.fields.tenants', 'Tenants'),
+        dataIndex: 'tenantCount',
+      },
+      {
+        title: formatMessage('pages.system.tenants.fields.actions', 'Actions'),
+        valueType: 'option',
+        render: (_, record) => (
+          <Space size="small">
+            <Tooltip
+              title={formatMessage(
+                'pages.system.tenants.actions.editPlan',
+                'Edit tenant plan',
+              )}
+            >
+              <Button
+                aria-label={formatMessage(
+                  'pages.system.tenants.actions.editPlanAria',
+                  'Edit tenant plan',
+                )}
+                icon={<EditOutlined />}
+                onClick={() => {
+                  setEditingPlan(record);
+                  planForm.setFieldsValue({
+                    code: record.code,
+                    enabled: record.enabled,
+                    limitsJson: JSON.stringify(record.limits ?? {}, null, 2),
+                    moduleCodes: [...record.moduleCodes],
+                    name: record.name,
+                    remark: record.remark ?? undefined,
+                  });
+                }}
+                type="link"
+              />
+            </Tooltip>
+            <Popconfirm
+              disabled={record.tenantCount > 0}
+              okButtonProps={{ danger: true }}
+              onConfirm={() => void deletePlan(record)}
+              title={formatMessage(
+                'pages.system.tenants.actions.deletePlanConfirm',
+                'Delete this tenant plan?',
+              )}
+            >
+              <Tooltip
+                title={
+                  record.tenantCount > 0
+                    ? formatMessage(
+                        'pages.system.tenants.actions.deletePlanBlocked',
+                        'Assigned plans cannot be deleted.',
+                      )
+                    : formatMessage(
+                        'pages.system.tenants.actions.deletePlan',
+                        'Delete tenant plan',
+                      )
+                }
+              >
+                <Button
+                  aria-label={formatMessage(
+                    'pages.system.tenants.actions.deletePlanAria',
+                    'Delete tenant plan',
+                  )}
+                  danger
+                  disabled={record.tenantCount > 0}
+                  icon={<DeleteOutlined />}
+                  loading={deletingPlanId === record.id}
+                  type="link"
+                />
+              </Tooltip>
+            </Popconfirm>
+          </Space>
+        ),
+      },
     ],
-    [formatMessage],
+    [deletePlan, deletingPlanId, formatMessage, planForm],
   );
 
   const memberColumns = useMemo<ProColumns<TenantMemberSummary>[]>(
@@ -375,6 +535,39 @@ export default function TenantsPage() {
     ],
     [formatMessage, form],
   );
+
+  const savePlan = async () => {
+    const values = await planForm.validateFields();
+    const limits = parsePlanLimitsJson(values.limitsJson);
+    const body = {
+      code: values.code,
+      enabled: values.enabled,
+      limits,
+      moduleCodes: values.moduleCodes ?? [],
+      name: values.name,
+      remark: values.remark ?? null,
+    };
+
+    setSavingPlan(true);
+    try {
+      if (editingPlan) {
+        await updateOpenCoreTenantPlan(editingPlan.id, body);
+      } else {
+        await createOpenCoreTenantPlan(body);
+      }
+      message.success(
+        formatMessage(
+          'pages.system.tenants.actions.savePlanSuccess',
+          'Tenant plan saved.',
+        ),
+      );
+      setEditingPlan(undefined);
+      planForm.resetFields();
+      await loadSummary();
+    } finally {
+      setSavingPlan(false);
+    }
+  };
 
   const saveMemberAssignments = async () => {
     if (!editingMember) {
@@ -534,15 +727,37 @@ export default function TenantsPage() {
         toolBarRender={false}
       />
 
-      <ProTable<TenantPlanFoundationSummary>
+      <ProTable<TenantPlanSummary>
         columns={planColumns}
-        dataSource={[...(summary?.plans ?? [])]}
+        dataSource={[...plans]}
+        headerTitle={formatMessage(
+          'pages.system.tenants.sections.plans',
+          'Tenant plans',
+        )}
         loading={loading}
         pagination={false}
         rowKey="id"
         search={false}
         style={{ marginBottom: 16 }}
-        toolBarRender={false}
+        toolBarRender={() => [
+          <Tooltip
+            key="create"
+            title={formatMessage(
+              'pages.system.tenants.actions.createPlan',
+              'Create tenant plan',
+            )}
+          >
+            <Button
+              aria-label={formatMessage(
+                'pages.system.tenants.actions.createPlanAria',
+                'Create tenant plan',
+              )}
+              icon={<PlusOutlined />}
+              onClick={openCreatePlan}
+              type="primary"
+            />
+          </Tooltip>,
+        ]}
       />
 
       <ProTable<TenantMemberSummary>
@@ -558,6 +773,96 @@ export default function TenantsPage() {
         search={false}
         toolBarRender={false}
       />
+
+      <Modal
+        destroyOnClose
+        confirmLoading={savingPlan}
+        onCancel={() => {
+          setEditingPlan(undefined);
+          planForm.resetFields();
+        }}
+        onOk={() => void savePlan()}
+        open={editingPlan !== undefined}
+        title={
+          editingPlan
+            ? formatMessage(
+                'pages.system.tenants.actions.editPlan',
+                'Edit tenant plan',
+              )
+            : formatMessage(
+                'pages.system.tenants.actions.createPlan',
+                'Create tenant plan',
+              )
+        }
+      >
+        <Form form={planForm} layout="vertical">
+          <Form.Item
+            label={formatMessage('pages.system.tenants.fields.code', 'Code')}
+            name="code"
+            rules={[{ required: true }]}
+          >
+            <Input autoComplete="off" />
+          </Form.Item>
+          <Form.Item
+            label={formatMessage('pages.system.tenants.fields.name', 'Name')}
+            name="name"
+            rules={[{ required: true }]}
+          >
+            <Input autoComplete="off" />
+          </Form.Item>
+          <Form.Item
+            label={formatMessage(
+              'pages.system.tenants.fields.enabled',
+              'Enabled',
+            )}
+            name="enabled"
+            valuePropName="checked"
+          >
+            <Switch />
+          </Form.Item>
+          <Form.Item
+            label={formatMessage(
+              'pages.system.tenants.fields.modules',
+              'Modules',
+            )}
+            name="moduleCodes"
+            rules={[{ type: 'array' }]}
+          >
+            <Select
+              allowClear
+              mode="multiple"
+              optionFilterProp="label"
+              options={moduleOptions}
+              showSearch
+            />
+          </Form.Item>
+          <Form.Item
+            label={formatMessage(
+              'pages.system.tenants.fields.limits',
+              'Limits',
+            )}
+            name="limitsJson"
+            rules={[
+              {
+                validator: async (_, value: string) => {
+                  parsePlanLimitsJson(value);
+                },
+              },
+            ]}
+          >
+            <Input.TextArea autoSize={{ minRows: 4 }} />
+          </Form.Item>
+          <Form.Item
+            label={formatMessage(
+              'pages.system.tenants.fields.remark',
+              'Remark',
+            )}
+            name="remark"
+          >
+            <Input.TextArea autoSize={{ minRows: 2 }} />
+          </Form.Item>
+        </Form>
+      </Modal>
 
       <Modal
         destroyOnClose

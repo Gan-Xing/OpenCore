@@ -18,6 +18,88 @@ export class TenantPlanFoundationDto {
 
   @ApiProperty({ type: [String] })
   moduleCodes!: readonly string[];
+
+  @ApiProperty()
+  tenantCount!: number;
+
+  @ApiProperty({ required: false, nullable: true })
+  remark?: string | null;
+}
+
+export class TenantPlanUsageTenantDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  code!: string;
+
+  @ApiProperty()
+  name!: string;
+
+  @ApiProperty({ enum: ['active', 'expired', 'suspended'] })
+  status!: string;
+}
+
+export class TenantPlanDto extends TenantPlanFoundationDto {
+  @ApiProperty({ type: [TenantPlanUsageTenantDto] })
+  tenants!: readonly TenantPlanUsageTenantDto[];
+
+  @ApiProperty()
+  createdAt!: string;
+
+  @ApiProperty()
+  updatedAt!: string;
+}
+
+export class CreateTenantPlanDto {
+  @ApiProperty()
+  code!: string;
+
+  @ApiProperty()
+  name!: string;
+
+  @ApiProperty({ required: false, default: true })
+  enabled?: boolean;
+
+  @ApiProperty({ required: false, nullable: true })
+  remark?: string | null;
+
+  @ApiProperty({ required: false, type: Object })
+  limits?: unknown;
+
+  @ApiProperty({ required: false, type: [String] })
+  moduleCodes?: readonly string[];
+}
+
+export class UpdateTenantPlanDto {
+  @ApiProperty({ required: false })
+  code?: string;
+
+  @ApiProperty({ required: false })
+  name?: string;
+
+  @ApiProperty({ required: false })
+  enabled?: boolean;
+
+  @ApiProperty({ required: false, nullable: true })
+  remark?: string | null;
+
+  @ApiProperty({ required: false, type: Object })
+  limits?: unknown;
+
+  @ApiProperty({ required: false, type: [String] })
+  moduleCodes?: readonly string[];
+}
+
+export class TenantPlanDeleteResultDto {
+  @ApiProperty()
+  deleted!: true;
+
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  code!: string;
 }
 
 export class TenantFoundationDto {

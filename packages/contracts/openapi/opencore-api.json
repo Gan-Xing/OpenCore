@@ -3635,6 +3635,132 @@
         "tags": ["Core Tenancy"]
       }
     },
+    "/api/core/tenancy/plans": {
+      "get": {
+        "operationId": "TenantPlanController_listPlans",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/TenantPlanDto" }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core Tenancy"]
+      },
+      "post": {
+        "operationId": "TenantPlanController_createPlan",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateTenantPlanDto" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TenantPlanDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core Tenancy"]
+      }
+    },
+    "/api/core/tenancy/plans/{planId}": {
+      "get": {
+        "operationId": "TenantPlanController_getPlan",
+        "parameters": [
+          {
+            "name": "planId",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TenantPlanDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core Tenancy"]
+      },
+      "patch": {
+        "operationId": "TenantPlanController_updatePlan",
+        "parameters": [
+          {
+            "name": "planId",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateTenantPlanDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TenantPlanDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core Tenancy"]
+      },
+      "delete": {
+        "operationId": "TenantPlanController_deletePlan",
+        "parameters": [
+          {
+            "name": "planId",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TenantPlanDeleteResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core Tenancy"]
+      }
+    },
     "/api/core/tenancy/members": {
       "get": {
         "operationId": "TenantMemberController_listMembers",
@@ -12321,9 +12447,19 @@
           "name": { "type": "string" },
           "enabled": { "type": "boolean" },
           "limits": { "type": "object" },
-          "moduleCodes": { "type": "array", "items": { "type": "string" } }
+          "moduleCodes": { "type": "array", "items": { "type": "string" } },
+          "tenantCount": { "type": "number" },
+          "remark": { "type": "object", "nullable": true }
         },
-        "required": ["id", "code", "name", "enabled", "limits", "moduleCodes"]
+        "required": [
+          "id",
+          "code",
+          "name",
+          "enabled",
+          "limits",
+          "moduleCodes",
+          "tenantCount"
+        ]
       },
       "PlatformRoleFoundationDto": {
         "type": "object",
@@ -12408,6 +12544,82 @@
           "backfill",
           "generatedAt"
         ]
+      },
+      "TenantPlanUsageTenantDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["active", "expired", "suspended"]
+          }
+        },
+        "required": ["id", "code", "name", "status"]
+      },
+      "TenantPlanDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "limits": { "type": "object" },
+          "moduleCodes": { "type": "array", "items": { "type": "string" } },
+          "tenantCount": { "type": "number" },
+          "remark": { "type": "object", "nullable": true },
+          "tenants": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TenantPlanUsageTenantDto" }
+          },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "enabled",
+          "limits",
+          "moduleCodes",
+          "tenantCount",
+          "tenants",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CreateTenantPlanDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "enabled": { "type": "boolean", "default": true },
+          "remark": { "type": "object", "nullable": true },
+          "limits": { "type": "object" },
+          "moduleCodes": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["code", "name"]
+      },
+      "UpdateTenantPlanDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "remark": { "type": "object", "nullable": true },
+          "limits": { "type": "object" },
+          "moduleCodes": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "TenantPlanDeleteResultDto": {
+        "type": "object",
+        "properties": {
+          "deleted": { "type": "boolean" },
+          "id": { "type": "string" },
+          "code": { "type": "string" }
+        },
+        "required": ["deleted", "id", "code"]
       },
       "TenantMemberDto": {
         "type": "object",
