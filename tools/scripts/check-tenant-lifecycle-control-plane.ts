@@ -80,22 +80,22 @@ const packageJson = readRequired(packagePath);
 
 for (const marker of [
   "@Controller('core/tenancy/tenants')",
+  "@Get('page')",
   "@RequirePermission('platform:tenant:read')",
   "@RequirePermission('platform:tenant:create')",
   "@RequirePermission('platform:tenant:update')",
   "@RequirePermission('platform:tenant:suspend')",
   'setTenantStatus',
+  'listTenantsPage',
 ]) {
   requireIncludes(controllerPath, controller, marker);
-}
-
-for (const marker of ['@Query', '@Headers']) {
-  requireNotIncludes(controllerPath, controller, marker);
 }
 
 requireIncludes(modulePath, module, 'TenantController');
 
 for (const marker of [
+  'export class TenantPageDto',
+  'export class TenantQueryDto',
   'export class TenantDto',
   'export class CreateTenantDto',
   'export class UpdateTenantDto',
@@ -121,6 +121,7 @@ for (const marker of ['tenantId?:', 'tenantId!:']) {
 
 for (const marker of [
   'listTenants',
+  'listTenantsPage',
   'createTenant',
   'updateTenant',
   'setTenantStatus',
@@ -134,6 +135,7 @@ for (const marker of [
 
 for (const marker of [
   'listTenants',
+  'listTenantsPage',
   'createTenant',
   'updateTenant',
   'setTenantStatus',
@@ -143,6 +145,8 @@ for (const marker of [
 }
 for (const marker of [
   'TenantSummary',
+  'TenantPageSummary',
+  'TenantQueryRequest',
   'CreateTenantRequest',
   'UpdateTenantRequest',
   'SetTenantStatusRequest',
@@ -151,7 +155,7 @@ for (const marker of [
 }
 
 for (const marker of [
-  'listOpenCoreTenants',
+  'listOpenCoreTenantPage',
   'createOpenCoreTenant',
   'updateOpenCoreTenant',
   'setOpenCoreTenantStatus',
@@ -166,6 +170,8 @@ for (const marker of [
   'core.tenant.update',
   'core.tenant.status-suspend',
   'core.tenant.root-status-guard',
+  'core.tenant.page',
+  'core.tenant.audit-recorded',
   'TENANT_ROOT_STATUS_IMMUTABLE',
 ]) {
   requireIncludes(smokePath, smoke, marker);

@@ -77,6 +77,11 @@ async function main() {
     const refreshed = findMemberByUsername(membersAfter, username);
     assertEqual(refreshed.deptId, 'dept_operations', 'listed member dept');
     assertEqual(refreshed.status, 'suspended', 'listed member status');
+    const memberPage = await apiRequest(
+      `/core/tenancy/members/page?deptId=dept_operations&keyword=${encodeURIComponent(username)}&page=1&pageSize=5&postCode=engineer&roleCode=viewer&status=suspended`,
+    );
+    assertEqual(memberPage.total, 1, 'tenant member page total');
+    assertEqual(memberPage.items[0]?.id, member.id, 'tenant member page item');
 
     const userDetail = await apiRequest(
       `/core/users/${encodeURIComponent(userId)}`,
@@ -104,6 +109,7 @@ async function main() {
           ...(checkDocs ? ['openapi.docs-json'] : []),
           'auth.login',
           'core.tenant-member.list',
+          'core.tenant-member.page',
           'core.tenant-member.update',
           'core.tenant-member.body-tenant-ignored',
           'core.tenant-member.root-legacy-bridge',

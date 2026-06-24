@@ -106,6 +106,22 @@ describe('TenantFoundationService membership assignments', () => {
 
     const listed = await service.listTenantPlans();
     expect(listed.some((plan) => plan.id === updated.id)).toBe(true);
+    await expect(
+      service.listTenantPlansPage({
+        enabled: 'false',
+        keyword: 'Updated',
+        moduleCode: 'core.tenant-plan',
+        orderBy: 'name',
+        orderDirection: 'desc',
+        page: 1,
+        pageSize: 5,
+      }),
+    ).resolves.toMatchObject({
+      items: [expect.objectContaining({ id: updated.id })],
+      page: 1,
+      pageSize: 5,
+      total: 1,
+    });
 
     await expectHttpExceptionCode(
       service.createTenantPlan({
@@ -204,6 +220,21 @@ describe('TenantFoundationService membership assignments', () => {
 
     const tenants = await service.listTenants();
     expect(tenants.some((tenant) => tenant.id === updated.id)).toBe(true);
+    await expect(
+      service.listTenantsPage({
+        keyword: 'Lifecycle Updated',
+        orderBy: 'code',
+        orderDirection: 'desc',
+        page: 1,
+        pageSize: 5,
+        status: 'active',
+      }),
+    ).resolves.toMatchObject({
+      items: [expect.objectContaining({ id: updated.id })],
+      page: 1,
+      pageSize: 5,
+      total: 1,
+    });
     await expect(service.getTenant(updated.id)).resolves.toMatchObject({
       id: updated.id,
       code: updatedManagedTenantCode,
@@ -285,6 +316,38 @@ describe('TenantFoundationService membership assignments', () => {
       roleCodes: [roleCode],
       status: 'suspended',
     });
+    await expect(
+      service.listTenantMembersPage(tenantId, {
+        deptId,
+        isOwner: 'true',
+        orderBy: 'username',
+        orderDirection: 'asc',
+        page: 1,
+        pageSize: 1,
+        postCode,
+        roleCode,
+        status: 'active',
+        username: ownerUsername,
+      }),
+    ).resolves.toMatchObject({
+      items: [expect.objectContaining({ id: owner.id })],
+      page: 1,
+      pageSize: 1,
+      total: 1,
+    });
+    await expect(
+      runInTenant(tenantId, () =>
+        service.listMembersPage({
+          keyword: 'Invited',
+          page: 1,
+          pageSize: 5,
+          status: 'suspended',
+        }),
+      ),
+    ).resolves.toMatchObject({
+      items: [expect.objectContaining({ id: invited.id })],
+      total: 1,
+    });
 
     await expectHttpExceptionCode(
       service.createTenantMember(tenantId, {
@@ -299,13 +362,14 @@ describe('TenantFoundationService membership assignments', () => {
       'TENANT_MEMBER_LAST_OWNER',
     );
 
-    await expect(service.removeTenantMember(tenantId, invited.id)).resolves
-      .toMatchObject({
-        deleted: true,
-        id: invited.id,
-        tenantId,
-        username: invitedUsername,
-      });
+    await expect(
+      service.removeTenantMember(tenantId, invited.id),
+    ).resolves.toMatchObject({
+      deleted: true,
+      id: invited.id,
+      tenantId,
+      username: invitedUsername,
+    });
     const members = await service.listTenantMembers(tenantId);
     expect(members.find((member) => member.id === invited.id)).toMatchObject({
       status: 'left',

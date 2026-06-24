@@ -6,7 +6,9 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
+import { AuditOperation } from '@opencore/audit';
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
@@ -22,8 +24,14 @@ import {
   TenantFoundationSummaryDto,
   TenantMemberDeleteResultDto,
   TenantMemberDto,
+  TenantMemberPageDto,
+  TenantMemberQueryDto,
   TenantPlanDeleteResultDto,
   TenantPlanDto,
+  TenantPlanPageDto,
+  TenantPlanQueryDto,
+  TenantPageDto,
+  TenantQueryDto,
   TenantDto,
   UpdateTenantMemberDto,
   UpdateTenantPlanDto,
@@ -58,6 +66,13 @@ export class TenantController {
     return this.tenancy.listTenants();
   }
 
+  @Get('page')
+  @RequirePermission('platform:tenant:read')
+  @ApiOkResponse({ type: TenantPageDto })
+  listTenantsPage(@Query() query: TenantQueryDto): Promise<TenantPageDto> {
+    return this.tenancy.listTenantsPage(query);
+  }
+
   @Get(':tenantId')
   @RequirePermission('platform:tenant:read')
   @ApiOkResponse({ type: TenantDto })
@@ -66,6 +81,10 @@ export class TenantController {
   }
 
   @Post()
+  @AuditOperation({
+    action: 'create',
+    resource: 'core.tenancy.tenant',
+  })
   @RequirePermission('platform:tenant:create')
   @ApiCreatedResponse({ type: TenantDto })
   createTenant(@Body() body: CreateTenantDto): Promise<TenantDto> {
@@ -73,6 +92,11 @@ export class TenantController {
   }
 
   @Patch(':tenantId')
+  @AuditOperation({
+    action: 'update',
+    resource: 'core.tenancy.tenant',
+    resourceIdField: 'tenantId',
+  })
   @RequirePermission('platform:tenant:update')
   @ApiOkResponse({ type: TenantDto })
   updateTenant(
@@ -83,6 +107,11 @@ export class TenantController {
   }
 
   @Patch(':tenantId/status')
+  @AuditOperation({
+    action: 'set-status',
+    resource: 'core.tenancy.tenant',
+    resourceIdField: 'tenantId',
+  })
   @RequirePermission('platform:tenant:suspend')
   @ApiOkResponse({ type: TenantDto })
   setTenantStatus(
@@ -101,7 +130,22 @@ export class TenantController {
     return this.tenancy.listTenantMembers(tenantId);
   }
 
+  @Get(':tenantId/members/page')
+  @RequirePermission('platform:tenant-member:read')
+  @ApiOkResponse({ type: TenantMemberPageDto })
+  listTenantMembersPage(
+    @Param('tenantId') tenantId: string,
+    @Query() query: TenantMemberQueryDto,
+  ): Promise<TenantMemberPageDto> {
+    return this.tenancy.listTenantMembersPage(tenantId, query);
+  }
+
   @Post(':tenantId/members')
+  @AuditOperation({
+    action: 'create',
+    resource: 'core.tenancy.tenant-member',
+    resourceIdField: 'tenantId',
+  })
   @RequirePermission('platform:tenant-member:manage')
   @ApiCreatedResponse({ type: TenantMemberDto })
   createTenantMember(
@@ -112,6 +156,11 @@ export class TenantController {
   }
 
   @Patch(':tenantId/members/:membershipId')
+  @AuditOperation({
+    action: 'update',
+    resource: 'core.tenancy.tenant-member',
+    resourceIdField: 'membershipId',
+  })
   @RequirePermission('platform:tenant-member:manage')
   @ApiOkResponse({ type: TenantMemberDto })
   updateTenantMember(
@@ -123,6 +172,11 @@ export class TenantController {
   }
 
   @Delete(':tenantId/members/:membershipId')
+  @AuditOperation({
+    action: 'remove',
+    resource: 'core.tenancy.tenant-member',
+    resourceIdField: 'membershipId',
+  })
   @RequirePermission('platform:tenant-member:manage')
   @ApiOkResponse({ type: TenantMemberDeleteResultDto })
   removeTenantMember(
@@ -146,6 +200,15 @@ export class TenantPlanController {
     return this.tenancy.listTenantPlans();
   }
 
+  @Get('page')
+  @RequirePermission('platform:tenant-plan:read')
+  @ApiOkResponse({ type: TenantPlanPageDto })
+  listPlansPage(
+    @Query() query: TenantPlanQueryDto,
+  ): Promise<TenantPlanPageDto> {
+    return this.tenancy.listTenantPlansPage(query);
+  }
+
   @Get(':planId')
   @RequirePermission('platform:tenant-plan:read')
   @ApiOkResponse({ type: TenantPlanDto })
@@ -154,6 +217,10 @@ export class TenantPlanController {
   }
 
   @Post()
+  @AuditOperation({
+    action: 'create',
+    resource: 'core.tenancy.tenant-plan',
+  })
   @RequirePermission('platform:tenant-plan:manage')
   @ApiCreatedResponse({ type: TenantPlanDto })
   createPlan(@Body() body: CreateTenantPlanDto): Promise<TenantPlanDto> {
@@ -161,6 +228,11 @@ export class TenantPlanController {
   }
 
   @Patch(':planId')
+  @AuditOperation({
+    action: 'update',
+    resource: 'core.tenancy.tenant-plan',
+    resourceIdField: 'planId',
+  })
   @RequirePermission('platform:tenant-plan:manage')
   @ApiOkResponse({ type: TenantPlanDto })
   updatePlan(
@@ -171,6 +243,11 @@ export class TenantPlanController {
   }
 
   @Delete(':planId')
+  @AuditOperation({
+    action: 'delete',
+    resource: 'core.tenancy.tenant-plan',
+    resourceIdField: 'planId',
+  })
   @RequirePermission('platform:tenant-plan:manage')
   @ApiOkResponse({ type: TenantPlanDeleteResultDto })
   deletePlan(

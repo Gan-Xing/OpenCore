@@ -80,8 +80,10 @@ const packageJson = readRequired(packagePath);
 
 for (const marker of [
   "@Controller('core/tenancy/plans')",
+  "@Get('page')",
   "@RequirePermission('platform:tenant-plan:read')",
   "@RequirePermission('platform:tenant-plan:manage')",
+  'listPlansPage',
   'createPlan',
   'updatePlan',
   'deletePlan',
@@ -89,13 +91,11 @@ for (const marker of [
   requireIncludes(controllerPath, controller, marker);
 }
 
-for (const marker of ['@Query', '@Headers']) {
-  requireNotIncludes(controllerPath, controller, marker);
-}
-
 requireIncludes(modulePath, module, 'TenantPlanController');
 
 for (const marker of [
+  'export class TenantPlanPageDto',
+  'export class TenantPlanQueryDto',
   'export class TenantPlanDto',
   'export class CreateTenantPlanDto',
   'export class UpdateTenantPlanDto',
@@ -121,6 +121,7 @@ for (const marker of ['tenantId?:', 'tenantId!:']) {
 
 for (const marker of [
   'listTenantPlans',
+  'listTenantPlansPage',
   'createTenantPlan',
   'updateTenantPlan',
   'deleteTenantPlan',
@@ -134,6 +135,7 @@ for (const marker of [
 
 for (const marker of [
   'listTenantPlans',
+  'listTenantPlansPage',
   'createTenantPlan',
   'updateTenantPlan',
   'deleteTenantPlan',
@@ -143,6 +145,8 @@ for (const marker of [
 }
 for (const marker of [
   'TenantPlanSummary',
+  'TenantPlanPageSummary',
+  'TenantPlanQueryRequest',
   'CreateTenantPlanRequest',
   'UpdateTenantPlanRequest',
   'TenantPlanDeleteResultSummary',
@@ -151,7 +155,7 @@ for (const marker of [
 }
 
 for (const marker of [
-  'listOpenCoreTenantPlans',
+  'listOpenCoreTenantPlanPage',
   'createOpenCoreTenantPlan',
   'updateOpenCoreTenantPlan',
   'deleteOpenCoreTenantPlan',
@@ -164,6 +168,7 @@ for (const marker of [
   '/core/tenancy/plans',
   'core.tenant-plan.create',
   'core.tenant-plan.update',
+  'core.tenant-plan.page',
   'core.tenant-plan.in-use-delete-blocked',
   'TENANT_PLAN_MODULE_UNKNOWN',
   'TENANT_PLAN_IN_USE',

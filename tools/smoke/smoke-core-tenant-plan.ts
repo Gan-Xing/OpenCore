@@ -66,6 +66,17 @@ async function main() {
     const detail = await clients.tenancy.getTenantPlan(token, updated.id);
     assertEqual(detail.id, updated.id, 'tenant plan detail id');
     assertEqual(detail.tenantCount, 0, 'tenant plan detail usage');
+    const planPage = await clients.tenancy.listTenantPlansPage(token, {
+      enabled: false,
+      keyword: 'Updated',
+      moduleCode: 'core.tenant-plan',
+      orderBy: 'code',
+      orderDirection: 'asc',
+      page: 1,
+      pageSize: 5,
+    });
+    assertEqual(planPage.total, 1, 'tenant plan page total');
+    assertEqual(planPage.items[0]?.id, updated.id, 'tenant plan page item');
 
     const invalidModule = await request<unknown>(
       `${apiPrefix}/core/tenancy/plans`,
@@ -118,6 +129,7 @@ async function main() {
           'core.tenant-plan.create',
           'core.tenant-plan.update',
           'core.tenant-plan.detail',
+          'core.tenant-plan.page',
           'core.tenant-plan.module-guard',
           'core.tenant-plan.in-use-delete-blocked',
           'core.tenant-plan.delete',

@@ -110,9 +110,15 @@ import {
   type SystemStatusSummary,
   type TenancyFoundationSummary,
   type TenantMemberDeleteResultSummary,
+  type TenantMemberPageSummary,
+  type TenantMemberQueryRequest,
   type TenantMemberSummary,
   type TenantPlanDeleteResultSummary,
+  type TenantPlanPageSummary,
+  type TenantPlanQueryRequest,
   type TenantPlanSummary,
+  type TenantPageSummary,
+  type TenantQueryRequest,
   type TenantSummary,
   type DictBatchMutationSummary,
   type DictCacheRefreshSummary,
@@ -292,6 +298,12 @@ export function listOpenCoreTenants(): Promise<readonly TenantSummary[]> {
   return tenancyClient.listTenants(getRequiredAdminToken());
 }
 
+export function listOpenCoreTenantPage(
+  query?: TenantQueryRequest,
+): Promise<TenantPageSummary> {
+  return tenancyClient.listTenantsPage(getRequiredAdminToken(), query);
+}
+
 export function createOpenCoreTenant(
   body: CreateTenantRequest,
 ): Promise<TenantSummary> {
@@ -318,6 +330,12 @@ export function listOpenCoreTenantPlans(): Promise<
   return tenancyClient.listTenantPlans(getRequiredAdminToken());
 }
 
+export function listOpenCoreTenantPlanPage(
+  query?: TenantPlanQueryRequest,
+): Promise<TenantPlanPageSummary> {
+  return tenancyClient.listTenantPlansPage(getRequiredAdminToken(), query);
+}
+
 export function createOpenCoreTenantPlan(
   body: CreateTenantPlanRequest,
 ): Promise<TenantPlanSummary> {
@@ -341,6 +359,17 @@ export function listOpenCoreTenantControlMembers(
   tenantId: string,
 ): Promise<readonly TenantMemberSummary[]> {
   return tenancyClient.listTenantMembers(getRequiredAdminToken(), tenantId);
+}
+
+export function listOpenCoreTenantControlMemberPage(
+  tenantId: string,
+  query?: TenantMemberQueryRequest,
+): Promise<TenantMemberPageSummary> {
+  return tenancyClient.listTenantMembersPage(
+    getRequiredAdminToken(),
+    tenantId,
+    query,
+  );
 }
 
 export function createOpenCoreTenantMember(
@@ -382,6 +411,12 @@ export function listOpenCoreTenantMembers(): Promise<
   readonly TenantMemberSummary[]
 > {
   return tenancyClient.listMembers(getRequiredAdminToken());
+}
+
+export function listOpenCoreTenantMemberPage(
+  query?: TenantMemberQueryRequest,
+): Promise<TenantMemberPageSummary> {
+  return tenancyClient.listMembersPage(getRequiredAdminToken(), query);
 }
 
 export function updateOpenCoreTenantMemberAssignments(

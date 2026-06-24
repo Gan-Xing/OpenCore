@@ -80,6 +80,25 @@ async function main() {
     if (!members.some((member) => member.id === owner.id)) {
       throw new Error('Expected owner in tenant member list');
     }
+    const memberPage = await clients.tenancy.listTenantMembersPage(
+      token,
+      tenantId,
+      {
+        isOwner: true,
+        page: 1,
+        pageSize: 5,
+        postCode,
+        roleCode,
+        status: 'active',
+        username: ownerUsername,
+      },
+    );
+    assertEqual(memberPage.total, 1, 'tenant control member page total');
+    assertEqual(
+      memberPage.items[0]?.id,
+      owner.id,
+      'tenant control member page',
+    );
 
     const overflow = await request<unknown>(
       `${apiPrefix}/core/tenancy/tenants/${encodeURIComponent(tenantId)}/members`,
@@ -121,7 +140,10 @@ async function main() {
       invited.id,
     );
     assertEqual(removed.deleted, true, 'removed member deleted flag');
-    const afterRemove = await clients.tenancy.listTenantMembers(token, tenantId);
+    const afterRemove = await clients.tenancy.listTenantMembers(
+      token,
+      tenantId,
+    );
     const leftMember = afterRemove.find((member) => member.id === invited.id);
     assertEqual(leftMember?.status, 'left', 'removed member left status');
 
@@ -157,6 +179,7 @@ async function main() {
           'core.tenant-member-control.body-tenant-ignored',
           'core.tenant-member-control.invite',
           'core.tenant-member-control.list',
+          'core.tenant-member-control.page',
           'core.tenant-member-control.account-limit',
           'core.tenant-member-control.update',
           'core.tenant-member-control.remove-left',

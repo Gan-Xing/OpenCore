@@ -7,6 +7,8 @@ import {
   assertEqual,
   assertString,
   createTypedSmokeRuntime,
+  delay,
+  formatBody,
 } from './runtime';
 
 const smoke = createTypedSmokeRuntime();
@@ -91,6 +93,17 @@ async function main() {
     if (!tenantsAfter.some((tenant) => tenant.id === updated.id)) {
       throw new Error('Expected updated tenant in list');
     }
+    const tenantPage = await clients.tenancy.listTenantsPage(token, {
+      keyword: updatedTenantCode,
+      orderBy: 'code',
+      orderDirection: 'desc',
+      page: 1,
+      pageSize: 5,
+      status: 'active',
+    });
+    assertEqual(tenantPage.total, 1, 'tenant page total');
+    assertEqual(tenantPage.items[0]?.id, updated.id, 'tenant page item');
+    await assertTenantAudit(updated.id);
 
     const missingPlan = await request<unknown>(
       `${apiPrefix}/core/tenancy/tenants`,
@@ -146,6 +159,8 @@ async function main() {
           'core.tenant.status-suspend',
           'core.tenant.status-activate',
           'core.tenant.detail',
+          'core.tenant.page',
+          'core.tenant.audit-recorded',
           'core.tenant.missing-plan-guard',
           'core.tenant.root-status-guard',
           'core.tenant.cleanup',
@@ -169,6 +184,37 @@ async function main() {
 }
 
 void main();
+
+async function assertTenantAudit(tenantId: string) {
+  const client = await getSmokePrisma();
+  let latestRows: unknown[] = [];
+
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    const rows = await client.auditLog.findMany({
+      where: {
+        resource: 'core.tenancy.tenant',
+        resourceId: tenantId,
+        tenantId: 'tenant_root',
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+    });
+    latestRows = rows;
+
+    const actions = new Set(rows.map((row) => row.action));
+    if (actions.has('update') && actions.has('set-status')) {
+      return;
+    }
+
+    await delay(250);
+  }
+
+  throw new Error(
+    `Tenant lifecycle audit log was not recorded; latest rows=${formatBody(
+      latestRows,
+    )}`,
+  );
+}
 
 async function cleanup() {
   const client = await getSmokePrisma();

@@ -51,6 +51,52 @@ export class TenantPlanDto extends TenantPlanFoundationDto {
   updatedAt!: string;
 }
 
+export class TenantPlanPageDto {
+  @ApiProperty({ type: [TenantPlanDto] })
+  items!: readonly TenantPlanDto[];
+
+  @ApiProperty()
+  page!: number;
+
+  @ApiProperty()
+  pageSize!: number;
+
+  @ApiProperty()
+  total!: number;
+
+  @ApiProperty()
+  totalPages!: number;
+}
+
+export class TenantPlanQueryDto {
+  @ApiProperty({ required: false, default: 1 })
+  page?: number | string;
+
+  @ApiProperty({ required: false, default: 10 })
+  pageSize?: number | string;
+
+  @ApiProperty({ required: false })
+  keyword?: string;
+
+  @ApiProperty({ required: false })
+  code?: string;
+
+  @ApiProperty({ required: false })
+  name?: string;
+
+  @ApiProperty({ required: false })
+  enabled?: boolean | string;
+
+  @ApiProperty({ required: false })
+  moduleCode?: string;
+
+  @ApiProperty({ required: false })
+  orderBy?: string;
+
+  @ApiProperty({ required: false, enum: ['asc', 'desc'] })
+  orderDirection?: string;
+}
+
 export class CreateTenantPlanDto {
   @ApiProperty()
   code!: string;
@@ -155,6 +201,55 @@ export class TenantDto extends TenantFoundationDto {
 
   @ApiProperty()
   updatedAt!: string;
+}
+
+export class TenantPageDto {
+  @ApiProperty({ type: [TenantDto] })
+  items!: readonly TenantDto[];
+
+  @ApiProperty()
+  page!: number;
+
+  @ApiProperty()
+  pageSize!: number;
+
+  @ApiProperty()
+  total!: number;
+
+  @ApiProperty()
+  totalPages!: number;
+}
+
+export class TenantQueryDto {
+  @ApiProperty({ required: false, default: 1 })
+  page?: number | string;
+
+  @ApiProperty({ required: false, default: 10 })
+  pageSize?: number | string;
+
+  @ApiProperty({ required: false })
+  keyword?: string;
+
+  @ApiProperty({ required: false })
+  code?: string;
+
+  @ApiProperty({ required: false })
+  name?: string;
+
+  @ApiProperty({ required: false, enum: ['active', 'expired', 'suspended'] })
+  status?: string;
+
+  @ApiProperty({ required: false })
+  planCode?: string;
+
+  @ApiProperty({ required: false })
+  ownerUsername?: string;
+
+  @ApiProperty({ required: false })
+  orderBy?: string;
+
+  @ApiProperty({ required: false, enum: ['asc', 'desc'] })
+  orderDirection?: string;
 }
 
 export class CreateTenantDto {
@@ -348,6 +443,64 @@ export class TenantMemberDto {
 
   @ApiProperty()
   updatedAt!: string;
+}
+
+export class TenantMemberPageDto {
+  @ApiProperty({ type: [TenantMemberDto] })
+  items!: readonly TenantMemberDto[];
+
+  @ApiProperty()
+  page!: number;
+
+  @ApiProperty()
+  pageSize!: number;
+
+  @ApiProperty()
+  total!: number;
+
+  @ApiProperty()
+  totalPages!: number;
+}
+
+export class TenantMemberQueryDto {
+  @ApiProperty({ required: false, default: 1 })
+  page?: number | string;
+
+  @ApiProperty({ required: false, default: 10 })
+  pageSize?: number | string;
+
+  @ApiProperty({ required: false })
+  keyword?: string;
+
+  @ApiProperty({ required: false })
+  username?: string;
+
+  @ApiProperty({ required: false })
+  displayName?: string;
+
+  @ApiProperty({
+    required: false,
+    enum: ['active', 'invited', 'left', 'suspended'],
+  })
+  status?: string;
+
+  @ApiProperty({ required: false })
+  isOwner?: boolean | string;
+
+  @ApiProperty({ required: false })
+  deptId?: string;
+
+  @ApiProperty({ required: false })
+  roleCode?: string;
+
+  @ApiProperty({ required: false })
+  postCode?: string;
+
+  @ApiProperty({ required: false })
+  orderBy?: string;
+
+  @ApiProperty({ required: false, enum: ['asc', 'desc'] })
+  orderDirection?: string;
 }
 
 export class CreateTenantMemberDto {

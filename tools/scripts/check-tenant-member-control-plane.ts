@@ -79,20 +79,20 @@ const packageJson = readRequired(packagePath);
 for (const marker of [
   "@Controller('core/tenancy/tenants')",
   "@Get(':tenantId/members')",
+  "@Get(':tenantId/members/page')",
   "@Post(':tenantId/members')",
   "@Patch(':tenantId/members/:membershipId')",
   "@Delete(':tenantId/members/:membershipId')",
   "@RequirePermission('platform:tenant-member:read')",
   "@RequirePermission('platform:tenant-member:manage')",
+  'listTenantMembersPage',
 ]) {
   requireIncludes(controllerPath, controller, marker);
 }
 
-for (const marker of ['@Query', '@Headers']) {
-  requireNotIncludes(controllerPath, controller, marker);
-}
-
 for (const marker of [
+  'export class TenantMemberPageDto',
+  'export class TenantMemberQueryDto',
   'export class CreateTenantMemberDto',
   'export class UpdateTenantMemberDto',
   'export class TenantMemberDeleteResultDto',
@@ -118,6 +118,8 @@ for (const marker of ['tenantId?:', 'tenantId!:']) {
 
 for (const marker of [
   'listTenantMembers',
+  'listTenantMembersPage',
+  'listMembersPage',
   'createTenantMember',
   'updateTenantMember',
   'removeTenantMember',
@@ -130,6 +132,8 @@ for (const marker of [
 
 for (const marker of [
   'listTenantMembers',
+  'listTenantMembersPage',
+  'listMembersPage',
   'createTenantMember',
   'updateTenantMember',
   'removeTenantMember',
@@ -139,6 +143,8 @@ for (const marker of [
 }
 for (const marker of [
   'CreateTenantMemberRequest',
+  'TenantMemberPageSummary',
+  'TenantMemberQueryRequest',
   'UpdateTenantMemberRequest',
   'TenantMemberDeleteResultSummary',
 ]) {
@@ -146,7 +152,8 @@ for (const marker of [
 }
 
 for (const marker of [
-  'listOpenCoreTenantControlMembers',
+  'listOpenCoreTenantControlMemberPage',
+  'listOpenCoreTenantMemberPage',
   'createOpenCoreTenantMember',
   'updateOpenCoreTenantMember',
   'removeOpenCoreTenantMember',
@@ -159,6 +166,7 @@ for (const marker of [
   'core.tenant-member-control.create-owner',
   'core.tenant-member-control.invite',
   'core.tenant-member-control.account-limit',
+  'core.tenant-member-control.page',
   'core.tenant-member-control.remove-left',
   'core.tenant-member-control.last-owner-guard',
   'TENANT_MEMBER_LAST_OWNER',
@@ -166,8 +174,16 @@ for (const marker of [
   requireIncludes(smokePath, smoke, marker);
 }
 
-requireIncludes(packagePath, packageJson, '"guard:tenant-member-control-plane"');
-requireIncludes(packagePath, packageJson, '"smoke:core-tenant-member-lifecycle"');
+requireIncludes(
+  packagePath,
+  packageJson,
+  '"guard:tenant-member-control-plane"',
+);
+requireIncludes(
+  packagePath,
+  packageJson,
+  '"smoke:core-tenant-member-lifecycle"',
+);
 requireIncludes(
   localSmokePath,
   localSmoke,

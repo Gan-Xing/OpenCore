@@ -3,7 +3,12 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { createApiErrorBody } from '@opencore/common';
+import {
+  createApiErrorBody,
+  createPageResult,
+  normalizePagination,
+  type PageResult,
+} from '@opencore/common';
 import { getRequestContext } from '@opencore/core';
 import {
   PrismaService,
@@ -20,8 +25,11 @@ import type {
   TenantFoundationSummaryDto,
   TenantMemberDeleteResultDto,
   TenantMemberDto,
+  TenantMemberQueryDto,
   TenantPlanDeleteResultDto,
   TenantPlanDto,
+  TenantPlanQueryDto,
+  TenantQueryDto,
   TenantDto,
   UpdateTenantMemberDto,
   UpdateTenantPlanDto,
@@ -143,6 +151,23 @@ export class TenantFoundationService {
     });
 
     return tenants.map(toTenantDto);
+  }
+
+  async listTenantsPage(
+    query: TenantQueryDto = {},
+  ): Promise<PageResult<TenantDto>> {
+    const where = createTenantWhere(query);
+    const total = await this.prisma.tenant.count({ where });
+    const pagination = normalizeTenantPageQuery(query, total);
+    const tenants = await this.prisma.tenant.findMany({
+      where,
+      include: tenantIncludes,
+      orderBy: createTenantOrderBy(query),
+      skip: pagination.skip,
+      take: pagination.take,
+    });
+
+    return createTenantPageResult(tenants.map(toTenantDto), pagination);
   }
 
   async getTenant(tenantId: string): Promise<TenantDto> {
@@ -305,6 +330,23 @@ export class TenantFoundationService {
     });
 
     return plans.map(toTenantPlanDto);
+  }
+
+  async listTenantPlansPage(
+    query: TenantPlanQueryDto = {},
+  ): Promise<PageResult<TenantPlanDto>> {
+    const where = createTenantPlanWhere(query);
+    const total = await this.prisma.tenantPlan.count({ where });
+    const pagination = normalizeTenantPageQuery(query, total);
+    const plans = await this.prisma.tenantPlan.findMany({
+      where,
+      include: tenantPlanIncludes,
+      orderBy: createTenantPlanOrderBy(query),
+      skip: pagination.skip,
+      take: pagination.take,
+    });
+
+    return createTenantPageResult(plans.map(toTenantPlanDto), pagination);
   }
 
   async getTenantPlan(planId: string): Promise<TenantPlanDto> {
@@ -495,6 +537,12 @@ export class TenantFoundationService {
     return memberships.map(toTenantMemberDto);
   }
 
+  async listMembersPage(
+    query: TenantMemberQueryDto = {},
+  ): Promise<PageResult<TenantMemberDto>> {
+    return this.listTenantMembersForTenantPage(resolveCurrentTenantId(), query);
+  }
+
   async listTenantMembers(tenantId: string): Promise<TenantMemberDto[]> {
     const id = normalizeTenantRecordId(tenantId);
     await this.assertTenantExists(id);
@@ -506,6 +554,16 @@ export class TenantFoundationService {
     });
 
     return memberships.map(toTenantMemberDto);
+  }
+
+  async listTenantMembersPage(
+    tenantId: string,
+    query: TenantMemberQueryDto = {},
+  ): Promise<PageResult<TenantMemberDto>> {
+    const id = normalizeTenantRecordId(tenantId);
+    await this.assertTenantExists(id);
+
+    return this.listTenantMembersForTenantPage(id, query);
   }
 
   async createTenantMember(
@@ -1021,6 +1079,27 @@ export class TenantFoundationService {
     }
   }
 
+  private async listTenantMembersForTenantPage(
+    tenantId: string,
+    query: TenantMemberQueryDto = {},
+  ): Promise<PageResult<TenantMemberDto>> {
+    const where = createTenantMemberWhere(tenantId, query);
+    const total = await this.prisma.tenantMembership.count({ where });
+    const pagination = normalizeTenantPageQuery(query, total);
+    const memberships = await this.prisma.tenantMembership.findMany({
+      where,
+      include: memberIncludes,
+      orderBy: createTenantMemberOrderBy(query),
+      skip: pagination.skip,
+      take: pagination.take,
+    });
+
+    return createTenantPageResult(
+      memberships.map(toTenantMemberDto),
+      pagination,
+    );
+  }
+
   private async resolveTenantMemberUser(
     body: CreateTenantMemberDto,
   ): Promise<TenantMemberUserInput> {
@@ -1108,10 +1187,7 @@ export class TenantFoundationService {
 
     const duplicate = await this.prisma.user.findFirst({
       where: {
-        OR: [
-          ...(mobile ? [{ mobile }] : []),
-          ...(email ? [{ email }] : []),
-        ],
+        OR: [...(mobile ? [{ mobile }] : []), ...(email ? [{ email }] : [])],
       },
       select: { email: true, mobile: true, username: true },
     });
@@ -1223,6 +1299,321 @@ export class TenantFoundationService {
       );
     }
   }
+}
+
+type NormalizedTenantPageQuery = {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+  skip: number;
+  take: number;
+};
+
+type DbTenantWhereInput = NonNullable<
+  NonNullable<Parameters<PrismaService['tenant']['count']>[0]>['where']
+>;
+type DbTenantPlanWhereInput = NonNullable<
+  NonNullable<Parameters<PrismaService['tenantPlan']['count']>[0]>['where']
+>;
+type DbTenantMemberWhereInput = NonNullable<
+  NonNullable<
+    Parameters<PrismaService['tenantMembership']['count']>[0]
+  >['where']
+>;
+type DbTenantOrderByInput = NonNullable<
+  NonNullable<Parameters<PrismaService['tenant']['findMany']>[0]>['orderBy']
+>;
+type DbTenantPlanOrderByInput = NonNullable<
+  NonNullable<Parameters<PrismaService['tenantPlan']['findMany']>[0]>['orderBy']
+>;
+type DbTenantMemberOrderByInput = NonNullable<
+  NonNullable<
+    Parameters<PrismaService['tenantMembership']['findMany']>[0]
+  >['orderBy']
+>;
+
+type TenantOrderBy = 'code' | 'createdAt' | 'name' | 'planCode' | 'status';
+type TenantPlanOrderBy =
+  | 'code'
+  | 'createdAt'
+  | 'enabled'
+  | 'name'
+  | 'updatedAt';
+type TenantMemberOrderBy =
+  | 'createdAt'
+  | 'deptName'
+  | 'displayName'
+  | 'isOwner'
+  | 'status'
+  | 'updatedAt'
+  | 'username';
+
+const TENANT_ORDER_FIELDS: readonly TenantOrderBy[] = [
+  'code',
+  'createdAt',
+  'name',
+  'planCode',
+  'status',
+];
+const TENANT_PLAN_ORDER_FIELDS: readonly TenantPlanOrderBy[] = [
+  'code',
+  'createdAt',
+  'enabled',
+  'name',
+  'updatedAt',
+];
+const TENANT_MEMBER_ORDER_FIELDS: readonly TenantMemberOrderBy[] = [
+  'createdAt',
+  'deptName',
+  'displayName',
+  'isOwner',
+  'status',
+  'updatedAt',
+  'username',
+];
+
+function normalizeTenantPageQuery(
+  query: { page?: number | string; pageSize?: number | string } = {},
+  total: number,
+): NormalizedTenantPageQuery {
+  const pagination = normalizePagination(query, { maxPageSize: 100 });
+  const totalPages = Math.ceil(total / pagination.pageSize);
+  const safePage = totalPages === 0 ? 1 : Math.min(pagination.page, totalPages);
+
+  return {
+    page: safePage,
+    pageSize: pagination.pageSize,
+    total,
+    totalPages,
+    skip: (safePage - 1) * pagination.pageSize,
+    take: pagination.pageSize,
+  };
+}
+
+function createTenantPageResult<T>(
+  items: readonly T[],
+  pagination: NormalizedTenantPageQuery,
+): PageResult<T> {
+  return createPageResult(
+    [...items],
+    {
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+    },
+    pagination.total,
+  );
+}
+
+function createTenantWhere(query: TenantQueryDto): DbTenantWhereInput {
+  const keyword = normalizeQueryText(query.keyword);
+  const code = normalizeQueryText(query.code);
+  const name = normalizeQueryText(query.name);
+  const status = normalizeQueryText(query.status);
+  const planCode = normalizeQueryText(query.planCode);
+  const ownerUsername = normalizeQueryText(query.ownerUsername);
+
+  return {
+    ...(keyword
+      ? {
+          OR: [
+            { code: containsInsensitive(keyword) },
+            { slug: containsInsensitive(keyword) },
+            { name: containsInsensitive(keyword) },
+            { contactName: containsInsensitive(keyword) },
+            { contactMobile: containsInsensitive(keyword) },
+            {
+              memberships: {
+                some: {
+                  user: { username: containsInsensitive(keyword) },
+                },
+              },
+            },
+          ],
+        }
+      : {}),
+    ...(code ? { code: containsInsensitive(code) } : {}),
+    ...(name ? { name: containsInsensitive(name) } : {}),
+    ...(status ? { status } : {}),
+    ...(planCode ? { plan: { code: planCode } } : {}),
+    ...(ownerUsername
+      ? {
+          memberships: {
+            some: {
+              isOwner: true,
+              user: { username: containsInsensitive(ownerUsername) },
+            },
+          },
+        }
+      : {}),
+  };
+}
+
+function createTenantPlanWhere(
+  query: TenantPlanQueryDto,
+): DbTenantPlanWhereInput {
+  const keyword = normalizeQueryText(query.keyword);
+  const code = normalizeQueryText(query.code);
+  const name = normalizeQueryText(query.name);
+  const moduleCode = normalizeQueryText(query.moduleCode);
+  const enabled = normalizeQueryBoolean(query.enabled);
+
+  return {
+    ...(keyword
+      ? {
+          OR: [
+            { code: containsInsensitive(keyword) },
+            { name: containsInsensitive(keyword) },
+            { remark: containsInsensitive(keyword) },
+          ],
+        }
+      : {}),
+    ...(code ? { code: containsInsensitive(code) } : {}),
+    ...(name ? { name: containsInsensitive(name) } : {}),
+    ...(enabled === undefined ? {} : { enabled }),
+    ...(moduleCode ? { modules: { some: { moduleCode } } } : {}),
+  };
+}
+
+function createTenantMemberWhere(
+  tenantId: string,
+  query: TenantMemberQueryDto,
+): DbTenantMemberWhereInput {
+  const keyword = normalizeQueryText(query.keyword);
+  const username = normalizeQueryText(query.username);
+  const displayName = normalizeQueryText(query.displayName);
+  const status = normalizeQueryText(query.status);
+  const deptId = normalizeQueryText(query.deptId);
+  const roleCode = normalizeQueryText(query.roleCode);
+  const postCode = normalizeQueryText(query.postCode);
+  const isOwner = normalizeQueryBoolean(query.isOwner);
+  const and: DbTenantMemberWhereInput[] = [
+    { tenantId },
+    ...(username
+      ? [{ user: { username: containsInsensitive(username) } }]
+      : []),
+    ...(displayName
+      ? [{ user: { displayName: containsInsensitive(displayName) } }]
+      : []),
+    ...(status ? [{ status }] : []),
+    ...(isOwner === undefined ? [] : [{ isOwner }]),
+    ...(deptId ? [{ deptId }] : []),
+    ...(roleCode ? [{ roles: { some: { role: { code: roleCode } } } }] : []),
+    ...(postCode ? [{ posts: { some: { post: { code: postCode } } } }] : []),
+  ];
+
+  return {
+    AND: and,
+    ...(keyword
+      ? {
+          OR: [
+            { user: { username: containsInsensitive(keyword) } },
+            { user: { displayName: containsInsensitive(keyword) } },
+            { user: { email: containsInsensitive(keyword) } },
+            { user: { mobile: containsInsensitive(keyword) } },
+            { dept: { name: containsInsensitive(keyword) } },
+          ],
+        }
+      : {}),
+  };
+}
+
+function createTenantOrderBy(query: TenantQueryDto): DbTenantOrderByInput {
+  const direction = normalizeOrderDirection(query.orderDirection);
+  const orderBy = normalizeOrderField(
+    query.orderBy,
+    TENANT_ORDER_FIELDS,
+    'code',
+  );
+
+  if (orderBy === 'planCode') {
+    return [{ plan: { code: direction } }, { code: 'asc' }];
+  }
+
+  return [{ [orderBy]: direction }, { code: 'asc' }];
+}
+
+function createTenantPlanOrderBy(
+  query: TenantPlanQueryDto,
+): DbTenantPlanOrderByInput {
+  const direction = normalizeOrderDirection(query.orderDirection);
+  const orderBy = normalizeOrderField(
+    query.orderBy,
+    TENANT_PLAN_ORDER_FIELDS,
+    'code',
+  );
+
+  return [{ [orderBy]: direction }, { code: 'asc' }];
+}
+
+function createTenantMemberOrderBy(
+  query: TenantMemberQueryDto,
+): DbTenantMemberOrderByInput {
+  const direction = normalizeOrderDirection(query.orderDirection);
+  const orderBy = normalizeOrderField(
+    query.orderBy,
+    TENANT_MEMBER_ORDER_FIELDS,
+    'username',
+  );
+
+  if (orderBy === 'username') {
+    return [{ isOwner: 'desc' }, { user: { username: direction } }];
+  }
+
+  if (orderBy === 'displayName') {
+    return [{ isOwner: 'desc' }, { user: { displayName: direction } }];
+  }
+
+  if (orderBy === 'deptName') {
+    return [
+      { isOwner: 'desc' },
+      { dept: { name: direction } },
+      { user: { username: 'asc' } },
+    ];
+  }
+
+  return [{ [orderBy]: direction }, { user: { username: 'asc' } }];
+}
+
+function normalizeOrderDirection(value: unknown): 'asc' | 'desc' {
+  return typeof value === 'string' && value.toLowerCase() === 'desc'
+    ? 'desc'
+    : 'asc';
+}
+
+function normalizeOrderField<Field extends string>(
+  value: unknown,
+  allowedFields: readonly Field[],
+  fallback: Field,
+): Field {
+  return typeof value === 'string' && allowedFields.includes(value as Field)
+    ? (value as Field)
+    : fallback;
+}
+
+function normalizeQueryText(value: unknown): string | undefined {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  const normalized = value.trim();
+  return normalized || undefined;
+}
+
+function normalizeQueryBoolean(value: unknown): boolean | undefined {
+  if (value === true || value === 'true') {
+    return true;
+  }
+
+  if (value === false || value === 'false') {
+    return false;
+  }
+
+  return undefined;
+}
+
+function containsInsensitive(value: string) {
+  return { contains: value, mode: 'insensitive' as const };
 }
 
 const tenantIncludes = {
@@ -1702,8 +2093,7 @@ async function assertNotLastActiveOwnerChange(
     status: string;
   },
 ): Promise<void> {
-  const currentIsActiveOwner =
-    current.isOwner && current.status === 'active';
+  const currentIsActiveOwner = current.isOwner && current.status === 'active';
   const nextIsActiveOwner = next.isOwner && next.status === 'active';
   if (!currentIsActiveOwner || nextIsActiveOwner) {
     return;

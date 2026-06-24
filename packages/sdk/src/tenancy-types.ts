@@ -24,6 +24,31 @@ export type TenantPlanSummary = TenantPlanFoundationSummary & {
   updatedAt: string;
 };
 
+export type TenancyPageRequest = {
+  page?: number;
+  pageSize?: number;
+};
+
+export type TenancyPageSummary<T> = {
+  items: readonly T[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+};
+
+export type TenantPlanQueryRequest = TenancyPageRequest & {
+  code?: string;
+  enabled?: boolean | string;
+  keyword?: string;
+  moduleCode?: string;
+  name?: string;
+  orderBy?: string;
+  orderDirection?: string;
+};
+
+export type TenantPlanPageSummary = TenancyPageSummary<TenantPlanSummary>;
+
 export type CreateTenantPlanRequest = {
   code: string;
   name: string;
@@ -70,6 +95,19 @@ export type TenantSummary = TenantFoundationSummary & {
   createdAt: string;
   updatedAt: string;
 };
+
+export type TenantQueryRequest = TenancyPageRequest & {
+  code?: string;
+  keyword?: string;
+  name?: string;
+  orderBy?: string;
+  orderDirection?: string;
+  ownerUsername?: string;
+  planCode?: string;
+  status?: 'active' | 'expired' | 'suspended' | string;
+};
+
+export type TenantPageSummary = TenancyPageSummary<TenantSummary>;
 
 export type CreateTenantRequest = {
   code: string;
@@ -152,6 +190,21 @@ export type TenantMemberSummary = {
   createdAt: string;
   updatedAt: string;
 };
+
+export type TenantMemberQueryRequest = TenancyPageRequest & {
+  deptId?: string;
+  displayName?: string;
+  isOwner?: boolean | string;
+  keyword?: string;
+  orderBy?: string;
+  orderDirection?: string;
+  postCode?: string;
+  roleCode?: string;
+  status?: 'active' | 'invited' | 'left' | 'suspended' | string;
+  username?: string;
+};
+
+export type TenantMemberPageSummary = TenancyPageSummary<TenantMemberSummary>;
 
 export type CreateTenantMemberRequest = {
   userId?: string;
