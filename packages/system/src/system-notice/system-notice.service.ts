@@ -203,9 +203,11 @@ export class SystemNoticeService {
     body: TestSystemNoticeTemplateDto,
   ): Promise<SystemNoticeTemplateTestSendResult> {
     const result = await this.repository.testSendNoticeTemplate(code, body);
-    await this.publishRealtimeEvent(result.delivery.userId, 'notice.published', [
-      result.notice.id,
-    ]);
+    await this.publishRealtimeEvent(
+      result.delivery.userId,
+      'notice.published',
+      [result.notice.id],
+    );
 
     return result;
   }

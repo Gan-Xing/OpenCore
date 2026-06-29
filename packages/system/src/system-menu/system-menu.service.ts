@@ -14,8 +14,13 @@ import {
 export class SystemMenuService {
   constructor(private readonly repository: SystemMenuRepository) {}
 
-  async listMenus(scope: SystemMenuPlanScope = {}): Promise<SystemMenuRecord[]> {
-    return filterSystemMenusByPlanScope(await this.repository.listMenus(), scope);
+  async listMenus(
+    scope: SystemMenuPlanScope = {},
+  ): Promise<SystemMenuRecord[]> {
+    return filterSystemMenusByPlanScope(
+      await this.repository.listMenus(),
+      scope,
+    );
   }
 
   async getMenu(

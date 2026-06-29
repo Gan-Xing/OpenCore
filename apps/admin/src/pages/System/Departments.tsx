@@ -209,8 +209,7 @@ function toTreeSelectData(
 export default function DepartmentsPage() {
   const intl = useIntl();
   const [form] = Form.useForm<DeptFormValues>();
-  const [rows, setRows] =
-    useState<readonly SystemDeptTreeSummary[]>([]);
+  const [rows, setRows] = useState<readonly SystemDeptTreeSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
   const [selectedDetail, setSelectedDetail] = useState<SystemDeptSummary>();
@@ -293,7 +292,10 @@ export default function DepartmentsPage() {
       dataIndex: 'email',
     },
     {
-      title: formatMessage('pages.system.departments.fields.enabled', 'Enabled'),
+      title: formatMessage(
+        'pages.system.departments.fields.enabled',
+        'Enabled',
+      ),
       renderText: (record) =>
         record.enabled ? statusLabels.enabled : statusLabels.disabled,
     },
@@ -313,7 +315,10 @@ export default function DepartmentsPage() {
     },
   ];
   const createDetailFields = (record: SystemDeptSummary): DetailField[] => [
-    { label: formatMessage('pages.system.departments.fields.id', 'ID'), value: record.id },
+    {
+      label: formatMessage('pages.system.departments.fields.id', 'ID'),
+      value: record.id,
+    },
     {
       label: formatMessage('pages.system.departments.fields.code', 'Code'),
       value: record.code,
@@ -345,7 +350,10 @@ export default function DepartmentsPage() {
       value: record.email,
     },
     {
-      label: formatMessage('pages.system.departments.fields.enabled', 'Enabled'),
+      label: formatMessage(
+        'pages.system.departments.fields.enabled',
+        'Enabled',
+      ),
       value: record.enabled ? statusLabels.enabled : statusLabels.disabled,
     },
     {
@@ -856,15 +864,15 @@ export default function DepartmentsPage() {
         okText={
           editingDept
             ? formatMessage('pages.system.departments.actions.save', 'Save')
-            : formatMessage(
-                'pages.system.departments.actions.create',
-                'Create',
-              )
+            : formatMessage('pages.system.departments.actions.create', 'Create')
         }
       >
         <Form<DeptFormValues> form={form} layout="vertical">
           <Form.Item
-            label={formatMessage('pages.system.departments.fields.code', 'Code')}
+            label={formatMessage(
+              'pages.system.departments.fields.code',
+              'Code',
+            )}
             name="code"
             rules={[
               {
@@ -879,7 +887,10 @@ export default function DepartmentsPage() {
             <Input disabled={Boolean(editingDept)} maxLength={64} />
           </Form.Item>
           <Form.Item
-            label={formatMessage('pages.system.departments.fields.name', 'Name')}
+            label={formatMessage(
+              'pages.system.departments.fields.name',
+              'Name',
+            )}
             name="name"
             rules={[
               {

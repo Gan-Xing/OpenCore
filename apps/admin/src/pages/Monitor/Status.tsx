@@ -136,7 +136,10 @@ export default function StatusPage() {
   return (
     <PageContainer
       title={formatMessage('pages.monitor.status.title', 'Live runtime status')}
-      subTitle={formatMessage('pages.monitor.runtime.section', 'Runtime Monitor')}
+      subTitle={formatMessage(
+        'pages.monitor.runtime.section',
+        'Runtime Monitor',
+      )}
       extra={[
         <Tooltip
           key="reload"

@@ -135,7 +135,9 @@ export class SystemDictService {
     return this.repository.hardDeleteDictItem(itemId);
   }
 
-  deleteDicts(body: BatchDeleteDictTypesDto): Promise<DictDeleteMutationRecord> {
+  deleteDicts(
+    body: BatchDeleteDictTypesDto,
+  ): Promise<DictDeleteMutationRecord> {
     return this.repository.deleteDicts(body);
   }
 
@@ -197,7 +199,10 @@ export class SystemDictService {
     const entries = normalizeDictTranslationEntries(body);
     const options = await this.repository.listDictDataOptions();
     const optionByKey = new Map(
-      options.map((option) => [`${option.dictCode}\u0000${option.value}`, option]),
+      options.map((option) => [
+        `${option.dictCode}\u0000${option.value}`,
+        option,
+      ]),
     );
 
     return {
@@ -249,7 +254,10 @@ export class SystemDictService {
 
     const groups = new Map<string, NormalizedSystemDictImportInput[]>();
     for (const input of validInputs) {
-      groups.set(input.dictCode, [...(groups.get(input.dictCode) ?? []), input]);
+      groups.set(input.dictCode, [
+        ...(groups.get(input.dictCode) ?? []),
+        input,
+      ]);
     }
 
     const createdDictCodes: string[] = [];

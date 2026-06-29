@@ -131,10 +131,7 @@ export default function PostsPage() {
         { label: statusLabels.enabled, value: 'true' },
         { label: statusLabels.disabled, value: 'false' },
       ],
-      placeholder: formatMessage(
-        'pages.system.posts.filters.status',
-        'Status',
-      ),
+      placeholder: formatMessage('pages.system.posts.filters.status', 'Status'),
       predicate: (record, value) => record.enabled === (value === 'true'),
     },
   ];
@@ -177,7 +174,10 @@ export default function PostsPage() {
     },
   ];
   const createDetailFields = (record: SystemPostSummary): DetailField[] => [
-    { label: formatMessage('pages.system.posts.fields.id', 'ID'), value: record.id },
+    {
+      label: formatMessage('pages.system.posts.fields.id', 'ID'),
+      value: record.id,
+    },
     {
       label: formatMessage('pages.system.posts.fields.code', 'Code'),
       value: record.code,
@@ -445,7 +445,10 @@ export default function PostsPage() {
       render: (_, record) => (
         <Space size="small">
           <Tooltip
-            title={formatMessage('pages.system.posts.actions.moveUp', 'Move up')}
+            title={formatMessage(
+              'pages.system.posts.actions.moveUp',
+              'Move up',
+            )}
           >
             <Button
               aria-label={formatMessage(
@@ -517,7 +520,10 @@ export default function PostsPage() {
               'pages.system.posts.confirm.deleteOne',
               'Delete this post?',
             )}
-            okText={formatMessage('pages.system.posts.actions.delete', 'Delete')}
+            okText={formatMessage(
+              'pages.system.posts.actions.delete',
+              'Delete',
+            )}
             okButtonProps={{ danger: true }}
             onConfirm={() => void deletePost(record)}
           >
@@ -590,7 +596,10 @@ export default function PostsPage() {
               'Delete {count} selected post(s)?',
               { count: selectedPostCodes.length },
             )}
-            okText={formatMessage('pages.system.posts.actions.delete', 'Delete')}
+            okText={formatMessage(
+              'pages.system.posts.actions.delete',
+              'Delete',
+            )}
             okButtonProps={{ danger: true }}
             disabled={selectedPostCodes.length === 0}
             onConfirm={() => void deleteSelectedPosts()}

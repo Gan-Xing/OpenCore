@@ -33,7 +33,10 @@ import {
   StartSocialAuthFlowDto,
   SwitchTenantRequestDto,
 } from './rbac.dto';
-import { RequireAuthenticated, RequirePermission } from './permissions.decorator';
+import {
+  RequireAuthenticated,
+  RequirePermission,
+} from './permissions.decorator';
 import { SocialAuthService } from './social-auth.service';
 import type { OAuthProviderCallbackDto } from '../../integration/integration/integration.dto';
 
@@ -125,7 +128,8 @@ export class AuthController {
   ): Promise<LoginResponseDto> {
     const startedAt = Date.now();
     const ip = request.ip ?? 'unknown';
-    const userAgent = getHeaderValue(request.headers, 'user-agent') ?? 'unknown';
+    const userAgent =
+      getHeaderValue(request.headers, 'user-agent') ?? 'unknown';
     const requestId = getRequestContext()?.requestId ?? 'unknown';
 
     return this.authService

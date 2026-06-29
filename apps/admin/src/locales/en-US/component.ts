@@ -10,8 +10,7 @@ export default {
     'Live current-page export protocol is inactive.',
   'component.currentPageExport.protocolUnavailable':
     'Live current-page export protocol unavailable.',
-  'component.currentPageExport.success':
-    'Exported {count} current-page rows.',
+  'component.currentPageExport.success': 'Exported {count} current-page rows.',
   'component.currentPageFilters.reset': 'Reset',
   'component.currentPageFilters.searchPlaceholder': 'Search current page',
   'component.readOnlyDetail.timeline': 'Timeline',

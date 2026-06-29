@@ -285,7 +285,10 @@ export default function QueuesPage() {
   return (
     <PageContainer
       title={formatMessage('pages.monitor.queues.title', 'Queues')}
-      subTitle={formatMessage('pages.monitor.runtime.section', 'Runtime Monitor')}
+      subTitle={formatMessage(
+        'pages.monitor.runtime.section',
+        'Runtime Monitor',
+      )}
     >
       {loadError ? (
         <Alert

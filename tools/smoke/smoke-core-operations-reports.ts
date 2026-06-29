@@ -70,11 +70,7 @@ async function main() {
     const listedCreated = await clients.operations.listReports(token, {
       owner: 'admin',
     });
-    assertPageContainsId(
-      listedCreated,
-      created.id,
-      'created root reports',
-    );
+    assertPageContainsId(listedCreated, created.id, 'created root reports');
 
     const detail = await clients.operations.getReport(token, created.code);
     assertEqual(detail.id, created.id, 'created report detail id');

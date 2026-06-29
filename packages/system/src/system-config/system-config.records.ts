@@ -74,7 +74,7 @@ export type SystemConfigVaultKeyRotationRecord =
     reason?: string;
     rewrappedConfigCount: number;
     rewrappedSecretVersionCount: number;
-};
+  };
 
 const ROOT_TENANT_ID = 'tenant_root';
 

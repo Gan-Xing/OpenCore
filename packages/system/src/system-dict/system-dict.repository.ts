@@ -775,7 +775,10 @@ export function normalizeDictCode(value: unknown): string {
   return code;
 }
 
-export function normalizeRequiredText(value: unknown, fieldName: string): string {
+export function normalizeRequiredText(
+  value: unknown,
+  fieldName: string,
+): string {
   if (typeof value !== 'string' || value.trim().length === 0) {
     throw systemDictBadRequest(
       'SYSTEM_DICT_TEXT_REQUIRED',

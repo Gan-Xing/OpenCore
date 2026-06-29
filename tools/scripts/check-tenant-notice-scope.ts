@@ -79,9 +79,7 @@ for (const check of checks) {
 
   if (missing.length > 0) {
     throw new Error(
-      `${check.file} is missing tenant notice marker(s): ${missing.join(
-        ', ',
-      )}`,
+      `${check.file} is missing tenant notice marker(s): ${missing.join(', ')}`,
     );
   }
 }

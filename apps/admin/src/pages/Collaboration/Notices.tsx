@@ -541,10 +541,7 @@ export default function NoticesPage() {
   return (
     <PageContainer
       title={formatMessage('pages.collaboration.notices.title', 'Notices')}
-      subTitle={formatMessage(
-        'pages.collaboration.section',
-        'Collaboration',
-      )}
+      subTitle={formatMessage('pages.collaboration.section', 'Collaboration')}
     >
       {loadError ? (
         <Alert

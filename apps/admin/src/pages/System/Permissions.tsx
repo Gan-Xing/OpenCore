@@ -175,7 +175,13 @@ export default function PermissionsPage() {
         predicate: (record, value) => record.system === (value === 'true'),
       },
     ],
-    [rows, riskLabels.dangerous, riskLabels.normal, systemLabels.custom, systemLabels.system],
+    [
+      rows,
+      riskLabels.dangerous,
+      riskLabels.normal,
+      systemLabels.custom,
+      systemLabels.system,
+    ],
   );
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<PermissionSummary>({
@@ -380,10 +386,7 @@ export default function PermissionsPage() {
                     'pages.system.permissions.actions.systemEditLocked',
                     'System permissions cannot be edited',
                   )
-                : formatMessage(
-                    'pages.system.permissions.actions.edit',
-                    'Edit',
-                  )
+                : formatMessage('pages.system.permissions.actions.edit', 'Edit')
             }
           >
             <Button
@@ -533,7 +536,10 @@ export default function PermissionsPage() {
       >
         <Form<PermissionFormValues> form={form} layout="vertical">
           <Form.Item
-            label={formatMessage('pages.system.permissions.fields.code', 'Code')}
+            label={formatMessage(
+              'pages.system.permissions.fields.code',
+              'Code',
+            )}
             name="code"
             rules={[
               {

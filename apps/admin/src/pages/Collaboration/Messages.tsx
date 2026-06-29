@@ -582,10 +582,7 @@ export default function MessagesPage() {
   return (
     <PageContainer
       title={formatMessage('pages.collaboration.messages.title', 'Messages')}
-      subTitle={formatMessage(
-        'pages.collaboration.section',
-        'Collaboration',
-      )}
+      subTitle={formatMessage('pages.collaboration.section', 'Collaboration')}
     >
       {loadError ? (
         <Alert

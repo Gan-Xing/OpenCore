@@ -604,49 +604,49 @@ integration.provider
 
 以下分类是实施前的默认决策。若代码事实发生变化，必须先更新本矩阵，再改 schema。
 
-| Current model                      | Target ownership                              | Required action                                                                                  |
-| ---------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Current model                      | Target ownership                                 | Required action                                                                                                   |
+| ---------------------------------- | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
 | `User`                             | Global identity with root-only legacy org bridge | Done T3g/T4i: 保持全局 identity；legacy `deptId` 通过 `legacyDeptTenantId=tenant_root` 和复合 FK 限制为 root-only |
-| `Role`                             | Tenant-owned                                  | Done T3b: 增加 `tenantId`，code 改租户内唯一                                                    |
-| `Permission`                       | Global catalog                                | 保持全局唯一，不加 `tenantId`                                                                    |
-| `Menu`                             | Global catalog                                | 保持全局，不复制每租户菜单                                                                       |
-| `UserRole`                         | Root-only legacy compatibility               | Done T3g/T4i: `tenantId=tenant_root` CHECK + 复合 FK；非 root 使用 `TenantMembershipRole`        |
-| `UserPost`                         | Root-only legacy compatibility               | Done T3g/T4i: `tenantId=tenant_root` CHECK + 复合 FK；非 root 使用 `TenantMembershipPost`        |
-| `RolePermission`                   | Tenant authorization                          | Done T3b/T3f: 通过 tenant-owned Role 隔离，Permission/Menu 保持全局 catalog 并由 tenant plan 裁剪 |
-| `DictType`                         | Tenant-owned with optional system definitions | Done T4d: 增加 `tenantId`，code 改租户内唯一，repository 按 active tenant 查询                   |
-| `DictItem`                         | Tenant-owned child                            | Done T4d: 跟随 tenant-owned `DictType`，禁止跨租户 typeId                                       |
-| `SystemConfig`                     | Tenant-owned config value                     | Done T4e: 增加 `tenantId`，key 改租户内唯一，runtime/cache/export 按 active tenant 查询         |
-| `SystemConfigEnvironmentOverride`  | Tenant-owned value                            | Done T4e: 跟随 tenant-owned config key，环境覆盖按 active tenant 查询                            |
-| `SystemConfigSecretVersion`        | Tenant-owned secret                           | Done T4e: 增加 tenant ownership，密钥版本和 vault 操作按 active tenant 隔离                      |
-| `SystemNotice`                     | Tenant-owned                                  | Done T4g: 增加 `tenantId`，notice list/detail/lifecycle/inbox 按 active tenant 查询              |
-| `SystemNoticeTemplate`             | Tenant-owned template                         | Done T4g: 增加 `tenantId`，template code 改租户内唯一                                           |
-| `SystemNoticeReadReceipt`          | Tenant-owned child                            | Done T4g: 增加 tenant ownership，跟随 notice tenant                                              |
-| `SystemNoticeDelivery`             | Tenant-owned child                            | Done T4g: 增加 tenant ownership，provider/outbox 选择使用该租户配置                              |
-| `SystemDept`                       | Tenant-owned                                  | Done T3d: 增加 `tenantId`，code 改租户内唯一，parent/member/legacy User 关系有同租户或 root-only 约束 |
-| `SystemPost`                       | Tenant-owned                                  | Done T3c: 增加 `tenantId`，code 改租户内唯一，membership/legacy User 关系有同租户或 root-only 约束 |
-| `FileAsset`                        | Tenant-owned                                  | Done T4f: 增加 `tenantId`，对象 key 加 tenant prefix，metadata/download/export 按 active tenant 查询 |
-| `AuditLog`                         | Tenant-owned operation audit                  | Done T4c: 增加 `tenantId`，list/detail/export/delete/retention clean 按 active tenant 查询       |
-| `LoginLog`                         | Tenant-owned login audit                      | Done T4b: 增加 `tenantId`，登录/登出记录和 list/detail/export/delete/clean 按 active tenant 查询 |
-| `LoginLockout`                     | Tenant-owned credential security              | Done T4h: 增加 `tenantId`，唯一键改为 `(tenantId, username)`，登录锁定和解锁按服务端解析租户隔离 |
-| `CollaborationMessage`             | Tenant-owned                                  | Done T7a: 增加 `tenantId` 并按 active tenant 查询；sender/recipient member/user identity 后续细化 |
-| `CollaborationNotice`              | Tenant-owned                                  | Done T7b: 增加 `tenantId` 并按 active tenant 查询                                                |
-| `CollaborationTodo`                | Tenant-owned                                  | Done T7c: 增加 `tenantId` 并按 active tenant 查询                                                |
-| `CollaborationApprovalLite`        | Tenant-owned                                  | Done T7d: 增加 `tenantId` 并按 active tenant 查询                                                |
-| `JobDefinition`                    | Tenant-owned scheduler job                    | Done T5a: 增加 `tenantId`，code 改租户内唯一，monitor job API 按 active tenant 查询              |
-| `JobRunLog`                        | Tenant-owned run log                          | Done T5a: 增加 `tenantId`，worker claim/run detail/run clean 按 active tenant 查询               |
-| `OnlineUserSession`                | Tenant-bound access session                   | Done T4a: 增加 `tenantId`、`membershipId`、`accessMode`，monitor API 按 active tenant 查询       |
-| `ReportDefinition`                 | Tenant-owned                                  | Done T7e: 增加 `tenantId`，code 改租户内唯一，optional reports API 按 active tenant 查询        |
-| `IntegrationProvider`              | Tenant-owned provider instance                | Done T5e: 增加 `tenantId`，code 改租户内唯一；全局 driver/catalog 如需拆分留给后续               |
-| `IntegrationProviderAuditLog`      | Tenant-owned audit                            | Done T5e: 增加 `tenantId` 并按 active tenant 查询                                                |
-| `IntegrationTemplate`              | Tenant-owned                                  | Done T5e: 增加 `tenantId`，code 改租户内唯一                                                     |
-| `IntegrationOutbox`                | Tenant-owned runtime                          | Done T5e: 增加 `tenantId`，API/notice sync 按 tenant 限制                                        |
-| `IntegrationOAuthToken`            | Tenant-owned secret reference                 | Done T5e: 增加 `tenantId`，唯一键改为 `(tenantId, providerCode, subjectId, providerAccountId)`   |
-| `IntegrationOAuthFlow`             | Tenant-owned flow                             | Done T5e: 增加 `tenantId`，callback 从全局唯一 state 恢复 flow tenant                            |
-| `IntegrationOAuthCallbackAudit`    | Tenant-owned audit                            | Done T5e: 增加 `tenantId`，callback audit 写入 flow tenant                                       |
-| `IntegrationWebSocketRuntimeEvent` | Tenant-owned/scoped                           | Done T5c: room 和 event 带 tenant namespace                                                      |
-| `AreaDatasetVersion`               | Global geography/IP catalog                   | 保持全局数据集版本，不按租户复制                                                                 |
-| `AreaRegion`                       | Global geography catalog child                | 跟随 `AreaDatasetVersion`，不属于租户业务数据                                                     |
-| `AreaIpRange`                      | Global IP range catalog child                 | 跟随 `AreaDatasetVersion`，不属于租户业务数据                                                     |
+| `Role`                             | Tenant-owned                                     | Done T3b: 增加 `tenantId`，code 改租户内唯一                                                                      |
+| `Permission`                       | Global catalog                                   | 保持全局唯一，不加 `tenantId`                                                                                     |
+| `Menu`                             | Global catalog                                   | 保持全局，不复制每租户菜单                                                                                        |
+| `UserRole`                         | Root-only legacy compatibility                   | Done T3g/T4i: `tenantId=tenant_root` CHECK + 复合 FK；非 root 使用 `TenantMembershipRole`                         |
+| `UserPost`                         | Root-only legacy compatibility                   | Done T3g/T4i: `tenantId=tenant_root` CHECK + 复合 FK；非 root 使用 `TenantMembershipPost`                         |
+| `RolePermission`                   | Tenant authorization                             | Done T3b/T3f: 通过 tenant-owned Role 隔离，Permission/Menu 保持全局 catalog 并由 tenant plan 裁剪                 |
+| `DictType`                         | Tenant-owned with optional system definitions    | Done T4d: 增加 `tenantId`，code 改租户内唯一，repository 按 active tenant 查询                                    |
+| `DictItem`                         | Tenant-owned child                               | Done T4d: 跟随 tenant-owned `DictType`，禁止跨租户 typeId                                                         |
+| `SystemConfig`                     | Tenant-owned config value                        | Done T4e: 增加 `tenantId`，key 改租户内唯一，runtime/cache/export 按 active tenant 查询                           |
+| `SystemConfigEnvironmentOverride`  | Tenant-owned value                               | Done T4e: 跟随 tenant-owned config key，环境覆盖按 active tenant 查询                                             |
+| `SystemConfigSecretVersion`        | Tenant-owned secret                              | Done T4e: 增加 tenant ownership，密钥版本和 vault 操作按 active tenant 隔离                                       |
+| `SystemNotice`                     | Tenant-owned                                     | Done T4g: 增加 `tenantId`，notice list/detail/lifecycle/inbox 按 active tenant 查询                               |
+| `SystemNoticeTemplate`             | Tenant-owned template                            | Done T4g: 增加 `tenantId`，template code 改租户内唯一                                                             |
+| `SystemNoticeReadReceipt`          | Tenant-owned child                               | Done T4g: 增加 tenant ownership，跟随 notice tenant                                                               |
+| `SystemNoticeDelivery`             | Tenant-owned child                               | Done T4g: 增加 tenant ownership，provider/outbox 选择使用该租户配置                                               |
+| `SystemDept`                       | Tenant-owned                                     | Done T3d: 增加 `tenantId`，code 改租户内唯一，parent/member/legacy User 关系有同租户或 root-only 约束             |
+| `SystemPost`                       | Tenant-owned                                     | Done T3c: 增加 `tenantId`，code 改租户内唯一，membership/legacy User 关系有同租户或 root-only 约束                |
+| `FileAsset`                        | Tenant-owned                                     | Done T4f: 增加 `tenantId`，对象 key 加 tenant prefix，metadata/download/export 按 active tenant 查询              |
+| `AuditLog`                         | Tenant-owned operation audit                     | Done T4c: 增加 `tenantId`，list/detail/export/delete/retention clean 按 active tenant 查询                        |
+| `LoginLog`                         | Tenant-owned login audit                         | Done T4b: 增加 `tenantId`，登录/登出记录和 list/detail/export/delete/clean 按 active tenant 查询                  |
+| `LoginLockout`                     | Tenant-owned credential security                 | Done T4h: 增加 `tenantId`，唯一键改为 `(tenantId, username)`，登录锁定和解锁按服务端解析租户隔离                  |
+| `CollaborationMessage`             | Tenant-owned                                     | Done T7a: 增加 `tenantId` 并按 active tenant 查询；sender/recipient member/user identity 后续细化                 |
+| `CollaborationNotice`              | Tenant-owned                                     | Done T7b: 增加 `tenantId` 并按 active tenant 查询                                                                 |
+| `CollaborationTodo`                | Tenant-owned                                     | Done T7c: 增加 `tenantId` 并按 active tenant 查询                                                                 |
+| `CollaborationApprovalLite`        | Tenant-owned                                     | Done T7d: 增加 `tenantId` 并按 active tenant 查询                                                                 |
+| `JobDefinition`                    | Tenant-owned scheduler job                       | Done T5a: 增加 `tenantId`，code 改租户内唯一，monitor job API 按 active tenant 查询                               |
+| `JobRunLog`                        | Tenant-owned run log                             | Done T5a: 增加 `tenantId`，worker claim/run detail/run clean 按 active tenant 查询                                |
+| `OnlineUserSession`                | Tenant-bound access session                      | Done T4a: 增加 `tenantId`、`membershipId`、`accessMode`，monitor API 按 active tenant 查询                        |
+| `ReportDefinition`                 | Tenant-owned                                     | Done T7e: 增加 `tenantId`，code 改租户内唯一，optional reports API 按 active tenant 查询                          |
+| `IntegrationProvider`              | Tenant-owned provider instance                   | Done T5e: 增加 `tenantId`，code 改租户内唯一；全局 driver/catalog 如需拆分留给后续                                |
+| `IntegrationProviderAuditLog`      | Tenant-owned audit                               | Done T5e: 增加 `tenantId` 并按 active tenant 查询                                                                 |
+| `IntegrationTemplate`              | Tenant-owned                                     | Done T5e: 增加 `tenantId`，code 改租户内唯一                                                                      |
+| `IntegrationOutbox`                | Tenant-owned runtime                             | Done T5e: 增加 `tenantId`，API/notice sync 按 tenant 限制                                                         |
+| `IntegrationOAuthToken`            | Tenant-owned secret reference                    | Done T5e: 增加 `tenantId`，唯一键改为 `(tenantId, providerCode, subjectId, providerAccountId)`                    |
+| `IntegrationOAuthFlow`             | Tenant-owned flow                                | Done T5e: 增加 `tenantId`，callback 从全局唯一 state 恢复 flow tenant                                             |
+| `IntegrationOAuthCallbackAudit`    | Tenant-owned audit                               | Done T5e: 增加 `tenantId`，callback audit 写入 flow tenant                                                        |
+| `IntegrationWebSocketRuntimeEvent` | Tenant-owned/scoped                              | Done T5c: room 和 event 带 tenant namespace                                                                       |
+| `AreaDatasetVersion`               | Global geography/IP catalog                      | 保持全局数据集版本，不按租户复制                                                                                  |
+| `AreaRegion`                       | Global geography catalog child                   | 跟随 `AreaDatasetVersion`，不属于租户业务数据                                                                     |
+| `AreaIpRange`                      | Global IP range catalog child                    | 跟随 `AreaDatasetVersion`，不属于租户业务数据                                                                     |
 
 注意：
 

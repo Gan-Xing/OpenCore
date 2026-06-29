@@ -76,11 +76,7 @@ async function main() {
     );
     const createdApprovalId = assertString(created.id, 'created approval id');
     createdApprovalIds.push(createdApprovalId);
-    assertEqual(
-      created.tenantId,
-      ROOT_TENANT_ID,
-      'created approval tenant id',
-    );
+    assertEqual(created.tenantId, ROOT_TENANT_ID, 'created approval tenant id');
     assertEqual(created.status, 'pending', 'created approval status');
     assertEqual(created.approver, 'admin', 'created approval approver');
     assertEqual(created.businessId, runId, 'created approval business id');

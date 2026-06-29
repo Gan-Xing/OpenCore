@@ -115,7 +115,10 @@ function createFilterOptions(
         label: option.label,
         value: option.value,
       })),
-      placeholder: formatMessage('pages.security.loginLogs.fields.result', 'Result'),
+      placeholder: formatMessage(
+        'pages.security.loginLogs.fields.result',
+        'Result',
+      ),
       predicate: (record, value) => record.result === value,
     },
     {
@@ -124,7 +127,10 @@ function createFilterOptions(
         label: option.label,
         value: option.value,
       })),
-      placeholder: formatMessage('pages.security.loginLogs.filters.type', 'Type'),
+      placeholder: formatMessage(
+        'pages.security.loginLogs.filters.type',
+        'Type',
+      ),
       predicate: (record, value) => record.logType === value,
     },
     {
@@ -155,9 +161,15 @@ function createDetailFields(
   formatMessage: LocaleFormatter,
 ): DetailField[] {
   return [
-    { label: formatMessage('pages.security.loginLogs.fields.id', 'ID'), value: record.id },
     {
-      label: formatMessage('pages.security.loginLogs.fields.tenantId', 'Tenant ID'),
+      label: formatMessage('pages.security.loginLogs.fields.id', 'ID'),
+      value: record.id,
+    },
+    {
+      label: formatMessage(
+        'pages.security.loginLogs.fields.tenantId',
+        'Tenant ID',
+      ),
       value: record.tenantId,
     },
     {
@@ -197,7 +209,10 @@ function createDetailFields(
       label: formatMessage('pages.security.loginLogs.fields.reason', 'Reason'),
       value: record.reason,
     },
-    { label: formatMessage('pages.security.loginLogs.fields.ip', 'IP'), value: record.ip },
+    {
+      label: formatMessage('pages.security.loginLogs.fields.ip', 'IP'),
+      value: record.ip,
+    },
     {
       label: formatMessage(
         'pages.security.loginLogs.fields.location',
@@ -213,10 +228,16 @@ function createDetailFields(
       value: record.userAgent,
     },
     {
-      label: formatMessage('pages.security.loginLogs.fields.browser', 'Browser'),
+      label: formatMessage(
+        'pages.security.loginLogs.fields.browser',
+        'Browser',
+      ),
       value: record.browser,
     },
-    { label: formatMessage('pages.security.loginLogs.fields.os', 'OS'), value: record.os },
+    {
+      label: formatMessage('pages.security.loginLogs.fields.os', 'OS'),
+      value: record.os,
+    },
     {
       label: formatMessage(
         'pages.security.loginLogs.fields.requestId',
@@ -321,7 +342,10 @@ export default function LoginLogsPage() {
       value: 'login.mobile',
     },
     {
-      label: formatMessage('pages.security.loginLogs.loginType.sms', 'SMS login'),
+      label: formatMessage(
+        'pages.security.loginLogs.loginType.sms',
+        'SMS login',
+      ),
       value: 'login.sms',
     },
     {
@@ -348,7 +372,10 @@ export default function LoginLogsPage() {
   ];
   const loginResultOptions: LoginResultOption[] = [
     {
-      label: formatMessage('pages.security.loginLogs.result.success', 'Success'),
+      label: formatMessage(
+        'pages.security.loginLogs.result.success',
+        'Success',
+      ),
       value: 'success',
     },
     {
@@ -388,9 +415,15 @@ export default function LoginLogsPage() {
     },
   ];
   const exportColumns: CurrentPageExportColumn<LoginLogSummary>[] = [
-    { title: formatMessage('pages.security.loginLogs.fields.id', 'ID'), dataIndex: 'id' },
     {
-      title: formatMessage('pages.security.loginLogs.fields.tenantId', 'Tenant ID'),
+      title: formatMessage('pages.security.loginLogs.fields.id', 'ID'),
+      dataIndex: 'id',
+    },
+    {
+      title: formatMessage(
+        'pages.security.loginLogs.fields.tenantId',
+        'Tenant ID',
+      ),
       dataIndex: 'tenantId',
     },
     {
@@ -430,7 +463,10 @@ export default function LoginLogsPage() {
       title: formatMessage('pages.security.loginLogs.fields.reason', 'Reason'),
       dataIndex: 'reason',
     },
-    { title: formatMessage('pages.security.loginLogs.fields.ip', 'IP'), dataIndex: 'ip' },
+    {
+      title: formatMessage('pages.security.loginLogs.fields.ip', 'IP'),
+      dataIndex: 'ip',
+    },
     {
       title: formatMessage(
         'pages.security.loginLogs.fields.location',
@@ -446,10 +482,16 @@ export default function LoginLogsPage() {
       dataIndex: 'userAgent',
     },
     {
-      title: formatMessage('pages.security.loginLogs.fields.browser', 'Browser'),
+      title: formatMessage(
+        'pages.security.loginLogs.fields.browser',
+        'Browser',
+      ),
       dataIndex: 'browser',
     },
-    { title: formatMessage('pages.security.loginLogs.fields.os', 'OS'), dataIndex: 'os' },
+    {
+      title: formatMessage('pages.security.loginLogs.fields.os', 'OS'),
+      dataIndex: 'os',
+    },
     {
       title: formatMessage(
         'pages.security.loginLogs.fields.requestId',
@@ -551,14 +593,21 @@ export default function LoginLogsPage() {
 
   const confirmUnlock = (record: LoginLogSummary) => {
     Modal.confirm({
-      title: formatMessage('pages.security.loginLogs.confirm.unlock', 'Unlock {username}?', {
-        username: record.username,
-      }),
+      title: formatMessage(
+        'pages.security.loginLogs.confirm.unlock',
+        'Unlock {username}?',
+        {
+          username: record.username,
+        },
+      ),
       content: formatMessage(
         'pages.security.loginLogs.confirm.unlockContent',
         'Failed login counters for this username will be cleared immediately.',
       ),
-      okText: formatMessage('pages.security.loginLogs.actions.unlock', 'Unlock'),
+      okText: formatMessage(
+        'pages.security.loginLogs.actions.unlock',
+        'Unlock',
+      ),
       onOk: async () => {
         setUnlockingUsername(record.username);
         try {
@@ -633,7 +682,10 @@ export default function LoginLogsPage() {
         'Every login log record will be permanently removed.',
       ),
       okButtonProps: { danger: true },
-      okText: formatMessage('pages.security.loginLogs.actions.cleanAll', 'Clean all'),
+      okText: formatMessage(
+        'pages.security.loginLogs.actions.cleanAll',
+        'Clean all',
+      ),
       onOk: async () => {
         setCleaningLogs(true);
         try {
@@ -694,7 +746,10 @@ export default function LoginLogsPage() {
       ),
     },
     {
-      title: formatMessage('pages.security.loginLogs.fields.tenantId', 'Tenant ID'),
+      title: formatMessage(
+        'pages.security.loginLogs.fields.tenantId',
+        'Tenant ID',
+      ),
       dataIndex: 'tenantId',
       width: 152,
       ellipsis: true,
@@ -738,7 +793,10 @@ export default function LoginLogsPage() {
       width: 168,
     },
     {
-      title: formatMessage('pages.security.loginLogs.fields.browser', 'Browser'),
+      title: formatMessage(
+        'pages.security.loginLogs.fields.browser',
+        'Browser',
+      ),
       dataIndex: 'browser',
       width: 136,
     },
@@ -766,7 +824,12 @@ export default function LoginLogsPage() {
       width: 88,
       render: (_, record) => (
         <Space size="small">
-          <Tooltip title={formatMessage('pages.security.loginLogs.actions.detail', 'Detail')}>
+          <Tooltip
+            title={formatMessage(
+              'pages.security.loginLogs.actions.detail',
+              'Detail',
+            )}
+          >
             <Button
               aria-label={formatMessage(
                 'pages.security.loginLogs.actions.viewAria',
@@ -834,7 +897,10 @@ export default function LoginLogsPage() {
         onChange={(event) =>
           updateServerFilterDraft('actorUsername', event.target.value)
         }
-        placeholder={formatMessage('pages.security.loginLogs.fields.actor', 'Actor')}
+        placeholder={formatMessage(
+          'pages.security.loginLogs.fields.actor',
+          'Actor',
+        )}
         style={{ width: 132 }}
         value={serverFilterDraft.actorUsername}
       />
@@ -893,7 +959,10 @@ export default function LoginLogsPage() {
             value === 'all' ? undefined : (value as LoginLogResult),
           )
         }
-        options={[{ label: allOptionLabel, value: 'all' }, ...loginResultOptions]}
+        options={[
+          { label: allOptionLabel, value: 'all' },
+          ...loginResultOptions,
+        ]}
         style={{ width: 160 }}
         value={
           serverFilterDraft.result === undefined
@@ -1116,7 +1185,10 @@ export default function LoginLogsPage() {
               loading={cleaningLogs}
               onClick={confirmCleanAll}
             >
-              {formatMessage('pages.security.loginLogs.actions.cleanAll', 'Clean all')}
+              {formatMessage(
+                'pages.security.loginLogs.actions.cleanAll',
+                'Clean all',
+              )}
             </Button>
           </Tooltip>,
           <CurrentPageExportButton
@@ -1128,7 +1200,10 @@ export default function LoginLogsPage() {
           />,
           <Tooltip
             key="refresh"
-            title={formatMessage('pages.security.loginLogs.actions.reload', 'Reload')}
+            title={formatMessage(
+              'pages.security.loginLogs.actions.reload',
+              'Reload',
+            )}
           >
             <Button
               aria-label={formatMessage(

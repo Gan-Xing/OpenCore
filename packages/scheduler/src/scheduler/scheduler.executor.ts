@@ -176,7 +176,8 @@ function executeHandlerWithTenantContext(
         currentContext?.requestId ??
         `scheduler:${input.tenantId}:${input.job.code}`,
       traceId:
-        currentContext?.traceId ?? `scheduler:${input.tenantId}:${input.job.id}`,
+        currentContext?.traceId ??
+        `scheduler:${input.tenantId}:${input.job.id}`,
       actorUserId: currentContext?.actorUserId,
       accessMode: currentContext?.accessMode ?? 'tenant',
       membershipId: currentContext?.membershipId,

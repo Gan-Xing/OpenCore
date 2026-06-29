@@ -226,10 +226,7 @@ export default function MenusPage() {
       ? intl.formatMessage({ id, defaultMessage }, values)
       : intl.formatMessage({ id, defaultMessage });
   const menuTypeLabels: Record<MenuType, string> = {
-    directory: formatMessage(
-      'pages.system.menus.type.directory',
-      'directory',
-    ),
+    directory: formatMessage('pages.system.menus.type.directory', 'directory'),
     menu: formatMessage('pages.system.menus.type.menu', 'menu'),
   };
   const menuStatusLabels: Record<MenuStatus, string> = {
@@ -289,7 +286,10 @@ export default function MenusPage() {
       dataIndex: 'component',
     },
     {
-      title: formatMessage('pages.system.menus.fields.permission', 'Permission'),
+      title: formatMessage(
+        'pages.system.menus.fields.permission',
+        'Permission',
+      ),
       dataIndex: 'permissionCode',
     },
     {
@@ -347,7 +347,10 @@ export default function MenusPage() {
       value: record.component,
     },
     {
-      label: formatMessage('pages.system.menus.fields.permission', 'Permission'),
+      label: formatMessage(
+        'pages.system.menus.fields.permission',
+        'Permission',
+      ),
       value: record.permissionCode,
     },
     {
@@ -617,7 +620,10 @@ export default function MenusPage() {
       ellipsis: true,
     },
     {
-      title: formatMessage('pages.system.menus.fields.permission', 'Permission'),
+      title: formatMessage(
+        'pages.system.menus.fields.permission',
+        'Permission',
+      ),
       dataIndex: 'permissionCode',
       ellipsis: true,
       render: (_, record) =>
@@ -665,10 +671,7 @@ export default function MenusPage() {
       render: (_, record) => (
         <Space size="small">
           <Tooltip
-            title={formatMessage(
-              'pages.system.menus.actions.detail',
-              'Detail',
-            )}
+            title={formatMessage('pages.system.menus.actions.detail', 'Detail')}
           >
             <Button
               aria-label={formatMessage(
@@ -717,7 +720,10 @@ export default function MenusPage() {
               'pages.system.menus.confirm.deleteOne',
               'Delete this menu?',
             )}
-            okText={formatMessage('pages.system.menus.actions.delete', 'Delete')}
+            okText={formatMessage(
+              'pages.system.menus.actions.delete',
+              'Delete',
+            )}
             okButtonProps={{ danger: true }}
             onConfirm={() => void deleteMenu(record)}
           >
@@ -868,7 +874,10 @@ export default function MenusPage() {
               <Select options={menuTypeOptions} style={{ minWidth: 160 }} />
             </Form.Item>
             <Form.Item
-              label={formatMessage('pages.system.menus.fields.status', 'Status')}
+              label={formatMessage(
+                'pages.system.menus.fields.status',
+                'Status',
+              )}
               name="status"
               rules={[
                 {
@@ -977,7 +986,10 @@ export default function MenusPage() {
               <Switch />
             </Form.Item>
             <Form.Item
-              label={formatMessage('pages.system.menus.fields.hidden', 'Hidden')}
+              label={formatMessage(
+                'pages.system.menus.fields.hidden',
+                'Hidden',
+              )}
               name="hidden"
               valuePropName="checked"
               style={{ marginBottom: 0 }}

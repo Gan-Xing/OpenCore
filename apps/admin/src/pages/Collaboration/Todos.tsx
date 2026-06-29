@@ -667,10 +667,7 @@ export default function TodosPage() {
   return (
     <PageContainer
       title={formatMessage('pages.collaboration.todos.title', 'Todos')}
-      subTitle={formatMessage(
-        'pages.collaboration.section',
-        'Collaboration',
-      )}
+      subTitle={formatMessage('pages.collaboration.section', 'Collaboration')}
     >
       {loadError ? (
         <Alert

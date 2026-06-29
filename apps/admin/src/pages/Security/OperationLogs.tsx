@@ -144,9 +144,15 @@ function createDetailFields(
   formatMessage: LocaleFormatter,
 ): DetailField[] {
   return [
-    { label: formatMessage('pages.security.operationLogs.fields.id', 'ID'), value: record.id },
     {
-      label: formatMessage('pages.security.operationLogs.fields.tenantId', 'Tenant ID'),
+      label: formatMessage('pages.security.operationLogs.fields.id', 'ID'),
+      value: record.id,
+    },
+    {
+      label: formatMessage(
+        'pages.security.operationLogs.fields.tenantId',
+        'Tenant ID',
+      ),
       value: record.tenantId,
     },
     {
@@ -154,11 +160,17 @@ function createDetailFields(
       value: record.createdAt,
     },
     {
-      label: formatMessage('pages.security.operationLogs.fields.actor', 'Actor'),
+      label: formatMessage(
+        'pages.security.operationLogs.fields.actor',
+        'Actor',
+      ),
       value: record.actorUsername,
     },
     {
-      label: formatMessage('pages.security.operationLogs.fields.action', 'Action'),
+      label: formatMessage(
+        'pages.security.operationLogs.fields.action',
+        'Action',
+      ),
       value: record.action,
     },
     {
@@ -176,7 +188,10 @@ function createDetailFields(
       value: record.resourceId,
     },
     {
-      label: formatMessage('pages.security.operationLogs.fields.method', 'Method'),
+      label: formatMessage(
+        'pages.security.operationLogs.fields.method',
+        'Method',
+      ),
       value: record.method,
     },
     {
@@ -190,7 +205,10 @@ function createDetailFields(
       ),
       value: record.statusCode,
     },
-    { label: formatMessage('pages.security.operationLogs.fields.ip', 'IP'), value: record.ip },
+    {
+      label: formatMessage('pages.security.operationLogs.fields.ip', 'IP'),
+      value: record.ip,
+    },
     {
       label: formatMessage(
         'pages.security.operationLogs.fields.location',
@@ -228,7 +246,10 @@ function createDetailJsonSections(
 ): DetailJsonSection[] {
   return [
     {
-      title: formatMessage('pages.security.operationLogs.fields.metadata', 'Metadata'),
+      title: formatMessage(
+        'pages.security.operationLogs.fields.metadata',
+        'Metadata',
+      ),
       value: record.metadata ?? {},
     },
   ];
@@ -285,19 +306,31 @@ export default function OperationLogsPage() {
       : intl.formatMessage({ id, defaultMessage });
   const auditStatusOptions: AuditStatusOption[] = [
     {
-      label: formatMessage('pages.security.operationLogs.status.success', 'Success'),
+      label: formatMessage(
+        'pages.security.operationLogs.status.success',
+        'Success',
+      ),
       value: 'success',
     },
     {
-      label: formatMessage('pages.security.operationLogs.status.error', 'Error'),
+      label: formatMessage(
+        'pages.security.operationLogs.status.error',
+        'Error',
+      ),
       value: 'error',
     },
   ];
   const allOptionLabel = formatMessage('pages.security.common.all', 'All');
   const exportColumns: CurrentPageExportColumn<AuditLogSummary>[] = [
-    { title: formatMessage('pages.security.operationLogs.fields.id', 'ID'), dataIndex: 'id' },
     {
-      title: formatMessage('pages.security.operationLogs.fields.tenantId', 'Tenant ID'),
+      title: formatMessage('pages.security.operationLogs.fields.id', 'ID'),
+      dataIndex: 'id',
+    },
+    {
+      title: formatMessage(
+        'pages.security.operationLogs.fields.tenantId',
+        'Tenant ID',
+      ),
       dataIndex: 'tenantId',
     },
     {
@@ -305,11 +338,17 @@ export default function OperationLogsPage() {
       dataIndex: 'createdAt',
     },
     {
-      title: formatMessage('pages.security.operationLogs.fields.actor', 'Actor'),
+      title: formatMessage(
+        'pages.security.operationLogs.fields.actor',
+        'Actor',
+      ),
       dataIndex: 'actorUsername',
     },
     {
-      title: formatMessage('pages.security.operationLogs.fields.action', 'Action'),
+      title: formatMessage(
+        'pages.security.operationLogs.fields.action',
+        'Action',
+      ),
       dataIndex: 'action',
     },
     {
@@ -327,7 +366,10 @@ export default function OperationLogsPage() {
       dataIndex: 'resourceId',
     },
     {
-      title: formatMessage('pages.security.operationLogs.fields.method', 'Method'),
+      title: formatMessage(
+        'pages.security.operationLogs.fields.method',
+        'Method',
+      ),
       dataIndex: 'method',
     },
     {
@@ -520,7 +562,10 @@ export default function OperationLogsPage() {
       width: 192,
     },
     {
-      title: formatMessage('pages.security.operationLogs.fields.actor', 'Actor'),
+      title: formatMessage(
+        'pages.security.operationLogs.fields.actor',
+        'Actor',
+      ),
       dataIndex: 'actorUsername',
       render: (_, record) => (
         <Typography.Link onClick={() => void openDetail(record)}>
@@ -529,13 +574,19 @@ export default function OperationLogsPage() {
       ),
     },
     {
-      title: formatMessage('pages.security.operationLogs.fields.tenantId', 'Tenant ID'),
+      title: formatMessage(
+        'pages.security.operationLogs.fields.tenantId',
+        'Tenant ID',
+      ),
       dataIndex: 'tenantId',
       width: 152,
       ellipsis: true,
     },
     {
-      title: formatMessage('pages.security.operationLogs.fields.action', 'Action'),
+      title: formatMessage(
+        'pages.security.operationLogs.fields.action',
+        'Action',
+      ),
       dataIndex: 'action',
       width: 132,
     },
@@ -548,7 +599,10 @@ export default function OperationLogsPage() {
       ellipsis: true,
     },
     {
-      title: formatMessage('pages.security.operationLogs.fields.method', 'Method'),
+      title: formatMessage(
+        'pages.security.operationLogs.fields.method',
+        'Method',
+      ),
       dataIndex: 'method',
       width: 96,
     },
@@ -568,12 +622,19 @@ export default function OperationLogsPage() {
       dataIndex: 'durationMs',
       width: 112,
       render: (_, record) =>
-        formatMessage('pages.security.operationLogs.duration.ms', '{value} ms', {
-          value: record.durationMs,
-        }),
+        formatMessage(
+          'pages.security.operationLogs.duration.ms',
+          '{value} ms',
+          {
+            value: record.durationMs,
+          },
+        ),
     },
     {
-      title: formatMessage('pages.security.operationLogs.fields.status', 'Status'),
+      title: formatMessage(
+        'pages.security.operationLogs.fields.status',
+        'Status',
+      ),
       dataIndex: 'statusCode',
       width: 96,
       render: (_, record) => (
@@ -694,7 +755,10 @@ export default function OperationLogsPage() {
             value === 'all' ? undefined : (value as AuditLogStatus),
           )
         }
-        options={[{ label: allOptionLabel, value: 'all' }, ...auditStatusOptions]}
+        options={[
+          { label: allOptionLabel, value: 'all' },
+          ...auditStatusOptions,
+        ]}
         style={{ width: 132 }}
         value={
           serverFilterDraft.status === undefined
@@ -707,7 +771,10 @@ export default function OperationLogsPage() {
           'pages.security.operationLogs.serverFilters.minDurationAria',
           'Operation minimum duration server filter',
         )}
-        addonAfter={formatMessage('pages.security.operationLogs.units.ms', 'ms')}
+        addonAfter={formatMessage(
+          'pages.security.operationLogs.units.ms',
+          'ms',
+        )}
         min={0}
         onChange={(value) =>
           updateServerFilterDraft(
@@ -728,7 +795,10 @@ export default function OperationLogsPage() {
           'pages.security.operationLogs.serverFilters.maxDurationAria',
           'Operation maximum duration server filter',
         )}
-        addonAfter={formatMessage('pages.security.operationLogs.units.ms', 'ms')}
+        addonAfter={formatMessage(
+          'pages.security.operationLogs.units.ms',
+          'ms',
+        )}
         min={0}
         onChange={(value) =>
           updateServerFilterDraft(
@@ -939,7 +1009,9 @@ export default function OperationLogsPage() {
       />
       <ReadOnlyDetailDrawer
         fields={
-          selectedDetail ? createDetailFields(selectedDetail, formatMessage) : []
+          selectedDetail
+            ? createDetailFields(selectedDetail, formatMessage)
+            : []
         }
         jsonSections={
           selectedDetail

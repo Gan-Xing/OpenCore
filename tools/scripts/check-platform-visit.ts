@@ -91,7 +91,7 @@ for (const marker of [
   "action: 'platform-visit'",
   "resource: 'auth.platform-visit'",
   'resolveAuditOperationLogLocation',
-  ".logout(`Bearer ${session.accessToken}`",
+  '.logout(`Bearer ${session.accessToken}`',
 ]) {
   requireIncludes(authControllerPath, authController, marker);
 }
@@ -103,7 +103,11 @@ requireIncludes(rbacRepositoryPath, rbacRepository, 'platformRoles');
 requireIncludes(sdkTypesPath, sdkTypes, 'PlatformVisitTenantRequest');
 requireIncludes(sdkClientPath, sdkClient, 'visitTenantAsPlatform');
 requireIncludes(adminAuthPath, adminAuth, 'visitOpenCoreTenantAsPlatform');
-requireIncludes(adminTenantsPath, adminTenants, 'visitOpenCoreTenantAsPlatform');
+requireIncludes(
+  adminTenantsPath,
+  adminTenants,
+  'visitOpenCoreTenantAsPlatform',
+);
 requireIncludes(adminTenantsPath, adminTenants, 'Visit tenant');
 
 for (const marker of [

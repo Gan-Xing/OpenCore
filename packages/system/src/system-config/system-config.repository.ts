@@ -201,9 +201,7 @@ export function systemConfigConflict(
   message: string,
   details?: Record<string, unknown>,
 ): ConflictException {
-  return new ConflictException(
-    createApiErrorBody({ code, message, details }),
-  );
+  return new ConflictException(createApiErrorBody({ code, message, details }));
 }
 
 export function systemConfigForbidden(
@@ -211,9 +209,7 @@ export function systemConfigForbidden(
   message: string,
   details?: Record<string, unknown>,
 ): ForbiddenException {
-  return new ForbiddenException(
-    createApiErrorBody({ code, message, details }),
-  );
+  return new ForbiddenException(createApiErrorBody({ code, message, details }));
 }
 
 export function systemConfigNotFound(
@@ -431,7 +427,11 @@ export function assertFeatureFlagConfigShape(input: {
     throw systemConfigBadRequest(
       'SYSTEM_CONFIG_FEATURE_FLAG_VALUE_TYPE_INVALID',
       `Feature flag config ${input.key} must keep ${valueTypeLabel}.`,
-      { expectedValueType: valueType, key: input.key, valueType: input.valueType },
+      {
+        expectedValueType: valueType,
+        key: input.key,
+        valueType: input.valueType,
+      },
     );
   }
 

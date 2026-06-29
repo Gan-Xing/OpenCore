@@ -348,7 +348,10 @@ export default function RolesPage() {
     },
   ];
   const createDetailFields = (record: RoleSummary): DetailField[] => [
-    { label: formatMessage('pages.system.roles.fields.id', 'ID'), value: record.id },
+    {
+      label: formatMessage('pages.system.roles.fields.id', 'ID'),
+      value: record.id,
+    },
     {
       label: formatMessage('pages.system.roles.fields.code', 'Code'),
       value: record.code,
@@ -605,7 +608,9 @@ export default function RolesPage() {
           formatMessage(
             'pages.system.roles.messages.updated',
             'Role updated. {revokedSessions}',
-            { revokedSessions: formatRevokedSessions(role.revokedSessionCount) },
+            {
+              revokedSessions: formatRevokedSessions(role.revokedSessionCount),
+            },
           ),
         );
       } else {
@@ -763,7 +768,7 @@ export default function RolesPage() {
               <Tag key={code}>{code}</Tag>
             ))}
           </Space>
-      ),
+        ),
     },
     {
       title: formatMessage('pages.system.roles.fields.dataScope', 'Data Scope'),
@@ -925,7 +930,10 @@ export default function RolesPage() {
               'pages.system.roles.confirm.deleteOne',
               'Delete this role?',
             )}
-            okText={formatMessage('pages.system.roles.actions.delete', 'Delete')}
+            okText={formatMessage(
+              'pages.system.roles.actions.delete',
+              'Delete',
+            )}
             okButtonProps={{ danger: true }}
             onConfirm={() => void deleteRole(record)}
           >

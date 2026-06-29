@@ -194,7 +194,10 @@ export default function FilesPage() {
     },
   ];
   const createDetailFields = (record: FileAssetSummary): DetailField[] => [
-    { label: formatMessage('pages.system.files.fields.id', 'ID'), value: record.id },
+    {
+      label: formatMessage('pages.system.files.fields.id', 'ID'),
+      value: record.id,
+    },
     {
       label: formatMessage('pages.system.files.fields.tenantId', 'Tenant ID'),
       value: record.tenantId,
@@ -449,12 +452,18 @@ export default function FilesPage() {
       ),
     },
     {
-      title: formatMessage('pages.system.files.fields.storageKey', 'Storage key'),
+      title: formatMessage(
+        'pages.system.files.fields.storageKey',
+        'Storage key',
+      ),
       dataIndex: 'storageKey',
       ellipsis: true,
     },
     {
-      title: formatMessage('pages.system.files.fields.uploadedBy', 'Uploaded by'),
+      title: formatMessage(
+        'pages.system.files.fields.uploadedBy',
+        'Uploaded by',
+      ),
       dataIndex: 'uploadedBy',
       width: 128,
     },
@@ -522,12 +531,18 @@ export default function FilesPage() {
               'pages.system.files.confirm.deleteOne',
               'Delete this file asset?',
             )}
-            okText={formatMessage('pages.system.files.actions.delete', 'Delete')}
+            okText={formatMessage(
+              'pages.system.files.actions.delete',
+              'Delete',
+            )}
             okButtonProps={{ danger: true }}
             onConfirm={() => void deleteFile(record)}
           >
             <Tooltip
-              title={formatMessage('pages.system.files.actions.delete', 'Delete')}
+              title={formatMessage(
+                'pages.system.files.actions.delete',
+                'Delete',
+              )}
             >
               <Button
                 aria-label={formatMessage(
@@ -633,7 +648,10 @@ export default function FilesPage() {
                 'pages.system.files.form.editTitle',
                 'Edit File Asset',
               )
-            : formatMessage('pages.system.files.form.uploadTitle', 'Upload File')
+            : formatMessage(
+                'pages.system.files.form.uploadTitle',
+                'Upload File',
+              )
         }
       >
         <Form<FileFormValues> form={form} layout="vertical">
@@ -739,7 +757,10 @@ export default function FilesPage() {
             />
           </Form.Item>
           <Form.Item
-            label={formatMessage('pages.system.files.fields.checksum', 'Checksum')}
+            label={formatMessage(
+              'pages.system.files.fields.checksum',
+              'Checksum',
+            )}
             name="checksum"
           >
             <Input

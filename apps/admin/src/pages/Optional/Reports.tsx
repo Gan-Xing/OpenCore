@@ -202,7 +202,10 @@ export default function ReportsPage() {
   return (
     <PageContainer
       title={formatMessage('pages.optional.reports.title', 'Reports')}
-      subTitle={formatMessage('pages.optional.section', 'Optional Capabilities')}
+      subTitle={formatMessage(
+        'pages.optional.section',
+        'Optional Capabilities',
+      )}
     >
       <ProTable<ReportDefinitionSummary>
         rowKey="code"

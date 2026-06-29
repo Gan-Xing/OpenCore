@@ -263,13 +263,11 @@ async function seedLimitedMenuRole(tenantId: string): Promise<void> {
       code: limitedRoleCode,
       name: 'Smoke Menu Scoped Role',
       permissions: {
-        create: [
-          'core:menu:read',
-          'core:role:read',
-          'core:role:update',
-        ].map((code) => ({
-          permission: { connect: { code } },
-        })),
+        create: ['core:menu:read', 'core:role:read', 'core:role:update'].map(
+          (code) => ({
+            permission: { connect: { code } },
+          }),
+        ),
       },
       tenantId,
     },

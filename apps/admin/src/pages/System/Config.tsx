@@ -346,10 +346,7 @@ export default function ConfigPage() {
     ),
   };
   const featureLabels = {
-    audience: formatMessage(
-      'pages.system.config.feature.audience',
-      'audience',
-    ),
+    audience: formatMessage('pages.system.config.feature.audience', 'audience'),
     invalidRules: formatMessage(
       'pages.system.config.feature.invalidRules',
       'invalid rules',
@@ -362,10 +359,7 @@ export default function ConfigPage() {
     ),
     rollout: formatMessage('pages.system.config.feature.rollout', 'rollout'),
     runtime: formatMessage('pages.system.config.feature.runtime', 'runtime'),
-    standard: formatMessage(
-      'pages.system.config.feature.standard',
-      'standard',
-    ),
+    standard: formatMessage('pages.system.config.feature.standard', 'standard'),
     standardConfig: formatMessage(
       'pages.system.config.feature.standardConfig',
       'standard config',
@@ -405,9 +399,7 @@ export default function ConfigPage() {
       ? vaultLabels.vaultEncrypted
       : vaultLabels.legacySecret;
   };
-  const renderFeatureFlagExportText = (
-    record: SystemConfigSummary,
-  ): string => {
+  const renderFeatureFlagExportText = (record: SystemConfigSummary): string => {
     const flagName = getFeatureFlagName(record);
 
     if (!flagName) {
@@ -441,7 +433,9 @@ export default function ConfigPage() {
     return (
       <Tag color={record.encrypted ? 'purple' : 'orange'}>
         <LockOutlined />{' '}
-        {record.encrypted ? vaultLabels.vaultEncrypted : vaultLabels.legacySecret}
+        {record.encrypted
+          ? vaultLabels.vaultEncrypted
+          : vaultLabels.legacySecret}
       </Tag>
     );
   };
@@ -481,7 +475,10 @@ export default function ConfigPage() {
         { label: publicLabels.public, value: 'true' },
         { label: publicLabels.private, value: 'false' },
       ],
-      placeholder: formatMessage('pages.system.config.filters.public', 'Public'),
+      placeholder: formatMessage(
+        'pages.system.config.filters.public',
+        'Public',
+      ),
       predicate: (record, value) => record.public === (value === 'true'),
     },
     {
@@ -518,12 +515,18 @@ export default function ConfigPage() {
         { label: systemLabels.system, value: 'true' },
         { label: systemLabels.custom, value: 'false' },
       ],
-      placeholder: formatMessage('pages.system.config.filters.system', 'System'),
+      placeholder: formatMessage(
+        'pages.system.config.filters.system',
+        'System',
+      ),
       predicate: (record, value) => record.system === (value === 'true'),
     },
   ];
   const exportColumns: CurrentPageExportColumn<SystemConfigSummary>[] = [
-    { title: formatMessage('pages.system.config.fields.id', 'ID'), dataIndex: 'id' },
+    {
+      title: formatMessage('pages.system.config.fields.id', 'ID'),
+      dataIndex: 'id',
+    },
     {
       title: formatMessage('pages.system.config.fields.tenantId', 'Tenant ID'),
       dataIndex: 'tenantId',
@@ -549,7 +552,10 @@ export default function ConfigPage() {
       renderText: (record) => valueTypeLabels[record.valueType],
     },
     {
-      title: formatMessage('pages.system.config.fields.visibility', 'Visibility'),
+      title: formatMessage(
+        'pages.system.config.fields.visibility',
+        'Visibility',
+      ),
       renderText: (record) => visibilityLabels[record.visibility],
     },
     {
@@ -585,7 +591,10 @@ export default function ConfigPage() {
         record.system ? systemLabels.system : systemLabels.custom,
     },
     {
-      title: formatMessage('pages.system.config.fields.description', 'Description'),
+      title: formatMessage(
+        'pages.system.config.fields.description',
+        'Description',
+      ),
       dataIndex: 'description',
     },
     {
@@ -594,7 +603,10 @@ export default function ConfigPage() {
     },
   ];
   const createDetailFields = (record: SystemConfigSummary): DetailField[] => [
-    { label: formatMessage('pages.system.config.fields.id', 'ID'), value: record.id },
+    {
+      label: formatMessage('pages.system.config.fields.id', 'ID'),
+      value: record.id,
+    },
     {
       label: formatMessage('pages.system.config.fields.tenantId', 'Tenant ID'),
       value: record.tenantId,
@@ -621,7 +633,10 @@ export default function ConfigPage() {
       value: valueTypeLabels[record.valueType],
     },
     {
-      label: formatMessage('pages.system.config.fields.visibility', 'Visibility'),
+      label: formatMessage(
+        'pages.system.config.fields.visibility',
+        'Visibility',
+      ),
       value: visibilityLabels[record.visibility],
     },
     {
@@ -659,7 +674,10 @@ export default function ConfigPage() {
       value: record.system ? systemLabels.system : systemLabels.custom,
     },
     {
-      label: formatMessage('pages.system.config.fields.description', 'Description'),
+      label: formatMessage(
+        'pages.system.config.fields.description',
+        'Description',
+      ),
       value: record.description,
     },
     {
@@ -1378,7 +1396,10 @@ export default function ConfigPage() {
       render: (_, record) => <Tag>{valueTypeLabels[record.valueType]}</Tag>,
     },
     {
-      title: formatMessage('pages.system.config.fields.visibility', 'Visibility'),
+      title: formatMessage(
+        'pages.system.config.fields.visibility',
+        'Visibility',
+      ),
       dataIndex: 'visibility',
       width: 124,
       render: (_, record) => renderVisibility(record),
@@ -1496,9 +1517,7 @@ export default function ConfigPage() {
 
         return (
           <Space size="small">
-            <Tag color="geekblue">
-              {formatAudienceRulesText(audienceValue)}
-            </Tag>
+            <Tag color="geekblue">{formatAudienceRulesText(audienceValue)}</Tag>
             {isFeatureFlagConfig(record) ? (
               <Tooltip
                 title={formatMessage(
@@ -1533,7 +1552,10 @@ export default function ConfigPage() {
       render: (_, record) => renderSystem(record),
     },
     {
-      title: formatMessage('pages.system.config.fields.description', 'Description'),
+      title: formatMessage(
+        'pages.system.config.fields.description',
+        'Description',
+      ),
       dataIndex: 'description',
       ellipsis: true,
     },
@@ -1660,7 +1682,10 @@ export default function ConfigPage() {
               'pages.system.config.confirm.deleteOne',
               'Delete this system config?',
             )}
-            okText={formatMessage('pages.system.config.actions.delete', 'Delete')}
+            okText={formatMessage(
+              'pages.system.config.actions.delete',
+              'Delete',
+            )}
             okButtonProps={{ danger: true }}
             disabled={record.system}
             onConfirm={() => void deleteConfig(record)}
@@ -1767,7 +1792,10 @@ export default function ConfigPage() {
               'Delete {count} selected custom config(s)?',
               { count: selectedDeletableKeys.length },
             )}
-            okText={formatMessage('pages.system.config.actions.delete', 'Delete')}
+            okText={formatMessage(
+              'pages.system.config.actions.delete',
+              'Delete',
+            )}
             okButtonProps={{ danger: true }}
             disabled={selectedDeletableKeys.length === 0}
             onConfirm={() => void deleteSelectedConfigs()}

@@ -44,12 +44,13 @@ describe('CollaborationRepository', () => {
       }),
     );
 
-    await expect(repository.listMessages({ recipient: 'admin' })).resolves
-      .toMatchObject({
-        items: expect.not.arrayContaining([
-          expect.objectContaining({ id: foreignMessage.id }),
-        ]),
-      });
+    await expect(
+      repository.listMessages({ recipient: 'admin' }),
+    ).resolves.toMatchObject({
+      items: expect.not.arrayContaining([
+        expect.objectContaining({ id: foreignMessage.id }),
+      ]),
+    });
     await expectHttpExceptionCode(
       repository.getMessage(foreignMessage.id),
       'COLLABORATION_RESOURCE_NOT_FOUND',
@@ -58,9 +59,11 @@ describe('CollaborationRepository', () => {
       repository.markMessageRead(foreignMessage.id),
       'COLLABORATION_RESOURCE_NOT_FOUND',
     );
-    await expect(runInTenant('tenant_foreign', () =>
-      repository.getMessage(foreignMessage.id),
-    )).resolves.toMatchObject({
+    await expect(
+      runInTenant('tenant_foreign', () =>
+        repository.getMessage(foreignMessage.id),
+      ),
+    ).resolves.toMatchObject({
       id: foreignMessage.id,
       tenantId: 'tenant_foreign',
     });
@@ -77,12 +80,13 @@ describe('CollaborationRepository', () => {
       }),
     );
 
-    await expect(repository.listNotices({ status: 'draft' })).resolves
-      .toMatchObject({
-        items: expect.not.arrayContaining([
-          expect.objectContaining({ id: foreignNotice.id }),
-        ]),
-      });
+    await expect(
+      repository.listNotices({ status: 'draft' }),
+    ).resolves.toMatchObject({
+      items: expect.not.arrayContaining([
+        expect.objectContaining({ id: foreignNotice.id }),
+      ]),
+    });
     await expectHttpExceptionCode(
       repository.getNotice(foreignNotice.id),
       'COLLABORATION_RESOURCE_NOT_FOUND',
@@ -91,9 +95,11 @@ describe('CollaborationRepository', () => {
       repository.publishNotice(foreignNotice.id),
       'COLLABORATION_RESOURCE_NOT_FOUND',
     );
-    await expect(runInTenant('tenant_foreign', () =>
-      repository.getNotice(foreignNotice.id),
-    )).resolves.toMatchObject({
+    await expect(
+      runInTenant('tenant_foreign', () =>
+        repository.getNotice(foreignNotice.id),
+      ),
+    ).resolves.toMatchObject({
       id: foreignNotice.id,
       tenantId: 'tenant_foreign',
     });
@@ -112,12 +118,13 @@ describe('CollaborationRepository', () => {
       }),
     );
 
-    await expect(repository.listTodos({ status: 'pending' })).resolves
-      .toMatchObject({
-        items: expect.not.arrayContaining([
-          expect.objectContaining({ id: foreignTodo.id }),
-        ]),
-      });
+    await expect(
+      repository.listTodos({ status: 'pending' }),
+    ).resolves.toMatchObject({
+      items: expect.not.arrayContaining([
+        expect.objectContaining({ id: foreignTodo.id }),
+      ]),
+    });
     await expectHttpExceptionCode(
       repository.getTodo(foreignTodo.id),
       'COLLABORATION_RESOURCE_NOT_FOUND',
@@ -129,9 +136,9 @@ describe('CollaborationRepository', () => {
       }),
       'COLLABORATION_RESOURCE_NOT_FOUND',
     );
-    await expect(runInTenant('tenant_foreign', () =>
-      repository.getTodo(foreignTodo.id),
-    )).resolves.toMatchObject({
+    await expect(
+      runInTenant('tenant_foreign', () => repository.getTodo(foreignTodo.id)),
+    ).resolves.toMatchObject({
       id: foreignTodo.id,
       tenantId: 'tenant_foreign',
     });
@@ -166,9 +173,11 @@ describe('CollaborationRepository', () => {
       }),
       'COLLABORATION_RESOURCE_NOT_FOUND',
     );
-    await expect(runInTenant('tenant_foreign', () =>
-      repository.getApprovalLiteRequest(foreignApproval.id),
-    )).resolves.toMatchObject({
+    await expect(
+      runInTenant('tenant_foreign', () =>
+        repository.getApprovalLiteRequest(foreignApproval.id),
+      ),
+    ).resolves.toMatchObject({
       id: foreignApproval.id,
       tenantId: 'tenant_foreign',
     });

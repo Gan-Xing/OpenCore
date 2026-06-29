@@ -44,7 +44,7 @@ const checks: Array<{
   {
     file: 'apps/api/src/modules/core/rbac/auth.controller.ts',
     markers: [
-      "tenantHost: getTenantHost(request.headers)",
+      'tenantHost: getTenantHost(request.headers)',
       'x-forwarded-host',
       "getHeaderValue(headers, 'host')",
       "@Post('select-tenant')",

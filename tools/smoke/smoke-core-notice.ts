@@ -1546,22 +1546,19 @@ async function assertForeignTenantNoticeHidden(userId) {
     assertArray(page.items, 'foreign notice list items');
     assertItemsExclude(page.items, FOREIGN_NOTICE_ID, 'foreign notice list');
   });
-  await apiRequest(
-    `/core/notices/${encodeURIComponent(FOREIGN_NOTICE_ID)}`,
-    {
-      method: 'PATCH',
-      expected: [404],
-      body: { title: `${FOREIGN_NOTICE_TITLE} mutated` },
-    },
-  );
+  await apiRequest(`/core/notices/${encodeURIComponent(FOREIGN_NOTICE_ID)}`, {
+    method: 'PATCH',
+    expected: [404],
+    body: { title: `${FOREIGN_NOTICE_TITLE} mutated` },
+  });
   await apiRequest(
     `/core/notices/${encodeURIComponent(FOREIGN_NOTICE_ID)}/publish`,
     { method: 'PATCH', expected: [404] },
   );
-  await apiRequest(
-    `/core/notices/${encodeURIComponent(FOREIGN_NOTICE_ID)}`,
-    { method: 'DELETE', expected: [404] },
-  );
+  await apiRequest(`/core/notices/${encodeURIComponent(FOREIGN_NOTICE_ID)}`, {
+    method: 'DELETE',
+    expected: [404],
+  });
   await apiRequest(
     `/core/notices/${encodeURIComponent(FOREIGN_NOTICE_ID)}/read-users?page=1&pageSize=10`,
     { expected: [404] },
@@ -1639,11 +1636,7 @@ async function assertForeignTenantNoticePreserved() {
     where: { id: FOREIGN_DELIVERY_ID },
     select: { status: true, tenantId: true, readAt: true },
   });
-  assertEqual(
-    delivery?.tenantId,
-    FOREIGN_TENANT_ID,
-    'foreign delivery tenant',
-  );
+  assertEqual(delivery?.tenantId, FOREIGN_TENANT_ID, 'foreign delivery tenant');
   assertEqual(delivery?.status, 'delivered', 'foreign delivery status');
   assertEqual(delivery?.readAt, null, 'foreign delivery readAt preserved');
 
@@ -1657,11 +1650,7 @@ async function assertForeignTenantNoticePreserved() {
     where: { id: FOREIGN_TEMPLATE_ID },
     select: { name: true, tenantId: true },
   });
-  assertEqual(
-    template?.tenantId,
-    FOREIGN_TENANT_ID,
-    'foreign template tenant',
-  );
+  assertEqual(template?.tenantId, FOREIGN_TENANT_ID, 'foreign template tenant');
   assertEqual(
     template?.name,
     'Foreign Notice Template',

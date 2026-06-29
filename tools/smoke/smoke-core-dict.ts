@@ -42,15 +42,27 @@ async function main() {
 
     const importTemplate = await clients.system.getDictImportTemplate(token);
     assertString(importTemplate.contentBase64, 'dict import template content');
-    assertIncludes(importTemplate.columns, 'dictCode', 'dict import template columns');
+    assertIncludes(
+      importTemplate.columns,
+      'dictCode',
+      'dict import template columns',
+    );
 
     const importCsvBase64 = createImportCsvBase64(importDictCode);
     const importPreview = await clients.system.previewImportDicts(token, {
       contentBase64: importCsvBase64,
     });
     assertEqual(importPreview.dryRun, true, 'dict import preview dryRun');
-    assertEqual(importPreview.createdDicts, 1, 'dict import preview dict count');
-    assertEqual(importPreview.createdItems, 2, 'dict import preview item count');
+    assertEqual(
+      importPreview.createdDicts,
+      1,
+      'dict import preview dict count',
+    );
+    assertEqual(
+      importPreview.createdItems,
+      2,
+      'dict import preview item count',
+    );
     assertEqual(importPreview.failed, 0, 'dict import preview failures');
 
     const importResult = await clients.system.importDicts(token, {
@@ -72,9 +84,21 @@ async function main() {
       entries: [{ dictCode: importDictCode, values: ['primary', 'missing'] }],
     });
     assertEqual(translation.items.length, 2, 'dict translation item count');
-    assertEqual(translation.items[0]?.found, true, 'dict translation found item');
-    assertEqual(translation.items[0]?.label, 'Primary', 'dict translation label');
-    assertEqual(translation.items[1]?.found, false, 'dict translation missing item');
+    assertEqual(
+      translation.items[0]?.found,
+      true,
+      'dict translation found item',
+    );
+    assertEqual(
+      translation.items[0]?.label,
+      'Primary',
+      'dict translation label',
+    );
+    assertEqual(
+      translation.items[1]?.found,
+      false,
+      'dict translation missing item',
+    );
 
     const createdDict = await clients.system.createDict(token, {
       code: dictCode,
@@ -131,7 +155,11 @@ async function main() {
       value: 'alpha',
     });
     assertEqual(itemPage.total, 1, 'dict item page filtered total');
-    assertEqual(itemPage.items[0]?.dictCode, dictCode, 'dict item page dictCode');
+    assertEqual(
+      itemPage.items[0]?.dictCode,
+      dictCode,
+      'dict item page dictCode',
+    );
 
     const dictPage = await clients.system.listDicts(token, {
       code: dictCode,
@@ -140,11 +168,15 @@ async function main() {
     });
     assertEqual(dictPage.total, 1, 'dict page filtered total');
 
-    const dictExport = await clients.system.exportDicts(token, { code: dictCode });
+    const dictExport = await clients.system.exportDicts(token, {
+      code: dictCode,
+    });
     assertEqual(dictExport.rowCount, 1, 'dict export row count');
     assertIncludes(dictExport.columns, 'tenantId', 'dict export tenant column');
 
-    const itemExport = await clients.system.exportDictItems(token, { dictCode });
+    const itemExport = await clients.system.exportDictItems(token, {
+      dictCode,
+    });
     assertEqual(itemExport.rowCount, 2, 'dict item export row count');
     assertIncludes(
       itemExport.columns,
@@ -247,12 +279,15 @@ async function main() {
     assertEqual(updatedAlpha.value, 'alpha-updated', 'alpha updated value');
 
     await clients.system.deleteDictItem(token, dictCode, alphaItemId);
-    const deletedAlphaPage = await clients.system.listDeletedDictItemsPage(token, {
-      dictCode,
-      page: 1,
-      pageSize: 10,
-      value: 'alpha-updated',
-    });
+    const deletedAlphaPage = await clients.system.listDeletedDictItemsPage(
+      token,
+      {
+        dictCode,
+        page: 1,
+        pageSize: 10,
+        value: 'alpha-updated',
+      },
+    );
     assertEqual(deletedAlphaPage.total, 1, 'deleted dict item page total');
     await clients.system.restoreDictItem(token, alphaItemId);
     assertOptionValues(
@@ -428,7 +463,11 @@ async function assertForeignTenantDictHidden(token: string) {
     page: 1,
     pageSize: 10,
   });
-  assertEqual(itemPage.total, 0, 'foreign tenant dict items hidden from root list');
+  assertEqual(
+    itemPage.total,
+    0,
+    'foreign tenant dict items hidden from root list',
+  );
   const deletedItemPage = await clients.system.listDeletedDictItemsPage(token, {
     dictCode: FOREIGN_DICT_CODE,
     page: 1,
@@ -446,10 +485,13 @@ async function assertForeignTenantDictHidden(token: string) {
     'foreign tenant simple-list options',
   );
 
-  await smoke.apiRequest(`/core/dicts/${encodeURIComponent(FOREIGN_DICT_CODE)}`, {
-    expected: [404],
-    token,
-  });
+  await smoke.apiRequest(
+    `/core/dicts/${encodeURIComponent(FOREIGN_DICT_CODE)}`,
+    {
+      expected: [404],
+      token,
+    },
+  );
   await smoke.apiRequest(
     `/core/dicts/${encodeURIComponent(FOREIGN_DICT_CODE)}/items/${encodeURIComponent(
       FOREIGN_DICT_ITEM_ID,
@@ -480,7 +522,11 @@ async function assertForeignTenantDictHidden(token: string) {
   const translation = await clients.system.translateDictValues(token, {
     entries: [{ dictCode: FOREIGN_DICT_CODE, values: ['foreign'] }],
   });
-  assertEqual(translation.items[0]?.found, false, 'foreign tenant translation hidden');
+  assertEqual(
+    translation.items[0]?.found,
+    false,
+    'foreign tenant translation hidden',
+  );
   await assertForeignTenantDictPreserved();
 }
 
@@ -599,7 +645,11 @@ async function cleanupCreatedDicts(token: string | undefined) {
     }
 
     const deletedItems = await clients.system
-      .listDeletedDictItemsPage(token, { dictCode: code, page: 1, pageSize: 200 })
+      .listDeletedDictItemsPage(token, {
+        dictCode: code,
+        page: 1,
+        pageSize: 200,
+      })
       .catch(() => undefined);
     for (const item of deletedItems?.items ?? []) {
       await smoke

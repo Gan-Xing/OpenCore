@@ -593,10 +593,7 @@ export default function ApprovalsPage() {
         'pages.collaboration.approvals.title',
         'Approval Lite',
       )}
-      subTitle={formatMessage(
-        'pages.collaboration.section',
-        'Collaboration',
-      )}
+      subTitle={formatMessage('pages.collaboration.section', 'Collaboration')}
     >
       {loadError ? (
         <Alert

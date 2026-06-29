@@ -164,7 +164,10 @@ export default function ExportJobsPage() {
   return (
     <PageContainer
       title={formatMessage('pages.optional.exportJobs.title', 'Export Jobs')}
-      subTitle={formatMessage('pages.optional.section', 'Optional Capabilities')}
+      subTitle={formatMessage(
+        'pages.optional.section',
+        'Optional Capabilities',
+      )}
     >
       <ProTable<ExportJobDesignSummary>
         rowKey="resource"

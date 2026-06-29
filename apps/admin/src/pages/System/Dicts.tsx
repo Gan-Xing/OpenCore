@@ -303,7 +303,9 @@ function toDictTypeQuery(params: DictTableParams): DictTypeQueryRequest {
     code: normalizeText(params.code),
     name: normalizeText(params.name),
     enabled: normalizeBooleanFilter(params.enabled),
-    createdFrom: createdFromDate ? `${createdFromDate}T00:00:00.000Z` : undefined,
+    createdFrom: createdFromDate
+      ? `${createdFromDate}T00:00:00.000Z`
+      : undefined,
     createdTo: createdToDate ? `${createdToDate}T23:59:59.999Z` : undefined,
   };
 }
@@ -349,7 +351,11 @@ function formatCount(template: string, count: number): string {
 }
 
 function renderStatus(enabled: boolean) {
-  return <Tag color={enabled ? 'success' : 'default'}>{enabled ? text.enabled : text.disabled}</Tag>;
+  return (
+    <Tag color={enabled ? 'success' : 'default'}>
+      {enabled ? text.enabled : text.disabled}
+    </Tag>
+  );
 }
 
 function renderSystemTag(system: boolean) {
@@ -372,7 +378,9 @@ function showExportPreview(preview: ExportPreview) {
         <Typography.Text>文件：{preview.filename}</Typography.Text>
         <Typography.Text>范围：当前查询结果</Typography.Text>
         <Typography.Text>行数：{preview.rowCount}</Typography.Text>
-        <Typography.Text>生成时间：{formatDateTime(preview.generatedAt)}</Typography.Text>
+        <Typography.Text>
+          生成时间：{formatDateTime(preview.generatedAt)}
+        </Typography.Text>
       </Space>
     ),
   });
@@ -393,8 +401,7 @@ function formatImportFailureRow(
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onerror = () =>
-      reject(reader.error ?? new Error('文件读取失败。'));
+    reader.onerror = () => reject(reader.error ?? new Error('文件读取失败。'));
     reader.onload = () => resolve(String(reader.result));
     reader.readAsDataURL(file);
   });
@@ -525,8 +532,13 @@ export default function DictsPage() {
       setLoadError(undefined);
 
       setSelectedDict((current) => {
-        if (current && nextRows.some((record) => record.code === current.code)) {
-          return nextRows.find((record) => record.code === current.code) ?? current;
+        if (
+          current &&
+          nextRows.some((record) => record.code === current.code)
+        ) {
+          return (
+            nextRows.find((record) => record.code === current.code) ?? current
+          );
         }
 
         return nextRows[0];
@@ -664,7 +676,9 @@ export default function DictsPage() {
     await deleteOpenCoreDict(record.code);
     message.success(text.dictDeleted);
     await refreshCache(true);
-    setSelectedDict((current) => (current?.code === record.code ? undefined : current));
+    setSelectedDict((current) =>
+      current?.code === record.code ? undefined : current,
+    );
     reloadDicts();
     reloadItems();
   };
@@ -756,7 +770,9 @@ export default function DictsPage() {
       page: 1,
       pageSize: 20,
     });
-    return !page.items.some((item) => item.value === value && item.id !== editingId);
+    return !page.items.some(
+      (item) => item.value === value && item.id !== editingId,
+    );
   };
 
   const submitItem = async () => {
@@ -781,7 +797,10 @@ export default function DictsPage() {
     const body = {
       colorType: trimOptional(values.colorType),
       cssClass: trimOptional(values.cssClass),
-      enabled: selectedDict.system && editingItem ? editingItem.enabled : values.enabled ?? true,
+      enabled:
+        selectedDict.system && editingItem
+          ? editingItem.enabled
+          : (values.enabled ?? true),
       id: trimOptional(values.id),
       label: values.label.trim(),
       remark: trimOptional(values.remark),
@@ -971,7 +990,8 @@ export default function DictsPage() {
         <Space direction="vertical" size={4}>
           {result.items.map((item) => (
             <Typography.Text key={`${item.dictCode}:${item.value}`}>
-              {item.value}：{item.found ? item.label : text.translationUnmatched}
+              {item.value}：
+              {item.found ? item.label : text.translationUnmatched}
             </Typography.Text>
           ))}
         </Space>
@@ -1063,7 +1083,9 @@ export default function DictsPage() {
                 icon={<OrderedListOutlined />}
                 onClick={() => selectDict(record)}
                 size="small"
-                type={selectedDict?.code === record.code ? 'primary' : 'default'}
+                type={
+                  selectedDict?.code === record.code ? 'primary' : 'default'
+                }
               />
             </Tooltip>
             {canUpdate ? (
@@ -1089,8 +1111,12 @@ export default function DictsPage() {
                 <Button
                   aria-label={`${record.enabled ? text.disabled : text.enabled}字典 ${record.code}`}
                   disabled={disableSystemStatus}
-                  icon={record.enabled ? <StopOutlined /> : <CheckCircleOutlined />}
-                  onClick={() => void updateDictsStatus([record.code], !record.enabled)}
+                  icon={
+                    record.enabled ? <StopOutlined /> : <CheckCircleOutlined />
+                  }
+                  onClick={() =>
+                    void updateDictsStatus([record.code], !record.enabled)
+                  }
                   size="small"
                 />
               </Tooltip>
@@ -1104,7 +1130,9 @@ export default function DictsPage() {
                 onConfirm={() => void deleteDict(record)}
               >
                 <Tooltip
-                  title={record.system ? text.systemDictDeleteDisabled : text.delete}
+                  title={
+                    record.system ? text.systemDictDeleteDisabled : text.delete
+                  }
                 >
                   <Button
                     aria-label={`删除字典 ${record.code}`}
@@ -1203,7 +1231,9 @@ export default function DictsPage() {
             >
               <Tooltip
                 title={
-                  selectedDict?.system ? text.systemDictItemDeleteDisabled : text.delete
+                  selectedDict?.system
+                    ? text.systemDictItemDeleteDisabled
+                    : text.delete
                 }
               >
                 <Button
@@ -1386,12 +1416,19 @@ export default function DictsPage() {
                 </Button>
               ) : null}
               {canExport ? (
-                <Button icon={<DownloadOutlined />} onClick={() => void exportDicts()}>
+                <Button
+                  icon={<DownloadOutlined />}
+                  onClick={() => void exportDicts()}
+                >
                   {text.export}
                 </Button>
               ) : null}
               {canCreate ? (
-                <Button icon={<PlusOutlined />} onClick={openCreateDict} type="primary">
+                <Button
+                  icon={<PlusOutlined />}
+                  onClick={openCreateDict}
+                  type="primary"
+                >
                   {text.createDict}
                 </Button>
               ) : null}
@@ -1434,7 +1471,9 @@ export default function DictsPage() {
                     <Button
                       disabled={selectedDictCodes.length === 0}
                       loading={batchLoading}
-                      onClick={() => void updateDictsStatus(selectedDictCodes, true)}
+                      onClick={() =>
+                        void updateDictsStatus(selectedDictCodes, true)
+                      }
                       size="small"
                     >
                       {text.batchEnable}
@@ -1442,7 +1481,9 @@ export default function DictsPage() {
                     <Button
                       disabled={selectedDictCodes.length === 0}
                       loading={batchLoading}
-                      onClick={() => void updateDictsStatus(selectedDictCodes, false)}
+                      onClick={() =>
+                        void updateDictsStatus(selectedDictCodes, false)
+                      }
                       size="small"
                     >
                       {text.batchDisable}
@@ -1522,7 +1563,11 @@ export default function DictsPage() {
                   {text.createDictItem}
                 </Button>
               ) : null}
-              <Button disabled={!selectedDict} icon={<ReloadOutlined />} onClick={reloadItems}>
+              <Button
+                disabled={!selectedDict}
+                icon={<ReloadOutlined />}
+                onClick={reloadItems}
+              >
                 {text.refresh}
               </Button>
             </Space>
@@ -1557,7 +1602,9 @@ export default function DictsPage() {
                       <Button
                         disabled={selectedItemIds.length === 0}
                         loading={batchLoading}
-                        onClick={() => void updateItemsStatus(selectedItemIds, true)}
+                        onClick={() =>
+                          void updateItemsStatus(selectedItemIds, true)
+                        }
                         size="small"
                       >
                         {text.batchEnable}
@@ -1565,7 +1612,9 @@ export default function DictsPage() {
                       <Button
                         disabled={selectedItemIds.length === 0}
                         loading={batchLoading}
-                        onClick={() => void updateItemsStatus(selectedItemIds, false)}
+                        onClick={() =>
+                          void updateItemsStatus(selectedItemIds, false)
+                        }
                         size="small"
                       >
                         {text.batchDisable}
@@ -1666,9 +1715,13 @@ export default function DictsPage() {
               description={
                 importResult.failures.length > 0 ? (
                   <Space direction="vertical" size={2}>
-                    <Typography.Text strong>{text.importFailureRows}</Typography.Text>
+                    <Typography.Text strong>
+                      {text.importFailureRows}
+                    </Typography.Text>
                     {importResult.failures.slice(0, 8).map((failure) => (
-                      <Typography.Text key={`${failure.rowNumber}:${failure.reason}`}>
+                      <Typography.Text
+                        key={`${failure.rowNumber}:${failure.reason}`}
+                      >
                         {formatImportFailureRow(failure)}
                       </Typography.Text>
                     ))}
@@ -1705,7 +1758,9 @@ export default function DictsPage() {
             }}
             rowKey="code"
             search={{ labelWidth: 84 }}
-            toolBarRender={() => [<Typography.Text key="title">已删除字典</Typography.Text>]}
+            toolBarRender={() => [
+              <Typography.Text key="title">已删除字典</Typography.Text>,
+            ]}
           />
           <ProTable<DictItemSummary, DictItemTableParams>
             actionRef={deletedItemActionRef}
@@ -1724,7 +1779,9 @@ export default function DictsPage() {
             }}
             rowKey="id"
             search={{ labelWidth: 84 }}
-            toolBarRender={() => [<Typography.Text key="title">已删除字典项</Typography.Text>]}
+            toolBarRender={() => [
+              <Typography.Text key="title">已删除字典项</Typography.Text>,
+            ]}
           />
         </Space>
       </Modal>
@@ -1756,10 +1813,16 @@ export default function DictsPage() {
             <Input maxLength={80} />
           </Form.Item>
           <Form.Item label="描述" name="description">
-            <Input.TextArea autoSize={{ minRows: 2, maxRows: 4 }} maxLength={240} />
+            <Input.TextArea
+              autoSize={{ minRows: 2, maxRows: 4 }}
+              maxLength={240}
+            />
           </Form.Item>
           <Form.Item label="备注" name="remark">
-            <Input.TextArea autoSize={{ minRows: 2, maxRows: 4 }} maxLength={240} />
+            <Input.TextArea
+              autoSize={{ minRows: 2, maxRows: 4 }}
+              maxLength={240}
+            />
           </Form.Item>
           <Form.Item label="启用" name="enabled" valuePropName="checked">
             <Switch
@@ -1784,7 +1847,11 @@ export default function DictsPage() {
       >
         <Form<DictItemFormValues> form={itemForm} layout="vertical">
           <Form.Item label="字典项 ID" name="id">
-            <Input disabled={Boolean(editingItem)} maxLength={120} placeholder="不填则自动生成" />
+            <Input
+              disabled={Boolean(editingItem)}
+              maxLength={120}
+              placeholder="不填则自动生成"
+            />
           </Form.Item>
           <Form.Item
             label="显示标签"
@@ -1798,7 +1865,10 @@ export default function DictsPage() {
             name="value"
             rules={[{ required: true, message: text.validationValueRequired }]}
           >
-            <Input disabled={Boolean(selectedDict?.system && editingItem)} maxLength={120} />
+            <Input
+              disabled={Boolean(selectedDict?.system && editingItem)}
+              maxLength={120}
+            />
           </Form.Item>
           <Form.Item label="排序" name="sort">
             <InputNumber min={0} precision={0} style={{ width: '100%' }} />
@@ -1810,7 +1880,10 @@ export default function DictsPage() {
             <Input maxLength={120} />
           </Form.Item>
           <Form.Item label="备注" name="remark">
-            <Input.TextArea autoSize={{ minRows: 2, maxRows: 4 }} maxLength={240} />
+            <Input.TextArea
+              autoSize={{ minRows: 2, maxRows: 4 }}
+              maxLength={240}
+            />
           </Form.Item>
           <Form.Item label="启用" name="enabled" valuePropName="checked">
             <Switch

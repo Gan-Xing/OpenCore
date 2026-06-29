@@ -1964,17 +1964,16 @@ async function assertForeignTenantConfigPreserved() {
   assertEqual(config.tenantId, FOREIGN_TENANT_ID, 'foreign config tenant');
   assertEqual(config.value, 'foreign-visible-value', 'foreign config value');
 
-  const override =
-    await client.systemConfigEnvironmentOverride.findUnique({
-      where: {
-        tenantId_key_environment: {
-          tenantId: FOREIGN_TENANT_ID,
-          key: FOREIGN_CONFIG_KEY,
-          environment: 'staging',
-        },
+  const override = await client.systemConfigEnvironmentOverride.findUnique({
+    where: {
+      tenantId_key_environment: {
+        tenantId: FOREIGN_TENANT_ID,
+        key: FOREIGN_CONFIG_KEY,
+        environment: 'staging',
       },
-      select: { tenantId: true, value: true },
-    });
+    },
+    select: { tenantId: true, value: true },
+  });
   if (!override) {
     throw new Error('Foreign tenant config override was unexpectedly removed.');
   }

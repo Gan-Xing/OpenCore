@@ -162,7 +162,9 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
     const pagination = normalizeSystemDictPageQuery(query, total);
     const rows = await this.prisma.dictItem.findMany({
       where,
-      include: { type: { select: { tenantId: true, code: true, system: true } } },
+      include: {
+        type: { select: { tenantId: true, code: true, system: true } },
+      },
       orderBy: [{ type: { code: 'asc' } }, { sort: 'asc' }, { value: 'asc' }],
       skip: pagination.skip,
       take: pagination.take,
@@ -236,7 +238,9 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
     const pagination = normalizeSystemDictPageQuery(query, total);
     const rows = await this.prisma.dictItem.findMany({
       where,
-      include: { type: { select: { tenantId: true, code: true, system: true } } },
+      include: {
+        type: { select: { tenantId: true, code: true, system: true } },
+      },
       orderBy: [{ deletedAt: 'desc' }, { type: { code: 'asc' } }],
       skip: pagination.skip,
       take: pagination.take,
@@ -351,7 +355,9 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
         cssClass: input.cssClass,
         remark: input.remark,
       },
-      include: { type: { select: { tenantId: true, code: true, system: true } } },
+      include: {
+        type: { select: { tenantId: true, code: true, system: true } },
+      },
     });
 
     return toDictItemRecord(item);
@@ -426,7 +432,9 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
         cssClass: input.cssClass ?? existing.cssClass,
         remark: input.remark ?? existing.remark,
       },
-      include: { type: { select: { tenantId: true, code: true, system: true } } },
+      include: {
+        type: { select: { tenantId: true, code: true, system: true } },
+      },
     });
 
     return toDictItemRecord(item);
@@ -490,7 +498,9 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
     const restored = await this.prisma.dictItem.update({
       where: { id: itemId },
       data: { deletedAt: null },
-      include: { type: { select: { tenantId: true, code: true, system: true } } },
+      include: {
+        type: { select: { tenantId: true, code: true, system: true } },
+      },
     });
 
     return toDictItemRecord(restored);
@@ -609,7 +619,9 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
     const tenantId = resolveCurrentTenantId();
     const items = await this.prisma.dictItem.findMany({
       where: { id: { in: [...ids] }, deletedAt: null, type: { tenantId } },
-      include: { type: { select: { tenantId: true, code: true, system: true } } },
+      include: {
+        type: { select: { tenantId: true, code: true, system: true } },
+      },
     });
     const existingIds = new Set(items.map((item) => item.id));
     const missing = ids.find((id) => !existingIds.has(id));
@@ -645,7 +657,9 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
     const tenantId = resolveCurrentTenantId();
     const items = await this.prisma.dictItem.findMany({
       where: { id: { in: [...ids] }, deletedAt: null, type: { tenantId } },
-      include: { type: { select: { tenantId: true, code: true, system: true } } },
+      include: {
+        type: { select: { tenantId: true, code: true, system: true } },
+      },
     });
     const existingIds = new Set(items.map((item) => item.id));
     const missing = ids.find((id) => !existingIds.has(id));
@@ -754,7 +768,9 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
           deletedAt: null,
         },
       },
-      include: { type: { select: { tenantId: true, code: true, system: true } } },
+      include: {
+        type: { select: { tenantId: true, code: true, system: true } },
+      },
     });
 
     if (!item) {

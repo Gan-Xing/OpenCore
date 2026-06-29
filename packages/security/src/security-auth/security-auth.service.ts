@@ -128,7 +128,9 @@ export class SecurityAuthService {
     );
     const tenant = await this.resolveTenantMembershipForLogin(user.id, context);
     const loginTenantId =
-      tenant.status === 'selected' ? tenant.membership.tenantId : ROOT_TENANT_ID;
+      tenant.status === 'selected'
+        ? tenant.membership.tenantId
+        : ROOT_TENANT_ID;
     await this.loginLockouts.clearLoginLockout({
       username: normalizedUsername,
       tenantId: loginTenantId,
@@ -818,7 +820,9 @@ function hasTenantSelection(
   );
 }
 
-function normalizeTenantHostCode(value: string | undefined): string | undefined {
+function normalizeTenantHostCode(
+  value: string | undefined,
+): string | undefined {
   if (!value) {
     return undefined;
   }

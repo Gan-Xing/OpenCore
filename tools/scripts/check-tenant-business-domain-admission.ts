@@ -45,7 +45,11 @@ function requireMarker(label: string, content: string, marker: string): void {
 
 for (const prefix of forbiddenModulePrefixes) {
   requireMarker('module registry forbidden prefixes', registry, `'${prefix}'`);
-  requireMarker('OpenForge forbidden prefixes', openforgeValidator, `'${prefix}'`);
+  requireMarker(
+    'OpenForge forbidden prefixes',
+    openforgeValidator,
+    `'${prefix}'`,
+  );
 }
 
 requireMarker(
@@ -82,7 +86,9 @@ const forbiddenModels = modelNames.filter((modelName) =>
 );
 
 if (forbiddenModels.length > 0) {
-  missing.push(`forbidden Prisma business models: ${forbiddenModels.join(', ')}`);
+  missing.push(
+    `forbidden Prisma business models: ${forbiddenModels.join(', ')}`,
+  );
 }
 
 for (const [label, content] of [

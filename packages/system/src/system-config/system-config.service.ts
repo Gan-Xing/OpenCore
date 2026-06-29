@@ -1,7 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import type { PageResult } from '@opencore/common';
 import { getRequestContext } from '@opencore/core';
@@ -810,7 +807,11 @@ function assertRuntimeConfigMutation(
     throw systemConfigBadRequest(
       'SYSTEM_CONFIG_RUNTIME_VISIBILITY_INVALID',
       `Runtime config ${key} must remain public.`,
-      { key, visibility: body.visibility ?? (body.public === false ? 'private' : undefined) },
+      {
+        key,
+        visibility:
+          body.visibility ?? (body.public === false ? 'private' : undefined),
+      },
     );
   }
 

@@ -1657,7 +1657,9 @@ describe('@opencore/system system-config', () => {
         }),
       );
       await expect(
-        runInTenant(ROOT_TENANT_ID, () => service.getConfig(foreignOnlyConfigKey)),
+        runInTenant(ROOT_TENANT_ID, () =>
+          service.getConfig(foreignOnlyConfigKey),
+        ),
       ).rejects.toThrow(NotFoundException);
       await expect(
         runInTenant(ROOT_TENANT_ID, () =>
@@ -1670,7 +1672,9 @@ describe('@opencore/system system-config', () => {
         ),
       ).rejects.toThrow(NotFoundException);
       await expect(
-        runInTenant(ROOT_TENANT_ID, () => service.deleteConfig(foreignOnlyConfigKey)),
+        runInTenant(ROOT_TENANT_ID, () =>
+          service.deleteConfig(foreignOnlyConfigKey),
+        ),
       ).rejects.toThrow(NotFoundException);
       await expect(
         runInTenant(ROOT_TENANT_ID, () =>

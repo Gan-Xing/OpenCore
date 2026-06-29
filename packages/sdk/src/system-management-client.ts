@@ -622,10 +622,13 @@ export function createSystemManagementClient(
         token,
       }),
     restoreDict: (token, code) =>
-      request<DictTypeSummary>(`/core/dicts/${encodeURIComponent(code)}/restore`, {
-        method: 'PATCH',
-        token,
-      }),
+      request<DictTypeSummary>(
+        `/core/dicts/${encodeURIComponent(code)}/restore`,
+        {
+          method: 'PATCH',
+          token,
+        },
+      ),
     restoreDictItem: (token, itemId) =>
       request<DictItemSummary>(
         `/core/dict-items/${encodeURIComponent(itemId)}/restore`,

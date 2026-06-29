@@ -76,21 +76,18 @@ async function main() {
     adminToken = assertString(loginResponse.accessToken, 'admin accessToken');
     smoke.setToken(adminToken);
 
-    const noRoleUser = await smoke.apiRequest<{ id?: unknown }>(
-      '/core/users',
-      {
-        body: {
-          displayName: 'Error Contract Smoke',
-          enabled: true,
-          password: noRolePassword,
-          postCodes: [],
-          roleCodes: [],
-          username: noRoleUsername,
-        },
-        method: 'POST',
-        token: adminToken,
+    const noRoleUser = await smoke.apiRequest<{ id?: unknown }>('/core/users', {
+      body: {
+        displayName: 'Error Contract Smoke',
+        enabled: true,
+        password: noRolePassword,
+        postCodes: [],
+        roleCodes: [],
+        username: noRoleUsername,
       },
-    );
+      method: 'POST',
+      token: adminToken,
+    });
     noRoleUserId = assertString(noRoleUser.id, 'no-role user id');
 
     const noRoleLogin = await request<{ accessToken?: unknown }>(

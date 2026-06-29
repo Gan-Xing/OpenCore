@@ -252,24 +252,22 @@ export class PrismaRbacRepository extends RbacRepository {
     }
 
     return [
-      ...new Set(
-        [
-          ...user.roles.flatMap((userRole) =>
-            userRole.role.enabled
-              ? userRole.role.permissions.map(
-                  (rolePermission) => rolePermission.permission.code,
-                )
-              : [],
-          ),
-          ...user.platformRoles.flatMap((userPlatformRole) =>
-            userPlatformRole.platformRole.enabled
-              ? userPlatformRole.platformRole.permissions.map(
-                  (rolePermission) => rolePermission.permission.code,
-                )
-              : [],
-          ),
-        ],
-      ),
+      ...new Set([
+        ...user.roles.flatMap((userRole) =>
+          userRole.role.enabled
+            ? userRole.role.permissions.map(
+                (rolePermission) => rolePermission.permission.code,
+              )
+            : [],
+        ),
+        ...user.platformRoles.flatMap((userPlatformRole) =>
+          userPlatformRole.platformRole.enabled
+            ? userPlatformRole.platformRole.permissions.map(
+                (rolePermission) => rolePermission.permission.code,
+              )
+            : [],
+        ),
+      ]),
     ].sort();
   }
 

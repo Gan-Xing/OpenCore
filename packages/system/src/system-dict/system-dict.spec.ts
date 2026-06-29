@@ -139,21 +139,23 @@ describe('@opencore/system system-dict', () => {
     const dictCode = 'sample.imported';
     const contentBase64 = createDictImportCsvBase64(dictCode);
 
-    await expect(service.previewImportDicts({ contentBase64 })).resolves.toMatchObject({
+    await expect(
+      service.previewImportDicts({ contentBase64 }),
+    ).resolves.toMatchObject({
       createdDicts: 1,
       createdItems: 2,
       dryRun: true,
       failed: 0,
     });
-    await expect(service.importDicts({ contentBase64 })).resolves.toMatchObject({
-      createdDicts: 1,
-      createdItems: 2,
-      dryRun: false,
-      failed: 0,
-    });
-    await expect(
-      service.listDictDataOptions({ dictCode }),
-    ).resolves.toEqual([
+    await expect(service.importDicts({ contentBase64 })).resolves.toMatchObject(
+      {
+        createdDicts: 1,
+        createdItems: 2,
+        dryRun: false,
+        failed: 0,
+      },
+    );
+    await expect(service.listDictDataOptions({ dictCode })).resolves.toEqual([
       expect.objectContaining({ dictCode, label: 'Open', value: 'open' }),
     ]);
     await expect(
@@ -167,8 +169,13 @@ describe('@opencore/system system-dict', () => {
       ],
     });
 
-    const openItem = requireDictItem(await service.listDictItems(dictCode), 'open');
-    await expect(service.deleteDictItem(dictCode, openItem.id)).resolves.toEqual({
+    const openItem = requireDictItem(
+      await service.listDictItems(dictCode),
+      'open',
+    );
+    await expect(
+      service.deleteDictItem(dictCode, openItem.id),
+    ).resolves.toEqual({
       deleted: true,
     });
     await expect(
@@ -407,11 +414,15 @@ describe('@opencore/system system-dict', () => {
         service.deleteDictItem(otherOnlyDictCode, otherOnlyItemId),
       );
       await expectHttpExceptionCode(
-        runInTenant(ROOT_TENANT_ID, () => service.restoreDictItem(otherOnlyItemId)),
+        runInTenant(ROOT_TENANT_ID, () =>
+          service.restoreDictItem(otherOnlyItemId),
+        ),
         'SYSTEM_DICT_ITEM_NOT_FOUND',
       );
       await expect(
-        runInTenant(otherTenantId, () => service.restoreDictItem(otherOnlyItemId)),
+        runInTenant(otherTenantId, () =>
+          service.restoreDictItem(otherOnlyItemId),
+        ),
       ).resolves.toMatchObject({ tenantId: otherTenantId, value: 'foreign' });
     });
 
@@ -526,7 +537,9 @@ describe('@opencore/system system-dict', () => {
         dryRun: true,
         failed: 0,
       });
-      await expect(service.importDicts({ contentBase64 })).resolves.toMatchObject({
+      await expect(
+        service.importDicts({ contentBase64 }),
+      ).resolves.toMatchObject({
         createdDicts: 1,
         createdItems: 2,
         dryRun: false,
@@ -538,7 +551,11 @@ describe('@opencore/system system-dict', () => {
         }),
       ).resolves.toMatchObject({
         items: [
-          expect.objectContaining({ found: true, label: 'Open', value: 'open' }),
+          expect.objectContaining({
+            found: true,
+            label: 'Open',
+            value: 'open',
+          }),
           expect.objectContaining({ found: false, value: 'missing' }),
         ],
       });
@@ -587,12 +604,7 @@ describe('@opencore/system system-dict', () => {
         where: {
           type: {
             code: {
-              in: [
-                dictCode,
-                importDictCode,
-                sharedDictCode,
-                otherOnlyDictCode,
-              ],
+              in: [dictCode, importDictCode, sharedDictCode, otherOnlyDictCode],
             },
           },
         },
@@ -600,12 +612,7 @@ describe('@opencore/system system-dict', () => {
       await prisma.dictType.deleteMany({
         where: {
           code: {
-            in: [
-              dictCode,
-              importDictCode,
-              sharedDictCode,
-              otherOnlyDictCode,
-            ],
+            in: [dictCode, importDictCode, sharedDictCode, otherOnlyDictCode],
           },
         },
       });

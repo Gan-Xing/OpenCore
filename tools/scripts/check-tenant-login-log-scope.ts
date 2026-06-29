@@ -69,10 +69,7 @@ const checks: Array<{
   },
   {
     file: 'apps/api/src/modules/core/system-management/system-management.controller.ts',
-    markers: [
-      'getAuthenticatedTenantId(request)',
-      'clearLoginLockout({',
-    ],
+    markers: ['getAuthenticatedTenantId(request)', 'clearLoginLockout({'],
   },
   {
     file: 'tools/smoke/smoke-core-login-log.ts',

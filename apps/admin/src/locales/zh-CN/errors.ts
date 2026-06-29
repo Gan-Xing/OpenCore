@@ -19,7 +19,8 @@ export default {
   'error.AUTH_TENANT_CONTEXT_MISMATCH': '会话租户上下文无效，请重新登录。',
   'error.AUTH_TENANT_CONTEXT_MISSING': '当前会话缺少租户上下文，请重新登录。',
   'error.AUTH_TENANT_UNAVAILABLE': '当前账号没有可用的活跃租户成员身份。',
-  'error.AUTH_PLATFORM_VISIT_FORBIDDEN': '当前账号不能以平台管理员身份访问租户。',
+  'error.AUTH_PLATFORM_VISIT_FORBIDDEN':
+    '当前账号不能以平台管理员身份访问租户。',
   'error.SECURITY_LOGIN_LOCKOUT_OCCURRED_AT_INVALID': '登录锁定尝试时间无效。',
   'error.SECURITY_LOGIN_LOCKOUT_POLICY_INVALID': '登录锁定策略无效。',
   'error.SECURITY_LOGIN_USERNAME_REQUIRED': '登录用户名不能为空。',
@@ -549,8 +550,7 @@ export default {
   'error.SYSTEM_DICT_IMPORT_ROWS_REQUIRED':
     '字典导入文件必须包含表头和至少一行数据。',
   'error.SYSTEM_DICT_IMPORT_XLSX_INVALID': '字典导入 XLSX 必须是有效工作簿。',
-  'error.SYSTEM_DICT_IMPORT_XLSX_SHEET_MISSING':
-    '字典导入 XLSX 缺少工作表。',
+  'error.SYSTEM_DICT_IMPORT_XLSX_SHEET_MISSING': '字典导入 XLSX 缺少工作表。',
   'error.SYSTEM_DICT_INLINE_ITEMS_UPDATE_UNSUPPORTED':
     '字典项必须通过字典数据接口维护。',
   'error.SYSTEM_DICT_INTEGER_INVALID': '字典整数字段无效。',
@@ -564,14 +564,10 @@ export default {
   'error.SYSTEM_DICT_SYSTEM_IMMUTABLE': '系统内置字典不能执行该操作。',
   'error.SYSTEM_DICT_SYSTEM_ITEM_IMMUTABLE': '系统内置字典项不能执行该操作。',
   'error.SYSTEM_DICT_TEXT_REQUIRED': '字典必填文本不能为空。',
-  'error.SYSTEM_DICT_TRANSLATION_ENTRIES_EMPTY':
-    '字典翻译条目不能为空。',
-  'error.SYSTEM_DICT_TRANSLATION_ENTRIES_INVALID':
-    '字典翻译条目必须是数组。',
-  'error.SYSTEM_DICT_TRANSLATION_VALUES_INVALID':
-    '字典翻译值必须是数组。',
-  'error.SYSTEM_DICT_TRANSLATION_VALUE_DUPLICATED':
-    '字典翻译值重复。',
+  'error.SYSTEM_DICT_TRANSLATION_ENTRIES_EMPTY': '字典翻译条目不能为空。',
+  'error.SYSTEM_DICT_TRANSLATION_ENTRIES_INVALID': '字典翻译条目必须是数组。',
+  'error.SYSTEM_DICT_TRANSLATION_VALUES_INVALID': '字典翻译值必须是数组。',
+  'error.SYSTEM_DICT_TRANSLATION_VALUE_DUPLICATED': '字典翻译值重复。',
   'error.TOOL_AREA_FORMAT_SEPARATOR_INVALID': '地区路径分隔符无效。',
   'error.TOOL_AREA_LEVEL_INVALID': '地区层级无效。',
 };

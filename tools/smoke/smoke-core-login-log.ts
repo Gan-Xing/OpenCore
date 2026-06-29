@@ -467,15 +467,18 @@ async function main() {
       },
     });
 
-    const tenantLoginWhileRootLocked = await request(`${apiPrefix}/auth/login`, {
-      method: 'POST',
-      expected: [200, 201],
-      body: {
-        username: lockoutUsername,
-        password: lockoutPassword,
-        tenantCode: lockoutTenantCode,
+    const tenantLoginWhileRootLocked = await request(
+      `${apiPrefix}/auth/login`,
+      {
+        method: 'POST',
+        expected: [200, 201],
+        body: {
+          username: lockoutUsername,
+          password: lockoutPassword,
+          tenantCode: lockoutTenantCode,
+        },
       },
-    });
+    );
     assertEqual(
       tenantLoginWhileRootLocked.user?.activeTenant?.id,
       lockoutTenantId,

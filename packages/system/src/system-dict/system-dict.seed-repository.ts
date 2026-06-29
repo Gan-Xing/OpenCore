@@ -398,7 +398,9 @@ export class SeedSystemDictRepository extends SystemDictRepository {
       );
     }
     const now = new Date().toISOString();
-    this.dictTypes = this.dictTypes.filter((dict) => !codes.includes(dict.code));
+    this.dictTypes = this.dictTypes.filter(
+      (dict) => !codes.includes(dict.code),
+    );
     this.deletedDictTypes = [
       ...dicts.map((dict) => ({
         ...cloneDictType(dict),
@@ -580,7 +582,9 @@ export class SeedSystemDictRepository extends SystemDictRepository {
     }
 
     if (
-      this.deletedDictTypes.some((candidate) => candidate.code === item.dictCode)
+      this.deletedDictTypes.some(
+        (candidate) => candidate.code === item.dictCode,
+      )
     ) {
       throw systemDictBadRequest(
         'SYSTEM_DICT_PARENT_DELETED',
@@ -589,11 +593,9 @@ export class SeedSystemDictRepository extends SystemDictRepository {
       );
     }
 
-    throw systemDictNotFound(
-      'SYSTEM_DICT_NOT_FOUND',
-      'Dictionary not found.',
-      { code: item.dictCode },
-    );
+    throw systemDictNotFound('SYSTEM_DICT_NOT_FOUND', 'Dictionary not found.', {
+      code: item.dictCode,
+    });
   }
 
   private assertItemValueAvailable(dict: DictTypeRecord, value: string): void {

@@ -220,9 +220,7 @@ export class SystemManagementController {
   @ApiTags('Core Dictionaries')
   @RequirePermission('core:dict:read')
   @ApiOkResponse({ type: DictTypePageDto })
-  listDeletedDicts(
-    @Query() query: DictTypeQueryDto,
-  ): Promise<DictTypePageDto> {
+  listDeletedDicts(@Query() query: DictTypeQueryDto): Promise<DictTypePageDto> {
     return this.dicts.listDeletedDicts(query);
   }
 
