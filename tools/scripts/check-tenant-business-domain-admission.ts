@@ -33,6 +33,9 @@ const waterline = read(
 );
 const handoff = read('docs/quality-cycle/cycle-022/handoff.md');
 const notes = read('docs/quality-cycle/cycle-022/implementation-notes.md');
+const businessDomainTemplate = read(
+  'docs/development/business-domain-admission-template.md',
+);
 const packageJson = read('package.json');
 
 const missing: string[] = [];
@@ -99,6 +102,20 @@ for (const [label, content] of [
   ['implementation notes', notes],
 ] as const) {
   requireMarker(label, content, 'T7f business-domain admission');
+}
+
+for (const marker of [
+  'Business-Domain Admission Template',
+  'Tenant ownership',
+  'Tenant isolation tests',
+  'Runtime isolation',
+  'Release evidence',
+]) {
+  requireMarker(
+    'business-domain admission template',
+    businessDomainTemplate,
+    marker,
+  );
 }
 
 requireMarker(

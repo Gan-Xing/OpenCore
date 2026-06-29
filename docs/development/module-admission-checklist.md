@@ -1,6 +1,6 @@
 # Module Admission Checklist
 
-Use this checklist before adding collaboration, workflow/report/job, or integration modules to the registry.
+Use this checklist before adding collaboration, workflow/report/job, or integration modules to the registry. Tenant-owned CRM, ERP, MES, WMS, mall, member, payment, AI/RAG/Agent, or other business domains must first complete [Business-Domain Admission Template](business-domain-admission-template.md).
 
 ## Required Contract Evidence
 

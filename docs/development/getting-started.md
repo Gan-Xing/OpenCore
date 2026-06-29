@@ -144,6 +144,7 @@ cp .env.example .env.opencore.local
 - 不直接实现 CRM、ERP、MES、WMS、mall、member。
 - 不直接实现真实支付、退款、对账或生产 SaaS 商业运营扩展。
 - 不把 Cycle-022 多租户基础设施自动扩大成业务域；后续业务模块必须先定义 tenant-owned migration/API/Admin/smoke/guard。
+- CRM/ERP/MES/WMS/mall/member/payment/AI 等业务域进入前，先填写 [Business-Domain Admission Template](business-domain-admission-template.md)。
 - 不直接实现知识库、RAG、Agent 或 AI workflow。
 - 不直接实现完整 BPMN/full workflow、完整报表设计器或大数据异步导出。
 - 不复制 RuoYi/Yudao Java/Vue 代码。
