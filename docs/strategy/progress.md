@@ -1,6 +1,6 @@
 # OpenCore Strategy Progress
 
-更新时间：2026-06-18
+更新时间：2026-06-29
 
 This file is now a compact progress index. It must not be used as a per-round
 execution transcript. Do not paste repeated command lists, smoke logs, changed
@@ -9,29 +9,29 @@ scripts, deployment scripts, and the active quality-cycle handoff.
 
 ## Current Source Of Truth
 
-| Topic                          | Source                                                           |
-| ------------------------------ | ---------------------------------------------------------------- |
-| Closed capstone handoff        | `docs/quality-cycle/cycle-021/handoff.md`                        |
-| Current waterline and debt     | `docs/quality-cycle/cycle-021/productization-waterline-audit.md` |
-| Acceptance matrix              | `docs/quality-cycle/cycle-021/acceptance-matrix.md`              |
-| Closed finite backlog          | `docs/quality-cycle/cycle-021/backlog.md`                        |
-| Guard and implementation facts | `docs/quality-cycle/cycle-021/implementation-notes.md`           |
-| Round history                  | `docs/quality-cycle/cycle-021/round-history.md`                  |
-| Reference comparison           | `docs/quality-cycle/cycle-021/reference-comparison.md`           |
-| Historical backend extraction  | `docs/quality-cycle/cycle-020/completion-report.md`              |
-| Profile center productization  | `docs/strategy/profile-center-productization.md`                 |
+| Topic                             | Source                                                           |
+| --------------------------------- | ---------------------------------------------------------------- |
+| Current tenant foundation handoff | `docs/quality-cycle/cycle-022/handoff.md`                        |
+| Current tenant waterline and debt | `docs/quality-cycle/cycle-022/productization-waterline-audit.md` |
+| Current tenant acceptance matrix  | `docs/quality-cycle/cycle-022/acceptance-matrix.md`              |
+| Current tenant backlog            | `docs/quality-cycle/cycle-022/backlog.md`                        |
+| Tenant architecture               | `docs/quality-cycle/cycle-022/tenant-architecture.md`            |
+| Tenant threat model               | `docs/quality-cycle/cycle-022/threat-model.md`                   |
+| Closed capstone handoff           | `docs/quality-cycle/cycle-021/handoff.md`                        |
+| Historical backend extraction     | `docs/quality-cycle/cycle-020/completion-report.md`              |
+| Profile center productization     | `docs/strategy/profile-center-productization.md`                 |
 
 ## Current Status
 
-OpenCore has completed the Cycle-021 finite System Admin fallback closure. The
-project has moved past strategy-only planning, S3-S8 foundation, runtime
-integration, OpenForge V1, Admin Ant Design Pro V6 migration, backend package
-extraction and the seven-page Capstone Acceptance flow.
+OpenCore has completed Cycle-022 SaaS tenant foundation V1. The project has
+moved past strategy-only planning, S3-S8 foundation, runtime integration,
+OpenForge V1, Admin Ant Design Pro V6 migration, backend package extraction,
+the Cycle-021 seven-page System Admin fallback closure, and the Cycle-022
+tenant identity/auth/data/runtime/Admin control-plane closure.
 
-Cycle-021 has delivered 126 deployable/runtime and guard stages, plus Round
-127 docs-only reconciliation. The finite System Admin Fallback Closure is
-complete; this does not claim full Cycle-021 completion or admit new large
-domains.
+Cycle-022 has delivered a code-backed tenant security boundary for the current
+OpenCore schema and module registry. This admits the platform tenant foundation
+only; it does not admit CRM/ERP/Mall/AI/payment or other business domains.
 
 Current state:
 
@@ -63,6 +63,15 @@ Current state:
 - Public API/Admin smoke is explicit for all seven fixed System Admin rows.
 - Progress, handoff, ledger and completion-report docs are reconciled for the
   finite System Admin fallback closure.
+- Tenant foundation V1 is complete: global users can have tenant memberships,
+  bearer sessions are tenant-bound, tenant switching reissues tokens, platform
+  visit is explicit and audited, tenant plan modules clip permissions/menus,
+  core/system/collaboration/report data is tenant-scoped, runtime caches/files/
+  queues/WebSocket/Integration records carry tenant context, and `/system/tenants`
+  is a live Admin control plane.
+- Business-domain admission is guarded: current Prisma/module-registry/OpenForge
+  checks reject unadmitted CRM/ERP/Mall/AI/payment-style domains until a future
+  tenant-owned domain plan exists.
 
 Fixed deployment entrypoints:
 
@@ -77,17 +86,18 @@ Admin smoke.
 
 ## Milestone Summary
 
-| Area                    | State     | Compact record                                                                                                                                                                                             |
-| ----------------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Strategy blueprint      | Complete  | Target vision, capability matrix, API architecture, Admin map, staged roadmap and offline visual were created.                                                                                             |
-| S3-S8 foundation        | Complete  | Contracts/shared/module-registry, API foundation, Admin shell, auth/RBAC, system management, monitor/tool baseline shipped.                                                                                |
-| Runtime integration     | Complete  | Legacy app runtime frozen; OpenCore received isolated PostgreSQL, Redis/BullMQ and MinIO/S3 boundaries plus live smoke.                                                                                    |
-| OpenForge S9 MVP        | Complete  | Registry entry, contracts, read-only plan/diff/check, safety preflight and docs landed.                                                                                                                    |
-| OpenForge V1            | Complete  | Schema/config DSL, template pack, safe apply, manifest rollback, doctor, gate, and generated API/Admin/SDK/docs skeletons landed.                                                                          |
-| Admin V6 migration      | Complete  | Admin moved to official Ant Design Pro V6 structure; official OpenCore pages, login/request, route registry and smoke guards were aligned.                                                                 |
-| Backend extraction BE20 | Complete  | Runtime capabilities were extracted into `packages/*`; `apps/api` is now bootstrap, HTTP aggregation, config and OpenAPI export/check.                                                                     |
-| Cycle-021               | Closed    | The finite System Admin fallback closure is complete; new large domains still require explicit admission.                                                                                                  |
-| System Area             | Complete  | `system.area` upgrades the former area tool boundary into System Management master data with tree/query, AreaCascader, formatter, IP lookup and dataset governance; public API/Admin smoke is recorded. |
+| Area                    | State    | Compact record                                                                                                                                                                                          |
+| ----------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Strategy blueprint      | Complete | Target vision, capability matrix, API architecture, Admin map, staged roadmap and offline visual were created.                                                                                          |
+| S3-S8 foundation        | Complete | Contracts/shared/module-registry, API foundation, Admin shell, auth/RBAC, system management, monitor/tool baseline shipped.                                                                             |
+| Runtime integration     | Complete | Legacy app runtime frozen; OpenCore received isolated PostgreSQL, Redis/BullMQ and MinIO/S3 boundaries plus live smoke.                                                                                 |
+| OpenForge S9 MVP        | Complete | Registry entry, contracts, read-only plan/diff/check, safety preflight and docs landed.                                                                                                                 |
+| OpenForge V1            | Complete | Schema/config DSL, template pack, safe apply, manifest rollback, doctor, gate, and generated API/Admin/SDK/docs skeletons landed.                                                                       |
+| Admin V6 migration      | Complete | Admin moved to official Ant Design Pro V6 structure; official OpenCore pages, login/request, route registry and smoke guards were aligned.                                                              |
+| Backend extraction BE20 | Complete | Runtime capabilities were extracted into `packages/*`; `apps/api` is now bootstrap, HTTP aggregation, config and OpenAPI export/check.                                                                  |
+| Cycle-021               | Closed   | The finite System Admin fallback closure is complete; new large domains still require explicit admission.                                                                                               |
+| Cycle-022               | Complete | SaaS tenant foundation V1 is complete across identity, auth, RBAC/menu clipping, data isolation, runtime propagation, Admin control plane, OpenAPI/SDK, smoke and guards.                               |
+| System Area             | Complete | `system.area` upgrades the former area tool boundary into System Management master data with tree/query, AreaCascader, formatter, IP lookup and dataset governance; public API/Admin smoke is recorded. |
 
 ## Cycle-021 Compressed History
 
@@ -120,11 +130,12 @@ See `docs/quality-cycle/cycle-021/round-history.md` for the maintained version.
 
 ## Active Productization Queue
 
-No in-scope System Admin fallback closure item remains. This file must not be
+No in-scope Cycle-022 tenant-foundation item remains. This file must not be
 used to select another queue.
 
-Large domains such as business modules, payment, multitenancy, BPM, AI and
-report designer still require explicit admission before implementation.
+Large domains such as CRM/ERP/Mall/member modules, payment, production SaaS
+commercial operations, BPM, AI and report designer still require explicit
+tenant-owned admission before implementation.
 
 ## Documentation Hygiene Rule
 

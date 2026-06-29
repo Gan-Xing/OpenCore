@@ -82,4 +82,4 @@
 
 ## 不在本文推进的内容
 
-本文不准入 CRM、ERP、MES、WMS、mall、member、生产多租户、真实支付、完整 BPMN/full workflow、完整报表设计器、大数据异步导出、AI/RAG/Agent 或 OpenForge direct schema/migration/business-code writes。
+本文不准入 CRM、ERP、MES、WMS、mall、member、生产 SaaS 商业运营扩展、真实支付、完整 BPMN/full workflow、完整报表设计器、大数据异步导出、AI/RAG/Agent 或 OpenForge direct schema/migration/business-code writes。

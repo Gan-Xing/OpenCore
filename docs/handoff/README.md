@@ -15,6 +15,7 @@
 - 2026-06-11 Admin Pro V6 migration：官方 Ant Design Pro V6 架构、正式 OpenCore 页面、request/access/OpenAPI/SDK 对齐。
 - 2026-06-12 Backend Self-Loop BE20：按依赖顺序完成 common/core/database/redis/file/system/security/audit/online-user/scheduler/monitor/generator-core/tools/api aggregation 后端闭环。
 - Cycle-021 System Admin fallback closure：七个固定 System Admin 页面已完成 live-only、no fixture fallback、public API/Admin smoke 和 deploy guard 验收。
+- Cycle-022 SaaS tenant foundation V1：租户身份、认证、RBAC/菜单裁剪、数据隔离、运行时隔离、Admin 租户控制面和 business-domain admission guard 已完成。
 
 旧 handoff 是历史交接记录，不是当前执行 goal。新的实现工作必须另起明确的有限验收清单；不得从旧 handoff 自动推导下一轮工作。
 
@@ -75,4 +76,4 @@ Docs-only cleanup 不需要部署，但仍需要格式/文档检查、commit 和
 
 ## 下一份 handoff 规则
 
-下一份 handoff 只能描述明确范围、有限队列、验收矩阵、测试/smoke/deploy guard 和回滚边界。不得复用 OpenForge V1、BE20 或 Cycle-021 closure 继续扩大为业务逻辑生成、migration 创建、行业业务包、真实支付、生产多租户、完整 BPMN/report 或 AI/RAG/Agent 实现。
+下一份 handoff 只能描述明确范围、有限队列、验收矩阵、测试/smoke/deploy guard 和回滚边界。不得复用 OpenForge V1、BE20、Cycle-021 closure 或 Cycle-022 tenant foundation 继续扩大为业务逻辑生成、migration 创建、行业业务包、真实支付、生产 SaaS 商业运营扩展、完整 BPMN/report 或 AI/RAG/Agent 实现。

@@ -24,8 +24,10 @@ OpenCore（中文名：开元）定位为 **AI Native 企业级全栈 Monorepo**
 | V1     | complete | OpenForge safe generator：schema/config DSL、template/VFS、apply/manifest/rollback、API/Admin/SDK/Test/Docs pack、doctor/gate/e2e                       |
 | Q001   | complete | Quality Cycle 001：RBAC/auth/audit/config/files/monitor/contracts/OpenForge 加固；新增轻量协同、operations/report 设计位、integration provider 设计边界 |
 | BE20   | complete | Backend Self-Loop：按依赖顺序完成 common/core/database/redis/file/system/security/audit/online-user/scheduler/monitor/generator-core/tools/api 聚合     |
+| C021   | complete | System Admin fallback closure：七个固定 System Admin 页面完成 API/SDK/Admin live-only、public smoke 和 deploy guard 验收                                |
+| C022   | complete | SaaS tenant foundation V1：租户身份、认证、RBAC/菜单裁剪、数据隔离、运行时隔离、Admin 控制面、smoke/guard/OpenAPI/SDK 闭环                              |
 
-S3-S9 handoff、runtime integration R-1-R7、OpenForge V1 A-L、Quality Cycle 001 和 Backend Self-Loop BE20-P01 至 BE20-P24 已完成。OpenForge 默认仍是 dry-run；真实写入必须显式 `--yes`，且只能创建或更新带合法 OpenForge marker 的 generated-owned files。
+S3-S9 handoff、runtime integration R-1-R7、OpenForge V1 A-L、Quality Cycle 001、Backend Self-Loop BE20-P01 至 BE20-P24、Cycle-021 System Admin fallback closure 和 Cycle-022 SaaS tenant foundation V1 已完成。OpenForge 默认仍是 dry-run；真实写入必须显式 `--yes`，且只能创建或更新带合法 OpenForge marker 的 generated-owned files。
 
 ## 后端当前状态
 
@@ -35,6 +37,7 @@ Backend Self-Loop 已在 2026-06-12 完成收尾记录。OpenCore 后端不再�
 - 系统管理：字典、参数、通知公告、部门、岗位、菜单、角色、用户已下沉到 `@opencore/system`。
 - 安全与审计：认证、JWT、密码、验证码、RBAC、数据权限、登录日志、操作日志已下沉到 `@opencore/security` 和 `@opencore/audit`。
 - 监控与运维：在线用户、调度任务、运行时诊断、健康检查、队列状态、缓存/Redis/S3 探测已下沉到 `@opencore/online-user`、`@opencore/scheduler`、`@opencore/monitor`。
+- 多租户基础设施：Cycle-022 已完成 `TenantPlan`、`Tenant`、`TenantMembership`、平台角色、tenant-bound token/session、租户切换、平台访问审计、租户套餐菜单裁剪、核心数据/运行时隔离和 Admin 租户控制面。
 - 代码生成：OpenForge core 已下沉到 `@opencore/generator-core`，`tools/generator` 只保留 CLI wrapper、status、doctor、gate、plan/diff/check/apply/rollback。
 - API 聚合：`apps/api` 只保留 bootstrap、HTTP entry aggregation、模块聚合、runtime config 和 OpenAPI export/check。
 
@@ -42,7 +45,8 @@ BE20 最终验证已通过：`pnpm typecheck`、`pnpm lint`、`pnpm test`、`pnp
 
 ## 当前明确不做
 
-- 不实现行业业务包或高风险闭环：CRM、ERP、MES、WMS、商城、真实支付、会员、多租户、知识库、RAG、Agent。
+- 不实现行业业务包或高风险闭环：CRM、ERP、MES、WMS、商城、真实支付/退款/对账、会员、知识库、RAG、Agent。
+- 不把 Cycle-022 多租户基础设施自动扩大成业务域、计费/订阅、租户自助注册、生产 SaaS 商业运营或行业套件；这些必须另起 tenant-owned admission plan。
 - Quality Cycle 001 只实现平台型轻量协同、operations/report 设计位和 integration provider/design 边界；不做 BPMN、完整报表设计器、大数据异步导出、真实支付回调/退款/对账或行业业务。
 - 不复制 RuoYi/Yudao 的 Java/Vue 代码，只学习模块地图、权限粒度、菜单组织、代码生成器和精简版/完整版思路。
 - 不直接迁移 NestWeb / Antdpro6 业务代码，只复用设计经验、工程纪律和测试习惯。
@@ -64,7 +68,7 @@ BE20 最终验证已通过：`pnpm typecheck`、`pnpm lint`、`pnpm test`、`pnp
 ## 工作区结构
 
 - `apps/api`：NestJS API composition root，保留 bootstrap、HTTP entry aggregation、模块聚合、runtime config 和 OpenAPI export/check；可复用 runtime 已下沉到 `packages/*` 或 `tools/*`。
-- `apps/admin`：Umi Max + Ant Design Pro V6 官方后台，已具备 Dashboard shell、RBAC 页面、系统管理页面、Monitor/Tool/Collaboration/Optional/Integrations 页面和 smoke test。
+- `apps/admin`：Umi Max + Ant Design Pro V6 官方后台，已具备 Dashboard shell、RBAC 页面、系统管理页面、租户控制面、Monitor/Tool/Collaboration/Optional/Integrations 页面和 smoke test。
 - `apps/web`：官网占位，后续使用 Next.js。
 - `apps/mobile`：移动端占位，后续使用 Expo React Native。
 - `apps/miniapp`：小程序占位，后续使用 Taro + React。

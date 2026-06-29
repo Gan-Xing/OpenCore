@@ -156,7 +156,7 @@ gantt
 
 ## 非目标
 
-- 当前不做 CRM、ERP、MES、WMS、商城、真实支付、会员、多租户。
+- 当前不做 CRM、ERP、MES、WMS、商城、真实支付、会员或生产 SaaS 商业运营扩展；Cycle-022 已完成平台多租户基础设施 V1，但不自动准入业务域。
 - 当前不做知识库、RAG、Agent。
 - 当前不迁移 NestWeb 的 schema 或业务模块。
 - 当前不让 Admin 手写裸 API 类型绕过 SDK。
