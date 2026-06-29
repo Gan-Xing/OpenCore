@@ -10,7 +10,7 @@ const checks: Array<{
   {
     file: 'prisma/schema.prisma',
     markers: [
-      'dictTypes       DictType[]',
+      'dictTypes              DictType[]',
       'tenantId    String     @default("tenant_root")',
       '@@unique([tenantId, code])',
       '@@index([tenantId, deletedAt, createdAt])',
@@ -51,7 +51,7 @@ const checks: Array<{
   },
   {
     file: 'apps/admin/src/pages/System/Dicts.tsx',
-    markers: ['tenantId', '租户 ID'],
+    markers: ['tenantId', 'pages.system.dicts.fields.tenantId'],
   },
   {
     file: 'packages/sdk/src/system-management-types.ts',

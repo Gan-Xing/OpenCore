@@ -10,7 +10,7 @@ const checks: Array<{
   {
     file: 'prisma/schema.prisma',
     markers: [
-      'auditLogs       AuditLog[]',
+      'auditLogs              AuditLog[]',
       'tenantId      String   @default("tenant_root")',
       '@@index([tenantId, resource, createdAt])',
     ],

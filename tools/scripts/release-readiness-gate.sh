@@ -8,6 +8,39 @@ API_PUBLIC_BASE_URL="${OPENCORE_RELEASE_PUBLIC_API_BASE_URL:-${OPENCORE_DEPLOY_P
 ADMIN_PUBLIC_BASE_URL="${OPENCORE_RELEASE_PUBLIC_ADMIN_BASE_URL:-${OPENCORE_DEPLOY_PUBLIC_ADMIN_BASE_URL:-http://$PUBLIC_HOST:39174}}"
 RUN_DEPLOY="${OPENCORE_RELEASE_GATE_DEPLOY:-true}"
 ALLOW_DIRTY="${OPENCORE_RELEASE_GATE_ALLOW_DIRTY:-false}"
+TENANT_PLATFORM_GUARDS=(
+  guard:tenant-foundation
+  guard:tenant-auth
+  guard:tenant-rbac
+  guard:tenant-member-assignment
+  guard:tenant-plan-control-plane
+  guard:tenant-lifecycle-control-plane
+  guard:tenant-member-control-plane
+  guard:tenant-switcher
+  guard:platform-visit
+  guard:tenant-dept-scope
+  guard:tenant-post-scope
+  guard:tenant-role-scope
+  guard:tenant-config-scope
+  guard:tenant-dict-scope
+  guard:tenant-file-scope
+  guard:tenant-notice-scope
+  guard:tenant-online-user-scope
+  guard:tenant-operation-log-scope
+  guard:tenant-login-log-scope
+  guard:tenant-redis-scope
+  guard:tenant-queue-scope
+  guard:tenant-scheduler-scope
+  guard:tenant-websocket-scope
+  guard:tenant-integration-scope
+  guard:tenant-collaboration-message-scope
+  guard:tenant-collaboration-notice-scope
+  guard:tenant-collaboration-todo-scope
+  guard:tenant-collaboration-approval-scope
+  guard:tenant-report-definition-scope
+  guard:tenant-legacy-user-org
+  guard:tenant-business-domain-admission
+)
 
 cd "$ROOT_DIR"
 
@@ -49,6 +82,14 @@ run_with_env() {
     set +a
     "$@"
   )
+}
+
+run_pnpm_scripts() {
+  local script
+
+  for script in "$@"; do
+    run_step "$script" pnpm "$script"
+  done
 }
 
 run_public_smoke() {
@@ -197,6 +238,8 @@ NODE
 
 run_step "release git worktree check" require_clean_worktree
 run_step "release env file check" require_env_file
+run_step "format check" pnpm format:check
+run_step "Prisma schema validation" pnpm prisma:validate
 run_step "lint" pnpm lint
 run_step "typecheck" pnpm typecheck
 run_step "test" pnpm test
@@ -205,6 +248,7 @@ run_step "OpenAPI registry tag check" pnpm openapi:registry-tags:check
 run_step "OpenAPI drift check" pnpm openapi:check
 run_step "Admin route access check" pnpm registry:admin-routes:check
 run_step "Admin fallback closure guard" pnpm guard:admin-fallback-closure --json
+run_pnpm_scripts "${TENANT_PLATFORM_GUARDS[@]}"
 run_step "build" pnpm build
 run_step "local API smoke" pnpm smoke:api:local
 

@@ -10,7 +10,7 @@ const checks: Array<{
   {
     file: 'prisma/schema.prisma',
     markers: [
-      'systemConfigs   SystemConfig[]',
+      'systemConfigs          SystemConfig[]',
       '@@unique([tenantId, key])',
       '@@unique([tenantId, key, environment])',
       '@@unique([tenantId, key, version])',

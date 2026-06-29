@@ -36,6 +36,22 @@ function requireNotIncludes(
   }
 }
 
+function sectionBetween(
+  content: string,
+  startMarker: string,
+  endMarker: string,
+): string {
+  const start = content.indexOf(startMarker);
+  const end = content.indexOf(endMarker, start + startMarker.length);
+
+  if (start === -1 || end === -1) {
+    issues.push(`missing-section ${startMarker}`);
+    return '';
+  }
+
+  return content.slice(start, end);
+}
+
 const schemaPath = 'prisma/schema.prisma';
 const migrationPath =
   'prisma/migrations/20260622223000_tenant_foundation/migration.sql';
@@ -98,14 +114,22 @@ for (const marker of [
 }
 
 requireIncludes(controllerPath, controller, "@Controller('core/tenancy')");
+requireIncludes(controllerPath, controller, 'TenantFoundationController');
+requireIncludes(controllerPath, controller, "@Get('foundation')");
 requireIncludes(
   controllerPath,
   controller,
   "@RequirePermission('platform:tenant:read')",
 );
 
-for (const marker of ['@Body', '@Query', '@Headers', 'tenantId']) {
-  requireNotIncludes(controllerPath, controller, marker);
+const foundationController = sectionBetween(
+  controller,
+  'export class TenantFoundationController',
+  "@Controller('core/tenancy/tenants')",
+);
+
+for (const marker of ['@Body', '@Query', '@Headers', '@Param']) {
+  requireNotIncludes(controllerPath, foundationController, marker);
 }
 
 requireIncludes(adminPath, admin, 'getOpenCoreTenancyFoundation');

@@ -13,7 +13,7 @@ const checks: Array<{
       'tenant            Tenant',
       '@@unique([tenantId, code])',
       '@@unique([tenantId, id])',
-      'roles           Role[]',
+      'roles                  Role[]',
     ],
   },
   {

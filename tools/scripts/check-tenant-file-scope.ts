@@ -10,7 +10,7 @@ const checks: Array<{
   {
     file: 'prisma/schema.prisma',
     markers: [
-      'fileAssets      FileAsset[]',
+      'fileAssets             FileAsset[]',
       'tenant       Tenant',
       '@@unique([tenantId, storageKey])',
       '@@index([tenantId, createdAt])',

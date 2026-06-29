@@ -10,7 +10,7 @@ const checks: Array<{
   {
     file: 'prisma/schema.prisma',
     markers: [
-      'posts           SystemPost[]',
+      'posts                  SystemPost[]',
       'tenant            Tenant',
       '@@unique([tenantId, code])',
       '@@unique([tenantId, id])',

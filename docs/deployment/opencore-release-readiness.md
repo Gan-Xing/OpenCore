@@ -1,7 +1,10 @@
 # OpenCore Release Readiness Gate
 
 This gate freezes the current foundation platform as a releasable baseline. It
-does not select a new productization loop or admit large domains.
+does not select a new productization loop or admit large domains. Tenant-owned
+business domains must complete
+[Business-Domain Admission](../development/business-domain-admission-template.md)
+before implementation; the gate only proves admitted scope.
 
 ## Command
 
@@ -21,18 +24,24 @@ OPENCORE_RELEASE_GATE_ALLOW_DIRTY=true pnpm release:gate
 `pnpm release:gate` runs these checks in order:
 
 1. clean worktree check
-2. `pnpm lint`
-3. `pnpm typecheck`
-4. `pnpm test`
-5. SDK drift check
-6. OpenAPI registry tag check
-7. OpenAPI drift check
-8. Admin route/access check
-9. seven-page Admin fallback closure guard
-10. full build
-11. fixed-port local API smoke
-12. fixed-port deployment through `pnpm deploy:opencore`
-13. public API/Admin/default-account smoke
+2. env file check
+3. `pnpm format:check`
+4. `pnpm prisma:validate`
+5. `pnpm lint`
+6. `pnpm typecheck`
+7. `pnpm test`
+8. SDK drift check
+9. OpenAPI registry tag check
+10. OpenAPI drift check
+11. Admin route/access check
+12. seven-page Admin fallback closure guard
+13. tenant platform guards, including auth, RBAC, control-plane, runtime
+    isolation, cross-domain scope guards, platform visit and business-domain
+    admission
+14. full build
+15. fixed-port local API smoke
+16. fixed-port deployment through `pnpm deploy:opencore`
+17. public API/Admin/default-account smoke
 
 The public smoke verifies:
 

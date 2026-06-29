@@ -81,14 +81,16 @@ const packageJson = readRequired(packagePath);
 
 for (const marker of [
   "@Controller('core/tenancy/members')",
+  "@Get('page')",
   "@RequirePermission('platform:tenant-member:read')",
   "@RequirePermission('platform:tenant-member:manage')",
+  'listMembersPage',
   'updateMemberAssignments',
 ]) {
   requireIncludes(controllerPath, controller, marker);
 }
 
-for (const marker of ['@Query', '@Headers', 'tenantId']) {
+for (const marker of ['@Headers', 'tenantId']) {
   requireNotIncludes(controllerPath, controller, marker);
 }
 
@@ -131,7 +133,7 @@ for (const marker of [
 }
 
 for (const marker of [
-  'listOpenCoreTenantMembers',
+  'listOpenCoreTenantMemberPage',
   'updateOpenCoreTenantMemberAssignments',
 ]) {
   requireIncludes(adminServicePath, adminService, marker);
