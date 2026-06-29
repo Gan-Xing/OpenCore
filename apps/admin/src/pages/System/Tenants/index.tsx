@@ -31,6 +31,7 @@ import {
   Alert,
   Button,
   Descriptions,
+  Empty,
   Form,
   Input,
   InputNumber,
@@ -205,6 +206,7 @@ export default function TenantsPage() {
   >([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
+  const [tableError, setTableError] = useState<string>();
   const [editingTenant, setEditingTenant] = useState<TenantSummary | null>();
   const [savingTenant, setSavingTenant] = useState(false);
   const [editingPlan, setEditingPlan] = useState<TenantPlanSummary | null>();
@@ -258,6 +260,43 @@ export default function TenantsPage() {
     'pages.system.tenants.validation.limitsJsonObject',
     'Tenant plan limits must be a JSON object.',
   );
+  const formatTableError = useCallback(
+    (error: unknown) =>
+      error instanceof Error
+        ? error.message
+        : formatMessage(
+            'pages.system.tenants.load.tableFailure',
+            'Unable to load tenant table data.',
+          ),
+    [formatMessage],
+  );
+  const tenantEmptyText = (
+    <Empty
+      image={Empty.PRESENTED_IMAGE_SIMPLE}
+      description={formatMessage(
+        'pages.system.tenants.empty.tenants',
+        'No tenants match the current filters.',
+      )}
+    />
+  );
+  const planEmptyText = (
+    <Empty
+      image={Empty.PRESENTED_IMAGE_SIMPLE}
+      description={formatMessage(
+        'pages.system.tenants.empty.plans',
+        'No tenant plans match the current filters.',
+      )}
+    />
+  );
+  const memberEmptyText = (
+    <Empty
+      image={Empty.PRESENTED_IMAGE_SIMPLE}
+      description={formatMessage(
+        'pages.system.tenants.empty.members',
+        'No members match the current filters.',
+      )}
+    />
+  );
 
   const loadSummary = useCallback(async () => {
     setLoading(true);
@@ -294,6 +333,7 @@ export default function TenantsPage() {
   }, [loadSummary]);
 
   const reloadControlPlane = useCallback(async () => {
+    setTableError(undefined);
     tenantActionRef.current?.reload();
     planActionRef.current?.reload();
     memberActionRef.current?.reload();
@@ -1390,6 +1430,19 @@ export default function TenantsPage() {
         />
       ) : null}
 
+      {tableError ? (
+        <Alert
+          showIcon
+          type="warning"
+          message={formatMessage(
+            'pages.system.tenants.load.tableFailureTitle',
+            'Unable to load tenant table data',
+          )}
+          description={tableError}
+          style={{ marginBlockEnd: 16 }}
+        />
+      ) : null}
+
       {backfillWarnings.length > 0 ? (
         <Alert
           showIcon
@@ -1476,20 +1529,27 @@ export default function TenantsPage() {
           'Tenants',
         )}
         loading={loading}
+        locale={{ emptyText: tenantEmptyText }}
         pagination={{ defaultPageSize: 10, showSizeChanger: true }}
         request={async (params, sort) => {
-          const page = await listOpenCoreTenantPage(
-            createTenantQuery(
-              params as Record<string, unknown>,
-              sort as Record<string, unknown>,
-            ),
-          );
+          try {
+            const page = await listOpenCoreTenantPage(
+              createTenantQuery(
+                params as Record<string, unknown>,
+                sort as Record<string, unknown>,
+              ),
+            );
 
-          return {
-            data: [...page.items],
-            success: true,
-            total: page.total,
-          };
+            setTableError(undefined);
+            return {
+              data: [...page.items],
+              success: true,
+              total: page.total,
+            };
+          } catch (error: unknown) {
+            setTableError(formatTableError(error));
+            return { data: [], success: false, total: 0 };
+          }
         }}
         rowKey="id"
         search={{ labelWidth: 'auto' }}
@@ -1528,20 +1588,27 @@ export default function TenantsPage() {
             'Tenant plans',
           )}
           loading={loading}
+          locale={{ emptyText: planEmptyText }}
           pagination={{ defaultPageSize: 10, showSizeChanger: true }}
           request={async (params, sort) => {
-            const page = await listOpenCoreTenantPlanPage(
-              createTenantPlanQuery(
-                params as Record<string, unknown>,
-                sort as Record<string, unknown>,
-              ),
-            );
+            try {
+              const page = await listOpenCoreTenantPlanPage(
+                createTenantPlanQuery(
+                  params as Record<string, unknown>,
+                  sort as Record<string, unknown>,
+                ),
+              );
 
-            return {
-              data: [...page.items],
-              success: true,
-              total: page.total,
-            };
+              setTableError(undefined);
+              return {
+                data: [...page.items],
+                success: true,
+                total: page.total,
+              };
+            } catch (error: unknown) {
+              setTableError(formatTableError(error));
+              return { data: [], success: false, total: 0 };
+            }
           }}
           rowKey="id"
           search={{ labelWidth: 'auto' }}
@@ -1581,20 +1648,27 @@ export default function TenantsPage() {
             'Current tenant members',
           )}
           loading={loading}
+          locale={{ emptyText: memberEmptyText }}
           pagination={{ defaultPageSize: 10, showSizeChanger: true }}
           request={async (params, sort) => {
-            const page = await listOpenCoreTenantMemberPage(
-              createTenantMemberQuery(
-                params as Record<string, unknown>,
-                sort as Record<string, unknown>,
-              ),
-            );
+            try {
+              const page = await listOpenCoreTenantMemberPage(
+                createTenantMemberQuery(
+                  params as Record<string, unknown>,
+                  sort as Record<string, unknown>,
+                ),
+              );
 
-            return {
-              data: [...page.items],
-              success: true,
-              total: page.total,
-            };
+              setTableError(undefined);
+              return {
+                data: [...page.items],
+                success: true,
+                total: page.total,
+              };
+            } catch (error: unknown) {
+              setTableError(formatTableError(error));
+              return { data: [], success: false, total: 0 };
+            }
           }}
           rowKey="id"
           search={{ labelWidth: 'auto' }}
@@ -1627,25 +1701,32 @@ export default function TenantsPage() {
         <ProTable<TenantMemberSummary>
           columns={controlMemberColumns}
           actionRef={controlMemberActionRef}
+          locale={{ emptyText: memberEmptyText }}
           params={{ tenantId: managingTenant?.id }}
           request={async (params, sort) => {
             if (!managingTenant) {
               return { data: [], success: true, total: 0 };
             }
 
-            const page = await listOpenCoreTenantControlMemberPage(
-              managingTenant.id,
-              createTenantMemberQuery(
-                params as Record<string, unknown>,
-                sort as Record<string, unknown>,
-              ),
-            );
+            try {
+              const page = await listOpenCoreTenantControlMemberPage(
+                managingTenant.id,
+                createTenantMemberQuery(
+                  params as Record<string, unknown>,
+                  sort as Record<string, unknown>,
+                ),
+              );
 
-            return {
-              data: [...page.items],
-              success: true,
-              total: page.total,
-            };
+              setTableError(undefined);
+              return {
+                data: [...page.items],
+                success: true,
+                total: page.total,
+              };
+            } catch (error: unknown) {
+              setTableError(formatTableError(error));
+              return { data: [], success: false, total: 0 };
+            }
           }}
           pagination={{ defaultPageSize: 10, showSizeChanger: true }}
           rowKey="id"

@@ -277,6 +277,36 @@ describe('@opencore/security security-auth', () => {
     });
   });
 
+  it('rejects platform visit selectors that do not identify one tenant', async () => {
+    const repository = new PlatformVisitSecurityAuthUserRepository();
+    const sessions = new InMemorySecurityAuthSessionRepository();
+    const service = new SecurityAuthService(
+      repository,
+      new InMemorySecurityLoginAttemptRecorder(),
+      sessions,
+    );
+
+    const rootSession = expectAuthenticated(
+      await service.login('admin', 'admin123'),
+    );
+
+    await expect(
+      service.visitTenantAsPlatform(`Bearer ${rootSession.accessToken}`, {
+        tenantCode: 'root',
+        tenantId: 'tenant_beta',
+      }),
+    ).rejects.toMatchObject({
+      response: expect.objectContaining({ code: 'AUTH_TENANT_UNAVAILABLE' }),
+    });
+    expect(sessions.revocations).toEqual([]);
+    await expect(
+      service.authenticateBearer(`Bearer ${rootSession.accessToken}`),
+    ).resolves.toMatchObject({
+      accessMode: 'tenant',
+      activeTenant: expect.objectContaining({ code: 'root' }),
+    });
+  });
+
   it('rejects invalid credentials and disabled users', async () => {
     const repository = new InMemorySecurityAuthUserRepository();
     const loginAttempts = new InMemorySecurityLoginAttemptRecorder();
@@ -463,15 +493,23 @@ class PlatformVisitSecurityAuthUserRepository extends InMemorySecurityAuthUserRe
     tenantCode?: string;
     tenantId?: string;
   }) {
-    if (input.tenantCode === 'beta' || input.tenantId === 'tenant_beta') {
-      return {
-        code: 'beta',
-        enabledModuleCodes: ['core.dashboard'],
-        id: 'tenant_beta',
-        name: 'Beta',
-        slug: 'beta',
-        status: 'active',
-      };
+    const tenant = {
+      code: 'beta',
+      enabledModuleCodes: ['core.dashboard'],
+      id: 'tenant_beta',
+      name: 'Beta',
+      slug: 'beta',
+      status: 'active',
+    };
+
+    if (
+      (input.tenantId || input.tenantCode) &&
+      (!input.tenantId || input.tenantId === tenant.id) &&
+      (!input.tenantCode ||
+        input.tenantCode === tenant.code ||
+        input.tenantCode === tenant.slug)
+    ) {
+      return tenant;
     }
 
     return super.findTenantForVisit(input);

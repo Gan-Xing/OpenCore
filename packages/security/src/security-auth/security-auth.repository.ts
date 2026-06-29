@@ -278,15 +278,11 @@ export abstract class SecurityAuthUserRepository {
   ): Promise<SecurityAuthTenantRecord | undefined> {
     const hostTenantCode = normalizeTenantHostCode(input.tenantHost);
 
-    if (
-      input.tenantId === 'tenant_root' ||
-      input.tenantCode === 'root' ||
-      hostTenantCode === 'root'
-    ) {
-      return createDefaultRootTenantRecord();
-    }
+    const rootTenant = createDefaultRootTenantRecord();
 
-    return undefined;
+    return tenantMatchesVisitSelection(rootTenant, input, hostTenantCode)
+      ? rootTenant
+      : undefined;
   }
 }
 
@@ -333,4 +329,24 @@ function normalizeTenantHostCode(
   }
 
   return host.split('.')[0];
+}
+
+function tenantMatchesVisitSelection(
+  tenant: SecurityAuthTenantRecord,
+  input: { tenantCode?: string; tenantId?: string },
+  hostTenantCode: string | undefined,
+): boolean {
+  if (!input.tenantId && !input.tenantCode && !hostTenantCode) {
+    return false;
+  }
+
+  return (
+    (!input.tenantId || tenant.id === input.tenantId) &&
+    (!input.tenantCode ||
+      tenant.code === input.tenantCode ||
+      tenant.slug === input.tenantCode) &&
+    (!hostTenantCode ||
+      tenant.code === hostTenantCode ||
+      tenant.slug === hostTenantCode)
+  );
 }

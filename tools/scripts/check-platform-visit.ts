@@ -100,6 +100,11 @@ requireIncludes(rbacModulePath, rbacModule, 'AuditOperationLogModule');
 requireIncludes(rbacDtoPath, rbacDto, 'PlatformVisitTenantRequestDto');
 requireIncludes(rbacRepositoryPath, rbacRepository, 'findTenantForVisit');
 requireIncludes(rbacRepositoryPath, rbacRepository, 'platformRoles');
+requireIncludes(
+  rbacRepositoryPath,
+  rbacRepository,
+  'tenantMatchesVisitSelection',
+);
 requireIncludes(sdkTypesPath, sdkTypes, 'PlatformVisitTenantRequest');
 requireIncludes(sdkClientPath, sdkClient, 'visitTenantAsPlatform');
 requireIncludes(adminAuthPath, adminAuth, 'visitOpenCoreTenantAsPlatform');
@@ -113,6 +118,8 @@ requireIncludes(adminTenantsPath, adminTenants, 'Visit tenant');
 for (const marker of [
   '/api/auth/platform-visit',
   'auth.platform-visit',
+  'auth.platform-visit.selector-mismatch-rejected',
+  'auth.platform-visit.selector-mismatch-preserves-token',
   'auth.platform-visit.old-token-revoked',
   'auth.platform-visit.request-context',
   'auth.platform-visit.audit-recorded',

@@ -40,6 +40,26 @@ async function main() {
       slug: tenantSlug,
     });
 
+    await request(`${apiPrefix}/auth/platform-visit`, {
+      body: {
+        reason: 'selector mismatch smoke',
+        tenantCode: 'root',
+        tenantId: tenant.id,
+      },
+      expected: [401],
+      method: 'POST',
+      token: rootToken,
+    });
+    const rootMe = await request<any>(`${apiPrefix}/auth/me`, {
+      expected: [200],
+      token: rootToken,
+    });
+    assertEqual(
+      rootMe.user.activeTenant?.code,
+      'root',
+      'selector mismatch preserves root tenant',
+    );
+
     const visit = await clients.rbac.visitTenantAsPlatform(rootToken, {
       reason: 'platform visit smoke',
       tenantId: tenant.id,
@@ -95,6 +115,8 @@ async function main() {
           ...(checkDocs ? ['openapi.auth.platform-visit'] : []),
           'auth.login',
           'core.platform-visit.tenant-create',
+          'auth.platform-visit.selector-mismatch-rejected',
+          'auth.platform-visit.selector-mismatch-preserves-token',
           'auth.platform-visit',
           'auth.platform-visit.old-token-revoked',
           'auth.platform-visit.me-preserves-mode',

@@ -98,6 +98,10 @@ export default {
   'pages.system.tenants.actions.visitTenantBlocked':
     'Only active tenants can be visited.',
   'pages.system.tenants.actions.visitTenantSuccess': 'Visiting tenant {code}.',
+  'pages.system.tenants.empty.members': 'No members match the current filters.',
+  'pages.system.tenants.empty.plans':
+    'No tenant plans match the current filters.',
+  'pages.system.tenants.empty.tenants': 'No tenants match the current filters.',
   'pages.system.tenants.fields.accountLimit': 'Account limit',
   'pages.system.tenants.fields.actions': 'Actions',
   'pages.system.tenants.fields.code': 'Code',
@@ -136,6 +140,9 @@ export default {
   'pages.system.tenants.load.failure': 'Unable to load live tenant foundation.',
   'pages.system.tenants.load.liveFailure':
     'Unable to load live tenant foundation',
+  'pages.system.tenants.load.tableFailure': 'Unable to load tenant table data.',
+  'pages.system.tenants.load.tableFailureTitle':
+    'Unable to load tenant table data',
   'pages.system.tenants.section': 'Tenant Foundation',
   'pages.system.tenants.sections.backfill': 'Backfill parity',
   'pages.system.tenants.sections.members': 'Current tenant members',

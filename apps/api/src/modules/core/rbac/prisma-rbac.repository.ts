@@ -368,21 +368,26 @@ export class PrismaRbacRepository extends RbacRepository {
       },
     });
 
-    return tenant
-      ? {
-          code: tenant.code,
-          enabledModuleCodes: [
-            ...new Set(
-              tenant.plan?.modules.map((module) => module.moduleCode) ?? [],
-            ),
-          ].sort(),
-          expiresAt: tenant.expiresAt?.toISOString(),
-          id: tenant.id,
-          name: tenant.name,
-          slug: tenant.slug,
-          status: tenant.status,
-        }
-      : undefined;
+    if (
+      !tenant ||
+      !tenantMatchesVisitSelection(tenant, input, hostTenantCode)
+    ) {
+      return undefined;
+    }
+
+    return {
+      code: tenant.code,
+      enabledModuleCodes: [
+        ...new Set(
+          tenant.plan?.modules.map((module) => module.moduleCode) ?? [],
+        ),
+      ].sort(),
+      expiresAt: tenant.expiresAt?.toISOString(),
+      id: tenant.id,
+      name: tenant.name,
+      slug: tenant.slug,
+      status: tenant.status,
+    };
   }
 
   async getDataScopeProfileForUser(
@@ -548,6 +553,22 @@ function normalizeTenantHostCode(
   }
 
   return host.split('.')[0];
+}
+
+function tenantMatchesVisitSelection(
+  tenant: { code: string; id: string; slug: string },
+  input: { tenantCode?: string; tenantId?: string },
+  hostTenantCode: string | undefined,
+): boolean {
+  return (
+    (!input.tenantId || tenant.id === input.tenantId) &&
+    (!input.tenantCode ||
+      tenant.code === input.tenantCode ||
+      tenant.slug === input.tenantCode) &&
+    (!hostTenantCode ||
+      tenant.code === hostTenantCode ||
+      tenant.slug === hostTenantCode)
+  );
 }
 
 function toPermissionSummaryRecord(
