@@ -4,6 +4,7 @@ import type {
   ChangeCrmOpportunityStageDto,
   CompleteCrmTaskDto,
   ConvertCrmLeadDto,
+  ConvertCrmLeadResultDto,
   CreateCrmAttachmentDto,
   CreateCrmContactDto,
   CreateCrmCustomerDto,
@@ -13,6 +14,7 @@ import type {
   CreateCrmTagDto,
   CreateCrmTaskDto,
   CrmAttachmentDto,
+  CrmActivityPageDto,
   CrmAttachmentPageDto,
   CrmAuditEventPageDto,
   CrmContactQueryDto,
@@ -78,11 +80,7 @@ export abstract class CrmRepository {
   abstract convertLead(
     id: string,
     body: ConvertCrmLeadDto,
-  ): Promise<{
-    lead: CrmLeadDto;
-    customer: CrmCustomerDto;
-    opportunity?: CrmOpportunityDto;
-  }>;
+  ): Promise<ConvertCrmLeadResultDto>;
   abstract transferLeadOwner(
     id: string,
     body: TransferCrmOwnerDto,
@@ -133,6 +131,10 @@ export abstract class CrmRepository {
     body: TransferCrmOwnerDto,
   ): Promise<CrmOpportunityDto>;
   abstract archiveOpportunity(id: string): Promise<{ deleted: true }>;
+
+  abstract listActivities(
+    query?: CrmTargetQueryDto,
+  ): Promise<CrmActivityPageDto>;
 
   abstract listFollowUps(
     query?: CrmTargetQueryDto,

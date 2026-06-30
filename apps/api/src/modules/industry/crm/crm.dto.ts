@@ -15,11 +15,22 @@ export const CRM_LEAD_STATUSES = [
   'lost',
   'archived',
 ] as const;
+export const CRM_WRITABLE_LEAD_STATUSES = [
+  'new',
+  'contacted',
+  'qualified',
+  'lost',
+] as const;
 export const CRM_CUSTOMER_STATUSES = [
   'active',
   'inactive',
   'churned',
   'archived',
+] as const;
+export const CRM_WRITABLE_CUSTOMER_STATUSES = [
+  'active',
+  'inactive',
+  'churned',
 ] as const;
 export const CRM_OPPORTUNITY_STAGES = [
   'qualification',
@@ -27,6 +38,11 @@ export const CRM_OPPORTUNITY_STAGES = [
   'negotiation',
   'won',
   'lost',
+] as const;
+export const CRM_OPEN_OPPORTUNITY_STAGES = [
+  'qualification',
+  'proposal',
+  'negotiation',
 ] as const;
 export const CRM_TASK_STATUSES = ['open', 'done', 'canceled'] as const;
 export const CRM_TASK_PRIORITIES = ['low', 'medium', 'high', 'urgent'] as const;
@@ -40,8 +56,13 @@ export const CRM_FOLLOW_UP_METHODS = [
 
 export type CrmTargetType = (typeof CRM_TARGET_TYPES)[number];
 export type CrmLeadStatus = (typeof CRM_LEAD_STATUSES)[number];
+export type CrmWritableLeadStatus = (typeof CRM_WRITABLE_LEAD_STATUSES)[number];
 export type CrmCustomerStatus = (typeof CRM_CUSTOMER_STATUSES)[number];
+export type CrmWritableCustomerStatus =
+  (typeof CRM_WRITABLE_CUSTOMER_STATUSES)[number];
 export type CrmOpportunityStage = (typeof CRM_OPPORTUNITY_STAGES)[number];
+export type CrmOpenOpportunityStage =
+  (typeof CRM_OPEN_OPPORTUNITY_STAGES)[number];
 export type CrmTaskStatus = (typeof CRM_TASK_STATUSES)[number];
 export type CrmTaskPriority = (typeof CRM_TASK_PRIORITIES)[number];
 export type CrmFollowUpMethod = (typeof CRM_FOLLOW_UP_METHODS)[number];
@@ -323,6 +344,17 @@ export class CrmOpportunityDto {
   updatedAt!: string;
 }
 
+export class ConvertCrmLeadResultDto {
+  @ApiProperty({ type: CrmLeadDto })
+  lead!: CrmLeadDto;
+
+  @ApiProperty({ type: CrmCustomerDto })
+  customer!: CrmCustomerDto;
+
+  @ApiProperty({ type: CrmOpportunityDto, required: false })
+  opportunity?: CrmOpportunityDto;
+}
+
 export class CrmFollowUpDto {
   @ApiProperty()
   id!: string;
@@ -492,6 +524,34 @@ export class CrmAuditEventDto {
   createdAt!: string;
 }
 
+export class CrmActivityDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  tenantId!: string;
+
+  @ApiProperty({
+    enum: ['follow-up', 'attachment', 'transfer', 'audit'],
+  })
+  activityType!: 'follow-up' | 'attachment' | 'transfer' | 'audit';
+
+  @ApiProperty({ enum: CRM_TARGET_TYPES })
+  targetType!: CrmTargetType;
+
+  @ApiProperty()
+  targetId!: string;
+
+  @ApiProperty({ required: false })
+  actor?: string;
+
+  @ApiProperty({ required: false })
+  title?: string;
+
+  @ApiProperty()
+  createdAt!: string;
+}
+
 export class CrmPageDto<T> {
   @ApiProperty()
   items!: readonly T[];
@@ -532,6 +592,11 @@ export class CrmContactPageDto extends CrmPageDto<CrmContactDto> {
 export class CrmOpportunityPageDto extends CrmPageDto<CrmOpportunityDto> {
   @ApiProperty({ type: [CrmOpportunityDto] })
   declare items: readonly CrmOpportunityDto[];
+}
+
+export class CrmActivityPageDto extends CrmPageDto<CrmActivityDto> {
+  @ApiProperty({ type: [CrmActivityDto] })
+  declare items: readonly CrmActivityDto[];
 }
 
 export class CrmFollowUpPageDto extends CrmPageDto<CrmFollowUpDto> {
@@ -682,8 +747,8 @@ export class CrmOpportunityQueryDto extends PageQueryDto {
   @ApiProperty({ required: false })
   customerId?: string;
 
-  @ApiProperty({ enum: CRM_OPPORTUNITY_STAGES, required: false })
-  stage?: CrmOpportunityStage;
+  @ApiProperty({ enum: CRM_OPEN_OPPORTUNITY_STAGES, required: false })
+  stage?: CrmOpenOpportunityStage;
 
   @ApiProperty({ required: false })
   owner?: string;
@@ -800,8 +865,8 @@ export class UpdateCrmLeadDto {
   @ApiProperty({ required: false })
   source?: string;
 
-  @ApiProperty({ enum: CRM_LEAD_STATUSES, required: false })
-  status?: CrmLeadStatus;
+  @ApiProperty({ enum: CRM_WRITABLE_LEAD_STATUSES, required: false })
+  status?: CrmWritableLeadStatus;
 
   @ApiProperty({ required: false })
   rating?: string;
@@ -846,8 +911,8 @@ export class CreateCrmCustomerDto {
   @ApiProperty()
   source!: string;
 
-  @ApiProperty({ required: false })
-  status?: CrmCustomerStatus;
+  @ApiProperty({ enum: CRM_WRITABLE_CUSTOMER_STATUSES, required: false })
+  status?: CrmWritableCustomerStatus;
 
   @ApiProperty({ required: false })
   industry?: string;
@@ -884,8 +949,8 @@ export class UpdateCrmCustomerDto {
   @ApiProperty({ required: false })
   owner?: string;
 
-  @ApiProperty({ enum: CRM_CUSTOMER_STATUSES, required: false })
-  status?: CrmCustomerStatus;
+  @ApiProperty({ enum: CRM_WRITABLE_CUSTOMER_STATUSES, required: false })
+  status?: CrmWritableCustomerStatus;
 
   @ApiProperty({ required: false })
   level?: string;

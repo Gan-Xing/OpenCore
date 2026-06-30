@@ -12,6 +12,7 @@ import type {
   CreateCrmOpportunityRequest,
   CreateCrmTagRequest,
   CreateCrmTaskRequest,
+  CrmActivityPage,
   CrmAttachmentPage,
   CrmAuditEventPage,
   CrmContactPage,
@@ -128,6 +129,10 @@ export type CrmClient = {
     token: string,
     query?: CrmOpportunityQueryRequest,
   ) => Promise<CrmOpportunityPage>;
+  listActivities: (
+    token: string,
+    query?: CrmTargetQueryRequest,
+  ) => Promise<CrmActivityPage>;
   getOpportunity: (token: string, id: string) => Promise<CrmOpportunitySummary>;
   createOpportunity: (
     token: string,
@@ -303,6 +308,10 @@ export function createCrmClient(request: SdkRequest): CrmClient {
         withQuery('/industry/crm/opportunities', query),
         { token },
       ),
+    listActivities: (token, query) =>
+      request<CrmActivityPage>(withQuery('/industry/crm/activity', query), {
+        token,
+      }),
     getOpportunity: (token, id) =>
       request<CrmOpportunitySummary>(
         `/industry/crm/opportunities/${encodeURIComponent(id)}`,

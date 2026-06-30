@@ -55,6 +55,10 @@ describe('createCrmClient', () => {
     await client.updateContact('token', 'contact 1', { title: 'VP' });
     await client.archiveContact('token', 'contact 1');
     await client.listOpportunities('token', { stage: 'proposal' });
+    await client.listActivities('token', {
+      targetId: 'lead 1',
+      targetType: 'lead',
+    });
     await client.getOpportunity('token', 'opportunity 1');
     await client.createOpportunity('token', {
       customerId: 'customer 1',
@@ -143,6 +147,7 @@ describe('createCrmClient', () => {
       { path: '/industry/crm/contacts/contact%201', method: 'PATCH' },
       { path: '/industry/crm/contacts/contact%201', method: 'DELETE' },
       { path: '/industry/crm/opportunities?stage=proposal' },
+      { path: '/industry/crm/activity?targetId=lead+1&targetType=lead' },
       { path: '/industry/crm/opportunities/opportunity%201' },
       { path: '/industry/crm/opportunities', method: 'POST' },
       { path: '/industry/crm/opportunities/opportunity%201', method: 'PATCH' },

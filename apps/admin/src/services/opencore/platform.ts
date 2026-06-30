@@ -95,6 +95,7 @@ import {
   type CreateTodoRequest,
   type DecideApprovalLiteRequest,
   type DeleteCacheKeyRequest,
+  type CrmActivityPage,
   type CrmAttachmentPage,
   type CrmAttachmentSummary,
   type CrmAuditEventPage,
@@ -974,6 +975,16 @@ export async function listOpenCoreCrmOpportunities(
 ): Promise<CrmOpportunitySummary[]> {
   const page = await pageOpenCoreCrmOpportunities(query);
   return [...page.items];
+}
+
+export function pageOpenCoreCrmActivities(
+  query?: CrmTargetQueryRequest,
+): Promise<CrmActivityPage> {
+  return crmClient.listActivities(getRequiredAdminToken(), {
+    page: 1,
+    pageSize: 100,
+    ...query,
+  });
 }
 
 export function getOpenCoreCrmOpportunity(

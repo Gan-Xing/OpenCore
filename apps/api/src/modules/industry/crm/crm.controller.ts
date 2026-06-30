@@ -20,6 +20,7 @@ import {
   ChangeCrmOpportunityStageDto,
   CompleteCrmTaskDto,
   ConvertCrmLeadDto,
+  ConvertCrmLeadResultDto,
   CreateCrmAttachmentDto,
   CreateCrmContactDto,
   CreateCrmCustomerDto,
@@ -62,6 +63,7 @@ import {
   UpdateCrmLeadDto,
   UpdateCrmOpportunityDto,
   UpdateCrmTagDto,
+  CrmActivityPageDto,
 } from './crm.dto';
 import { CrmRepository } from './crm.repository';
 
@@ -164,6 +166,7 @@ export class CrmController {
     resource: 'industry.crm',
     resourceIdField: 'id',
   })
+  @ApiOkResponse({ type: ConvertCrmLeadResultDto })
   convertLead(@Param('id') id: string, @Body() body: ConvertCrmLeadDto) {
     return this.repository.convertLead(id, body);
   }
@@ -391,6 +394,15 @@ export class CrmController {
   @ApiOkResponse({ type: CrmDeleteResultDto })
   archiveOpportunity(@Param('id') id: string): Promise<{ deleted: true }> {
     return this.repository.archiveOpportunity(id);
+  }
+
+  @Get('activity')
+  @RequirePermission('industry:crm:read')
+  @ApiOkResponse({ type: CrmActivityPageDto })
+  listActivities(
+    @Query() query: CrmTargetQueryDto,
+  ): Promise<CrmActivityPageDto> {
+    return this.repository.listActivities(query);
   }
 
   @Get('follow-ups')

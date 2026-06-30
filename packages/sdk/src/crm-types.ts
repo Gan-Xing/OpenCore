@@ -10,13 +10,22 @@ export type CrmLeadStatus =
   | 'lost'
   | 'new'
   | 'qualified';
+export type CrmWritableLeadStatus = Exclude<
+  CrmLeadStatus,
+  'archived' | 'converted'
+>;
 export type CrmCustomerStatus = 'active' | 'archived' | 'churned' | 'inactive';
+export type CrmWritableCustomerStatus = Exclude<CrmCustomerStatus, 'archived'>;
 export type CrmOpportunityStage =
   | 'lost'
   | 'negotiation'
   | 'proposal'
   | 'qualification'
   | 'won';
+export type CrmOpenOpportunityStage = Exclude<
+  CrmOpportunityStage,
+  'lost' | 'won'
+>;
 export type CrmTaskStatus = 'canceled' | 'done' | 'open';
 export type CrmTaskPriority = 'high' | 'low' | 'medium' | 'urgent';
 export type CrmFollowUpMethod =
@@ -177,6 +186,17 @@ export type CrmAttachmentSummary = {
   updatedAt: string;
 };
 
+export type CrmActivitySummary = {
+  id: string;
+  tenantId: string;
+  activityType: 'attachment' | 'audit' | 'follow-up' | 'transfer';
+  targetType: CrmTargetType;
+  targetId: string;
+  actor?: string;
+  title?: string;
+  createdAt: string;
+};
+
 export type CrmOwnerTransferSummary = {
   id: string;
   tenantId: string;
@@ -229,6 +249,7 @@ export type CrmLeadPage = PageResponse<CrmLeadSummary>;
 export type CrmCustomerPage = PageResponse<CrmCustomerSummary>;
 export type CrmContactPage = PageResponse<CrmContactSummary>;
 export type CrmOpportunityPage = PageResponse<CrmOpportunitySummary>;
+export type CrmActivityPage = PageResponse<CrmActivitySummary>;
 export type CrmFollowUpPage = PageResponse<CrmFollowUpSummary>;
 export type CrmTaskPage = PageResponse<CrmTaskSummary>;
 export type CrmAttachmentPage = PageResponse<CrmAttachmentSummary>;
@@ -295,8 +316,19 @@ export type CreateCrmLeadRequest = Pick<
     >
   > & { tags?: string[] };
 export type UpdateCrmLeadRequest = Partial<
-  Omit<CrmLeadSummary, 'createdAt' | 'id' | 'number' | 'tenantId' | 'updatedAt'>
-> & { tags?: string[] };
+  Pick<
+    CrmLeadSummary,
+    | 'company'
+    | 'email'
+    | 'mobile'
+    | 'name'
+    | 'nextContactAt'
+    | 'owner'
+    | 'rating'
+    | 'remark'
+    | 'source'
+  >
+> & { status?: CrmWritableLeadStatus; tags?: string[] };
 export type ConvertCrmLeadRequest = {
   actor: string;
   customerName?: string;
@@ -323,22 +355,26 @@ export type CreateCrmCustomerRequest = Pick<
       | 'phone'
       | 'region'
       | 'remark'
-      | 'status'
       | 'website'
     >
-  > & { tags?: string[] };
+  > & { status?: CrmWritableCustomerStatus; tags?: string[] };
 export type UpdateCrmCustomerRequest = Partial<
-  Omit<
+  Pick<
     CrmCustomerSummary,
-    | 'contactCount'
-    | 'createdAt'
-    | 'id'
-    | 'number'
-    | 'opportunityCount'
-    | 'tenantId'
-    | 'updatedAt'
+    | 'address'
+    | 'email'
+    | 'industry'
+    | 'level'
+    | 'name'
+    | 'nextContactAt'
+    | 'owner'
+    | 'phone'
+    | 'region'
+    | 'remark'
+    | 'source'
+    | 'website'
   >
-> & { tags?: string[] };
+> & { status?: CrmWritableCustomerStatus; tags?: string[] };
 export type CreateCrmContactRequest = Pick<
   CrmContactSummary,
   'customerId' | 'name'
@@ -375,17 +411,19 @@ export type CreateCrmOpportunityRequest = Pick<
   Partial<
     Pick<
       CrmOpportunitySummary,
-      'amount' | 'expectedCloseAt' | 'probability' | 'remark' | 'stage'
+      'amount' | 'expectedCloseAt' | 'probability' | 'remark'
     >
-  > & { tags?: string[] };
+  > & { stage?: CrmOpenOpportunityStage; tags?: string[] };
 export type UpdateCrmOpportunityRequest = Partial<
   Omit<
     CrmOpportunitySummary,
     | 'closedAt'
+    | 'closeReason'
     | 'createdAt'
     | 'customerName'
     | 'id'
     | 'number'
+    | 'stage'
     | 'tenantId'
     | 'updatedAt'
   >

@@ -17,13 +17,16 @@ import {
 import type {
   CrmCustomerSummary,
   CrmLeadSummary,
+  CrmOpenOpportunityStage,
   CrmOpportunitySummary,
   CrmSummary,
   CrmTagSummary,
   CrmTargetType,
   CrmTaskSummary,
+  CrmWritableCustomerStatus,
+  CrmWritableLeadStatus,
 } from '@opencore/sdk';
-import { useAccess } from '@umijs/max';
+import { useAccess, useIntl } from '@umijs/max';
 import {
   Alert,
   Button,
@@ -44,8 +47,9 @@ import {
   Typography,
   message,
 } from 'antd';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  archiveOpenCoreCrmContact,
   archiveOpenCoreCrmCustomer,
   archiveOpenCoreCrmLead,
   archiveOpenCoreCrmOpportunity,
@@ -61,14 +65,11 @@ import {
   createOpenCoreCrmTag,
   createOpenCoreCrmTask,
   getOpenCoreCrmSummary,
-  pageOpenCoreCrmAttachments,
-  pageOpenCoreCrmAuditEvents,
+  pageOpenCoreCrmActivities,
   pageOpenCoreCrmContacts,
   pageOpenCoreCrmCustomers,
-  pageOpenCoreCrmFollowUps,
   pageOpenCoreCrmLeads,
   pageOpenCoreCrmOpportunities,
-  pageOpenCoreCrmOwnerTransfers,
   pageOpenCoreCrmTags,
   pageOpenCoreCrmTasks,
   transferOpenCoreCrmCustomerOwner,
@@ -112,9 +113,15 @@ type TargetContext = {
   title: string;
   type: CrmTargetType;
 };
+type FormatMessage = (
+  id: string,
+  defaultMessage: string,
+  values?: Record<string, number | string>,
+) => string;
 
 const DEFAULT_ACTOR = 'admin';
 const LEAD_STATUSES = ['new', 'contacted', 'qualified', 'converted', 'lost'];
+const WRITABLE_LEAD_STATUSES = ['new', 'contacted', 'qualified', 'lost'];
 const CUSTOMER_STATUSES = ['active', 'inactive', 'churned'];
 const OPPORTUNITY_STAGES = [
   'qualification',
@@ -123,10 +130,53 @@ const OPPORTUNITY_STAGES = [
   'won',
   'lost',
 ];
+const OPEN_OPPORTUNITY_STAGES = ['qualification', 'proposal', 'negotiation'];
 const TASK_STATUSES = ['open', 'done', 'canceled'];
+const TASK_PRIORITIES = ['low', 'medium', 'high', 'urgent'];
+const FOLLOW_UP_METHODS = ['call', 'email', 'meeting', 'wechat', 'note'];
 
-function valueEnum(values: readonly string[]) {
-  return Object.fromEntries(values.map((value) => [value, { text: value }]));
+function crmMessageId(suffix: string): string {
+  return `pages.industry.crm.${suffix}`;
+}
+
+function valueEnum(
+  values: readonly string[],
+  formatMessage: FormatMessage,
+  scope: string,
+) {
+  return Object.fromEntries(
+    values.map((value) => [
+      value,
+      { text: formatMessage(crmMessageId(`${scope}.${value}`), value) },
+    ]),
+  );
+}
+
+function enumOptions(
+  values: readonly string[],
+  formatMessage: FormatMessage,
+  scope: string,
+) {
+  return values.map((value) => ({
+    label: formatMessage(crmMessageId(`${scope}.${value}`), value),
+    value,
+  }));
+}
+
+function entityLabel(
+  kind: EntityKind | undefined,
+  formatMessage: FormatMessage,
+): string {
+  return kind ? formatMessage(crmMessageId(`entityKind.${kind}`), kind) : '';
+}
+
+function actionLabel(
+  kind: ActionKind | undefined,
+  formatMessage: FormatMessage,
+): string {
+  return kind
+    ? formatMessage(crmMessageId(`actionKind.${kind}`), kind)
+    : formatMessage(crmMessageId('actionKind.action'), 'Action');
 }
 
 function rowify<T extends { id: string; tenantId: string }>(
@@ -242,65 +292,163 @@ function targetForRow(row: CrmRow): TargetContext | undefined {
   return undefined;
 }
 
-function createExportColumns(tab: CrmTab): CurrentPageExportColumn<CrmRow>[] {
+function createExportColumns(
+  tab: CrmTab,
+  formatMessage: FormatMessage,
+): CurrentPageExportColumn<CrmRow>[] {
   const common: CurrentPageExportColumn<CrmRow>[] = [
-    { title: 'Tenant', dataIndex: 'tenantId' },
-    { title: 'ID', dataIndex: 'id' },
+    {
+      title: formatMessage(crmMessageId('fields.tenant'), 'Tenant'),
+      dataIndex: 'tenantId',
+    },
+    { title: formatMessage(crmMessageId('fields.id'), 'ID'), dataIndex: 'id' },
   ];
   if (tab === 'leads') {
     return [
       ...common,
-      { title: 'Number', dataIndex: 'number' },
-      { title: 'Name', dataIndex: 'name' },
-      { title: 'Company', dataIndex: 'company' },
-      { title: 'Status', dataIndex: 'status' },
-      { title: 'Owner', dataIndex: 'owner' },
-      { title: 'Source', dataIndex: 'source' },
+      {
+        title: formatMessage(crmMessageId('fields.number'), 'Number'),
+        dataIndex: 'number',
+      },
+      {
+        title: formatMessage(crmMessageId('fields.name'), 'Name'),
+        dataIndex: 'name',
+      },
+      {
+        title: formatMessage(crmMessageId('fields.company'), 'Company'),
+        dataIndex: 'company',
+      },
+      {
+        title: formatMessage(crmMessageId('fields.status'), 'Status'),
+        dataIndex: 'status',
+      },
+      {
+        title: formatMessage(crmMessageId('fields.owner'), 'Owner'),
+        dataIndex: 'owner',
+      },
+      {
+        title: formatMessage(crmMessageId('fields.source'), 'Source'),
+        dataIndex: 'source',
+      },
     ];
   }
   if (tab === 'customers') {
     return [
       ...common,
-      { title: 'Number', dataIndex: 'number' },
-      { title: 'Name', dataIndex: 'name' },
-      { title: 'Status', dataIndex: 'status' },
-      { title: 'Level', dataIndex: 'level' },
-      { title: 'Owner', dataIndex: 'owner' },
-      { title: 'Source', dataIndex: 'source' },
+      {
+        title: formatMessage(crmMessageId('fields.number'), 'Number'),
+        dataIndex: 'number',
+      },
+      {
+        title: formatMessage(crmMessageId('fields.name'), 'Name'),
+        dataIndex: 'name',
+      },
+      {
+        title: formatMessage(crmMessageId('fields.status'), 'Status'),
+        dataIndex: 'status',
+      },
+      {
+        title: formatMessage(crmMessageId('fields.level'), 'Level'),
+        dataIndex: 'level',
+      },
+      {
+        title: formatMessage(crmMessageId('fields.owner'), 'Owner'),
+        dataIndex: 'owner',
+      },
+      {
+        title: formatMessage(crmMessageId('fields.source'), 'Source'),
+        dataIndex: 'source',
+      },
     ];
   }
   if (tab === 'opportunities') {
     return [
       ...common,
-      { title: 'Number', dataIndex: 'number' },
-      { title: 'Name', dataIndex: 'name' },
-      { title: 'Customer', dataIndex: 'customerName' },
-      { title: 'Stage', dataIndex: 'stage' },
-      { title: 'Amount', dataIndex: 'amount' },
-      { title: 'Owner', dataIndex: 'owner' },
+      {
+        title: formatMessage(crmMessageId('fields.number'), 'Number'),
+        dataIndex: 'number',
+      },
+      {
+        title: formatMessage(crmMessageId('fields.name'), 'Name'),
+        dataIndex: 'name',
+      },
+      {
+        title: formatMessage(crmMessageId('fields.customer'), 'Customer'),
+        dataIndex: 'customerName',
+      },
+      {
+        title: formatMessage(crmMessageId('fields.stage'), 'Stage'),
+        dataIndex: 'stage',
+      },
+      {
+        title: formatMessage(crmMessageId('fields.amount'), 'Amount'),
+        dataIndex: 'amount',
+      },
+      {
+        title: formatMessage(crmMessageId('fields.owner'), 'Owner'),
+        dataIndex: 'owner',
+      },
     ];
   }
   if (tab === 'tasks') {
     return [
       ...common,
-      { title: 'Title', dataIndex: 'title' },
-      { title: 'Assignee', dataIndex: 'assignee' },
-      { title: 'Status', dataIndex: 'status' },
-      { title: 'Priority', dataIndex: 'priority' },
-      { title: 'Due At', dataIndex: 'dueAt' },
+      {
+        title: formatMessage(crmMessageId('fields.title'), 'Title'),
+        dataIndex: 'title',
+      },
+      {
+        title: formatMessage(crmMessageId('fields.assignee'), 'Assignee'),
+        dataIndex: 'assignee',
+      },
+      {
+        title: formatMessage(crmMessageId('fields.status'), 'Status'),
+        dataIndex: 'status',
+      },
+      {
+        title: formatMessage(crmMessageId('fields.priority'), 'Priority'),
+        dataIndex: 'priority',
+      },
+      {
+        title: formatMessage(crmMessageId('fields.dueAt'), 'Due At'),
+        dataIndex: 'dueAt',
+      },
     ];
   }
   return [
     ...common,
-    { title: 'Name', dataIndex: 'name' },
-    { title: 'Title', dataIndex: 'title' },
-    { title: 'Target', dataIndex: 'targetId' },
-    { title: 'Owner', dataIndex: 'owner' },
-    { title: 'Status', dataIndex: 'status' },
+    {
+      title: formatMessage(crmMessageId('fields.name'), 'Name'),
+      dataIndex: 'name',
+    },
+    {
+      title: formatMessage(crmMessageId('fields.title'), 'Title'),
+      dataIndex: 'title',
+    },
+    {
+      title: formatMessage(crmMessageId('fields.target'), 'Target'),
+      dataIndex: 'targetId',
+    },
+    {
+      title: formatMessage(crmMessageId('fields.owner'), 'Owner'),
+      dataIndex: 'owner',
+    },
+    {
+      title: formatMessage(crmMessageId('fields.status'), 'Status'),
+      dataIndex: 'status',
+    },
   ];
 }
 
 export default function CrmPage() {
+  const intl = useIntl();
+  const formatMessage: FormatMessage = useCallback(
+    (id, defaultMessage, values) =>
+      values
+        ? intl.formatMessage({ id, defaultMessage }, values)
+        : intl.formatMessage({ id, defaultMessage }),
+    [intl],
+  );
   const access = useAccess() as {
     canAssignCrm?: boolean;
     canCommentCrm?: boolean;
@@ -340,7 +488,9 @@ export default function CrmPage() {
       setLoadError(undefined);
     } catch (error: unknown) {
       setLoadError(
-        error instanceof Error ? error.message : 'Unable to load CRM.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(crmMessageId('load.failure'), 'Unable to load CRM.'),
       );
     } finally {
       setLoading(false);
@@ -373,7 +523,8 @@ export default function CrmPage() {
       priority: 'medium',
       probability: 10,
       source: 'website',
-      status: 'active',
+      status:
+        kind === 'lead' ? 'new' : kind === 'customer' ? 'active' : undefined,
       stage: 'qualification',
     });
     setEditing(undefined);
@@ -440,11 +591,17 @@ export default function CrmPage() {
           rating: optionalText(values, 'rating'),
           remark: nullableText(values, 'remark') ?? undefined,
           source: textValue(values, 'source'),
-          status: optionalText(values, 'status') as CrmLeadSummary['status'],
           tags: splitTags(optionalText(values, 'tags')),
         };
-        if (editing) await updateOpenCoreCrmLead(editing.id, body);
-        else await createOpenCoreCrmLead(body);
+        if (editing) {
+          const status = optionalText(values, 'status');
+          await updateOpenCoreCrmLead(editing.id, {
+            ...body,
+            ...(status === undefined || status === 'converted'
+              ? {}
+              : { status: status as CrmWritableLeadStatus }),
+          });
+        } else await createOpenCoreCrmLead(body);
       } else if (entityKind === 'customer') {
         const body = {
           address: nullableText(values, 'address') ?? undefined,
@@ -458,10 +615,7 @@ export default function CrmPage() {
           region: nullableText(values, 'region') ?? undefined,
           remark: nullableText(values, 'remark') ?? undefined,
           source: textValue(values, 'source'),
-          status: optionalText(
-            values,
-            'status',
-          ) as CrmCustomerSummary['status'],
+          status: optionalText(values, 'status') as CrmWritableCustomerStatus,
           tags: splitTags(optionalText(values, 'tags')),
           website: nullableText(values, 'website') ?? undefined,
         };
@@ -492,21 +646,36 @@ export default function CrmPage() {
           owner: textValue(values, 'owner'),
           probability: getNumber(values as CrmRow, 'probability'),
           remark: nullableText(values, 'remark') ?? undefined,
-          stage: optionalText(
-            values,
-            'stage',
-          ) as CrmOpportunitySummary['stage'],
           tags: splitTags(optionalText(values, 'tags')),
         };
         if (editing) await updateOpenCoreCrmOpportunity(editing.id, body);
-        else await createOpenCoreCrmOpportunity(body);
+        else
+          await createOpenCoreCrmOpportunity({
+            ...body,
+            stage: optionalText(values, 'stage') as CrmOpenOpportunityStage,
+          });
       }
-      message.success(editing ? 'CRM record updated.' : 'CRM record created.');
+      message.success(
+        editing
+          ? formatMessage(
+              crmMessageId('messages.updated'),
+              'CRM record updated.',
+            )
+          : formatMessage(
+              crmMessageId('messages.created'),
+              'CRM record created.',
+            ),
+      );
       closeEntityModal();
       await reloadCrm();
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'CRM save failed.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              crmMessageId('messages.saveFailed'),
+              'CRM save failed.',
+            ),
       );
     } finally {
       setSubmitting(false);
@@ -575,12 +744,22 @@ export default function CrmPage() {
           stage: textValue(values, 'stage') as CrmOpportunitySummary['stage'],
         });
       }
-      message.success('CRM action completed.');
+      message.success(
+        formatMessage(
+          crmMessageId('messages.actionCompleted'),
+          'CRM action completed.',
+        ),
+      );
       closeActionModal();
       await reloadCrm();
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'CRM action failed.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              crmMessageId('messages.actionFailed'),
+              'CRM action failed.',
+            ),
       );
     } finally {
       setSubmitting(false);
@@ -590,15 +769,23 @@ export default function CrmPage() {
   const archiveRow = async (row: CrmRow) => {
     if (row.resource === 'leads') await archiveOpenCoreCrmLead(row.id);
     if (row.resource === 'customers') await archiveOpenCoreCrmCustomer(row.id);
+    if (row.resource === 'contacts') await archiveOpenCoreCrmContact(row.id);
     if (row.resource === 'opportunities')
       await archiveOpenCoreCrmOpportunity(row.id);
-    message.success('CRM record archived.');
+    message.success(
+      formatMessage(crmMessageId('messages.archived'), 'CRM record archived.'),
+    );
     await reloadCrm();
   };
 
   const completeTask = async (row: CrmRow) => {
     await completeOpenCoreCrmTask(row.id, { actor: DEFAULT_ACTOR });
-    message.success('CRM task completed.');
+    message.success(
+      formatMessage(
+        crmMessageId('messages.taskCompleted'),
+        'CRM task completed.',
+      ),
+    );
     await reloadCrm();
   };
 
@@ -676,49 +863,20 @@ export default function CrmPage() {
       return { data, success: true, total: result.total };
     }
 
-    const activityPageSize = Math.min(page * pageSize, 100);
-    const [followUps, attachments, transfers, audits] = await Promise.all([
-      pageOpenCoreCrmFollowUps({ page: 1, pageSize: activityPageSize }),
-      pageOpenCoreCrmAttachments({ page: 1, pageSize: activityPageSize }),
-      pageOpenCoreCrmOwnerTransfers({ page: 1, pageSize: activityPageSize }),
-      pageOpenCoreCrmAuditEvents({ page: 1, pageSize: activityPageSize }),
-    ]);
-    const allRows = [
-      ...rowify('activity', followUps.items).map((row) => ({
-        ...row,
-        activityType: 'follow-up',
-      })),
-      ...rowify('activity', attachments.items).map((row) => ({
-        ...row,
-        activityType: 'attachment',
-      })),
-      ...rowify('activity', transfers.items).map((row) => ({
-        ...row,
-        activityType: 'transfer',
-      })),
-      ...rowify('activity', audits.items).map((row) => ({
-        ...row,
-        activityType: 'audit',
-      })),
-    ].sort(
-      (left, right) =>
-        Date.parse(getString(right, 'createdAt') ?? '') -
-        Date.parse(getString(left, 'createdAt') ?? ''),
-    );
-    const data = allRows.slice((page - 1) * pageSize, page * pageSize);
+    const result = await pageOpenCoreCrmActivities({ page, pageSize });
+    const data = rowify('activity', result.items);
     setTableRows(data);
 
     return {
       data,
       success: true,
-      total:
-        followUps.total + attachments.total + transfers.total + audits.total,
+      total: result.total,
     };
   };
 
   const columns: ProColumns<CrmRow>[] = [
     {
-      title: 'Keyword',
+      title: formatMessage(crmMessageId('fields.keyword'), 'Keyword'),
       dataIndex: 'keyword',
       hideInTable: true,
       search: !['contacts', 'customers', 'leads', 'opportunities'].includes(
@@ -728,7 +886,7 @@ export default function CrmPage() {
         : undefined,
     },
     {
-      title: 'Owner',
+      title: formatMessage(crmMessageId('fields.owner'), 'Owner'),
       dataIndex: 'owner',
       hideInTable: true,
       search: !['contacts', 'customers', 'leads', 'opportunities'].includes(
@@ -738,13 +896,13 @@ export default function CrmPage() {
         : undefined,
     },
     {
-      title: 'Assignee',
+      title: formatMessage(crmMessageId('fields.assignee'), 'Assignee'),
       dataIndex: 'assignee',
       hideInTable: true,
       search: activeTab !== 'tasks' ? false : undefined,
     },
     {
-      title: 'Status',
+      title: formatMessage(crmMessageId('fields.status'), 'Status'),
       dataIndex: 'status',
       hideInTable: true,
       search: !['customers', 'leads', 'tasks'].includes(activeTab)
@@ -757,24 +915,37 @@ export default function CrmPage() {
           : activeTab === 'tasks'
             ? TASK_STATUSES
             : LEAD_STATUSES,
+        formatMessage,
+        activeTab === 'customers'
+          ? 'customerStatus'
+          : activeTab === 'tasks'
+            ? 'taskStatus'
+            : 'leadStatus',
       ),
     },
     {
-      title: 'Stage',
+      title: formatMessage(crmMessageId('fields.stage'), 'Stage'),
       dataIndex: 'stage',
       hideInTable: true,
       search: activeTab !== 'opportunities' ? false : undefined,
       valueType: 'select',
-      valueEnum: valueEnum(OPPORTUNITY_STAGES),
+      valueEnum: valueEnum(
+        OPPORTUNITY_STAGES,
+        formatMessage,
+        'opportunityStage',
+      ),
     },
     {
-      title: 'Tenant',
+      title: formatMessage(crmMessageId('fields.tenant'), 'Tenant'),
       dataIndex: 'tenantId',
       search: false,
       width: 150,
     },
     {
-      title: activeTab === 'tasks' ? 'Title' : 'Name',
+      title:
+        activeTab === 'tasks'
+          ? formatMessage(crmMessageId('fields.title'), 'Title')
+          : formatMessage(crmMessageId('fields.name'), 'Name'),
       dataIndex: activeTab === 'tasks' ? 'title' : 'name',
       search: false,
       render: (_, record) => (
@@ -786,35 +957,35 @@ export default function CrmPage() {
       ),
     },
     {
-      title: 'Number',
+      title: formatMessage(crmMessageId('fields.number'), 'Number'),
       dataIndex: 'number',
       search: false,
       width: 170,
       hideInTable: !['customers', 'leads', 'opportunities'].includes(activeTab),
     },
     {
-      title: 'Customer',
+      title: formatMessage(crmMessageId('fields.customer'), 'Customer'),
       dataIndex: 'customerName',
       search: false,
       width: 180,
       hideInTable: !['contacts', 'opportunities'].includes(activeTab),
     },
     {
-      title: 'Owner',
+      title: formatMessage(crmMessageId('fields.owner'), 'Owner'),
       dataIndex: 'owner',
       search: false,
       width: 130,
       hideInTable: ['activity', 'tags', 'tasks'].includes(activeTab),
     },
     {
-      title: 'Assignee',
+      title: formatMessage(crmMessageId('fields.assignee'), 'Assignee'),
       dataIndex: 'assignee',
       search: false,
       width: 130,
       hideInTable: activeTab !== 'tasks',
     },
     {
-      title: 'Status',
+      title: formatMessage(crmMessageId('fields.status'), 'Status'),
       dataIndex: 'status',
       search: false,
       width: 120,
@@ -826,7 +997,7 @@ export default function CrmPage() {
       ),
     },
     {
-      title: 'Stage',
+      title: formatMessage(crmMessageId('fields.stage'), 'Stage'),
       dataIndex: 'stage',
       search: false,
       width: 140,
@@ -838,14 +1009,14 @@ export default function CrmPage() {
       ),
     },
     {
-      title: 'Amount',
+      title: formatMessage(crmMessageId('fields.amount'), 'Amount'),
       dataIndex: 'amount',
       search: false,
       width: 120,
       hideInTable: activeTab !== 'opportunities',
     },
     {
-      title: 'Target',
+      title: formatMessage(crmMessageId('fields.target'), 'Target'),
       dataIndex: 'targetId',
       search: false,
       width: 180,
@@ -860,20 +1031,23 @@ export default function CrmPage() {
       ),
     },
     {
-      title: 'Due',
+      title: formatMessage(crmMessageId('fields.dueAt'), 'Due'),
       dataIndex: 'dueAt',
       search: false,
       width: 180,
       hideInTable: activeTab !== 'tasks',
     },
     {
-      title: 'Action',
+      title: formatMessage(crmMessageId('actions.column'), 'Action'),
       valueType: 'option',
       width: 260,
       render: (_, record) => {
         const target = targetForRow(record);
         return [
-          <Tooltip key="detail" title="Detail">
+          <Tooltip
+            key="detail"
+            title={formatMessage(crmMessageId('actions.detail'), 'Detail')}
+          >
             <Button
               icon={<EyeOutlined />}
               onClick={() => setSelected(record)}
@@ -885,7 +1059,10 @@ export default function CrmPage() {
           ['leads', 'customers', 'contacts', 'opportunities', 'tags'].includes(
             record.resource,
           ) ? (
-            <Tooltip key="edit" title="Edit">
+            <Tooltip
+              key="edit"
+              title={formatMessage(crmMessageId('actions.edit'), 'Edit')}
+            >
               <Button
                 icon={<EditOutlined />}
                 onClick={() =>
@@ -910,7 +1087,13 @@ export default function CrmPage() {
           access.canAssignCrm &&
           target &&
           ['lead', 'customer', 'opportunity'].includes(target.type) ? (
-            <Tooltip key="transfer" title="Transfer owner">
+            <Tooltip
+              key="transfer"
+              title={formatMessage(
+                crmMessageId('actions.transferOwner'),
+                'Transfer owner',
+              )}
+            >
               <Button
                 icon={<SwapOutlined />}
                 onClick={() => openAction('transfer', target)}
@@ -920,7 +1103,13 @@ export default function CrmPage() {
             </Tooltip>
           ) : null,
           access.canCommentCrm && target ? (
-            <Tooltip key="follow" title="Follow up">
+            <Tooltip
+              key="follow"
+              title={formatMessage(
+                crmMessageId('actions.followUp'),
+                'Follow up',
+              )}
+            >
               <Button
                 icon={<CommentOutlined />}
                 onClick={() => openAction('follow', target)}
@@ -930,18 +1119,30 @@ export default function CrmPage() {
             </Tooltip>
           ) : null,
           access.canUpdateCrm && target ? (
-            <Tooltip key="task" title="Reminder">
+            <Tooltip
+              key="task"
+              title={formatMessage(
+                crmMessageId('actions.reminder'),
+                'Reminder',
+              )}
+            >
               <Button
                 onClick={() => openAction('task', target)}
                 size="small"
                 type="link"
               >
-                Task
+                {formatMessage(crmMessageId('actions.task'), 'Task')}
               </Button>
             </Tooltip>
           ) : null,
           access.canUpdateCrm && target ? (
-            <Tooltip key="attach" title="Attachment">
+            <Tooltip
+              key="attach"
+              title={formatMessage(
+                crmMessageId('actions.attachment'),
+                'Attachment',
+              )}
+            >
               <Button
                 icon={<CloudUploadOutlined />}
                 onClick={() => openAction('attach', target)}
@@ -963,7 +1164,7 @@ export default function CrmPage() {
               size="small"
               type="link"
             >
-              Convert
+              {formatMessage(crmMessageId('actions.convert'), 'Convert')}
             </Button>
           ) : null,
           access.canUpdateCrm && record.resource === 'opportunities' ? (
@@ -979,13 +1180,19 @@ export default function CrmPage() {
               size="small"
               type="link"
             >
-              Stage
+              {formatMessage(crmMessageId('actions.stage'), 'Stage')}
             </Button>
           ) : null,
           access.canUpdateCrm &&
           record.resource === 'tasks' &&
           getString(record, 'status') === 'open' ? (
-            <Tooltip key="complete" title="Complete task">
+            <Tooltip
+              key="complete"
+              title={formatMessage(
+                crmMessageId('actions.completeTask'),
+                'Complete task',
+              )}
+            >
               <Button
                 icon={<CheckCircleOutlined />}
                 onClick={() => void completeTask(record)}
@@ -995,14 +1202,19 @@ export default function CrmPage() {
             </Tooltip>
           ) : null,
           access.canDeleteCrm &&
-          ['leads', 'customers', 'opportunities'].includes(record.resource) ? (
+          ['leads', 'customers', 'contacts', 'opportunities'].includes(
+            record.resource,
+          ) ? (
             <Popconfirm
               key="archive"
               onConfirm={() => void archiveRow(record)}
-              title="Archive this CRM record?"
+              title={formatMessage(
+                crmMessageId('actions.archiveConfirm'),
+                'Archive this CRM record?',
+              )}
             >
               <Button danger size="small" type="link">
-                Archive
+                {formatMessage(crmMessageId('actions.archive'), 'Archive')}
               </Button>
             </Popconfirm>
           ) : null,
@@ -1012,20 +1224,26 @@ export default function CrmPage() {
   ];
 
   const exportColumns = useMemo(
-    () => createExportColumns(activeTab),
-    [activeTab],
+    () => createExportColumns(activeTab, formatMessage),
+    [activeTab, formatMessage],
   );
 
   return (
-    <PageContainer title="CRM" subTitle="Industry">
+    <PageContainer
+      title={formatMessage(crmMessageId('title'), 'CRM')}
+      subTitle={formatMessage(crmMessageId('section'), 'Industry')}
+    >
       {loadError ? (
         <Alert
           action={
             <Button onClick={() => void reloadCrm()} size="small">
-              Retry
+              {formatMessage(crmMessageId('actions.retry'), 'Retry')}
             </Button>
           }
-          message="Live CRM unavailable"
+          message={formatMessage(
+            crmMessageId('load.liveFailure'),
+            'Live CRM unavailable',
+          )}
           showIcon
           style={{ marginBottom: 16 }}
           type="error"
@@ -1036,14 +1254,21 @@ export default function CrmPage() {
       <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
         <Col xs={12} md={6}>
           <Card size="small">
-            <Statistic loading={loading} title="Leads" value={summary?.leads} />
+            <Statistic
+              loading={loading}
+              title={formatMessage(crmMessageId('stats.leads'), 'Leads')}
+              value={summary?.leads}
+            />
           </Card>
         </Col>
         <Col xs={12} md={6}>
           <Card size="small">
             <Statistic
               loading={loading}
-              title="Customers"
+              title={formatMessage(
+                crmMessageId('stats.customers'),
+                'Customers',
+              )}
               value={summary?.customers}
             />
           </Card>
@@ -1052,7 +1277,10 @@ export default function CrmPage() {
           <Card size="small">
             <Statistic
               loading={loading}
-              title="Open Tasks"
+              title={formatMessage(
+                crmMessageId('stats.openTasks'),
+                'Open Tasks',
+              )}
               value={summary?.openTasks}
             />
           </Card>
@@ -1062,7 +1290,10 @@ export default function CrmPage() {
             <Statistic
               loading={loading}
               prefix="$"
-              title="Open Pipeline"
+              title={formatMessage(
+                crmMessageId('stats.openPipeline'),
+                'Open Pipeline',
+              )}
               value={summary?.openPipelineAmount}
             />
           </Card>
@@ -1086,13 +1317,40 @@ export default function CrmPage() {
           menu: {
             activeKey: activeTab,
             items: [
-              { key: 'leads', label: 'Leads' },
-              { key: 'customers', label: 'Customers' },
-              { key: 'contacts', label: 'Contacts' },
-              { key: 'opportunities', label: 'Opportunities' },
-              { key: 'tasks', label: 'Tasks' },
-              { key: 'tags', label: 'Tags' },
-              { key: 'activity', label: 'Activity' },
+              {
+                key: 'leads',
+                label: formatMessage(crmMessageId('tabs.leads'), 'Leads'),
+              },
+              {
+                key: 'customers',
+                label: formatMessage(
+                  crmMessageId('tabs.customers'),
+                  'Customers',
+                ),
+              },
+              {
+                key: 'contacts',
+                label: formatMessage(crmMessageId('tabs.contacts'), 'Contacts'),
+              },
+              {
+                key: 'opportunities',
+                label: formatMessage(
+                  crmMessageId('tabs.opportunities'),
+                  'Opportunities',
+                ),
+              },
+              {
+                key: 'tasks',
+                label: formatMessage(crmMessageId('tabs.tasks'), 'Tasks'),
+              },
+              {
+                key: 'tags',
+                label: formatMessage(crmMessageId('tabs.tags'), 'Tags'),
+              },
+              {
+                key: 'activity',
+                label: formatMessage(crmMessageId('tabs.activity'), 'Activity'),
+              },
             ],
             onChange: (key) => {
               setActiveTab(key as CrmTab);
@@ -1107,9 +1365,10 @@ export default function CrmPage() {
               key="reload"
               onClick={() => void reloadCrm()}
             >
-              Reload
+              {formatMessage(crmMessageId('actions.reload'), 'Reload')}
             </Button>,
-            access.canCreateCrm && activeTab !== 'activity' ? (
+            access.canCreateCrm &&
+            !['activity', 'tasks'].includes(activeTab) ? (
               <Button
                 icon={<PlusOutlined />}
                 key="create"
@@ -1130,7 +1389,7 @@ export default function CrmPage() {
                 }
                 type="primary"
               >
-                Create
+                {formatMessage(crmMessageId('actions.create'), 'Create')}
               </Button>
             ) : null,
             access.canExportCrm ? (
@@ -1148,17 +1407,44 @@ export default function CrmPage() {
 
       <ReadOnlyDetailDrawer
         fields={[
-          { label: 'Tenant', value: selected?.tenantId },
-          { label: 'ID', value: selected?.id },
-          { label: 'Resource', value: selected?.resource },
-          { label: 'Number', value: selected && getString(selected, 'number') },
-          { label: 'Name', value: selected && getString(selected, 'name') },
-          { label: 'Title', value: selected && getString(selected, 'title') },
-          { label: 'Status', value: selected && getString(selected, 'status') },
-          { label: 'Stage', value: selected && getString(selected, 'stage') },
-          { label: 'Owner', value: selected && getString(selected, 'owner') },
           {
-            label: 'Target',
+            label: formatMessage(crmMessageId('fields.tenant'), 'Tenant'),
+            value: selected?.tenantId,
+          },
+          {
+            label: formatMessage(crmMessageId('fields.id'), 'ID'),
+            value: selected?.id,
+          },
+          {
+            label: formatMessage(crmMessageId('fields.resource'), 'Resource'),
+            value: selected?.resource,
+          },
+          {
+            label: formatMessage(crmMessageId('fields.number'), 'Number'),
+            value: selected && getString(selected, 'number'),
+          },
+          {
+            label: formatMessage(crmMessageId('fields.name'), 'Name'),
+            value: selected && getString(selected, 'name'),
+          },
+          {
+            label: formatMessage(crmMessageId('fields.title'), 'Title'),
+            value: selected && getString(selected, 'title'),
+          },
+          {
+            label: formatMessage(crmMessageId('fields.status'), 'Status'),
+            value: selected && getString(selected, 'status'),
+          },
+          {
+            label: formatMessage(crmMessageId('fields.stage'), 'Stage'),
+            value: selected && getString(selected, 'stage'),
+          },
+          {
+            label: formatMessage(crmMessageId('fields.owner'), 'Owner'),
+            value: selected && getString(selected, 'owner'),
+          },
+          {
+            label: formatMessage(crmMessageId('fields.target'), 'Target'),
             value:
               selected &&
               [
@@ -1169,15 +1455,30 @@ export default function CrmPage() {
                 .join(' / '),
           },
           {
-            label: 'Created At',
+            label: formatMessage(
+              crmMessageId('fields.createdAt'),
+              'Created At',
+            ),
             value: selected && getString(selected, 'createdAt'),
           },
           {
-            label: 'Updated At',
+            label: formatMessage(
+              crmMessageId('fields.updatedAt'),
+              'Updated At',
+            ),
             value: selected && getString(selected, 'updatedAt'),
           },
         ]}
-        jsonSections={selected ? [{ title: 'Record', value: selected }] : []}
+        jsonSections={
+          selected
+            ? [
+                {
+                  title: formatMessage(crmMessageId('fields.record'), 'Record'),
+                  value: selected,
+                },
+              ]
+            : []
+        }
         onClose={() => setSelected(undefined)}
         open={Boolean(selected)}
         title={
@@ -1185,7 +1486,7 @@ export default function CrmPage() {
             ? (getString(selected, 'name') ??
               getString(selected, 'title') ??
               selected.id)
-            : 'CRM Detail'
+            : formatMessage(crmMessageId('detail.title'), 'CRM Detail')
         }
       />
 
@@ -1195,13 +1496,21 @@ export default function CrmPage() {
         onCancel={closeEntityModal}
         onOk={() => void submitEntity()}
         open={Boolean(entityKind)}
-        title={`${editing ? 'Edit' : 'Create'} CRM ${entityKind ?? ''}`}
+        title={formatMessage(
+          editing
+            ? crmMessageId('modal.editTitle')
+            : crmMessageId('modal.createTitle'),
+          editing ? 'Edit CRM {kind}' : 'Create CRM {kind}',
+          { kind: entityLabel(entityKind, formatMessage) },
+        )}
         width={720}
       >
         <Form form={entityForm} layout="vertical">
           <EntityFields
             customers={customers}
+            editing={editing}
             entityKind={entityKind}
+            formatMessage={formatMessage}
             tags={tags}
           />
         </Form>
@@ -1213,11 +1522,18 @@ export default function CrmPage() {
         onCancel={closeActionModal}
         onOk={() => void submitAction()}
         open={Boolean(actionKind)}
-        title={`${actionKind ?? 'Action'} ${actionTarget?.title ?? ''}`}
+        title={formatMessage(
+          crmMessageId('modal.actionTitle'),
+          '{kind} {title}',
+          {
+            kind: actionLabel(actionKind, formatMessage),
+            title: actionTarget?.title ?? '',
+          },
+        )}
         width={640}
       >
         <Form form={actionForm} layout="vertical">
-          <ActionFields actionKind={actionKind} />
+          <ActionFields actionKind={actionKind} formatMessage={formatMessage} />
         </Form>
       </Modal>
     </PageContainer>
@@ -1226,35 +1542,76 @@ export default function CrmPage() {
 
 function EntityFields({
   customers,
+  editing,
   entityKind,
+  formatMessage,
   tags,
 }: {
   customers: readonly CrmCustomerSummary[];
+  editing?: CrmRow;
   entityKind?: EntityKind;
+  formatMessage: FormatMessage;
   tags: readonly CrmTagSummary[];
 }) {
   if (!entityKind) return null;
+  const leadStatusValues =
+    editing && getString(editing, 'status') === 'converted'
+      ? ['converted']
+      : WRITABLE_LEAD_STATUSES;
+  const opportunityStageValues =
+    entityKind === 'opportunity' && editing
+      ? [getString(editing, 'stage') ?? 'qualification']
+      : OPEN_OPPORTUNITY_STAGES;
 
   if (entityKind === 'tag') {
     return (
       <>
-        <Form.Item label="Code" name="code" rules={[{ required: true }]}>
+        <Form.Item
+          label={formatMessage(crmMessageId('fields.code'), 'Code')}
+          name="code"
+          rules={[{ required: true }]}
+        >
           <Input />
         </Form.Item>
-        <Form.Item label="Name" name="name" rules={[{ required: true }]}>
+        <Form.Item
+          label={formatMessage(crmMessageId('fields.name'), 'Name')}
+          name="name"
+          rules={[{ required: true }]}
+        >
           <Input />
         </Form.Item>
-        <Form.Item label="Color" name="color">
+        <Form.Item
+          label={formatMessage(crmMessageId('fields.color'), 'Color')}
+          name="color"
+        >
           <Input />
         </Form.Item>
-        <Form.Item label="Description" name="description">
+        <Form.Item
+          label={formatMessage(
+            crmMessageId('fields.description'),
+            'Description',
+          )}
+          name="description"
+        >
           <Input.TextArea rows={3} />
         </Form.Item>
-        <Form.Item label="Enabled" name="enabled">
+        <Form.Item
+          label={formatMessage(crmMessageId('fields.enabled'), 'Enabled')}
+          name="enabled"
+        >
           <Select
             options={[
-              { label: 'enabled', value: true },
-              { label: 'disabled', value: false },
+              {
+                label: formatMessage(crmMessageId('values.enabled'), 'enabled'),
+                value: true,
+              },
+              {
+                label: formatMessage(
+                  crmMessageId('values.disabled'),
+                  'disabled',
+                ),
+                value: false,
+              },
             ]}
           />
         </Form.Item>
@@ -1266,7 +1623,7 @@ function EntityFields({
     <>
       {entityKind === 'contact' || entityKind === 'opportunity' ? (
         <Form.Item
-          label="Customer"
+          label={formatMessage(crmMessageId('fields.customer'), 'Customer')}
           name="customerId"
           rules={[{ required: true }]}
         >
@@ -1279,79 +1636,142 @@ function EntityFields({
           />
         </Form.Item>
       ) : null}
-      <Form.Item label="Name" name="name" rules={[{ required: true }]}>
+      <Form.Item
+        label={formatMessage(crmMessageId('fields.name'), 'Name')}
+        name="name"
+        rules={[{ required: true }]}
+      >
         <Input />
       </Form.Item>
       {entityKind !== 'contact' ? (
-        <Form.Item label="Owner" name="owner" rules={[{ required: true }]}>
+        <Form.Item
+          label={formatMessage(crmMessageId('fields.owner'), 'Owner')}
+          name="owner"
+          rules={[{ required: true }]}
+        >
           <Input />
         </Form.Item>
       ) : (
-        <Form.Item label="Owner" name="owner">
+        <Form.Item
+          label={formatMessage(crmMessageId('fields.owner'), 'Owner')}
+          name="owner"
+        >
           <Input />
         </Form.Item>
       )}
       {entityKind === 'lead' ? (
         <>
-          <Form.Item label="Company" name="company">
+          <Form.Item
+            label={formatMessage(crmMessageId('fields.company'), 'Company')}
+            name="company"
+          >
             <Input />
           </Form.Item>
-          <Form.Item label="Source" name="source" rules={[{ required: true }]}>
+          <Form.Item
+            label={formatMessage(crmMessageId('fields.source'), 'Source')}
+            name="source"
+            rules={[{ required: true }]}
+          >
             <Input />
           </Form.Item>
-          <Form.Item label="Status" name="status">
+          <Form.Item
+            label={formatMessage(crmMessageId('fields.status'), 'Status')}
+            name="status"
+          >
             <Select
-              options={[
-                'new',
-                'contacted',
-                'qualified',
-                'converted',
-                'lost',
-              ].map((value) => ({ label: value, value }))}
+              options={enumOptions(
+                leadStatusValues,
+                formatMessage,
+                'leadStatus',
+              )}
             />
           </Form.Item>
-          <Form.Item label="Rating" name="rating">
+          <Form.Item
+            label={formatMessage(crmMessageId('fields.rating'), 'Rating')}
+            name="rating"
+          >
             <Input />
           </Form.Item>
         </>
       ) : null}
       {entityKind === 'customer' ? (
         <>
-          <Form.Item label="Status" name="status">
+          <Form.Item
+            label={formatMessage(crmMessageId('fields.status'), 'Status')}
+            name="status"
+          >
             <Select
-              options={['active', 'inactive', 'churned'].map((value) => ({
-                label: value,
-                value,
-              }))}
+              options={enumOptions(
+                CUSTOMER_STATUSES,
+                formatMessage,
+                'customerStatus',
+              )}
             />
           </Form.Item>
-          <Form.Item label="Level" name="level">
+          <Form.Item
+            label={formatMessage(crmMessageId('fields.level'), 'Level')}
+            name="level"
+          >
             <Input />
           </Form.Item>
-          <Form.Item label="Source" name="source" rules={[{ required: true }]}>
+          <Form.Item
+            label={formatMessage(crmMessageId('fields.source'), 'Source')}
+            name="source"
+            rules={[{ required: true }]}
+          >
             <Input />
           </Form.Item>
-          <Form.Item label="Industry" name="industry">
+          <Form.Item
+            label={formatMessage(crmMessageId('fields.industry'), 'Industry')}
+            name="industry"
+          >
             <Input />
           </Form.Item>
-          <Form.Item label="Region" name="region">
+          <Form.Item
+            label={formatMessage(crmMessageId('fields.region'), 'Region')}
+            name="region"
+          >
             <Input />
           </Form.Item>
         </>
       ) : null}
       {entityKind === 'contact' ? (
         <>
-          <Form.Item label="Title" name="title">
+          <Form.Item
+            label={formatMessage(crmMessageId('fields.title'), 'Title')}
+            name="title"
+          >
             <Input />
           </Form.Item>
-          <Form.Item label="Decision Role" name="decisionRole">
+          <Form.Item
+            label={formatMessage(
+              crmMessageId('fields.decisionRole'),
+              'Decision Role',
+            )}
+            name="decisionRole"
+          >
             <Input />
           </Form.Item>
-          <Form.Item label="Primary" name="primary">
+          <Form.Item
+            label={formatMessage(crmMessageId('fields.primary'), 'Primary')}
+            name="primary"
+          >
             <Select
               options={[
-                { label: 'primary', value: true },
-                { label: 'secondary', value: false },
+                {
+                  label: formatMessage(
+                    crmMessageId('values.primary'),
+                    'primary',
+                  ),
+                  value: true,
+                },
+                {
+                  label: formatMessage(
+                    crmMessageId('values.secondary'),
+                    'secondary',
+                  ),
+                  value: false,
+                },
               ]}
             />
           </Form.Item>
@@ -1359,24 +1779,40 @@ function EntityFields({
       ) : null}
       {entityKind === 'opportunity' ? (
         <>
-          <Form.Item label="Stage" name="stage">
+          <Form.Item
+            label={formatMessage(crmMessageId('fields.stage'), 'Stage')}
+            name="stage"
+          >
             <Select
-              options={[
-                'qualification',
-                'proposal',
-                'negotiation',
-                'won',
-                'lost',
-              ].map((value) => ({ label: value, value }))}
+              options={enumOptions(
+                opportunityStageValues,
+                formatMessage,
+                'opportunityStage',
+              )}
             />
           </Form.Item>
-          <Form.Item label="Amount" name="amount">
+          <Form.Item
+            label={formatMessage(crmMessageId('fields.amount'), 'Amount')}
+            name="amount"
+          >
             <Input />
           </Form.Item>
-          <Form.Item label="Probability" name="probability">
+          <Form.Item
+            label={formatMessage(
+              crmMessageId('fields.probability'),
+              'Probability',
+            )}
+            name="probability"
+          >
             <InputNumber max={100} min={0} style={{ width: '100%' }} />
           </Form.Item>
-          <Form.Item label="Expected Close" name="expectedCloseAt">
+          <Form.Item
+            label={formatMessage(
+              crmMessageId('fields.expectedCloseAt'),
+              'Expected Close',
+            )}
+            name="expectedCloseAt"
+          >
             <DatePicker showTime style={{ width: '100%' }} />
           </Form.Item>
         </>
@@ -1385,26 +1821,47 @@ function EntityFields({
       entityKind === 'customer' ||
       entityKind === 'contact' ? (
         <>
-          <Form.Item label="Mobile" name="mobile">
+          <Form.Item
+            label={formatMessage(crmMessageId('fields.mobile'), 'Mobile')}
+            name="mobile"
+          >
             <Input />
           </Form.Item>
-          <Form.Item label="Email" name="email">
+          <Form.Item
+            label={formatMessage(crmMessageId('fields.email'), 'Email')}
+            name="email"
+          >
             <Input />
           </Form.Item>
-          <Form.Item label="Phone" name="phone">
+          <Form.Item
+            label={formatMessage(crmMessageId('fields.phone'), 'Phone')}
+            name="phone"
+          >
             <Input />
           </Form.Item>
-          <Form.Item label="Next Contact" name="nextContactAt">
+          <Form.Item
+            label={formatMessage(
+              crmMessageId('fields.nextContactAt'),
+              'Next Contact',
+            )}
+            name="nextContactAt"
+          >
             <DatePicker showTime style={{ width: '100%' }} />
           </Form.Item>
         </>
       ) : null}
       {entityKind === 'customer' ? (
         <>
-          <Form.Item label="Website" name="website">
+          <Form.Item
+            label={formatMessage(crmMessageId('fields.website'), 'Website')}
+            name="website"
+          >
             <Input />
           </Form.Item>
-          <Form.Item label="Address" name="address">
+          <Form.Item
+            label={formatMessage(crmMessageId('fields.address'), 'Address')}
+            name="address"
+          >
             <Input />
           </Form.Item>
         </>
@@ -1412,36 +1869,57 @@ function EntityFields({
       {entityKind !== 'contact' ? (
         <Form.Item
           extra={tags.map((tag) => tag.code).join(', ')}
-          label="Tags"
+          label={formatMessage(crmMessageId('fields.tags'), 'Tags')}
           name="tags"
         >
-          <Input placeholder="comma separated tag codes" />
+          <Input
+            placeholder={formatMessage(
+              crmMessageId('placeholders.tags'),
+              'comma separated tag codes',
+            )}
+          />
         </Form.Item>
       ) : null}
-      <Form.Item label="Remark" name="remark">
+      <Form.Item
+        label={formatMessage(crmMessageId('fields.remark'), 'Remark')}
+        name="remark"
+      >
         <Input.TextArea rows={3} />
       </Form.Item>
     </>
   );
 }
 
-function ActionFields({ actionKind }: { actionKind?: ActionKind }) {
+function ActionFields({
+  actionKind,
+  formatMessage,
+}: {
+  actionKind?: ActionKind;
+  formatMessage: FormatMessage;
+}) {
   if (!actionKind) return null;
 
   if (actionKind === 'transfer') {
     return (
       <>
         <Form.Item
-          label="New Owner"
+          label={formatMessage(crmMessageId('fields.newOwner'), 'New Owner')}
           name="toOwner"
           rules={[{ required: true }]}
         >
           <Input />
         </Form.Item>
-        <Form.Item label="Actor" name="actor" rules={[{ required: true }]}>
+        <Form.Item
+          label={formatMessage(crmMessageId('fields.actor'), 'Actor')}
+          name="actor"
+          rules={[{ required: true }]}
+        >
           <Input />
         </Form.Item>
-        <Form.Item label="Reason" name="reason">
+        <Form.Item
+          label={formatMessage(crmMessageId('fields.reason'), 'Reason')}
+          name="reason"
+        >
           <Input.TextArea rows={3} />
         </Form.Item>
       </>
@@ -1451,24 +1929,39 @@ function ActionFields({ actionKind }: { actionKind?: ActionKind }) {
   if (actionKind === 'follow') {
     return (
       <>
-        <Form.Item label="Method" name="method" rules={[{ required: true }]}>
+        <Form.Item
+          label={formatMessage(crmMessageId('fields.method'), 'Method')}
+          name="method"
+          rules={[{ required: true }]}
+        >
           <Select
-            options={['call', 'email', 'meeting', 'wechat', 'note'].map(
-              (value) => ({ label: value, value }),
-            )}
+            options={enumOptions(FOLLOW_UP_METHODS, formatMessage, 'method')}
           />
         </Form.Item>
-        <Form.Item label="Content" name="content" rules={[{ required: true }]}>
+        <Form.Item
+          label={formatMessage(crmMessageId('fields.content'), 'Content')}
+          name="content"
+          rules={[{ required: true }]}
+        >
           <Input.TextArea rows={4} />
         </Form.Item>
-        <Form.Item label="Outcome" name="outcome">
+        <Form.Item
+          label={formatMessage(crmMessageId('fields.outcome'), 'Outcome')}
+          name="outcome"
+        >
           <Input />
         </Form.Item>
-        <Form.Item label="Next Contact" name="nextContactAt">
+        <Form.Item
+          label={formatMessage(
+            crmMessageId('fields.nextContactAt'),
+            'Next Contact',
+          )}
+          name="nextContactAt"
+        >
           <DatePicker showTime style={{ width: '100%' }} />
         </Form.Item>
         <Form.Item
-          label="Created By"
+          label={formatMessage(crmMessageId('fields.createdBy'), 'Created By')}
           name="createdBy"
           rules={[{ required: true }]}
         >
@@ -1481,35 +1974,45 @@ function ActionFields({ actionKind }: { actionKind?: ActionKind }) {
   if (actionKind === 'task') {
     return (
       <>
-        <Form.Item label="Title" name="title" rules={[{ required: true }]}>
+        <Form.Item
+          label={formatMessage(crmMessageId('fields.title'), 'Title')}
+          name="title"
+          rules={[{ required: true }]}
+        >
           <Input />
         </Form.Item>
         <Form.Item
-          label="Assignee"
+          label={formatMessage(crmMessageId('fields.assignee'), 'Assignee')}
           name="assignee"
           rules={[{ required: true }]}
         >
           <Input />
         </Form.Item>
-        <Form.Item label="Priority" name="priority">
+        <Form.Item
+          label={formatMessage(crmMessageId('fields.priority'), 'Priority')}
+          name="priority"
+        >
           <Select
-            options={['low', 'medium', 'high', 'urgent'].map((value) => ({
-              label: value,
-              value,
-            }))}
+            options={enumOptions(TASK_PRIORITIES, formatMessage, 'priority')}
           />
         </Form.Item>
-        <Form.Item label="Due At" name="dueAt">
+        <Form.Item
+          label={formatMessage(crmMessageId('fields.dueAt'), 'Due At')}
+          name="dueAt"
+        >
           <DatePicker showTime style={{ width: '100%' }} />
         </Form.Item>
         <Form.Item
-          label="Created By"
+          label={formatMessage(crmMessageId('fields.createdBy'), 'Created By')}
           name="createdBy"
           rules={[{ required: true }]}
         >
           <Input />
         </Form.Item>
-        <Form.Item label="Remark" name="remark">
+        <Form.Item
+          label={formatMessage(crmMessageId('fields.remark'), 'Remark')}
+          name="remark"
+        >
           <Input.TextArea rows={3} />
         </Form.Item>
       </>
@@ -1520,35 +2023,44 @@ function ActionFields({ actionKind }: { actionKind?: ActionKind }) {
     return (
       <>
         <Form.Item
-          label="Original Name"
+          label={formatMessage(
+            crmMessageId('fields.originalName'),
+            'Original Name',
+          )}
           name="originalName"
           rules={[{ required: true }]}
         >
           <Input />
         </Form.Item>
         <Form.Item
-          label="MIME Type"
+          label={formatMessage(crmMessageId('fields.mimeType'), 'MIME Type')}
           name="mimeType"
           rules={[{ required: true }]}
         >
           <Input />
         </Form.Item>
         <Form.Item
-          label="Size Bytes"
+          label={formatMessage(crmMessageId('fields.sizeBytes'), 'Size Bytes')}
           name="sizeBytes"
           rules={[{ required: true }]}
         >
           <InputNumber min={1} style={{ width: '100%' }} />
         </Form.Item>
         <Form.Item
-          label="Storage Key"
+          label={formatMessage(
+            crmMessageId('fields.storageKey'),
+            'Storage Key',
+          )}
           name="storageKey"
           rules={[{ required: true }]}
         >
           <Input />
         </Form.Item>
         <Form.Item
-          label="Uploaded By"
+          label={formatMessage(
+            crmMessageId('fields.uploadedBy'),
+            'Uploaded By',
+          )}
           name="uploadedBy"
           rules={[{ required: true }]}
         >
@@ -1561,16 +2073,38 @@ function ActionFields({ actionKind }: { actionKind?: ActionKind }) {
   if (actionKind === 'convert') {
     return (
       <>
-        <Form.Item label="Actor" name="actor" rules={[{ required: true }]}>
+        <Form.Item
+          label={formatMessage(crmMessageId('fields.actor'), 'Actor')}
+          name="actor"
+          rules={[{ required: true }]}
+        >
           <Input />
         </Form.Item>
-        <Form.Item label="Customer Name" name="customerName">
+        <Form.Item
+          label={formatMessage(
+            crmMessageId('fields.customerName'),
+            'Customer Name',
+          )}
+          name="customerName"
+        >
           <Input />
         </Form.Item>
-        <Form.Item label="Opportunity Name" name="opportunityName">
+        <Form.Item
+          label={formatMessage(
+            crmMessageId('fields.opportunityName'),
+            'Opportunity Name',
+          )}
+          name="opportunityName"
+        >
           <Input />
         </Form.Item>
-        <Form.Item label="Opportunity Amount" name="amount">
+        <Form.Item
+          label={formatMessage(
+            crmMessageId('fields.opportunityAmount'),
+            'Opportunity Amount',
+          )}
+          name="amount"
+        >
           <Input />
         </Form.Item>
       </>
@@ -1579,21 +2113,33 @@ function ActionFields({ actionKind }: { actionKind?: ActionKind }) {
 
   return (
     <>
-      <Form.Item label="Stage" name="stage" rules={[{ required: true }]}>
+      <Form.Item
+        label={formatMessage(crmMessageId('fields.stage'), 'Stage')}
+        name="stage"
+        rules={[{ required: true }]}
+      >
         <Select
-          options={[
-            'qualification',
-            'proposal',
-            'negotiation',
-            'won',
-            'lost',
-          ].map((value) => ({ label: value, value }))}
+          options={enumOptions(
+            OPPORTUNITY_STAGES,
+            formatMessage,
+            'opportunityStage',
+          )}
         />
       </Form.Item>
-      <Form.Item label="Actor" name="actor" rules={[{ required: true }]}>
+      <Form.Item
+        label={formatMessage(crmMessageId('fields.actor'), 'Actor')}
+        name="actor"
+        rules={[{ required: true }]}
+      >
         <Input />
       </Form.Item>
-      <Form.Item label="Close Reason" name="closeReason">
+      <Form.Item
+        label={formatMessage(
+          crmMessageId('fields.closeReason'),
+          'Close Reason',
+        )}
+        name="closeReason"
+      >
         <Input />
       </Form.Item>
     </>

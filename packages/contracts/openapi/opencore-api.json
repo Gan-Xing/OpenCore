@@ -10389,7 +10389,18 @@
             }
           }
         },
-        "responses": { "200": { "description": "" } },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConvertCrmLeadResultDto"
+                }
+              }
+            }
+          }
+        },
         "security": [{ "bearer": [] }],
         "tags": ["Industry CRM"]
       }
@@ -10837,13 +10848,7 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": [
-                "qualification",
-                "proposal",
-                "negotiation",
-                "won",
-                "lost"
-              ]
+              "enum": ["qualification", "proposal", "negotiation"]
             }
           },
           {
@@ -11048,6 +11053,58 @@
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/CrmOpportunityDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      }
+    },
+    "/api/industry/crm/activity": {
+      "get": {
+        "operationId": "CrmController_listActivities",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "targetType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["lead", "customer", "contact", "opportunity"]
+            }
+          },
+          {
+            "name": "targetId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CrmActivityPageDto" }
               }
             }
           }
@@ -18466,14 +18523,7 @@
           "source": { "type": "string" },
           "status": {
             "type": "string",
-            "enum": [
-              "new",
-              "contacted",
-              "qualified",
-              "converted",
-              "lost",
-              "archived"
-            ]
+            "enum": ["new", "contacted", "qualified", "lost"]
           },
           "rating": { "type": "string" },
           "owner": { "type": "string" },
@@ -18491,20 +18541,6 @@
           "amount": { "type": "string" }
         },
         "required": ["actor"]
-      },
-      "TransferCrmOwnerDto": {
-        "type": "object",
-        "properties": {
-          "toOwner": { "type": "string" },
-          "actor": { "type": "string" },
-          "reason": { "type": "string" }
-        },
-        "required": ["toOwner", "actor"]
-      },
-      "CrmDeleteResultDto": {
-        "type": "object",
-        "properties": { "deleted": { "type": "boolean" } },
-        "required": ["deleted"]
       },
       "CrmCustomerDto": {
         "type": "object",
@@ -18552,6 +18588,69 @@
           "updatedAt"
         ]
       },
+      "CrmOpportunityDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "customerId": { "type": "string" },
+          "customerName": { "type": "string" },
+          "number": { "type": "string" },
+          "name": { "type": "string" },
+          "owner": { "type": "string" },
+          "stage": {
+            "type": "string",
+            "enum": ["qualification", "proposal", "negotiation", "won", "lost"]
+          },
+          "amount": { "type": "string" },
+          "probability": { "type": "number" },
+          "expectedCloseAt": { "type": "string" },
+          "closedAt": { "type": "string" },
+          "closeReason": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "remark": { "type": "string" },
+          "archivedAt": { "type": "string" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "customerId",
+          "number",
+          "name",
+          "owner",
+          "stage",
+          "amount",
+          "probability",
+          "tags",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ConvertCrmLeadResultDto": {
+        "type": "object",
+        "properties": {
+          "lead": { "$ref": "#/components/schemas/CrmLeadDto" },
+          "customer": { "$ref": "#/components/schemas/CrmCustomerDto" },
+          "opportunity": { "$ref": "#/components/schemas/CrmOpportunityDto" }
+        },
+        "required": ["lead", "customer"]
+      },
+      "TransferCrmOwnerDto": {
+        "type": "object",
+        "properties": {
+          "toOwner": { "type": "string" },
+          "actor": { "type": "string" },
+          "reason": { "type": "string" }
+        },
+        "required": ["toOwner", "actor"]
+      },
+      "CrmDeleteResultDto": {
+        "type": "object",
+        "properties": { "deleted": { "type": "boolean" } },
+        "required": ["deleted"]
+      },
       "CrmCustomerPageDto": {
         "type": "object",
         "properties": {
@@ -18573,7 +18672,10 @@
           "owner": { "type": "string" },
           "level": { "type": "string" },
           "source": { "type": "string" },
-          "status": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["active", "inactive", "churned"]
+          },
           "industry": { "type": "string" },
           "region": { "type": "string" },
           "website": { "type": "string" },
@@ -18593,7 +18695,7 @@
           "owner": { "type": "string" },
           "status": {
             "type": "string",
-            "enum": ["active", "inactive", "churned", "archived"]
+            "enum": ["active", "inactive", "churned"]
           },
           "level": { "type": "string" },
           "source": { "type": "string" },
@@ -18687,46 +18789,6 @@
           "nextContactAt": { "type": "object" }
         }
       },
-      "CrmOpportunityDto": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string" },
-          "tenantId": { "type": "string" },
-          "customerId": { "type": "string" },
-          "customerName": { "type": "string" },
-          "number": { "type": "string" },
-          "name": { "type": "string" },
-          "owner": { "type": "string" },
-          "stage": {
-            "type": "string",
-            "enum": ["qualification", "proposal", "negotiation", "won", "lost"]
-          },
-          "amount": { "type": "string" },
-          "probability": { "type": "number" },
-          "expectedCloseAt": { "type": "string" },
-          "closedAt": { "type": "string" },
-          "closeReason": { "type": "string" },
-          "tags": { "type": "array", "items": { "type": "string" } },
-          "remark": { "type": "string" },
-          "archivedAt": { "type": "string" },
-          "createdAt": { "type": "string" },
-          "updatedAt": { "type": "string" }
-        },
-        "required": [
-          "id",
-          "tenantId",
-          "customerId",
-          "number",
-          "name",
-          "owner",
-          "stage",
-          "amount",
-          "probability",
-          "tags",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
       "CrmOpportunityPageDto": {
         "type": "object",
         "properties": {
@@ -18788,6 +18850,47 @@
           "closeReason": { "type": "string" }
         },
         "required": ["stage", "actor"]
+      },
+      "CrmActivityDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "activityType": {
+            "type": "string",
+            "enum": ["follow-up", "attachment", "transfer", "audit"]
+          },
+          "targetType": {
+            "type": "string",
+            "enum": ["lead", "customer", "contact", "opportunity"]
+          },
+          "targetId": { "type": "string" },
+          "actor": { "type": "string" },
+          "title": { "type": "string" },
+          "createdAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "activityType",
+          "targetType",
+          "targetId",
+          "createdAt"
+        ]
+      },
+      "CrmActivityPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CrmActivityDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
       },
       "CrmFollowUpDto": {
         "type": "object",
