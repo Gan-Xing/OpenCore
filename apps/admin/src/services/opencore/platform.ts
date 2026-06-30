@@ -95,25 +95,35 @@ import {
   type CreateTodoRequest,
   type DecideApprovalLiteRequest,
   type DeleteCacheKeyRequest,
+  type CrmAttachmentPage,
   type CrmAttachmentSummary,
+  type CrmAuditEventPage,
   type CrmAuditEventSummary,
+  type CrmContactPage,
   type CrmContactQueryRequest,
   type CrmContactSummary,
+  type CrmCustomerPage,
   type CrmCustomerQueryRequest,
   type CrmCustomerSummary,
   type CrmDeleteResult,
   type CrmExportPreview,
   type CrmExportQueryRequest,
+  type CrmFollowUpPage,
   type CrmFollowUpSummary,
+  type CrmLeadPage,
   type CrmLeadQueryRequest,
   type CrmLeadSummary,
+  type CrmOpportunityPage,
   type CrmOpportunityQueryRequest,
   type CrmOpportunitySummary,
+  type CrmOwnerTransferPage,
   type CrmOwnerTransferSummary,
   type CrmSummary,
+  type CrmTagPage,
   type CrmTagQueryRequest,
   type CrmTagSummary,
   type CrmTargetQueryRequest,
+  type CrmTaskPage,
   type CrmTaskQueryRequest,
   type CrmTaskSummary,
   type OpenForgeApplyDryRunRequest,
@@ -778,14 +788,20 @@ export function getOpenCoreCrmSummary(): Promise<CrmSummary> {
   return crmClient.getSummary(getRequiredAdminToken());
 }
 
-export async function listOpenCoreCrmTags(
+export function pageOpenCoreCrmTags(
   query?: CrmTagQueryRequest,
-): Promise<CrmTagSummary[]> {
-  const page = await crmClient.listTags(getRequiredAdminToken(), {
+): Promise<CrmTagPage> {
+  return crmClient.listTags(getRequiredAdminToken(), {
     page: 1,
     pageSize: 100,
     ...query,
   });
+}
+
+export async function listOpenCoreCrmTags(
+  query?: CrmTagQueryRequest,
+): Promise<CrmTagSummary[]> {
+  const page = await pageOpenCoreCrmTags(query);
   return [...page.items];
 }
 
@@ -802,14 +818,20 @@ export function updateOpenCoreCrmTag(
   return crmClient.updateTag(getRequiredAdminToken(), id, body);
 }
 
-export async function listOpenCoreCrmLeads(
+export function pageOpenCoreCrmLeads(
   query?: CrmLeadQueryRequest,
-): Promise<CrmLeadSummary[]> {
-  const page = await crmClient.listLeads(getRequiredAdminToken(), {
+): Promise<CrmLeadPage> {
+  return crmClient.listLeads(getRequiredAdminToken(), {
     page: 1,
     pageSize: 100,
     ...query,
   });
+}
+
+export async function listOpenCoreCrmLeads(
+  query?: CrmLeadQueryRequest,
+): Promise<CrmLeadSummary[]> {
+  const page = await pageOpenCoreCrmLeads(query);
   return [...page.items];
 }
 
@@ -848,14 +870,20 @@ export function archiveOpenCoreCrmLead(id: string): Promise<CrmDeleteResult> {
   return crmClient.archiveLead(getRequiredAdminToken(), id);
 }
 
-export async function listOpenCoreCrmCustomers(
+export function pageOpenCoreCrmCustomers(
   query?: CrmCustomerQueryRequest,
-): Promise<CrmCustomerSummary[]> {
-  const page = await crmClient.listCustomers(getRequiredAdminToken(), {
+): Promise<CrmCustomerPage> {
+  return crmClient.listCustomers(getRequiredAdminToken(), {
     page: 1,
     pageSize: 100,
     ...query,
   });
+}
+
+export async function listOpenCoreCrmCustomers(
+  query?: CrmCustomerQueryRequest,
+): Promise<CrmCustomerSummary[]> {
+  const page = await pageOpenCoreCrmCustomers(query);
   return [...page.items];
 }
 
@@ -891,14 +919,20 @@ export function archiveOpenCoreCrmCustomer(
   return crmClient.archiveCustomer(getRequiredAdminToken(), id);
 }
 
-export async function listOpenCoreCrmContacts(
+export function pageOpenCoreCrmContacts(
   query?: CrmContactQueryRequest,
-): Promise<CrmContactSummary[]> {
-  const page = await crmClient.listContacts(getRequiredAdminToken(), {
+): Promise<CrmContactPage> {
+  return crmClient.listContacts(getRequiredAdminToken(), {
     page: 1,
     pageSize: 100,
     ...query,
   });
+}
+
+export async function listOpenCoreCrmContacts(
+  query?: CrmContactQueryRequest,
+): Promise<CrmContactSummary[]> {
+  const page = await pageOpenCoreCrmContacts(query);
   return [...page.items];
 }
 
@@ -925,14 +959,20 @@ export function archiveOpenCoreCrmContact(
   return crmClient.archiveContact(getRequiredAdminToken(), id);
 }
 
-export async function listOpenCoreCrmOpportunities(
+export function pageOpenCoreCrmOpportunities(
   query?: CrmOpportunityQueryRequest,
-): Promise<CrmOpportunitySummary[]> {
-  const page = await crmClient.listOpportunities(getRequiredAdminToken(), {
+): Promise<CrmOpportunityPage> {
+  return crmClient.listOpportunities(getRequiredAdminToken(), {
     page: 1,
     pageSize: 100,
     ...query,
   });
+}
+
+export async function listOpenCoreCrmOpportunities(
+  query?: CrmOpportunityQueryRequest,
+): Promise<CrmOpportunitySummary[]> {
+  const page = await pageOpenCoreCrmOpportunities(query);
   return [...page.items];
 }
 
@@ -975,14 +1015,20 @@ export function archiveOpenCoreCrmOpportunity(
   return crmClient.archiveOpportunity(getRequiredAdminToken(), id);
 }
 
-export async function listOpenCoreCrmFollowUps(
+export function pageOpenCoreCrmFollowUps(
   query?: CrmTargetQueryRequest,
-): Promise<CrmFollowUpSummary[]> {
-  const page = await crmClient.listFollowUps(getRequiredAdminToken(), {
+): Promise<CrmFollowUpPage> {
+  return crmClient.listFollowUps(getRequiredAdminToken(), {
     page: 1,
     pageSize: 100,
     ...query,
   });
+}
+
+export async function listOpenCoreCrmFollowUps(
+  query?: CrmTargetQueryRequest,
+): Promise<CrmFollowUpSummary[]> {
+  const page = await pageOpenCoreCrmFollowUps(query);
   return [...page.items];
 }
 
@@ -992,14 +1038,20 @@ export function createOpenCoreCrmFollowUp(
   return crmClient.createFollowUp(getRequiredAdminToken(), body);
 }
 
-export async function listOpenCoreCrmTasks(
+export function pageOpenCoreCrmTasks(
   query?: CrmTaskQueryRequest,
-): Promise<CrmTaskSummary[]> {
-  const page = await crmClient.listTasks(getRequiredAdminToken(), {
+): Promise<CrmTaskPage> {
+  return crmClient.listTasks(getRequiredAdminToken(), {
     page: 1,
     pageSize: 100,
     ...query,
   });
+}
+
+export async function listOpenCoreCrmTasks(
+  query?: CrmTaskQueryRequest,
+): Promise<CrmTaskSummary[]> {
+  const page = await pageOpenCoreCrmTasks(query);
   return [...page.items];
 }
 
@@ -1016,14 +1068,20 @@ export function completeOpenCoreCrmTask(
   return crmClient.completeTask(getRequiredAdminToken(), id, body);
 }
 
-export async function listOpenCoreCrmAttachments(
+export function pageOpenCoreCrmAttachments(
   query?: CrmTargetQueryRequest,
-): Promise<CrmAttachmentSummary[]> {
-  const page = await crmClient.listAttachments(getRequiredAdminToken(), {
+): Promise<CrmAttachmentPage> {
+  return crmClient.listAttachments(getRequiredAdminToken(), {
     page: 1,
     pageSize: 100,
     ...query,
   });
+}
+
+export async function listOpenCoreCrmAttachments(
+  query?: CrmTargetQueryRequest,
+): Promise<CrmAttachmentSummary[]> {
+  const page = await pageOpenCoreCrmAttachments(query);
   return [...page.items];
 }
 
@@ -1033,25 +1091,37 @@ export function createOpenCoreCrmAttachment(
   return crmClient.createAttachment(getRequiredAdminToken(), body);
 }
 
-export async function listOpenCoreCrmOwnerTransfers(
+export function pageOpenCoreCrmOwnerTransfers(
   query?: CrmTargetQueryRequest,
-): Promise<CrmOwnerTransferSummary[]> {
-  const page = await crmClient.listOwnerTransfers(getRequiredAdminToken(), {
+): Promise<CrmOwnerTransferPage> {
+  return crmClient.listOwnerTransfers(getRequiredAdminToken(), {
     page: 1,
     pageSize: 100,
     ...query,
   });
+}
+
+export async function listOpenCoreCrmOwnerTransfers(
+  query?: CrmTargetQueryRequest,
+): Promise<CrmOwnerTransferSummary[]> {
+  const page = await pageOpenCoreCrmOwnerTransfers(query);
   return [...page.items];
+}
+
+export function pageOpenCoreCrmAuditEvents(
+  query?: CrmTargetQueryRequest,
+): Promise<CrmAuditEventPage> {
+  return crmClient.listAuditEvents(getRequiredAdminToken(), {
+    page: 1,
+    pageSize: 100,
+    ...query,
+  });
 }
 
 export async function listOpenCoreCrmAuditEvents(
   query?: CrmTargetQueryRequest,
 ): Promise<CrmAuditEventSummary[]> {
-  const page = await crmClient.listAuditEvents(getRequiredAdminToken(), {
-    page: 1,
-    pageSize: 100,
-    ...query,
-  });
+  const page = await pageOpenCoreCrmAuditEvents(query);
   return [...page.items];
 }
 

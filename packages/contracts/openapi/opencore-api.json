@@ -10361,7 +10361,7 @@
             "description": "",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/DeleteResultDto" }
+                "schema": { "$ref": "#/components/schemas/CrmDeleteResultDto" }
               }
             }
           }
@@ -10597,7 +10597,7 @@
             "description": "",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/DeleteResultDto" }
+                "schema": { "$ref": "#/components/schemas/CrmDeleteResultDto" }
               }
             }
           }
@@ -10794,7 +10794,7 @@
             "description": "",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/DeleteResultDto" }
+                "schema": { "$ref": "#/components/schemas/CrmDeleteResultDto" }
               }
             }
           }
@@ -10979,7 +10979,7 @@
             "description": "",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/DeleteResultDto" }
+                "schema": { "$ref": "#/components/schemas/CrmDeleteResultDto" }
               }
             }
           }
@@ -18348,9 +18348,13 @@
           "items": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/CrmTagDto" }
-          }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
         },
-        "required": ["items"]
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
       },
       "CreateCrmTagDto": {
         "type": "object",
@@ -18428,9 +18432,13 @@
           "items": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/CrmLeadDto" }
-          }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
         },
-        "required": ["items"]
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
       },
       "CreateCrmLeadDto": {
         "type": "object",
@@ -18493,6 +18501,11 @@
         },
         "required": ["toOwner", "actor"]
       },
+      "CrmDeleteResultDto": {
+        "type": "object",
+        "properties": { "deleted": { "type": "boolean" } },
+        "required": ["deleted"]
+      },
       "CrmCustomerDto": {
         "type": "object",
         "properties": {
@@ -18545,9 +18558,13 @@
           "items": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/CrmCustomerDto" }
-          }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
         },
-        "required": ["items"]
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
       },
       "CreateCrmCustomerDto": {
         "type": "object",
@@ -18630,9 +18647,13 @@
           "items": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/CrmContactDto" }
-          }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
         },
-        "required": ["items"]
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
       },
       "CreateCrmContactDto": {
         "type": "object",
@@ -18712,9 +18733,13 @@
           "items": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/CrmOpportunityDto" }
-          }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
         },
-        "required": ["items"]
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
       },
       "CreateCrmOpportunityDto": {
         "type": "object",
@@ -18803,9 +18828,13 @@
           "items": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/CrmFollowUpDto" }
-          }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
         },
-        "required": ["items"]
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
       },
       "CreateCrmFollowUpDto": {
         "type": "object",
@@ -18870,9 +18899,13 @@
           "items": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/CrmTaskDto" }
-          }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
         },
-        "required": ["items"]
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
       },
       "CreateCrmTaskDto": {
         "type": "object",
@@ -18937,9 +18970,13 @@
           "items": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/CrmAttachmentDto" }
-          }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
         },
-        "required": ["items"]
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
       },
       "CreateCrmAttachmentDto": {
         "type": "object",
@@ -18997,9 +19034,13 @@
           "items": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/CrmOwnerTransferDto" }
-          }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
         },
-        "required": ["items"]
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
       },
       "CrmAuditEventDto": {
         "type": "object",
@@ -19033,9 +19074,13 @@
           "items": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/CrmAuditEventDto" }
-          }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
         },
-        "required": ["items"]
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
       },
       "RuntimeProcessStatusDto": {
         "type": "object",

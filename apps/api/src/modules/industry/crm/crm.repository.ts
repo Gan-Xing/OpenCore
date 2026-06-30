@@ -56,6 +56,13 @@ export type CrmPageResult<T> = {
   totalPages: number;
 };
 
+export type CrmPageWindow = {
+  page: number;
+  pageSize: number;
+  skip: number;
+  take: number;
+};
+
 export abstract class CrmRepository {
   abstract getSummary(): Promise<CrmSummaryDto>;
   abstract exportCrm(query: CrmExportQueryDto): Promise<CrmExportPreviewDto>;
@@ -158,8 +165,7 @@ export function createCrmPage<T>(
   rows: readonly T[],
   query: { page?: number | string; pageSize?: number | string } = {},
 ): CrmPageResult<T> {
-  const page = normalizePositiveInteger(query.page, 1);
-  const pageSize = Math.min(normalizePositiveInteger(query.pageSize, 10), 100);
+  const { page, pageSize } = normalizeCrmPageWindow(query);
   const total = rows.length;
   const totalPages = Math.ceil(total / pageSize);
   const safePage = totalPages === 0 ? 1 : Math.min(page, totalPages);
@@ -171,6 +177,36 @@ export function createCrmPage<T>(
     pageSize,
     total,
     totalPages,
+  };
+}
+
+export function normalizeCrmPageWindow(
+  query: { page?: number | string; pageSize?: number | string } = {},
+): CrmPageWindow {
+  const page = normalizePositiveInteger(query.page, 1);
+  const pageSize = Math.min(normalizePositiveInteger(query.pageSize, 10), 100);
+
+  return {
+    page,
+    pageSize,
+    skip: (page - 1) * pageSize,
+    take: pageSize,
+  };
+}
+
+export function createCrmDbPage<T>(
+  items: readonly T[],
+  query: { page?: number | string; pageSize?: number | string } = {},
+  total: number,
+): CrmPageResult<T> {
+  const { page, pageSize } = normalizeCrmPageWindow(query);
+
+  return {
+    items: items.map(clone),
+    page,
+    pageSize,
+    total,
+    totalPages: Math.ceil(total / pageSize),
   };
 }
 

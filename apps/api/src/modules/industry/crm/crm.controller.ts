@@ -8,7 +8,12 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOkResponse,
+  ApiProperty,
+  ApiTags,
+} from '@nestjs/swagger';
 import { AuditOperation } from '@opencore/audit';
 import { RequirePermission } from '../../core/rbac/permissions.decorator';
 import {
@@ -60,7 +65,8 @@ import {
 } from './crm.dto';
 import { CrmRepository } from './crm.repository';
 
-class DeleteResultDto {
+class CrmDeleteResultDto {
+  @ApiProperty()
   deleted!: true;
 }
 
@@ -184,7 +190,7 @@ export class CrmController {
     resource: 'industry.crm',
     resourceIdField: 'id',
   })
-  @ApiOkResponse({ type: DeleteResultDto })
+  @ApiOkResponse({ type: CrmDeleteResultDto })
   archiveLead(@Param('id') id: string): Promise<{ deleted: true }> {
     return this.repository.archiveLead(id);
   }
@@ -250,7 +256,7 @@ export class CrmController {
     resource: 'industry.crm',
     resourceIdField: 'id',
   })
-  @ApiOkResponse({ type: DeleteResultDto })
+  @ApiOkResponse({ type: CrmDeleteResultDto })
   archiveCustomer(@Param('id') id: string): Promise<{ deleted: true }> {
     return this.repository.archiveCustomer(id);
   }
@@ -299,7 +305,7 @@ export class CrmController {
     resource: 'industry.crm',
     resourceIdField: 'id',
   })
-  @ApiOkResponse({ type: DeleteResultDto })
+  @ApiOkResponse({ type: CrmDeleteResultDto })
   archiveContact(@Param('id') id: string): Promise<{ deleted: true }> {
     return this.repository.archiveContact(id);
   }
@@ -382,7 +388,7 @@ export class CrmController {
     resource: 'industry.crm',
     resourceIdField: 'id',
   })
-  @ApiOkResponse({ type: DeleteResultDto })
+  @ApiOkResponse({ type: CrmDeleteResultDto })
   archiveOpportunity(@Param('id') id: string): Promise<{ deleted: true }> {
     return this.repository.archiveOpportunity(id);
   }

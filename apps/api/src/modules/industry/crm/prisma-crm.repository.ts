@@ -2,7 +2,10 @@ import { randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { getRequestContext } from '@opencore/core';
-import { PrismaService } from '@opencore/database';
+import {
+  PrismaService,
+  type PrismaTransactionClient,
+} from '@opencore/database';
 import type {
   ChangeCrmOpportunityStageDto,
   CompleteCrmTaskDto,
@@ -63,10 +66,11 @@ import {
   CRM_TASK_STATUSES,
 } from './crm.dto';
 import {
-  createCrmPage,
+  createCrmDbPage,
   crmBadRequest,
   CrmRepository,
   crmNotFound,
+  normalizeCrmPageWindow,
 } from './crm.repository';
 
 const ROOT_TENANT_ID = 'tenant_root';
@@ -101,48 +105,78 @@ export class PrismaCrmRepository extends CrmRepository {
 
   async getSummary(): Promise<CrmSummaryDto> {
     const tenantId = resolveCurrentTenantId();
-    const [leads, customers, contacts, opportunities, tasks] =
-      await Promise.all([
-        this.prisma.crmLead.findMany({ where: { tenantId, archivedAt: null } }),
-        this.prisma.crmCustomer.findMany({
-          where: { tenantId, archivedAt: null },
-        }),
-        this.prisma.crmContact.findMany({
-          where: { tenantId, archivedAt: null },
-        }),
-        this.prisma.crmOpportunity.findMany({
-          where: { tenantId, archivedAt: null },
-        }),
-        this.prisma.crmTask.findMany({ where: { tenantId } }),
-      ]);
-    const now = Date.now();
-    const openOpportunities = opportunities.filter(
-      (opportunity) => !['won', 'lost'].includes(opportunity.stage),
-    );
-    const openTasks = tasks.filter((task) => task.status === 'open');
+    const activeWhere = { tenantId, archivedAt: null };
+    const [
+      leads,
+      customers,
+      contacts,
+      opportunities,
+      openTasks,
+      overdueTasks,
+      openPipeline,
+      leadsByStatus,
+      customersByLevel,
+      opportunitiesByStage,
+    ] = await Promise.all([
+      this.prisma.crmLead.count({ where: activeWhere }),
+      this.prisma.crmCustomer.count({ where: activeWhere }),
+      this.prisma.crmContact.count({
+        where: { ...activeWhere, customer: { archivedAt: null } },
+      }),
+      this.prisma.crmOpportunity.count({
+        where: { ...activeWhere, customer: { archivedAt: null } },
+      }),
+      this.prisma.crmTask.count({ where: { tenantId, status: 'open' } }),
+      this.prisma.crmTask.count({
+        where: { tenantId, status: 'open', dueAt: { lt: new Date() } },
+      }),
+      this.prisma.crmOpportunity.aggregate({
+        _sum: { amount: true },
+        where: {
+          ...activeWhere,
+          customer: { archivedAt: null },
+          stage: { notIn: ['won', 'lost'] },
+        },
+      }),
+      this.prisma.crmLead.groupBy({
+        by: ['status'],
+        _count: { _all: true },
+        where: activeWhere,
+      }),
+      this.prisma.crmCustomer.groupBy({
+        by: ['level'],
+        _count: { _all: true },
+        where: activeWhere,
+      }),
+      this.prisma.crmOpportunity.groupBy({
+        by: ['stage'],
+        _count: { _all: true },
+        where: { ...activeWhere, customer: { archivedAt: null } },
+      }),
+    ]);
 
     return {
-      leads: leads.length,
-      customers: customers.length,
-      contacts: contacts.length,
-      opportunities: opportunities.length,
-      openTasks: openTasks.length,
-      overdueTasks: openTasks.filter(
-        (task) => task.dueAt !== null && task.dueAt.getTime() < now,
-      ).length,
-      openPipelineAmount: openOpportunities
-        .reduce(
-          (sum, opportunity) => sum.plus(opportunity.amount),
-          new Prisma.Decimal(0),
-        )
-        .toFixed(2),
-      leadsByStatus: countBuckets(leads.map((lead) => lead.status)),
-      customersByLevel: countBuckets(
-        customers.map((customer) => customer.level),
-      ),
-      opportunitiesByStage: countBuckets(
-        opportunities.map((opportunity) => opportunity.stage),
-      ),
+      leads,
+      customers,
+      contacts,
+      opportunities,
+      openTasks,
+      overdueTasks,
+      openPipelineAmount: (
+        openPipeline._sum.amount ?? new Prisma.Decimal(0)
+      ).toFixed(2),
+      leadsByStatus: leadsByStatus.map((row) => ({
+        key: row.status,
+        count: row._count._all,
+      })),
+      customersByLevel: customersByLevel.map((row) => ({
+        key: row.level,
+        count: row._count._all,
+      })),
+      opportunitiesByStage: opportunitiesByStage.map((row) => ({
+        key: row.stage,
+        count: row._count._all,
+      })),
     };
   }
 
@@ -256,12 +290,19 @@ export class PrismaCrmRepository extends CrmRepository {
   async listTags(query: CrmTagQueryDto = {}): Promise<CrmTagPageDto> {
     const tenantId = resolveCurrentTenantId();
     const enabled = parseOptionalBoolean(query.enabled);
-    const rows = await this.prisma.crmTag.findMany({
-      where: { tenantId, ...(enabled === undefined ? {} : { enabled }) },
-      orderBy: [{ enabled: 'desc' }, { name: 'asc' }, { id: 'asc' }],
-    });
+    const where = { tenantId, ...(enabled === undefined ? {} : { enabled }) };
+    const page = normalizeCrmPageWindow(query);
+    const [rows, total] = await this.prisma.$transaction([
+      this.prisma.crmTag.findMany({
+        where,
+        orderBy: [{ enabled: 'desc' }, { name: 'asc' }, { id: 'asc' }],
+        skip: page.skip,
+        take: page.take,
+      }),
+      this.prisma.crmTag.count({ where }),
+    ]);
 
-    return createCrmPage(rows.map(toTagRecord), query);
+    return createCrmDbPage(rows.map(toTagRecord), query, total);
   }
 
   async createTag(body: CreateCrmTagDto): Promise<CrmTagDto> {
@@ -307,12 +348,19 @@ export class PrismaCrmRepository extends CrmRepository {
 
   async listLeads(query: CrmLeadQueryDto = {}): Promise<CrmLeadPageDto> {
     const tenantId = resolveCurrentTenantId();
-    const rows = await this.prisma.crmLead.findMany({
-      where: buildLeadWhere(tenantId, query),
-      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
-    });
+    const where = buildLeadWhere(tenantId, query);
+    const page = normalizeCrmPageWindow(query);
+    const [rows, total] = await this.prisma.$transaction([
+      this.prisma.crmLead.findMany({
+        where,
+        orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+        skip: page.skip,
+        take: page.take,
+      }),
+      this.prisma.crmLead.count({ where }),
+    ]);
 
-    return createCrmPage(rows.map(toLeadRecord), query);
+    return createCrmDbPage(rows.map(toLeadRecord), query, total);
   }
 
   async getLead(id: string): Promise<CrmLeadDto> {
@@ -322,32 +370,41 @@ export class PrismaCrmRepository extends CrmRepository {
   async createLead(body: CreateCrmLeadDto): Promise<CrmLeadDto> {
     const tenantId = resolveCurrentTenantId();
     const tags = await this.normalizeTags(tenantId, body.tags);
-    const lead = await this.prisma.crmLead.create({
-      data: {
-        tenantId,
-        number: createCrmNumber('LEAD'),
-        name: requireText(body.name, 'name'),
-        company: normalizeOptionalText(body.company),
-        mobile: normalizeOptionalText(body.mobile),
-        email: normalizeOptionalText(body.email),
-        source: requireText(body.source, 'source'),
-        status: 'new',
-        rating: normalizeOptionalText(body.rating) ?? 'warm',
-        owner: requireText(body.owner, 'owner'),
-        tags,
-        remark: normalizeOptionalText(body.remark),
-        nextContactAt: parseOptionalDate(body.nextContactAt, 'nextContactAt'),
-      },
-    });
-    await this.writeAudit(
-      tenantId,
-      'lead',
-      lead.id,
-      'create-lead',
-      lead.owner,
-      {
-        number: lead.number,
-      },
+    const lead = await retryCrmNumberConflicts(() =>
+      this.prisma.$transaction(async (tx) => {
+        const created = await tx.crmLead.create({
+          data: {
+            tenantId,
+            number: createCrmNumber('LEAD'),
+            name: requireText(body.name, 'name'),
+            company: normalizeOptionalText(body.company),
+            mobile: normalizeOptionalText(body.mobile),
+            email: normalizeOptionalText(body.email),
+            source: requireText(body.source, 'source'),
+            status: 'new',
+            rating: normalizeOptionalText(body.rating) ?? 'warm',
+            owner: requireText(body.owner, 'owner'),
+            tags,
+            remark: normalizeOptionalText(body.remark),
+            nextContactAt: parseOptionalDate(
+              body.nextContactAt,
+              'nextContactAt',
+            ),
+          },
+        });
+        await tx.crmAuditEvent.create({
+          data: {
+            tenantId,
+            targetType: 'lead',
+            targetId: created.id,
+            action: 'create-lead',
+            actor: created.owner,
+            detail: toInputJson({ number: created.number }),
+          },
+        });
+
+        return created;
+      }),
     );
 
     return toLeadRecord(lead);
@@ -408,86 +465,134 @@ export class PrismaCrmRepository extends CrmRepository {
 
   async convertLead(id: string, body: ConvertCrmLeadDto) {
     const tenantId = resolveCurrentTenantId();
-    const lead = await this.findLead(id);
-    if (lead.convertedAt || lead.status === 'converted') {
-      throw crmBadRequest(
-        'INDUSTRY_CRM_LEAD_ALREADY_CONVERTED',
-        'CRM lead is already converted.',
-        { id },
-      );
-    }
-
     const actor = requireText(body.actor, 'actor');
-    const customer = await this.prisma.crmCustomer.create({
-      data: {
-        tenantId,
-        number: createCrmNumber('CUS'),
-        name:
-          normalizeOptionalText(body.customerName) ?? lead.company ?? lead.name,
-        owner: lead.owner,
-        status: 'active',
-        level: 'standard',
-        source: lead.source,
-        phone: lead.mobile,
-        email: lead.email,
-        tags: toJsonArray(lead.tags),
-        remark: lead.remark,
-        nextContactAt: parseOptionalDate(lead.nextContactAt, 'nextContactAt'),
-        lastFollowedAt: parseOptionalDate(
-          lead.lastFollowedAt,
-          'lastFollowedAt',
-        ),
-      },
-      include: CUSTOMER_INCLUDE,
-    });
-    await this.prisma.crmContact.create({
-      data: {
-        tenantId,
-        customerId: customer.id,
-        name: lead.name,
-        mobile: lead.mobile,
-        email: lead.email,
-        owner: lead.owner,
-        primary: true,
-      },
-    });
+    const result = await retryCrmNumberConflicts(() =>
+      this.prisma.$transaction(async (tx) => {
+        const lead = await tx.crmLead.findUnique({
+          where: { tenantId_id: { tenantId, id } },
+        });
+        if (!lead || lead.archivedAt || lead.status === 'archived') {
+          throw crmNotFound(
+            'INDUSTRY_CRM_LEAD_NOT_FOUND',
+            'CRM lead not found.',
+            { id },
+          );
+        }
+        if (lead.convertedAt || lead.status === 'converted') {
+          throw crmBadRequest(
+            'INDUSTRY_CRM_LEAD_ALREADY_CONVERTED',
+            'CRM lead is already converted.',
+            { id },
+          );
+        }
 
-    const opportunityName = normalizeOptionalText(body.opportunityName);
-    const opportunity = opportunityName
-      ? await this.prisma.crmOpportunity.create({
+        const customer = await tx.crmCustomer.create({
+          data: {
+            tenantId,
+            number: createCrmNumber('CUS'),
+            name:
+              normalizeOptionalText(body.customerName) ??
+              lead.company ??
+              lead.name,
+            owner: lead.owner,
+            status: 'active',
+            level: 'standard',
+            source: lead.source,
+            phone: lead.mobile,
+            email: lead.email,
+            tags: toJsonArray(lead.tags),
+            remark: lead.remark,
+            nextContactAt: lead.nextContactAt,
+            lastFollowedAt: lead.lastFollowedAt,
+          },
+          include: CUSTOMER_INCLUDE,
+        });
+        await tx.crmContact.create({
           data: {
             tenantId,
             customerId: customer.id,
-            number: createCrmNumber('OPP'),
-            name: opportunityName,
+            name: lead.name,
+            mobile: lead.mobile,
+            email: lead.email,
             owner: lead.owner,
-            stage: 'qualification',
-            amount: parseMoney(body.amount ?? '0'),
-            probability: 10,
-            tags: toJsonArray(lead.tags),
+            primary: true,
           },
-          include: OPPORTUNITY_INCLUDE,
-        })
-      : undefined;
+        });
 
-    await this.prisma.crmLead.update({
-      where: { tenantId_id: { tenantId, id } },
-      data: {
-        status: 'converted',
-        convertedAt: new Date(),
-        convertedCustomerId: customer.id,
-        convertedOpportunityId: opportunity?.id ?? null,
-      },
-    });
-    await this.writeAudit(tenantId, 'lead', id, 'convert-lead', actor, {
-      customerId: customer.id,
-      opportunityId: opportunity?.id,
-    });
+        const opportunityName = normalizeOptionalText(body.opportunityName);
+        const opportunity = opportunityName
+          ? await tx.crmOpportunity.create({
+              data: {
+                tenantId,
+                customerId: customer.id,
+                number: createCrmNumber('OPP'),
+                name: opportunityName,
+                owner: lead.owner,
+                stage: 'qualification',
+                amount: parseMoney(body.amount ?? '0'),
+                probability: 10,
+                tags: toJsonArray(lead.tags),
+              },
+              include: OPPORTUNITY_INCLUDE,
+            })
+          : undefined;
+
+        const updated = await tx.crmLead.updateMany({
+          where: {
+            tenantId,
+            id,
+            archivedAt: null,
+            convertedAt: null,
+            status: { not: 'converted' },
+          },
+          data: {
+            status: 'converted',
+            convertedAt: new Date(),
+            convertedCustomerId: customer.id,
+            convertedOpportunityId: opportunity?.id ?? null,
+          },
+        });
+        if (updated.count !== 1) {
+          throw crmBadRequest(
+            'INDUSTRY_CRM_LEAD_ALREADY_CONVERTED',
+            'CRM lead is already converted.',
+            { id },
+          );
+        }
+        await tx.crmAuditEvent.create({
+          data: {
+            tenantId,
+            targetType: 'lead',
+            targetId: id,
+            action: 'convert-lead',
+            actor,
+            detail: toInputJson({
+              customerId: customer.id,
+              opportunityId: opportunity?.id,
+            }),
+          },
+        });
+        const convertedLead = await tx.crmLead.findUnique({
+          where: { tenantId_id: { tenantId, id } },
+        });
+        if (!convertedLead) {
+          throw crmNotFound(
+            'INDUSTRY_CRM_LEAD_NOT_FOUND',
+            'CRM lead not found.',
+            { id },
+          );
+        }
+
+        return { customer, lead: convertedLead, opportunity };
+      }),
+    );
 
     return {
-      lead: await this.findLead(id),
-      customer: toCustomerRecord(customer),
-      opportunity: opportunity ? toOpportunityRecord(opportunity) : undefined,
+      lead: toLeadRecord(result.lead),
+      customer: toCustomerRecord(result.customer),
+      opportunity: result.opportunity
+        ? toOpportunityRecord(result.opportunity)
+        : undefined,
     };
   }
 
@@ -528,13 +633,20 @@ export class PrismaCrmRepository extends CrmRepository {
     query: CrmCustomerQueryDto = {},
   ): Promise<CrmCustomerPageDto> {
     const tenantId = resolveCurrentTenantId();
-    const rows = await this.prisma.crmCustomer.findMany({
-      where: buildCustomerWhere(tenantId, query),
-      include: CUSTOMER_INCLUDE,
-      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
-    });
+    const where = buildCustomerWhere(tenantId, query);
+    const page = normalizeCrmPageWindow(query);
+    const [rows, total] = await this.prisma.$transaction([
+      this.prisma.crmCustomer.findMany({
+        where,
+        include: CUSTOMER_INCLUDE,
+        orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+        skip: page.skip,
+        take: page.take,
+      }),
+      this.prisma.crmCustomer.count({ where }),
+    ]);
 
-    return createCrmPage(rows.map(toCustomerRecord), query);
+    return createCrmDbPage(rows.map(toCustomerRecord), query, total);
   }
 
   async getCustomer(id: string): Promise<CrmCustomerDto> {
@@ -544,38 +656,49 @@ export class PrismaCrmRepository extends CrmRepository {
   async createCustomer(body: CreateCrmCustomerDto): Promise<CrmCustomerDto> {
     const tenantId = resolveCurrentTenantId();
     const tags = await this.normalizeTags(tenantId, body.tags);
-    const customer = await this.prisma.crmCustomer.create({
-      data: {
-        tenantId,
-        number: createCrmNumber('CUS'),
-        name: requireText(body.name, 'name'),
-        owner: requireText(body.owner, 'owner'),
-        status: parseChoice(
-          body.status ?? 'active',
-          CRM_CUSTOMER_STATUSES,
-          'status',
-        ),
-        level: normalizeOptionalText(body.level) ?? 'standard',
-        source: requireText(body.source, 'source'),
-        industry: normalizeOptionalText(body.industry),
-        region: normalizeOptionalText(body.region),
-        website: normalizeOptionalText(body.website),
-        phone: normalizeOptionalText(body.phone),
-        email: normalizeOptionalText(body.email),
-        address: normalizeOptionalText(body.address),
-        tags,
-        remark: normalizeOptionalText(body.remark),
-        nextContactAt: parseOptionalDate(body.nextContactAt, 'nextContactAt'),
-      },
-      include: CUSTOMER_INCLUDE,
-    });
-    await this.writeAudit(
-      tenantId,
-      'customer',
-      customer.id,
-      'create-customer',
-      customer.owner,
-      { number: customer.number },
+    const customer = await retryCrmNumberConflicts(() =>
+      this.prisma.$transaction(async (tx) => {
+        const created = await tx.crmCustomer.create({
+          data: {
+            tenantId,
+            number: createCrmNumber('CUS'),
+            name: requireText(body.name, 'name'),
+            owner: requireText(body.owner, 'owner'),
+            status: parseChoice(
+              body.status ?? 'active',
+              CRM_CUSTOMER_STATUSES,
+              'status',
+            ),
+            level: normalizeOptionalText(body.level) ?? 'standard',
+            source: requireText(body.source, 'source'),
+            industry: normalizeOptionalText(body.industry),
+            region: normalizeOptionalText(body.region),
+            website: normalizeOptionalText(body.website),
+            phone: normalizeOptionalText(body.phone),
+            email: normalizeOptionalText(body.email),
+            address: normalizeOptionalText(body.address),
+            tags,
+            remark: normalizeOptionalText(body.remark),
+            nextContactAt: parseOptionalDate(
+              body.nextContactAt,
+              'nextContactAt',
+            ),
+          },
+          include: CUSTOMER_INCLUDE,
+        });
+        await tx.crmAuditEvent.create({
+          data: {
+            tenantId,
+            targetType: 'customer',
+            targetId: created.id,
+            action: 'create-customer',
+            actor: created.owner,
+            detail: toInputJson({ number: created.number }),
+          },
+        });
+
+        return created;
+      }),
     );
 
     return toCustomerRecord(customer);
@@ -686,18 +809,41 @@ export class PrismaCrmRepository extends CrmRepository {
 
   async archiveCustomer(id: string): Promise<{ deleted: true }> {
     const tenantId = resolveCurrentTenantId();
-    await this.findCustomer(id);
-    await this.prisma.crmCustomer.update({
-      where: { tenantId_id: { tenantId, id } },
-      data: { archivedAt: new Date(), status: 'archived' },
+    await this.prisma.$transaction(async (tx) => {
+      const existing = await tx.crmCustomer.findUnique({
+        where: { tenantId_id: { tenantId, id } },
+      });
+      if (!existing) {
+        throw crmNotFound(
+          'INDUSTRY_CRM_CUSTOMER_NOT_FOUND',
+          'CRM customer not found.',
+          { id },
+        );
+      }
+      const archivedAt = new Date();
+      await tx.crmCustomer.update({
+        where: { tenantId_id: { tenantId, id } },
+        data: { archivedAt, status: 'archived' },
+      });
+      await tx.crmContact.updateMany({
+        where: { tenantId, customerId: id, archivedAt: null },
+        data: { archivedAt },
+      });
+      await tx.crmOpportunity.updateMany({
+        where: { tenantId, customerId: id, archivedAt: null },
+        data: { archivedAt },
+      });
+      await tx.crmAuditEvent.create({
+        data: {
+          tenantId,
+          targetType: 'customer',
+          targetId: id,
+          action: 'archive-customer',
+          actor: 'system',
+          detail: toInputJson({}),
+        },
+      });
     });
-    await this.writeAudit(
-      tenantId,
-      'customer',
-      id,
-      'archive-customer',
-      'system',
-    );
 
     return { deleted: true };
   }
@@ -706,13 +852,20 @@ export class PrismaCrmRepository extends CrmRepository {
     query: CrmContactQueryDto = {},
   ): Promise<CrmContactPageDto> {
     const tenantId = resolveCurrentTenantId();
-    const rows = await this.prisma.crmContact.findMany({
-      where: buildContactWhere(tenantId, query),
-      include: CONTACT_INCLUDE,
-      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
-    });
+    const where = buildContactWhere(tenantId, query);
+    const page = normalizeCrmPageWindow(query);
+    const [rows, total] = await this.prisma.$transaction([
+      this.prisma.crmContact.findMany({
+        where,
+        include: CONTACT_INCLUDE,
+        orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+        skip: page.skip,
+        take: page.take,
+      }),
+      this.prisma.crmContact.count({ where }),
+    ]);
 
-    return createCrmPage(rows.map(toContactRecord), query);
+    return createCrmDbPage(rows.map(toContactRecord), query, total);
   }
 
   async getContact(id: string): Promise<CrmContactDto> {
@@ -721,37 +874,49 @@ export class PrismaCrmRepository extends CrmRepository {
 
   async createContact(body: CreateCrmContactDto): Promise<CrmContactDto> {
     const tenantId = resolveCurrentTenantId();
-    const customer = await this.findCustomer(body.customerId);
-    if (body.primary === true) {
-      await this.prisma.crmContact.updateMany({
-        where: { tenantId, customerId: body.customerId, primary: true },
-        data: { primary: false },
+    const contact = await this.prisma.$transaction(async (tx) => {
+      const customer = await findActiveCustomer(tx, tenantId, body.customerId);
+      if (body.primary === true) {
+        await tx.crmContact.updateMany({
+          where: {
+            tenantId,
+            customerId: customer.id,
+            primary: true,
+            archivedAt: null,
+          },
+          data: { primary: false },
+        });
+      }
+      const created = await tx.crmContact.create({
+        data: {
+          tenantId,
+          customerId: customer.id,
+          name: requireText(body.name, 'name'),
+          title: normalizeOptionalText(body.title),
+          mobile: normalizeOptionalText(body.mobile),
+          email: normalizeOptionalText(body.email),
+          phone: normalizeOptionalText(body.phone),
+          owner: normalizeOptionalText(body.owner) ?? customer.owner,
+          decisionRole: normalizeOptionalText(body.decisionRole),
+          primary: body.primary ?? false,
+          remark: normalizeOptionalText(body.remark),
+          nextContactAt: parseOptionalDate(body.nextContactAt, 'nextContactAt'),
+        },
+        include: CONTACT_INCLUDE,
       });
-    }
-    const contact = await this.prisma.crmContact.create({
-      data: {
-        tenantId,
-        customerId: customer.id,
-        name: requireText(body.name, 'name'),
-        title: normalizeOptionalText(body.title),
-        mobile: normalizeOptionalText(body.mobile),
-        email: normalizeOptionalText(body.email),
-        phone: normalizeOptionalText(body.phone),
-        owner: normalizeOptionalText(body.owner) ?? customer.owner,
-        decisionRole: normalizeOptionalText(body.decisionRole),
-        primary: body.primary ?? false,
-        remark: normalizeOptionalText(body.remark),
-        nextContactAt: parseOptionalDate(body.nextContactAt, 'nextContactAt'),
-      },
-      include: CONTACT_INCLUDE,
+      await tx.crmAuditEvent.create({
+        data: {
+          tenantId,
+          targetType: 'contact',
+          targetId: created.id,
+          action: 'create-contact',
+          actor: created.owner,
+          detail: toInputJson({}),
+        },
+      });
+
+      return created;
     });
-    await this.writeAudit(
-      tenantId,
-      'contact',
-      contact.id,
-      'create-contact',
-      contact.owner,
-    );
 
     return toContactRecord(contact);
   }
@@ -761,59 +926,86 @@ export class PrismaCrmRepository extends CrmRepository {
     body: UpdateCrmContactDto,
   ): Promise<CrmContactDto> {
     const tenantId = resolveCurrentTenantId();
-    const existing = await this.findContact(id);
-    if (body.primary === true) {
-      await this.prisma.crmContact.updateMany({
-        where: { tenantId, customerId: existing.customerId, primary: true },
-        data: { primary: false },
+    const contact = await this.prisma.$transaction(async (tx) => {
+      const existing = await tx.crmContact.findFirst({
+        where: {
+          tenantId,
+          id,
+          archivedAt: null,
+          customer: { archivedAt: null },
+        },
+        include: CONTACT_INCLUDE,
       });
-    }
-    const contact = await this.prisma.crmContact.update({
-      where: { tenantId_id: { tenantId, id } },
-      data: {
-        ...(body.name === undefined
-          ? {}
-          : { name: requireText(body.name, 'name') }),
-        ...(body.title === undefined
-          ? {}
-          : { title: normalizeNullableText(body.title) }),
-        ...(body.mobile === undefined
-          ? {}
-          : { mobile: normalizeNullableText(body.mobile) }),
-        ...(body.email === undefined
-          ? {}
-          : { email: normalizeNullableText(body.email) }),
-        ...(body.phone === undefined
-          ? {}
-          : { phone: normalizeNullableText(body.phone) }),
-        ...(body.owner === undefined
-          ? {}
-          : { owner: requireText(body.owner, 'owner') }),
-        ...(body.decisionRole === undefined
-          ? {}
-          : { decisionRole: normalizeNullableText(body.decisionRole) }),
-        ...(body.primary === undefined ? {} : { primary: body.primary }),
-        ...(body.remark === undefined
-          ? {}
-          : { remark: normalizeNullableText(body.remark) }),
-        ...(body.nextContactAt === undefined
-          ? {}
-          : {
-              nextContactAt: parseNullableDate(
-                body.nextContactAt,
-                'nextContactAt',
-              ),
-            }),
-      },
-      include: CONTACT_INCLUDE,
+      if (!existing) {
+        throw crmNotFound(
+          'INDUSTRY_CRM_CONTACT_NOT_FOUND',
+          'CRM contact not found.',
+          { id },
+        );
+      }
+      if (body.primary === true) {
+        await tx.crmContact.updateMany({
+          where: {
+            tenantId,
+            customerId: existing.customerId,
+            primary: true,
+            archivedAt: null,
+          },
+          data: { primary: false },
+        });
+      }
+      const updated = await tx.crmContact.update({
+        where: { tenantId_id: { tenantId, id } },
+        data: {
+          ...(body.name === undefined
+            ? {}
+            : { name: requireText(body.name, 'name') }),
+          ...(body.title === undefined
+            ? {}
+            : { title: normalizeNullableText(body.title) }),
+          ...(body.mobile === undefined
+            ? {}
+            : { mobile: normalizeNullableText(body.mobile) }),
+          ...(body.email === undefined
+            ? {}
+            : { email: normalizeNullableText(body.email) }),
+          ...(body.phone === undefined
+            ? {}
+            : { phone: normalizeNullableText(body.phone) }),
+          ...(body.owner === undefined
+            ? {}
+            : { owner: requireText(body.owner, 'owner') }),
+          ...(body.decisionRole === undefined
+            ? {}
+            : { decisionRole: normalizeNullableText(body.decisionRole) }),
+          ...(body.primary === undefined ? {} : { primary: body.primary }),
+          ...(body.remark === undefined
+            ? {}
+            : { remark: normalizeNullableText(body.remark) }),
+          ...(body.nextContactAt === undefined
+            ? {}
+            : {
+                nextContactAt: parseNullableDate(
+                  body.nextContactAt,
+                  'nextContactAt',
+                ),
+              }),
+        },
+        include: CONTACT_INCLUDE,
+      });
+      await tx.crmAuditEvent.create({
+        data: {
+          tenantId,
+          targetType: 'contact',
+          targetId: id,
+          action: 'update-contact',
+          actor: updated.owner,
+          detail: toInputJson({}),
+        },
+      });
+
+      return updated;
     });
-    await this.writeAudit(
-      tenantId,
-      'contact',
-      id,
-      'update-contact',
-      contact.owner,
-    );
 
     return toContactRecord(contact);
   }
@@ -834,13 +1026,20 @@ export class PrismaCrmRepository extends CrmRepository {
     query: CrmOpportunityQueryDto = {},
   ): Promise<CrmOpportunityPageDto> {
     const tenantId = resolveCurrentTenantId();
-    const rows = await this.prisma.crmOpportunity.findMany({
-      where: buildOpportunityWhere(tenantId, query),
-      include: OPPORTUNITY_INCLUDE,
-      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
-    });
+    const where = buildOpportunityWhere(tenantId, query);
+    const page = normalizeCrmPageWindow(query);
+    const [rows, total] = await this.prisma.$transaction([
+      this.prisma.crmOpportunity.findMany({
+        where,
+        include: OPPORTUNITY_INCLUDE,
+        orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+        skip: page.skip,
+        take: page.take,
+      }),
+      this.prisma.crmOpportunity.count({ where }),
+    ]);
 
-    return createCrmPage(rows.map(toOpportunityRecord), query);
+    return createCrmDbPage(rows.map(toOpportunityRecord), query, total);
   }
 
   async getOpportunity(id: string): Promise<CrmOpportunityDto> {
@@ -851,37 +1050,50 @@ export class PrismaCrmRepository extends CrmRepository {
     body: CreateCrmOpportunityDto,
   ): Promise<CrmOpportunityDto> {
     const tenantId = resolveCurrentTenantId();
-    await this.findCustomer(body.customerId);
     const tags = await this.normalizeTags(tenantId, body.tags);
-    const opportunity = await this.prisma.crmOpportunity.create({
-      data: {
-        tenantId,
-        customerId: body.customerId,
-        number: createCrmNumber('OPP'),
-        name: requireText(body.name, 'name'),
-        owner: requireText(body.owner, 'owner'),
-        stage: parseChoice(
-          body.stage ?? 'qualification',
-          CRM_OPPORTUNITY_STAGES,
-          'stage',
-        ),
-        amount: parseMoney(body.amount ?? '0'),
-        probability: normalizeProbability(body.probability ?? 10),
-        expectedCloseAt: parseOptionalDate(
-          body.expectedCloseAt,
-          'expectedCloseAt',
-        ),
-        tags,
-        remark: normalizeOptionalText(body.remark),
-      },
-      include: OPPORTUNITY_INCLUDE,
-    });
-    await this.writeAudit(
-      tenantId,
-      'opportunity',
-      opportunity.id,
-      'create-opportunity',
-      opportunity.owner,
+    const opportunity = await retryCrmNumberConflicts(() =>
+      this.prisma.$transaction(async (tx) => {
+        const customer = await findActiveCustomer(
+          tx,
+          tenantId,
+          body.customerId,
+        );
+        const created = await tx.crmOpportunity.create({
+          data: {
+            tenantId,
+            customerId: customer.id,
+            number: createCrmNumber('OPP'),
+            name: requireText(body.name, 'name'),
+            owner: requireText(body.owner, 'owner'),
+            stage: parseChoice(
+              body.stage ?? 'qualification',
+              CRM_OPPORTUNITY_STAGES,
+              'stage',
+            ),
+            amount: parseMoney(body.amount ?? '0'),
+            probability: normalizeProbability(body.probability ?? 10),
+            expectedCloseAt: parseOptionalDate(
+              body.expectedCloseAt,
+              'expectedCloseAt',
+            ),
+            tags,
+            remark: normalizeOptionalText(body.remark),
+          },
+          include: OPPORTUNITY_INCLUDE,
+        });
+        await tx.crmAuditEvent.create({
+          data: {
+            tenantId,
+            targetType: 'opportunity',
+            targetId: created.id,
+            action: 'create-opportunity',
+            actor: created.owner,
+            detail: toInputJson({ number: created.number }),
+          },
+        });
+
+        return created;
+      }),
     );
 
     return toOpportunityRecord(opportunity);
@@ -892,62 +1104,83 @@ export class PrismaCrmRepository extends CrmRepository {
     body: UpdateCrmOpportunityDto,
   ): Promise<CrmOpportunityDto> {
     const tenantId = resolveCurrentTenantId();
-    await this.findOpportunity(id);
-    if (body.customerId !== undefined) {
-      await this.findCustomer(body.customerId);
-    }
     const tags =
       body.tags === undefined
         ? undefined
         : await this.normalizeTags(tenantId, body.tags);
-    const opportunity = await this.prisma.crmOpportunity.update({
-      where: { tenantId_id: { tenantId, id } },
-      data: {
-        ...(body.customerId === undefined
-          ? {}
-          : { customerId: body.customerId }),
-        ...(body.name === undefined
-          ? {}
-          : { name: requireText(body.name, 'name') }),
-        ...(body.owner === undefined
-          ? {}
-          : { owner: requireText(body.owner, 'owner') }),
-        ...(body.stage === undefined
-          ? {}
-          : {
-              stage: parseChoice(body.stage, CRM_OPPORTUNITY_STAGES, 'stage'),
-            }),
-        ...(body.amount === undefined
-          ? {}
-          : { amount: parseMoney(body.amount) }),
-        ...(body.probability === undefined
-          ? {}
-          : { probability: normalizeProbability(body.probability) }),
-        ...(body.expectedCloseAt === undefined
-          ? {}
-          : {
-              expectedCloseAt: parseNullableDate(
-                body.expectedCloseAt,
-                'expectedCloseAt',
-              ),
-            }),
-        ...(body.closeReason === undefined
-          ? {}
-          : { closeReason: normalizeNullableText(body.closeReason) }),
-        ...(tags === undefined ? {} : { tags }),
-        ...(body.remark === undefined
-          ? {}
-          : { remark: normalizeNullableText(body.remark) }),
-      },
-      include: OPPORTUNITY_INCLUDE,
+    const opportunity = await this.prisma.$transaction(async (tx) => {
+      const existing = await tx.crmOpportunity.findFirst({
+        where: {
+          tenantId,
+          id,
+          archivedAt: null,
+          customer: { archivedAt: null },
+        },
+      });
+      if (!existing) {
+        throw crmNotFound(
+          'INDUSTRY_CRM_OPPORTUNITY_NOT_FOUND',
+          'CRM opportunity not found.',
+          { id },
+        );
+      }
+      if (body.customerId !== undefined) {
+        await findActiveCustomer(tx, tenantId, body.customerId);
+      }
+      const updated = await tx.crmOpportunity.update({
+        where: { tenantId_id: { tenantId, id } },
+        data: {
+          ...(body.customerId === undefined
+            ? {}
+            : { customerId: body.customerId }),
+          ...(body.name === undefined
+            ? {}
+            : { name: requireText(body.name, 'name') }),
+          ...(body.owner === undefined
+            ? {}
+            : { owner: requireText(body.owner, 'owner') }),
+          ...(body.stage === undefined
+            ? {}
+            : {
+                stage: parseChoice(body.stage, CRM_OPPORTUNITY_STAGES, 'stage'),
+              }),
+          ...(body.amount === undefined
+            ? {}
+            : { amount: parseMoney(body.amount) }),
+          ...(body.probability === undefined
+            ? {}
+            : { probability: normalizeProbability(body.probability) }),
+          ...(body.expectedCloseAt === undefined
+            ? {}
+            : {
+                expectedCloseAt: parseNullableDate(
+                  body.expectedCloseAt,
+                  'expectedCloseAt',
+                ),
+              }),
+          ...(body.closeReason === undefined
+            ? {}
+            : { closeReason: normalizeNullableText(body.closeReason) }),
+          ...(tags === undefined ? {} : { tags }),
+          ...(body.remark === undefined
+            ? {}
+            : { remark: normalizeNullableText(body.remark) }),
+        },
+        include: OPPORTUNITY_INCLUDE,
+      });
+      await tx.crmAuditEvent.create({
+        data: {
+          tenantId,
+          targetType: 'opportunity',
+          targetId: id,
+          action: 'update-opportunity',
+          actor: updated.owner,
+          detail: toInputJson({}),
+        },
+      });
+
+      return updated;
     });
-    await this.writeAudit(
-      tenantId,
-      'opportunity',
-      id,
-      'update-opportunity',
-      opportunity.owner,
-    );
 
     return toOpportunityRecord(opportunity);
   }
@@ -1035,12 +1268,19 @@ export class PrismaCrmRepository extends CrmRepository {
     query: CrmTargetQueryDto = {},
   ): Promise<CrmFollowUpPageDto> {
     const tenantId = resolveCurrentTenantId();
-    const rows = await this.prisma.crmFollowUp.findMany({
-      where: buildTargetWhere(tenantId, query),
-      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
-    });
+    const where = buildTargetWhere(tenantId, query);
+    const page = normalizeCrmPageWindow(query);
+    const [rows, total] = await this.prisma.$transaction([
+      this.prisma.crmFollowUp.findMany({
+        where,
+        orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+        skip: page.skip,
+        take: page.take,
+      }),
+      this.prisma.crmFollowUp.count({ where }),
+    ]);
 
-    return createCrmPage(rows.map(toFollowUpRecord), query);
+    return createCrmDbPage(rows.map(toFollowUpRecord), query, total);
   }
 
   async createFollowUp(body: CreateCrmFollowUpDto): Promise<CrmFollowUpDto> {
@@ -1083,12 +1323,19 @@ export class PrismaCrmRepository extends CrmRepository {
 
   async listTasks(query: CrmTaskQueryDto = {}): Promise<CrmTaskPageDto> {
     const tenantId = resolveCurrentTenantId();
-    const rows = await this.prisma.crmTask.findMany({
-      where: buildTaskWhere(tenantId, query),
-      orderBy: [{ dueAt: 'asc' }, { createdAt: 'desc' }, { id: 'asc' }],
-    });
+    const where = buildTaskWhere(tenantId, query);
+    const page = normalizeCrmPageWindow(query);
+    const [rows, total] = await this.prisma.$transaction([
+      this.prisma.crmTask.findMany({
+        where,
+        orderBy: [{ dueAt: 'asc' }, { createdAt: 'desc' }, { id: 'asc' }],
+        skip: page.skip,
+        take: page.take,
+      }),
+      this.prisma.crmTask.count({ where }),
+    ]);
 
-    return createCrmPage(rows.map(toTaskRecord), query);
+    return createCrmDbPage(rows.map(toTaskRecord), query, total);
   }
 
   async createTask(body: CreateCrmTaskDto): Promise<CrmTaskDto> {
@@ -1155,12 +1402,19 @@ export class PrismaCrmRepository extends CrmRepository {
     query: CrmTargetQueryDto = {},
   ): Promise<CrmAttachmentPageDto> {
     const tenantId = resolveCurrentTenantId();
-    const rows = await this.prisma.crmAttachment.findMany({
-      where: buildTargetWhere(tenantId, query),
-      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
-    });
+    const where = buildTargetWhere(tenantId, query);
+    const page = normalizeCrmPageWindow(query);
+    const [rows, total] = await this.prisma.$transaction([
+      this.prisma.crmAttachment.findMany({
+        where,
+        orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+        skip: page.skip,
+        take: page.take,
+      }),
+      this.prisma.crmAttachment.count({ where }),
+    ]);
 
-    return createCrmPage(rows.map(toAttachmentRecord), query);
+    return createCrmDbPage(rows.map(toAttachmentRecord), query, total);
   }
 
   async createAttachment(
@@ -1197,24 +1451,38 @@ export class PrismaCrmRepository extends CrmRepository {
     query: CrmTargetQueryDto = {},
   ): Promise<CrmOwnerTransferPageDto> {
     const tenantId = resolveCurrentTenantId();
-    const rows = await this.prisma.crmOwnerTransfer.findMany({
-      where: buildTargetWhere(tenantId, query),
-      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
-    });
+    const where = buildTargetWhere(tenantId, query);
+    const page = normalizeCrmPageWindow(query);
+    const [rows, total] = await this.prisma.$transaction([
+      this.prisma.crmOwnerTransfer.findMany({
+        where,
+        orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+        skip: page.skip,
+        take: page.take,
+      }),
+      this.prisma.crmOwnerTransfer.count({ where }),
+    ]);
 
-    return createCrmPage(rows.map(toOwnerTransferRecord), query);
+    return createCrmDbPage(rows.map(toOwnerTransferRecord), query, total);
   }
 
   async listAuditEvents(
     query: CrmTargetQueryDto = {},
   ): Promise<CrmAuditEventPageDto> {
     const tenantId = resolveCurrentTenantId();
-    const rows = await this.prisma.crmAuditEvent.findMany({
-      where: buildTargetWhere(tenantId, query),
-      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
-    });
+    const where = buildTargetWhere(tenantId, query);
+    const page = normalizeCrmPageWindow(query);
+    const [rows, total] = await this.prisma.$transaction([
+      this.prisma.crmAuditEvent.findMany({
+        where,
+        orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+        skip: page.skip,
+        take: page.take,
+      }),
+      this.prisma.crmAuditEvent.count({ where }),
+    ]);
 
-    return createCrmPage(rows.map(toAuditEventRecord), query);
+    return createCrmDbPage(rows.map(toAuditEventRecord), query, total);
   }
 
   private async findTag(id: string): Promise<CrmTagDto> {
@@ -1345,19 +1613,29 @@ export class PrismaCrmRepository extends CrmRepository {
     const id = requireText(targetId, 'targetId');
     const found =
       targetType === 'lead'
-        ? await this.prisma.crmLead.findUnique({
-            where: { tenantId_id: { tenantId, id } },
+        ? await this.prisma.crmLead.findFirst({
+            where: { tenantId, id, archivedAt: null },
           })
         : targetType === 'customer'
-          ? await this.prisma.crmCustomer.findUnique({
-              where: { tenantId_id: { tenantId, id } },
+          ? await this.prisma.crmCustomer.findFirst({
+              where: { tenantId, id, archivedAt: null },
             })
           : targetType === 'contact'
-            ? await this.prisma.crmContact.findUnique({
-                where: { tenantId_id: { tenantId, id } },
+            ? await this.prisma.crmContact.findFirst({
+                where: {
+                  tenantId,
+                  id,
+                  archivedAt: null,
+                  customer: { archivedAt: null },
+                },
               })
-            : await this.prisma.crmOpportunity.findUnique({
-                where: { tenantId_id: { tenantId, id } },
+            : await this.prisma.crmOpportunity.findFirst({
+                where: {
+                  tenantId,
+                  id,
+                  archivedAt: null,
+                  customer: { archivedAt: null },
+                },
               });
 
     if (!found) {
@@ -1443,9 +1721,62 @@ function resolveCurrentTenantId(): string {
   return getRequestContext()?.tenantId ?? ROOT_TENANT_ID;
 }
 
+async function retryCrmNumberConflicts<T>(
+  operation: () => Promise<T>,
+): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (!isCrmNumberUniqueError(error)) {
+        throw error;
+      }
+      lastError = error;
+    }
+  }
+
+  throw lastError;
+}
+
+async function findActiveCustomer(
+  tx: PrismaTransactionClient,
+  tenantId: string,
+  customerId: string,
+): Promise<{ id: string; owner: string }> {
+  const id = requireText(customerId, 'customerId');
+  const customer = await tx.crmCustomer.findFirst({
+    where: { tenantId, id, archivedAt: null },
+    select: { id: true, owner: true },
+  });
+  if (!customer) {
+    throw crmNotFound(
+      'INDUSTRY_CRM_CUSTOMER_NOT_FOUND',
+      'CRM customer not found.',
+      { id },
+    );
+  }
+
+  return customer;
+}
+
+function isCrmNumberUniqueError(error: unknown): boolean {
+  if (
+    !(error instanceof Prisma.PrismaClientKnownRequestError) ||
+    error.code !== 'P2002'
+  ) {
+    return false;
+  }
+  const target = error.meta?.target;
+
+  return Array.isArray(target)
+    ? target.includes('number')
+    : String(target).includes('number');
+}
+
 function createCrmNumber(prefix: string): string {
   const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-  const suffix = randomUUID().slice(0, 8).toUpperCase();
+  const suffix = randomUUID().replace(/-/g, '').slice(0, 16).toUpperCase();
 
   return `${prefix}-${date}-${suffix}`;
 }
@@ -1527,7 +1858,9 @@ function buildContactWhere(tenantId: string, query: CrmContactQueryDto) {
 
   return {
     tenantId,
-    ...(includeArchived ? {} : { archivedAt: null }),
+    ...(includeArchived
+      ? {}
+      : { archivedAt: null, customer: { archivedAt: null } }),
     ...(query.customerId === undefined ? {} : { customerId: query.customerId }),
     ...(query.owner === undefined ? {} : { owner: query.owner }),
     ...(and.length === 0 ? {} : { AND: and }),
@@ -1552,7 +1885,9 @@ function buildOpportunityWhere(
 
   return {
     tenantId,
-    ...(includeArchived ? {} : { archivedAt: null }),
+    ...(includeArchived
+      ? {}
+      : { archivedAt: null, customer: { archivedAt: null } }),
     ...(query.customerId === undefined ? {} : { customerId: query.customerId }),
     ...(query.stage === undefined
       ? {}
@@ -1729,22 +2064,6 @@ function getStageProbability(stage: string): number {
   if (stage === 'negotiation') return 75;
   if (stage === 'proposal') return 50;
   return 10;
-}
-
-function countBuckets(
-  values: readonly string[],
-): CrmSummaryDto['leadsByStatus'] {
-  const counts = new Map<string, number>();
-  for (const value of values) {
-    counts.set(value, (counts.get(value) ?? 0) + 1);
-  }
-
-  return Array.from(counts.entries())
-    .map(([key, count]) => ({ key, count }))
-    .sort(
-      (left, right) =>
-        right.count - left.count || left.key.localeCompare(right.key),
-    );
 }
 
 function createCsvExportPreview(

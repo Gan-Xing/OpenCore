@@ -493,10 +493,19 @@ export class CrmAuditEventDto {
 }
 
 export class CrmPageDto<T> {
+  @ApiProperty()
   items!: readonly T[];
+
+  @ApiProperty()
   page!: number;
+
+  @ApiProperty()
   pageSize!: number;
+
+  @ApiProperty()
   total!: number;
+
+  @ApiProperty()
   totalPages!: number;
 }
 

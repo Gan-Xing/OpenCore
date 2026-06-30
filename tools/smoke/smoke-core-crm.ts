@@ -65,6 +65,22 @@ async function main() {
       ]) {
         assertOpenApiPath(openApi, path);
       }
+      for (const schemaName of [
+        'CrmLeadPageDto',
+        'CrmCustomerPageDto',
+        'CrmContactPageDto',
+        'CrmOpportunityPageDto',
+        'CrmTaskPageDto',
+      ]) {
+        assertOpenApiSchemaProperties(openApi, schemaName, [
+          'items',
+          'page',
+          'pageSize',
+          'total',
+          'totalPages',
+        ]);
+      }
+      assertOpenApiSchemaProperties(openApi, 'CrmDeleteResultDto', ['deleted']);
     }
 
     const loginResponse = await smoke.login();
@@ -187,6 +203,15 @@ async function main() {
       throw new Error('CRM lead conversion did not create an opportunity');
     }
     created.opportunities.push(converted.opportunity.id);
+    await smoke.apiRequest(
+      `/industry/crm/leads/${encodeURIComponent(lead.id)}/convert`,
+      {
+        body: { actor: username },
+        expected: [400],
+        method: 'PATCH',
+        token,
+      },
+    );
 
     const customer = await clients.crm.getCustomer(
       token,
@@ -306,14 +331,86 @@ async function main() {
 
     const archivedContact = await clients.crm.archiveContact(token, contact.id);
     assertEqual(archivedContact.deleted, true, 'archived CRM contact');
+    assertPageExcludesId(
+      await clients.crm.listContacts(token, {
+        customerId: customer.id,
+        page: 1,
+        pageSize: 50,
+      }),
+      contact.id,
+      'archived CRM contact list',
+    );
     const archivedOpportunity = await clients.crm.archiveOpportunity(
       token,
       opportunity.id,
     );
     assertEqual(archivedOpportunity.deleted, true, 'archived CRM opportunity');
+    assertPageExcludesId(
+      await clients.crm.listOpportunities(token, {
+        customerId: customer.id,
+        page: 1,
+        pageSize: 50,
+      }),
+      opportunity.id,
+      'archived CRM opportunity list',
+    );
     const archivedLead = await clients.crm.archiveLead(token, lead.id);
     assertEqual(archivedLead.deleted, true, 'archived CRM lead');
+    assertPageExcludesId(
+      await clients.crm.listLeads(token, { page: 1, pageSize: 50 }),
+      lead.id,
+      'archived CRM lead list',
+    );
+    await smoke.apiRequest('/industry/crm/tasks', {
+      body: {
+        assignee: username,
+        createdBy: username,
+        targetId: lead.id,
+        targetType: 'lead',
+        title: `Archived target task ${runId}`,
+      },
+      expected: [404],
+      method: 'POST',
+      token,
+    });
     await clients.crm.archiveCustomer(token, customer.id);
+    assertPageExcludesId(
+      await clients.crm.listCustomers(token, { page: 1, pageSize: 50 }),
+      customer.id,
+      'archived CRM customer list',
+    );
+    const customerContacts = await clients.crm.listContacts(token, {
+      customerId: customer.id,
+      page: 1,
+      pageSize: 50,
+    });
+    assertEqual(
+      customerContacts.items.length,
+      0,
+      'archived customer contact list',
+    );
+    const customerOpportunities = await clients.crm.listOpportunities(token, {
+      customerId: customer.id,
+      page: 1,
+      pageSize: 50,
+    });
+    assertEqual(
+      customerOpportunities.items.length,
+      0,
+      'archived customer opportunity list',
+    );
+    await smoke.apiRequest('/industry/crm/follow-ups', {
+      body: {
+        content: 'Archived target follow-up.',
+        createdBy: username,
+        method: 'call',
+        targetId: customer.id,
+        targetType: 'customer',
+      },
+      expected: [404],
+      method: 'POST',
+      token,
+    });
 
     console.log('crm.foreign-hidden');
     console.log('crm.lead-conversion');
@@ -556,6 +653,29 @@ function assertDecodedExportIncludes(
 
   if (!decoded.includes(expected)) {
     throw new Error(`${label} export must include ${expected}`);
+  }
+}
+
+function assertOpenApiSchemaProperties(
+  openApi: unknown,
+  schemaName: string,
+  properties: readonly string[],
+) {
+  const schemas = (
+    openApi as {
+      components?: {
+        schemas?: Record<string, { properties?: Record<string, unknown> }>;
+      };
+    }
+  ).components?.schemas;
+  const schema = schemas?.[schemaName];
+  if (!schema) {
+    throw new Error(`OpenAPI schema missing ${schemaName}`);
+  }
+  for (const property of properties) {
+    if (!schema.properties || !(property in schema.properties)) {
+      throw new Error(`OpenAPI schema ${schemaName} missing ${property}`);
+    }
   }
 }
 

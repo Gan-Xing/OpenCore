@@ -9,12 +9,12 @@ import {
   SwapOutlined,
 } from '@ant-design/icons';
 import {
+  type ActionType,
   PageContainer,
   ProTable,
   type ProColumns,
 } from '@ant-design/pro-components';
 import type {
-  CrmContactSummary,
   CrmCustomerSummary,
   CrmLeadSummary,
   CrmOpportunitySummary,
@@ -44,7 +44,7 @@ import {
   Typography,
   message,
 } from 'antd';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   archiveOpenCoreCrmCustomer,
   archiveOpenCoreCrmLead,
@@ -61,16 +61,16 @@ import {
   createOpenCoreCrmTag,
   createOpenCoreCrmTask,
   getOpenCoreCrmSummary,
-  listOpenCoreCrmAttachments,
-  listOpenCoreCrmAuditEvents,
-  listOpenCoreCrmContacts,
-  listOpenCoreCrmCustomers,
-  listOpenCoreCrmFollowUps,
-  listOpenCoreCrmLeads,
-  listOpenCoreCrmOpportunities,
-  listOpenCoreCrmOwnerTransfers,
-  listOpenCoreCrmTags,
-  listOpenCoreCrmTasks,
+  pageOpenCoreCrmAttachments,
+  pageOpenCoreCrmAuditEvents,
+  pageOpenCoreCrmContacts,
+  pageOpenCoreCrmCustomers,
+  pageOpenCoreCrmFollowUps,
+  pageOpenCoreCrmLeads,
+  pageOpenCoreCrmOpportunities,
+  pageOpenCoreCrmOwnerTransfers,
+  pageOpenCoreCrmTags,
+  pageOpenCoreCrmTasks,
   transferOpenCoreCrmCustomerOwner,
   transferOpenCoreCrmLeadOwner,
   transferOpenCoreCrmOpportunityOwner,
@@ -84,11 +84,6 @@ import {
   CurrentPageExportButton,
   type CurrentPageExportColumn,
 } from '../../shared/CurrentPageExportButton';
-import {
-  createCurrentPageFilterOptions,
-  useCurrentPageFilters,
-  type CurrentPageFilterOption,
-} from '../../shared/CurrentPageFilters';
 import { ReadOnlyDetailDrawer } from '../../shared/ReadOnlyDetailDrawer';
 
 type CrmTab =
@@ -119,6 +114,20 @@ type TargetContext = {
 };
 
 const DEFAULT_ACTOR = 'admin';
+const LEAD_STATUSES = ['new', 'contacted', 'qualified', 'converted', 'lost'];
+const CUSTOMER_STATUSES = ['active', 'inactive', 'churned'];
+const OPPORTUNITY_STAGES = [
+  'qualification',
+  'proposal',
+  'negotiation',
+  'won',
+  'lost',
+];
+const TASK_STATUSES = ['open', 'done', 'canceled'];
+
+function valueEnum(values: readonly string[]) {
+  return Object.fromEntries(values.map((value) => [value, { text: value }]));
+}
 
 function rowify<T extends { id: string; tenantId: string }>(
   resource: CrmTab,
@@ -167,6 +176,11 @@ function dateText(
     return value.toISOString();
   }
   return undefined;
+}
+
+function pageNumber(value: unknown, fallback: number): number {
+  const number = Number(value);
+  return Number.isInteger(number) && number > 0 ? number : fallback;
 }
 
 function splitTags(value: string | undefined): string[] | undefined {
@@ -297,17 +311,12 @@ export default function CrmPage() {
   };
   const [entityForm] = Form.useForm<Record<string, unknown>>();
   const [actionForm] = Form.useForm<Record<string, unknown>>();
+  const actionRef = useRef<ActionType | undefined>(undefined);
   const [activeTab, setActiveTab] = useState<CrmTab>('leads');
   const [summary, setSummary] = useState<CrmSummary>();
   const [tags, setTags] = useState<readonly CrmTagSummary[]>([]);
-  const [leads, setLeads] = useState<readonly CrmLeadSummary[]>([]);
   const [customers, setCustomers] = useState<readonly CrmCustomerSummary[]>([]);
-  const [contacts, setContacts] = useState<readonly CrmContactSummary[]>([]);
-  const [opportunities, setOpportunities] = useState<
-    readonly CrmOpportunitySummary[]
-  >([]);
-  const [tasks, setTasks] = useState<readonly CrmTaskSummary[]>([]);
-  const [activityRows, setActivityRows] = useState<CrmRow[]>([]);
+  const [tableRows, setTableRows] = useState<CrmRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
   const [selected, setSelected] = useState<CrmRow>();
@@ -320,56 +329,14 @@ export default function CrmPage() {
   const loadCrm = async () => {
     setLoading(true);
     try {
-      const [
-        summaryResult,
-        tagRows,
-        leadRows,
-        customerRows,
-        contactRows,
-        opportunityRows,
-        taskRows,
-        followUps,
-        attachments,
-        transfers,
-        audits,
-      ] = await Promise.all([
+      const [summaryResult, tagPage, customerPage] = await Promise.all([
         getOpenCoreCrmSummary(),
-        listOpenCoreCrmTags({ enabled: true }),
-        listOpenCoreCrmLeads(),
-        listOpenCoreCrmCustomers(),
-        listOpenCoreCrmContacts(),
-        listOpenCoreCrmOpportunities(),
-        listOpenCoreCrmTasks(),
-        listOpenCoreCrmFollowUps(),
-        listOpenCoreCrmAttachments(),
-        listOpenCoreCrmOwnerTransfers(),
-        listOpenCoreCrmAuditEvents(),
+        pageOpenCoreCrmTags({ enabled: true, page: 1, pageSize: 100 }),
+        pageOpenCoreCrmCustomers({ page: 1, pageSize: 100 }),
       ]);
       setSummary(summaryResult);
-      setTags(tagRows);
-      setLeads(leadRows);
-      setCustomers(customerRows);
-      setContacts(contactRows);
-      setOpportunities(opportunityRows);
-      setTasks(taskRows);
-      setActivityRows([
-        ...rowify('activity', followUps).map((row) => ({
-          ...row,
-          activityType: 'follow-up',
-        })),
-        ...rowify('activity', attachments).map((row) => ({
-          ...row,
-          activityType: 'attachment',
-        })),
-        ...rowify('activity', transfers).map((row) => ({
-          ...row,
-          activityType: 'transfer',
-        })),
-        ...rowify('activity', audits).map((row) => ({
-          ...row,
-          activityType: 'audit',
-        })),
-      ]);
+      setTags([...tagPage.items]);
+      setCustomers([...customerPage.items]);
       setLoadError(undefined);
     } catch (error: unknown) {
       setLoadError(
@@ -384,83 +351,10 @@ export default function CrmPage() {
     void loadCrm();
   }, []);
 
-  const rows = useMemo(() => {
-    if (activeTab === 'leads') return rowify('leads', leads);
-    if (activeTab === 'customers') return rowify('customers', customers);
-    if (activeTab === 'contacts') return rowify('contacts', contacts);
-    if (activeTab === 'opportunities')
-      return rowify('opportunities', opportunities);
-    if (activeTab === 'tasks') return rowify('tasks', tasks);
-    if (activeTab === 'tags') return rowify('tags', tags);
-    return activityRows;
-  }, [
-    activeTab,
-    activityRows,
-    contacts,
-    customers,
-    leads,
-    opportunities,
-    tags,
-    tasks,
-  ]);
-
-  const filters: CurrentPageFilterOption<CrmRow>[] = useMemo(
-    () =>
-      [
-        {
-          key: 'status',
-          options: createCurrentPageFilterOptions(rows, 'status'),
-          placeholder: 'Status',
-          predicate: (record: CrmRow, value: string) =>
-            getString(record, 'status') === value,
-        },
-        {
-          key: 'owner',
-          options: createCurrentPageFilterOptions(rows, 'owner'),
-          placeholder: 'Owner',
-          predicate: (record: CrmRow, value: string) =>
-            getString(record, 'owner') === value,
-        },
-        {
-          key: 'stage',
-          options: createCurrentPageFilterOptions(rows, 'stage'),
-          placeholder: 'Stage',
-          predicate: (record: CrmRow, value: string) =>
-            getString(record, 'stage') === value,
-        },
-        {
-          key: 'activityType',
-          options: createCurrentPageFilterOptions(rows, 'activityType'),
-          placeholder: 'Activity',
-          predicate: (record: CrmRow, value: string) =>
-            getString(record, 'activityType') === value,
-        },
-      ].filter((filter) => filter.options.length > 0),
-    [rows],
-  );
-
-  const { filteredRows, toolbar: filterToolbar } =
-    useCurrentPageFilters<CrmRow>({
-      rows,
-      searchFields: [
-        'tenantId',
-        'number',
-        'name',
-        'title',
-        'company',
-        'customerName',
-        'owner',
-        'assignee',
-        'status',
-        'stage',
-        'source',
-        'targetType',
-        'targetId',
-        'action',
-      ],
-      searchPlaceholder: 'Search current CRM page',
-      selectFilters: filters,
-    });
+  const reloadCrm = async () => {
+    await loadCrm();
+    actionRef.current?.reload();
+  };
 
   const closeEntityModal = () => {
     setEntityKind(undefined);
@@ -609,7 +503,7 @@ export default function CrmPage() {
       }
       message.success(editing ? 'CRM record updated.' : 'CRM record created.');
       closeEntityModal();
-      await loadCrm();
+      await reloadCrm();
     } catch (error: unknown) {
       message.error(
         error instanceof Error ? error.message : 'CRM save failed.',
@@ -683,7 +577,7 @@ export default function CrmPage() {
       }
       message.success('CRM action completed.');
       closeActionModal();
-      await loadCrm();
+      await reloadCrm();
     } catch (error: unknown) {
       message.error(
         error instanceof Error ? error.message : 'CRM action failed.',
@@ -699,24 +593,190 @@ export default function CrmPage() {
     if (row.resource === 'opportunities')
       await archiveOpenCoreCrmOpportunity(row.id);
     message.success('CRM record archived.');
-    await loadCrm();
+    await reloadCrm();
   };
 
   const completeTask = async (row: CrmRow) => {
     await completeOpenCoreCrmTask(row.id, { actor: DEFAULT_ACTOR });
     message.success('CRM task completed.');
-    await loadCrm();
+    await reloadCrm();
+  };
+
+  const requestTable = async (params: Record<string, unknown>) => {
+    const page = pageNumber(params.current, 1);
+    const pageSize = pageNumber(params.pageSize, 10);
+    const keyword = optionalText(params, 'keyword');
+    const owner = optionalText(params, 'owner');
+    const status = optionalText(params, 'status');
+    const stage = optionalText(params, 'stage');
+    const assignee = optionalText(params, 'assignee');
+
+    if (activeTab === 'leads') {
+      const result = await pageOpenCoreCrmLeads({
+        keyword,
+        owner,
+        page,
+        pageSize,
+        status: status as CrmLeadSummary['status'] | undefined,
+      });
+      const data = rowify('leads', result.items);
+      setTableRows(data);
+      return { data, success: true, total: result.total };
+    }
+    if (activeTab === 'customers') {
+      const result = await pageOpenCoreCrmCustomers({
+        keyword,
+        owner,
+        page,
+        pageSize,
+        status: status as CrmCustomerSummary['status'] | undefined,
+      });
+      const data = rowify('customers', result.items);
+      setTableRows(data);
+      return { data, success: true, total: result.total };
+    }
+    if (activeTab === 'contacts') {
+      const result = await pageOpenCoreCrmContacts({
+        keyword,
+        owner,
+        page,
+        pageSize,
+      });
+      const data = rowify('contacts', result.items);
+      setTableRows(data);
+      return { data, success: true, total: result.total };
+    }
+    if (activeTab === 'opportunities') {
+      const result = await pageOpenCoreCrmOpportunities({
+        keyword,
+        owner,
+        page,
+        pageSize,
+        stage: stage as CrmOpportunitySummary['stage'] | undefined,
+      });
+      const data = rowify('opportunities', result.items);
+      setTableRows(data);
+      return { data, success: true, total: result.total };
+    }
+    if (activeTab === 'tasks') {
+      const result = await pageOpenCoreCrmTasks({
+        assignee,
+        page,
+        pageSize,
+        status: status as CrmTaskSummary['status'] | undefined,
+      });
+      const data = rowify('tasks', result.items);
+      setTableRows(data);
+      return { data, success: true, total: result.total };
+    }
+    if (activeTab === 'tags') {
+      const result = await pageOpenCoreCrmTags({ page, pageSize });
+      const data = rowify('tags', result.items);
+      setTableRows(data);
+      return { data, success: true, total: result.total };
+    }
+
+    const activityPageSize = Math.min(page * pageSize, 100);
+    const [followUps, attachments, transfers, audits] = await Promise.all([
+      pageOpenCoreCrmFollowUps({ page: 1, pageSize: activityPageSize }),
+      pageOpenCoreCrmAttachments({ page: 1, pageSize: activityPageSize }),
+      pageOpenCoreCrmOwnerTransfers({ page: 1, pageSize: activityPageSize }),
+      pageOpenCoreCrmAuditEvents({ page: 1, pageSize: activityPageSize }),
+    ]);
+    const allRows = [
+      ...rowify('activity', followUps.items).map((row) => ({
+        ...row,
+        activityType: 'follow-up',
+      })),
+      ...rowify('activity', attachments.items).map((row) => ({
+        ...row,
+        activityType: 'attachment',
+      })),
+      ...rowify('activity', transfers.items).map((row) => ({
+        ...row,
+        activityType: 'transfer',
+      })),
+      ...rowify('activity', audits.items).map((row) => ({
+        ...row,
+        activityType: 'audit',
+      })),
+    ].sort(
+      (left, right) =>
+        Date.parse(getString(right, 'createdAt') ?? '') -
+        Date.parse(getString(left, 'createdAt') ?? ''),
+    );
+    const data = allRows.slice((page - 1) * pageSize, page * pageSize);
+    setTableRows(data);
+
+    return {
+      data,
+      success: true,
+      total:
+        followUps.total + attachments.total + transfers.total + audits.total,
+    };
   };
 
   const columns: ProColumns<CrmRow>[] = [
     {
+      title: 'Keyword',
+      dataIndex: 'keyword',
+      hideInTable: true,
+      search: !['contacts', 'customers', 'leads', 'opportunities'].includes(
+        activeTab,
+      )
+        ? false
+        : undefined,
+    },
+    {
+      title: 'Owner',
+      dataIndex: 'owner',
+      hideInTable: true,
+      search: !['contacts', 'customers', 'leads', 'opportunities'].includes(
+        activeTab,
+      )
+        ? false
+        : undefined,
+    },
+    {
+      title: 'Assignee',
+      dataIndex: 'assignee',
+      hideInTable: true,
+      search: activeTab !== 'tasks' ? false : undefined,
+    },
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      hideInTable: true,
+      search: !['customers', 'leads', 'tasks'].includes(activeTab)
+        ? false
+        : undefined,
+      valueType: 'select',
+      valueEnum: valueEnum(
+        activeTab === 'customers'
+          ? CUSTOMER_STATUSES
+          : activeTab === 'tasks'
+            ? TASK_STATUSES
+            : LEAD_STATUSES,
+      ),
+    },
+    {
+      title: 'Stage',
+      dataIndex: 'stage',
+      hideInTable: true,
+      search: activeTab !== 'opportunities' ? false : undefined,
+      valueType: 'select',
+      valueEnum: valueEnum(OPPORTUNITY_STAGES),
+    },
+    {
       title: 'Tenant',
       dataIndex: 'tenantId',
+      search: false,
       width: 150,
     },
     {
       title: activeTab === 'tasks' ? 'Title' : 'Name',
       dataIndex: activeTab === 'tasks' ? 'title' : 'name',
+      search: false,
       render: (_, record) => (
         <Typography.Link onClick={() => setSelected(record)}>
           {getString(record, activeTab === 'tasks' ? 'title' : 'name') ??
@@ -728,30 +788,35 @@ export default function CrmPage() {
     {
       title: 'Number',
       dataIndex: 'number',
+      search: false,
       width: 170,
       hideInTable: !['customers', 'leads', 'opportunities'].includes(activeTab),
     },
     {
       title: 'Customer',
       dataIndex: 'customerName',
+      search: false,
       width: 180,
       hideInTable: !['contacts', 'opportunities'].includes(activeTab),
     },
     {
       title: 'Owner',
       dataIndex: 'owner',
+      search: false,
       width: 130,
       hideInTable: ['activity', 'tags', 'tasks'].includes(activeTab),
     },
     {
       title: 'Assignee',
       dataIndex: 'assignee',
+      search: false,
       width: 130,
       hideInTable: activeTab !== 'tasks',
     },
     {
       title: 'Status',
       dataIndex: 'status',
+      search: false,
       width: 120,
       hideInTable: ['activity', 'opportunities', 'tags'].includes(activeTab),
       render: (_, record) => (
@@ -763,6 +828,7 @@ export default function CrmPage() {
     {
       title: 'Stage',
       dataIndex: 'stage',
+      search: false,
       width: 140,
       hideInTable: activeTab !== 'opportunities',
       render: (_, record) => (
@@ -774,12 +840,14 @@ export default function CrmPage() {
     {
       title: 'Amount',
       dataIndex: 'amount',
+      search: false,
       width: 120,
       hideInTable: activeTab !== 'opportunities',
     },
     {
       title: 'Target',
       dataIndex: 'targetId',
+      search: false,
       width: 180,
       hideInTable: activeTab !== 'activity',
       render: (_, record) => (
@@ -794,6 +862,7 @@ export default function CrmPage() {
     {
       title: 'Due',
       dataIndex: 'dueAt',
+      search: false,
       width: 180,
       hideInTable: activeTab !== 'tasks',
     },
@@ -952,7 +1021,7 @@ export default function CrmPage() {
       {loadError ? (
         <Alert
           action={
-            <Button onClick={() => void loadCrm()} size="small">
+            <Button onClick={() => void reloadCrm()} size="small">
               Retry
             </Button>
           }
@@ -1001,11 +1070,16 @@ export default function CrmPage() {
       </Row>
 
       <ProTable<CrmRow>
+        actionRef={actionRef}
         columns={columns}
-        dataSource={filteredRows}
-        loading={loading}
+        params={{ activeTab }}
+        request={requestTable}
         rowKey="id"
-        search={false}
+        search={
+          ['activity', 'tags'].includes(activeTab)
+            ? false
+            : { labelWidth: 'auto' }
+        }
         scroll={{ x: 1180 }}
         pagination={{ pageSize: 10, showSizeChanger: true }}
         toolbar={{
@@ -1020,15 +1094,18 @@ export default function CrmPage() {
               { key: 'tags', label: 'Tags' },
               { key: 'activity', label: 'Activity' },
             ],
-            onChange: (key) => setActiveTab(key as CrmTab),
+            onChange: (key) => {
+              setActiveTab(key as CrmTab);
+              setSelected(undefined);
+              setTableRows([]);
+            },
             type: 'tab',
           },
           actions: [
-            filterToolbar,
             <Button
               icon={<ReloadOutlined />}
               key="reload"
-              onClick={() => void loadCrm()}
+              onClick={() => void reloadCrm()}
             >
               Reload
             </Button>,
@@ -1062,7 +1139,7 @@ export default function CrmPage() {
                 filename={`opencore-crm-${activeTab}.csv`}
                 key="export"
                 resource={`crm-${activeTab}`}
-                rows={filteredRows}
+                rows={tableRows}
               />
             ) : null,
           ].filter(Boolean),
