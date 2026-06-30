@@ -110,6 +110,16 @@ model Tenant {
   ticketComments         TicketComment[]
   ticketTransitions      TicketTransition[]
   ticketAttachments      TicketAttachment[]
+  crmTags                CrmTag[]
+  crmLeads               CrmLead[]
+  crmCustomers           CrmCustomer[]
+  crmContacts            CrmContact[]
+  crmOpportunities       CrmOpportunity[]
+  crmFollowUps           CrmFollowUp[]
+  crmTasks               CrmTask[]
+  crmAttachments         CrmAttachment[]
+  crmOwnerTransfers      CrmOwnerTransfer[]
+  crmAuditEvents         CrmAuditEvent[]
   reportDefinitions      ReportDefinition[]
   auditLogs              AuditLog[]
   loginLogs              LoginLog[]
@@ -805,6 +815,242 @@ model TicketAttachment {
   @@unique([tenantId, storageKey])
   @@index([tenantId, ticketId, createdAt])
   @@index([tenantId, uploadedBy, createdAt])
+}
+
+model CrmTag {
+  id          String   @id @default(cuid())
+  tenantId    String   @default("tenant_root")
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  code        String
+  name        String
+  color       String?
+  description String?
+  enabled     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([tenantId, code])
+  @@unique([tenantId, id])
+  @@index([tenantId, enabled, name])
+}
+
+model CrmLead {
+  id                     String    @id @default(cuid())
+  tenantId               String    @default("tenant_root")
+  tenant                 Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  number                 String
+  name                   String
+  company                String?
+  mobile                 String?
+  email                  String?
+  source                 String
+  status                 String    @default("new")
+  rating                 String    @default("warm")
+  owner                  String
+  tags                   Json      @default("[]")
+  remark                 String?
+  nextContactAt          DateTime?
+  lastFollowedAt         DateTime?
+  convertedCustomerId    String?
+  convertedOpportunityId String?
+  convertedAt            DateTime?
+  archivedAt             DateTime?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  @@unique([tenantId, number])
+  @@unique([tenantId, id])
+  @@index([tenantId, status, owner, createdAt])
+  @@index([tenantId, source, createdAt])
+  @@index([tenantId, nextContactAt])
+  @@index([tenantId, archivedAt])
+}
+
+model CrmCustomer {
+  id             String           @id @default(cuid())
+  tenantId       String           @default("tenant_root")
+  tenant         Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  number         String
+  name           String
+  owner          String
+  status         String           @default("active")
+  level          String           @default("standard")
+  source         String
+  industry       String?
+  region         String?
+  website        String?
+  phone          String?
+  email          String?
+  address        String?
+  tags           Json             @default("[]")
+  remark         String?
+  nextContactAt  DateTime?
+  lastFollowedAt DateTime?
+  archivedAt     DateTime?
+  contacts       CrmContact[]
+  opportunities  CrmOpportunity[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@unique([tenantId, number])
+  @@unique([tenantId, id])
+  @@index([tenantId, status, owner, createdAt])
+  @@index([tenantId, level, source, createdAt])
+  @@index([tenantId, nextContactAt])
+  @@index([tenantId, archivedAt])
+}
+
+model CrmContact {
+  id             String      @id @default(cuid())
+  tenantId       String      @default("tenant_root")
+  tenant         Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customerId     String
+  customer       CrmCustomer @relation(fields: [tenantId, customerId], references: [tenantId, id], onDelete: Cascade)
+  name           String
+  title          String?
+  mobile         String?
+  email          String?
+  phone          String?
+  owner          String
+  decisionRole   String?
+  primary        Boolean     @default(false)
+  remark         String?
+  nextContactAt  DateTime?
+  lastFollowedAt DateTime?
+  archivedAt     DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@unique([tenantId, id])
+  @@index([tenantId, customerId, primary])
+  @@index([tenantId, owner, createdAt])
+  @@index([tenantId, nextContactAt])
+  @@index([tenantId, archivedAt])
+}
+
+model CrmOpportunity {
+  id              String      @id @default(cuid())
+  tenantId        String      @default("tenant_root")
+  tenant          Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customerId      String
+  customer        CrmCustomer @relation(fields: [tenantId, customerId], references: [tenantId, id], onDelete: Cascade)
+  number          String
+  name            String
+  owner           String
+  stage           String      @default("qualification")
+  amount          Decimal     @default(0) @db.Decimal(18, 2)
+  probability     Int         @default(10)
+  expectedCloseAt DateTime?
+  closedAt        DateTime?
+  closeReason     String?
+  tags            Json        @default("[]")
+  remark          String?
+  archivedAt      DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@unique([tenantId, number])
+  @@unique([tenantId, id])
+  @@index([tenantId, customerId, stage])
+  @@index([tenantId, owner, stage, createdAt])
+  @@index([tenantId, expectedCloseAt])
+  @@index([tenantId, archivedAt])
+}
+
+model CrmFollowUp {
+  id            String    @id @default(cuid())
+  tenantId      String    @default("tenant_root")
+  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  targetType    String
+  targetId      String
+  method        String
+  content       String
+  outcome       String?
+  nextContactAt DateTime?
+  createdBy     String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([tenantId, id])
+  @@index([tenantId, targetType, targetId, createdAt])
+  @@index([tenantId, createdBy, createdAt])
+  @@index([tenantId, nextContactAt])
+}
+
+model CrmTask {
+  id          String    @id @default(cuid())
+  tenantId    String    @default("tenant_root")
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  targetType  String
+  targetId    String
+  title       String
+  assignee    String
+  status      String    @default("open")
+  priority    String    @default("medium")
+  dueAt       DateTime?
+  completedAt DateTime?
+  remark      String?
+  createdBy   String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([tenantId, id])
+  @@index([tenantId, assignee, status, dueAt])
+  @@index([tenantId, targetType, targetId])
+}
+
+model CrmAttachment {
+  id           String   @id @default(cuid())
+  tenantId     String   @default("tenant_root")
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  targetType   String
+  targetId     String
+  originalName String
+  mimeType     String
+  sizeBytes    Int
+  storageKey   String
+  uploadedBy   String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([tenantId, storageKey])
+  @@unique([tenantId, id])
+  @@index([tenantId, targetType, targetId, createdAt])
+  @@index([tenantId, uploadedBy, createdAt])
+}
+
+model CrmOwnerTransfer {
+  id         String   @id @default(cuid())
+  tenantId   String   @default("tenant_root")
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  targetType String
+  targetId   String
+  fromOwner  String?
+  toOwner    String
+  actor      String
+  reason     String?
+  createdAt  DateTime @default(now())
+
+  @@unique([tenantId, id])
+  @@index([tenantId, targetType, targetId, createdAt])
+  @@index([tenantId, toOwner, createdAt])
+}
+
+model CrmAuditEvent {
+  id         String   @id @default(cuid())
+  tenantId   String   @default("tenant_root")
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  targetType String
+  targetId   String
+  action     String
+  actor      String
+  detail     Json     @default("{}")
+  createdAt  DateTime @default(now())
+
+  @@unique([tenantId, id])
+  @@index([tenantId, targetType, targetId, createdAt])
+  @@index([tenantId, actor, createdAt])
+  @@index([tenantId, action, createdAt])
 }
 
 model JobDefinition {

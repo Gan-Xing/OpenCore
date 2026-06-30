@@ -10020,6 +10020,1427 @@
         "tags": ["Collaboration Tickets", "Collaboration Tickets"]
       }
     },
+    "/api/industry/crm/summary": {
+      "get": {
+        "operationId": "CrmController_getSummary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CrmSummaryDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      }
+    },
+    "/api/industry/crm/export": {
+      "get": {
+        "operationId": "CrmController_exportCrm",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "resource",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "leads",
+                "customers",
+                "contacts",
+                "opportunities",
+                "tasks"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CrmExportPreviewDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      }
+    },
+    "/api/industry/crm/tags": {
+      "get": {
+        "operationId": "CrmController_listTags",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "enabled",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CrmTagPageDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      },
+      "post": {
+        "operationId": "CrmController_createTag",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateCrmTagDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CrmTagDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      }
+    },
+    "/api/industry/crm/tags/{id}": {
+      "patch": {
+        "operationId": "CrmController_updateTag",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateCrmTagDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CrmTagDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      }
+    },
+    "/api/industry/crm/leads": {
+      "get": {
+        "operationId": "CrmController_listLeads",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "new",
+                "contacted",
+                "qualified",
+                "converted",
+                "lost",
+                "archived"
+              ]
+            }
+          },
+          {
+            "name": "source",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "owner",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "keyword",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "includeArchived",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CrmLeadPageDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      },
+      "post": {
+        "operationId": "CrmController_createLead",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateCrmLeadDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CrmLeadDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      }
+    },
+    "/api/industry/crm/leads/{id}": {
+      "get": {
+        "operationId": "CrmController_getLead",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CrmLeadDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      },
+      "patch": {
+        "operationId": "CrmController_updateLead",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateCrmLeadDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CrmLeadDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      },
+      "delete": {
+        "operationId": "CrmController_archiveLead",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DeleteResultDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      }
+    },
+    "/api/industry/crm/leads/{id}/convert": {
+      "patch": {
+        "operationId": "CrmController_convertLead",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ConvertCrmLeadDto" }
+            }
+          }
+        },
+        "responses": { "200": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      }
+    },
+    "/api/industry/crm/leads/{id}/transfer": {
+      "patch": {
+        "operationId": "CrmController_transferLeadOwner",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TransferCrmOwnerDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CrmLeadDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      }
+    },
+    "/api/industry/crm/customers": {
+      "get": {
+        "operationId": "CrmController_listCustomers",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["active", "inactive", "churned", "archived"]
+            }
+          },
+          {
+            "name": "level",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "source",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "owner",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "keyword",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "includeArchived",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CrmCustomerPageDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      },
+      "post": {
+        "operationId": "CrmController_createCustomer",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateCrmCustomerDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CrmCustomerDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      }
+    },
+    "/api/industry/crm/customers/{id}": {
+      "get": {
+        "operationId": "CrmController_getCustomer",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CrmCustomerDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      },
+      "patch": {
+        "operationId": "CrmController_updateCustomer",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateCrmCustomerDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CrmCustomerDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      },
+      "delete": {
+        "operationId": "CrmController_archiveCustomer",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DeleteResultDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      }
+    },
+    "/api/industry/crm/customers/{id}/transfer": {
+      "patch": {
+        "operationId": "CrmController_transferCustomerOwner",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TransferCrmOwnerDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CrmCustomerDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      }
+    },
+    "/api/industry/crm/contacts": {
+      "get": {
+        "operationId": "CrmController_listContacts",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "owner",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "keyword",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "includeArchived",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CrmContactPageDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      },
+      "post": {
+        "operationId": "CrmController_createContact",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateCrmContactDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CrmContactDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      }
+    },
+    "/api/industry/crm/contacts/{id}": {
+      "get": {
+        "operationId": "CrmController_getContact",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CrmContactDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      },
+      "patch": {
+        "operationId": "CrmController_updateContact",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateCrmContactDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CrmContactDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      },
+      "delete": {
+        "operationId": "CrmController_archiveContact",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DeleteResultDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      }
+    },
+    "/api/industry/crm/opportunities": {
+      "get": {
+        "operationId": "CrmController_listOpportunities",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "stage",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "qualification",
+                "proposal",
+                "negotiation",
+                "won",
+                "lost"
+              ]
+            }
+          },
+          {
+            "name": "owner",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "keyword",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "includeArchived",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CrmOpportunityPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      },
+      "post": {
+        "operationId": "CrmController_createOpportunity",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCrmOpportunityDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CrmOpportunityDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      }
+    },
+    "/api/industry/crm/opportunities/{id}": {
+      "get": {
+        "operationId": "CrmController_getOpportunity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CrmOpportunityDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      },
+      "patch": {
+        "operationId": "CrmController_updateOpportunity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCrmOpportunityDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CrmOpportunityDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      },
+      "delete": {
+        "operationId": "CrmController_archiveOpportunity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DeleteResultDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      }
+    },
+    "/api/industry/crm/opportunities/{id}/stage": {
+      "patch": {
+        "operationId": "CrmController_changeOpportunityStage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeCrmOpportunityStageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CrmOpportunityDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      }
+    },
+    "/api/industry/crm/opportunities/{id}/transfer": {
+      "patch": {
+        "operationId": "CrmController_transferOpportunityOwner",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TransferCrmOwnerDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CrmOpportunityDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      }
+    },
+    "/api/industry/crm/follow-ups": {
+      "get": {
+        "operationId": "CrmController_listFollowUps",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "targetType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["lead", "customer", "contact", "opportunity"]
+            }
+          },
+          {
+            "name": "targetId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CrmFollowUpPageDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      },
+      "post": {
+        "operationId": "CrmController_createFollowUp",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateCrmFollowUpDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CrmFollowUpDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      }
+    },
+    "/api/industry/crm/tasks": {
+      "get": {
+        "operationId": "CrmController_listTasks",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "targetType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["lead", "customer", "contact", "opportunity"]
+            }
+          },
+          {
+            "name": "targetId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string", "enum": ["open", "done", "canceled"] }
+          },
+          {
+            "name": "assignee",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CrmTaskPageDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      },
+      "post": {
+        "operationId": "CrmController_createTask",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateCrmTaskDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CrmTaskDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      }
+    },
+    "/api/industry/crm/tasks/{id}/complete": {
+      "patch": {
+        "operationId": "CrmController_completeTask",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CompleteCrmTaskDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CrmTaskDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      }
+    },
+    "/api/industry/crm/attachments": {
+      "get": {
+        "operationId": "CrmController_listAttachments",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "targetType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["lead", "customer", "contact", "opportunity"]
+            }
+          },
+          {
+            "name": "targetId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CrmAttachmentPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      },
+      "post": {
+        "operationId": "CrmController_createAttachment",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCrmAttachmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CrmAttachmentDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      }
+    },
+    "/api/industry/crm/owner-transfers": {
+      "get": {
+        "operationId": "CrmController_listOwnerTransfers",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "targetType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["lead", "customer", "contact", "opportunity"]
+            }
+          },
+          {
+            "name": "targetId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CrmOwnerTransferPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      }
+    },
+    "/api/industry/crm/audit-events": {
+      "get": {
+        "operationId": "CrmController_listAuditEvents",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "targetType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["lead", "customer", "contact", "opportunity"]
+            }
+          },
+          {
+            "name": "targetId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CrmAuditEventPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Industry CRM"]
+      }
+    },
     "/api/monitor/status": {
       "get": {
         "operationId": "MonitoringController_getStatus",
@@ -11723,6 +13144,7 @@
       "description": "core.tenant-member: Tenant Members"
     },
     { "name": "Core Users", "description": "core.user: Users" },
+    { "name": "Industry CRM", "description": "industry.crm: CRM" },
     { "name": "Integration Mail", "description": "integration.mail: Mail" },
     { "name": "Integration OAuth", "description": "integration.oauth: OAuth" },
     {
@@ -16831,6 +18253,789 @@
           "storageKey",
           "uploadedBy"
         ]
+      },
+      "CrmSummaryBucketDto": {
+        "type": "object",
+        "properties": {
+          "key": { "type": "string" },
+          "count": { "type": "number" }
+        },
+        "required": ["key", "count"]
+      },
+      "CrmSummaryDto": {
+        "type": "object",
+        "properties": {
+          "leads": { "type": "number" },
+          "customers": { "type": "number" },
+          "contacts": { "type": "number" },
+          "opportunities": { "type": "number" },
+          "openTasks": { "type": "number" },
+          "overdueTasks": { "type": "number" },
+          "openPipelineAmount": { "type": "string" },
+          "leadsByStatus": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CrmSummaryBucketDto" }
+          },
+          "customersByLevel": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CrmSummaryBucketDto" }
+          },
+          "opportunitiesByStage": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CrmSummaryBucketDto" }
+          }
+        },
+        "required": [
+          "leads",
+          "customers",
+          "contacts",
+          "opportunities",
+          "openTasks",
+          "overdueTasks",
+          "openPipelineAmount",
+          "leadsByStatus",
+          "customersByLevel",
+          "opportunitiesByStage"
+        ]
+      },
+      "CrmExportPreviewDto": {
+        "type": "object",
+        "properties": {
+          "filename": { "type": "string" },
+          "contentType": { "type": "string" },
+          "contentBase64": { "type": "string" },
+          "scope": { "type": "string", "example": "current-page" },
+          "columns": { "type": "array", "items": { "type": "string" } },
+          "rowCount": { "type": "number" },
+          "generatedAt": { "type": "string" }
+        },
+        "required": [
+          "filename",
+          "contentType",
+          "contentBase64",
+          "scope",
+          "columns",
+          "rowCount",
+          "generatedAt"
+        ]
+      },
+      "CrmTagDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "color": { "type": "string" },
+          "description": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "code",
+          "name",
+          "enabled",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CrmTagPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CrmTagDto" }
+          }
+        },
+        "required": ["items"]
+      },
+      "CreateCrmTagDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "color": { "type": "string" },
+          "description": { "type": "string" },
+          "enabled": { "type": "boolean" }
+        },
+        "required": ["code", "name"]
+      },
+      "UpdateCrmTagDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "color": { "type": "object" },
+          "description": { "type": "object" },
+          "enabled": { "type": "boolean" }
+        }
+      },
+      "CrmLeadDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "number": { "type": "string" },
+          "name": { "type": "string" },
+          "company": { "type": "string" },
+          "mobile": { "type": "string" },
+          "email": { "type": "string" },
+          "source": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": [
+              "new",
+              "contacted",
+              "qualified",
+              "converted",
+              "lost",
+              "archived"
+            ]
+          },
+          "rating": { "type": "string" },
+          "owner": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "remark": { "type": "string" },
+          "nextContactAt": { "type": "string" },
+          "lastFollowedAt": { "type": "string" },
+          "convertedCustomerId": { "type": "string" },
+          "convertedOpportunityId": { "type": "string" },
+          "convertedAt": { "type": "string" },
+          "archivedAt": { "type": "string" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "number",
+          "name",
+          "source",
+          "status",
+          "rating",
+          "owner",
+          "tags",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CrmLeadPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CrmLeadDto" }
+          }
+        },
+        "required": ["items"]
+      },
+      "CreateCrmLeadDto": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "company": { "type": "string" },
+          "mobile": { "type": "string" },
+          "email": { "type": "string" },
+          "source": { "type": "string" },
+          "rating": { "type": "string" },
+          "owner": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "remark": { "type": "string" },
+          "nextContactAt": { "type": "string" }
+        },
+        "required": ["name", "source", "owner"]
+      },
+      "UpdateCrmLeadDto": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "company": { "type": "object" },
+          "mobile": { "type": "object" },
+          "email": { "type": "object" },
+          "source": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": [
+              "new",
+              "contacted",
+              "qualified",
+              "converted",
+              "lost",
+              "archived"
+            ]
+          },
+          "rating": { "type": "string" },
+          "owner": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "remark": { "type": "object" },
+          "nextContactAt": { "type": "object" }
+        }
+      },
+      "ConvertCrmLeadDto": {
+        "type": "object",
+        "properties": {
+          "actor": { "type": "string" },
+          "customerName": { "type": "string" },
+          "opportunityName": { "type": "string" },
+          "amount": { "type": "string" }
+        },
+        "required": ["actor"]
+      },
+      "TransferCrmOwnerDto": {
+        "type": "object",
+        "properties": {
+          "toOwner": { "type": "string" },
+          "actor": { "type": "string" },
+          "reason": { "type": "string" }
+        },
+        "required": ["toOwner", "actor"]
+      },
+      "CrmCustomerDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "number": { "type": "string" },
+          "name": { "type": "string" },
+          "owner": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["active", "inactive", "churned", "archived"]
+          },
+          "level": { "type": "string" },
+          "source": { "type": "string" },
+          "industry": { "type": "string" },
+          "region": { "type": "string" },
+          "website": { "type": "string" },
+          "phone": { "type": "string" },
+          "email": { "type": "string" },
+          "address": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "remark": { "type": "string" },
+          "nextContactAt": { "type": "string" },
+          "lastFollowedAt": { "type": "string" },
+          "archivedAt": { "type": "string" },
+          "contactCount": { "type": "number" },
+          "opportunityCount": { "type": "number" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "number",
+          "name",
+          "owner",
+          "status",
+          "level",
+          "source",
+          "tags",
+          "contactCount",
+          "opportunityCount",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CrmCustomerPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CrmCustomerDto" }
+          }
+        },
+        "required": ["items"]
+      },
+      "CreateCrmCustomerDto": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "owner": { "type": "string" },
+          "level": { "type": "string" },
+          "source": { "type": "string" },
+          "status": { "type": "string" },
+          "industry": { "type": "string" },
+          "region": { "type": "string" },
+          "website": { "type": "string" },
+          "phone": { "type": "string" },
+          "email": { "type": "string" },
+          "address": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "remark": { "type": "string" },
+          "nextContactAt": { "type": "string" }
+        },
+        "required": ["name", "owner", "source"]
+      },
+      "UpdateCrmCustomerDto": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "owner": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["active", "inactive", "churned", "archived"]
+          },
+          "level": { "type": "string" },
+          "source": { "type": "string" },
+          "industry": { "type": "object" },
+          "region": { "type": "object" },
+          "website": { "type": "object" },
+          "phone": { "type": "object" },
+          "email": { "type": "object" },
+          "address": { "type": "object" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "remark": { "type": "object" },
+          "nextContactAt": { "type": "object" }
+        }
+      },
+      "CrmContactDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "customerId": { "type": "string" },
+          "customerName": { "type": "string" },
+          "name": { "type": "string" },
+          "title": { "type": "string" },
+          "mobile": { "type": "string" },
+          "email": { "type": "string" },
+          "phone": { "type": "string" },
+          "owner": { "type": "string" },
+          "decisionRole": { "type": "string" },
+          "primary": { "type": "boolean" },
+          "remark": { "type": "string" },
+          "nextContactAt": { "type": "string" },
+          "lastFollowedAt": { "type": "string" },
+          "archivedAt": { "type": "string" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "customerId",
+          "name",
+          "owner",
+          "primary",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CrmContactPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CrmContactDto" }
+          }
+        },
+        "required": ["items"]
+      },
+      "CreateCrmContactDto": {
+        "type": "object",
+        "properties": {
+          "customerId": { "type": "string" },
+          "name": { "type": "string" },
+          "title": { "type": "string" },
+          "mobile": { "type": "string" },
+          "email": { "type": "string" },
+          "phone": { "type": "string" },
+          "owner": { "type": "string" },
+          "decisionRole": { "type": "string" },
+          "primary": { "type": "boolean" },
+          "remark": { "type": "string" },
+          "nextContactAt": { "type": "string" }
+        },
+        "required": ["customerId", "name"]
+      },
+      "UpdateCrmContactDto": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "title": { "type": "object" },
+          "mobile": { "type": "object" },
+          "email": { "type": "object" },
+          "phone": { "type": "object" },
+          "owner": { "type": "string" },
+          "decisionRole": { "type": "object" },
+          "primary": { "type": "boolean" },
+          "remark": { "type": "object" },
+          "nextContactAt": { "type": "object" }
+        }
+      },
+      "CrmOpportunityDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "customerId": { "type": "string" },
+          "customerName": { "type": "string" },
+          "number": { "type": "string" },
+          "name": { "type": "string" },
+          "owner": { "type": "string" },
+          "stage": {
+            "type": "string",
+            "enum": ["qualification", "proposal", "negotiation", "won", "lost"]
+          },
+          "amount": { "type": "string" },
+          "probability": { "type": "number" },
+          "expectedCloseAt": { "type": "string" },
+          "closedAt": { "type": "string" },
+          "closeReason": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "remark": { "type": "string" },
+          "archivedAt": { "type": "string" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "customerId",
+          "number",
+          "name",
+          "owner",
+          "stage",
+          "amount",
+          "probability",
+          "tags",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CrmOpportunityPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CrmOpportunityDto" }
+          }
+        },
+        "required": ["items"]
+      },
+      "CreateCrmOpportunityDto": {
+        "type": "object",
+        "properties": {
+          "customerId": { "type": "string" },
+          "name": { "type": "string" },
+          "owner": { "type": "string" },
+          "stage": {
+            "type": "string",
+            "enum": ["qualification", "proposal", "negotiation", "won", "lost"]
+          },
+          "amount": { "type": "string" },
+          "probability": { "type": "number" },
+          "expectedCloseAt": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "remark": { "type": "string" }
+        },
+        "required": ["customerId", "name", "owner"]
+      },
+      "UpdateCrmOpportunityDto": {
+        "type": "object",
+        "properties": {
+          "customerId": { "type": "string" },
+          "name": { "type": "string" },
+          "owner": { "type": "string" },
+          "stage": {
+            "type": "string",
+            "enum": ["qualification", "proposal", "negotiation", "won", "lost"]
+          },
+          "amount": { "type": "string" },
+          "probability": { "type": "number" },
+          "expectedCloseAt": { "type": "object" },
+          "closeReason": { "type": "object" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "remark": { "type": "object" }
+        }
+      },
+      "ChangeCrmOpportunityStageDto": {
+        "type": "object",
+        "properties": {
+          "stage": {
+            "type": "string",
+            "enum": ["qualification", "proposal", "negotiation", "won", "lost"]
+          },
+          "actor": { "type": "string" },
+          "closeReason": { "type": "string" }
+        },
+        "required": ["stage", "actor"]
+      },
+      "CrmFollowUpDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "targetType": {
+            "type": "string",
+            "enum": ["lead", "customer", "contact", "opportunity"]
+          },
+          "targetId": { "type": "string" },
+          "method": {
+            "type": "string",
+            "enum": ["call", "email", "meeting", "wechat", "note"]
+          },
+          "content": { "type": "string" },
+          "outcome": { "type": "string" },
+          "nextContactAt": { "type": "string" },
+          "createdBy": { "type": "string" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "targetType",
+          "targetId",
+          "method",
+          "content",
+          "createdBy",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CrmFollowUpPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CrmFollowUpDto" }
+          }
+        },
+        "required": ["items"]
+      },
+      "CreateCrmFollowUpDto": {
+        "type": "object",
+        "properties": {
+          "targetType": {
+            "type": "string",
+            "enum": ["lead", "customer", "contact", "opportunity"]
+          },
+          "targetId": { "type": "string" },
+          "method": {
+            "type": "string",
+            "enum": ["call", "email", "meeting", "wechat", "note"]
+          },
+          "content": { "type": "string" },
+          "outcome": { "type": "string" },
+          "nextContactAt": { "type": "string" },
+          "createdBy": { "type": "string" }
+        },
+        "required": ["targetType", "targetId", "method", "content", "createdBy"]
+      },
+      "CrmTaskDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "targetType": {
+            "type": "string",
+            "enum": ["lead", "customer", "contact", "opportunity"]
+          },
+          "targetId": { "type": "string" },
+          "title": { "type": "string" },
+          "assignee": { "type": "string" },
+          "status": { "type": "string", "enum": ["open", "done", "canceled"] },
+          "priority": {
+            "type": "string",
+            "enum": ["low", "medium", "high", "urgent"]
+          },
+          "dueAt": { "type": "string" },
+          "completedAt": { "type": "string" },
+          "remark": { "type": "string" },
+          "createdBy": { "type": "string" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "targetType",
+          "targetId",
+          "title",
+          "assignee",
+          "status",
+          "priority",
+          "createdBy",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CrmTaskPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CrmTaskDto" }
+          }
+        },
+        "required": ["items"]
+      },
+      "CreateCrmTaskDto": {
+        "type": "object",
+        "properties": {
+          "targetType": {
+            "type": "string",
+            "enum": ["lead", "customer", "contact", "opportunity"]
+          },
+          "targetId": { "type": "string" },
+          "title": { "type": "string" },
+          "assignee": { "type": "string" },
+          "priority": {
+            "type": "string",
+            "enum": ["low", "medium", "high", "urgent"]
+          },
+          "dueAt": { "type": "string" },
+          "remark": { "type": "string" },
+          "createdBy": { "type": "string" }
+        },
+        "required": ["targetType", "targetId", "title", "assignee", "createdBy"]
+      },
+      "CompleteCrmTaskDto": {
+        "type": "object",
+        "properties": { "actor": { "type": "string" } },
+        "required": ["actor"]
+      },
+      "CrmAttachmentDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "targetType": {
+            "type": "string",
+            "enum": ["lead", "customer", "contact", "opportunity"]
+          },
+          "targetId": { "type": "string" },
+          "originalName": { "type": "string" },
+          "mimeType": { "type": "string" },
+          "sizeBytes": { "type": "number" },
+          "storageKey": { "type": "string" },
+          "uploadedBy": { "type": "string" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "targetType",
+          "targetId",
+          "originalName",
+          "mimeType",
+          "sizeBytes",
+          "storageKey",
+          "uploadedBy",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CrmAttachmentPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CrmAttachmentDto" }
+          }
+        },
+        "required": ["items"]
+      },
+      "CreateCrmAttachmentDto": {
+        "type": "object",
+        "properties": {
+          "targetType": {
+            "type": "string",
+            "enum": ["lead", "customer", "contact", "opportunity"]
+          },
+          "targetId": { "type": "string" },
+          "originalName": { "type": "string" },
+          "mimeType": { "type": "string" },
+          "sizeBytes": { "type": "number" },
+          "storageKey": { "type": "string" },
+          "uploadedBy": { "type": "string" }
+        },
+        "required": [
+          "targetType",
+          "targetId",
+          "originalName",
+          "mimeType",
+          "sizeBytes",
+          "storageKey",
+          "uploadedBy"
+        ]
+      },
+      "CrmOwnerTransferDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "targetType": {
+            "type": "string",
+            "enum": ["lead", "customer", "contact", "opportunity"]
+          },
+          "targetId": { "type": "string" },
+          "fromOwner": { "type": "string" },
+          "toOwner": { "type": "string" },
+          "actor": { "type": "string" },
+          "reason": { "type": "string" },
+          "createdAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "targetType",
+          "targetId",
+          "toOwner",
+          "actor",
+          "createdAt"
+        ]
+      },
+      "CrmOwnerTransferPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CrmOwnerTransferDto" }
+          }
+        },
+        "required": ["items"]
+      },
+      "CrmAuditEventDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "targetType": {
+            "type": "string",
+            "enum": ["lead", "customer", "contact", "opportunity"]
+          },
+          "targetId": { "type": "string" },
+          "action": { "type": "string" },
+          "actor": { "type": "string" },
+          "detail": { "type": "object" },
+          "createdAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "targetType",
+          "targetId",
+          "action",
+          "actor",
+          "detail",
+          "createdAt"
+        ]
+      },
+      "CrmAuditEventPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CrmAuditEventDto" }
+          }
+        },
+        "required": ["items"]
       },
       "RuntimeProcessStatusDto": {
         "type": "object",

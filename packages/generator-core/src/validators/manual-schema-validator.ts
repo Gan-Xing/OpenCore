@@ -31,7 +31,6 @@ export type OpenForgeSchemaValidationResult = {
 
 const FORBIDDEN_MODULE_PREFIXES = [
   'optional.tenant',
-  'industry.crm',
   'industry.erp',
   'industry.mes',
   'industry.wms',

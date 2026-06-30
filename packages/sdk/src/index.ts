@@ -1,5 +1,7 @@
 export * from './collaboration-client';
 export * from './collaboration-types';
+export * from './crm-client';
+export * from './crm-types';
 export * from './integration-client';
 export * from './integration-types';
 export * from './monitoring-client';

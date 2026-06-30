@@ -251,6 +251,20 @@ export default [
     ],
   },
   {
+    path: '/industry',
+    name: 'industry',
+    icon: 'apartment',
+    routes: [
+      { path: '/industry', redirect: '/industry/crm' },
+      {
+        name: 'crm',
+        path: '/industry/crm',
+        component: './Industry/Crm',
+        access: 'canReadCrm',
+      },
+    ],
+  },
+  {
     path: '/optional',
     name: 'optional',
     icon: 'appstore',

@@ -8,7 +8,6 @@ function read(relativePath: string): string {
 }
 
 const forbiddenModulePrefixes = [
-  'industry.crm',
   'industry.erp',
   'industry.mes',
   'industry.wms',
@@ -36,6 +35,8 @@ const notes = read('docs/quality-cycle/cycle-022/implementation-notes.md');
 const businessDomainTemplate = read(
   'docs/development/business-domain-admission-template.md',
 );
+const cycle027Admission = read('docs/quality-cycle/cycle-027/admission.md');
+const cycle027Backlog = read('docs/quality-cycle/cycle-027/backlog.md');
 const packageJson = read('package.json');
 
 const missing: string[] = [];
@@ -67,7 +68,6 @@ requireMarker(
 );
 
 const forbiddenModelPrefixes = [
-  'Crm',
   'Erp',
   'Mes',
   'Wms',
@@ -123,6 +123,25 @@ requireMarker(
   packageJson,
   'guard:tenant-business-domain-admission',
 );
+
+for (const marker of [
+  '`industry.crm`',
+  'tenant-owned',
+  'Cross-tenant read/write/update/delete attempts',
+  '`pnpm release:gate`',
+]) {
+  requireMarker('cycle-027 CRM admission', cycle027Admission, marker);
+}
+
+for (const marker of [
+  'Typed smoke and tenant guard',
+  'release gate plus public smoke',
+]) {
+  requireMarker('cycle-027 CRM backlog', cycle027Backlog, marker);
+}
+
+requireMarker('package.json', packageJson, 'guard:tenant-crm-scope');
+requireMarker('package.json', packageJson, 'smoke:core-crm');
 
 if (missing.length > 0) {
   throw new Error(

@@ -1,5 +1,6 @@
 import {
   createCollaborationClient,
+  createCrmClient,
   createIntegrationClient,
   createMonitoringClient,
   createOperationsClient,
@@ -56,6 +57,10 @@ import {
   type CleanAuditLogsRequest,
   type ClaimQueuedJobsRequest,
   type ChangeTicketStatusRequest,
+  type ChangeCrmOpportunityStageRequest,
+  type CompleteCrmTaskRequest,
+  type ConvertCrmLeadRequest,
+  type ConvertCrmLeadResult,
   type CreateTenantPlanRequest,
   type CreateTenantMemberRequest,
   type CreateTenantRequest,
@@ -73,6 +78,14 @@ import {
   type CollaborationDeleteResult,
   type CollaborationSummary,
   type CreateApprovalLiteRequest,
+  type CreateCrmAttachmentRequest,
+  type CreateCrmContactRequest,
+  type CreateCrmCustomerRequest,
+  type CreateCrmFollowUpRequest,
+  type CreateCrmLeadRequest,
+  type CreateCrmOpportunityRequest,
+  type CreateCrmTagRequest,
+  type CreateCrmTaskRequest,
   type CreateMessageRequest,
   type CreateNoticeRequest,
   type CreateTicketAttachmentRequest,
@@ -82,6 +95,27 @@ import {
   type CreateTodoRequest,
   type DecideApprovalLiteRequest,
   type DeleteCacheKeyRequest,
+  type CrmAttachmentSummary,
+  type CrmAuditEventSummary,
+  type CrmContactQueryRequest,
+  type CrmContactSummary,
+  type CrmCustomerQueryRequest,
+  type CrmCustomerSummary,
+  type CrmDeleteResult,
+  type CrmExportPreview,
+  type CrmExportQueryRequest,
+  type CrmFollowUpSummary,
+  type CrmLeadQueryRequest,
+  type CrmLeadSummary,
+  type CrmOpportunityQueryRequest,
+  type CrmOpportunitySummary,
+  type CrmOwnerTransferSummary,
+  type CrmSummary,
+  type CrmTagQueryRequest,
+  type CrmTagSummary,
+  type CrmTargetQueryRequest,
+  type CrmTaskQueryRequest,
+  type CrmTaskSummary,
   type OpenForgeApplyDryRunRequest,
   type OpenForgeApplyDryRunSummary,
   type OpenForgeDiffSummary,
@@ -291,7 +325,13 @@ import {
   type UpdateTenantPlanRequest,
   type UpdateTenantRequest,
   type UpdateUserRequest,
+  type TransferCrmOwnerRequest,
   type UpdateTenantMemberAssignmentsRequest,
+  type UpdateCrmContactRequest,
+  type UpdateCrmCustomerRequest,
+  type UpdateCrmLeadRequest,
+  type UpdateCrmOpportunityRequest,
+  type UpdateCrmTagRequest,
   type UserImportResultSummary,
   type UserImportTemplateSummary,
 } from '@opencore/sdk';
@@ -299,6 +339,7 @@ import { getRequiredAdminToken, opencoreSdkRequest } from './client';
 
 const rbacClient = createRbacClient(opencoreSdkRequest);
 const collaborationClient = createCollaborationClient(opencoreSdkRequest);
+const crmClient = createCrmClient(opencoreSdkRequest);
 const integrationClient = createIntegrationClient(opencoreSdkRequest);
 const monitoringClient = createMonitoringClient(opencoreSdkRequest);
 const operationsClient = createOperationsClient(opencoreSdkRequest);
@@ -731,6 +772,293 @@ export function archiveOpenCoreTicket(
   id: string,
 ): Promise<CollaborationDeleteResult> {
   return collaborationClient.archiveTicket(getRequiredAdminToken(), id);
+}
+
+export function getOpenCoreCrmSummary(): Promise<CrmSummary> {
+  return crmClient.getSummary(getRequiredAdminToken());
+}
+
+export async function listOpenCoreCrmTags(
+  query?: CrmTagQueryRequest,
+): Promise<CrmTagSummary[]> {
+  const page = await crmClient.listTags(getRequiredAdminToken(), {
+    page: 1,
+    pageSize: 100,
+    ...query,
+  });
+  return [...page.items];
+}
+
+export function createOpenCoreCrmTag(
+  body: CreateCrmTagRequest,
+): Promise<CrmTagSummary> {
+  return crmClient.createTag(getRequiredAdminToken(), body);
+}
+
+export function updateOpenCoreCrmTag(
+  id: string,
+  body: UpdateCrmTagRequest,
+): Promise<CrmTagSummary> {
+  return crmClient.updateTag(getRequiredAdminToken(), id, body);
+}
+
+export async function listOpenCoreCrmLeads(
+  query?: CrmLeadQueryRequest,
+): Promise<CrmLeadSummary[]> {
+  const page = await crmClient.listLeads(getRequiredAdminToken(), {
+    page: 1,
+    pageSize: 100,
+    ...query,
+  });
+  return [...page.items];
+}
+
+export function getOpenCoreCrmLead(id: string): Promise<CrmLeadSummary> {
+  return crmClient.getLead(getRequiredAdminToken(), id);
+}
+
+export function createOpenCoreCrmLead(
+  body: CreateCrmLeadRequest,
+): Promise<CrmLeadSummary> {
+  return crmClient.createLead(getRequiredAdminToken(), body);
+}
+
+export function updateOpenCoreCrmLead(
+  id: string,
+  body: UpdateCrmLeadRequest,
+): Promise<CrmLeadSummary> {
+  return crmClient.updateLead(getRequiredAdminToken(), id, body);
+}
+
+export function convertOpenCoreCrmLead(
+  id: string,
+  body: ConvertCrmLeadRequest,
+): Promise<ConvertCrmLeadResult> {
+  return crmClient.convertLead(getRequiredAdminToken(), id, body);
+}
+
+export function transferOpenCoreCrmLeadOwner(
+  id: string,
+  body: TransferCrmOwnerRequest,
+): Promise<CrmLeadSummary> {
+  return crmClient.transferLeadOwner(getRequiredAdminToken(), id, body);
+}
+
+export function archiveOpenCoreCrmLead(id: string): Promise<CrmDeleteResult> {
+  return crmClient.archiveLead(getRequiredAdminToken(), id);
+}
+
+export async function listOpenCoreCrmCustomers(
+  query?: CrmCustomerQueryRequest,
+): Promise<CrmCustomerSummary[]> {
+  const page = await crmClient.listCustomers(getRequiredAdminToken(), {
+    page: 1,
+    pageSize: 100,
+    ...query,
+  });
+  return [...page.items];
+}
+
+export function getOpenCoreCrmCustomer(
+  id: string,
+): Promise<CrmCustomerSummary> {
+  return crmClient.getCustomer(getRequiredAdminToken(), id);
+}
+
+export function createOpenCoreCrmCustomer(
+  body: CreateCrmCustomerRequest,
+): Promise<CrmCustomerSummary> {
+  return crmClient.createCustomer(getRequiredAdminToken(), body);
+}
+
+export function updateOpenCoreCrmCustomer(
+  id: string,
+  body: UpdateCrmCustomerRequest,
+): Promise<CrmCustomerSummary> {
+  return crmClient.updateCustomer(getRequiredAdminToken(), id, body);
+}
+
+export function transferOpenCoreCrmCustomerOwner(
+  id: string,
+  body: TransferCrmOwnerRequest,
+): Promise<CrmCustomerSummary> {
+  return crmClient.transferCustomerOwner(getRequiredAdminToken(), id, body);
+}
+
+export function archiveOpenCoreCrmCustomer(
+  id: string,
+): Promise<CrmDeleteResult> {
+  return crmClient.archiveCustomer(getRequiredAdminToken(), id);
+}
+
+export async function listOpenCoreCrmContacts(
+  query?: CrmContactQueryRequest,
+): Promise<CrmContactSummary[]> {
+  const page = await crmClient.listContacts(getRequiredAdminToken(), {
+    page: 1,
+    pageSize: 100,
+    ...query,
+  });
+  return [...page.items];
+}
+
+export function getOpenCoreCrmContact(id: string): Promise<CrmContactSummary> {
+  return crmClient.getContact(getRequiredAdminToken(), id);
+}
+
+export function createOpenCoreCrmContact(
+  body: CreateCrmContactRequest,
+): Promise<CrmContactSummary> {
+  return crmClient.createContact(getRequiredAdminToken(), body);
+}
+
+export function updateOpenCoreCrmContact(
+  id: string,
+  body: UpdateCrmContactRequest,
+): Promise<CrmContactSummary> {
+  return crmClient.updateContact(getRequiredAdminToken(), id, body);
+}
+
+export function archiveOpenCoreCrmContact(
+  id: string,
+): Promise<CrmDeleteResult> {
+  return crmClient.archiveContact(getRequiredAdminToken(), id);
+}
+
+export async function listOpenCoreCrmOpportunities(
+  query?: CrmOpportunityQueryRequest,
+): Promise<CrmOpportunitySummary[]> {
+  const page = await crmClient.listOpportunities(getRequiredAdminToken(), {
+    page: 1,
+    pageSize: 100,
+    ...query,
+  });
+  return [...page.items];
+}
+
+export function getOpenCoreCrmOpportunity(
+  id: string,
+): Promise<CrmOpportunitySummary> {
+  return crmClient.getOpportunity(getRequiredAdminToken(), id);
+}
+
+export function createOpenCoreCrmOpportunity(
+  body: CreateCrmOpportunityRequest,
+): Promise<CrmOpportunitySummary> {
+  return crmClient.createOpportunity(getRequiredAdminToken(), body);
+}
+
+export function updateOpenCoreCrmOpportunity(
+  id: string,
+  body: UpdateCrmOpportunityRequest,
+): Promise<CrmOpportunitySummary> {
+  return crmClient.updateOpportunity(getRequiredAdminToken(), id, body);
+}
+
+export function changeOpenCoreCrmOpportunityStage(
+  id: string,
+  body: ChangeCrmOpportunityStageRequest,
+): Promise<CrmOpportunitySummary> {
+  return crmClient.changeOpportunityStage(getRequiredAdminToken(), id, body);
+}
+
+export function transferOpenCoreCrmOpportunityOwner(
+  id: string,
+  body: TransferCrmOwnerRequest,
+): Promise<CrmOpportunitySummary> {
+  return crmClient.transferOpportunityOwner(getRequiredAdminToken(), id, body);
+}
+
+export function archiveOpenCoreCrmOpportunity(
+  id: string,
+): Promise<CrmDeleteResult> {
+  return crmClient.archiveOpportunity(getRequiredAdminToken(), id);
+}
+
+export async function listOpenCoreCrmFollowUps(
+  query?: CrmTargetQueryRequest,
+): Promise<CrmFollowUpSummary[]> {
+  const page = await crmClient.listFollowUps(getRequiredAdminToken(), {
+    page: 1,
+    pageSize: 100,
+    ...query,
+  });
+  return [...page.items];
+}
+
+export function createOpenCoreCrmFollowUp(
+  body: CreateCrmFollowUpRequest,
+): Promise<CrmFollowUpSummary> {
+  return crmClient.createFollowUp(getRequiredAdminToken(), body);
+}
+
+export async function listOpenCoreCrmTasks(
+  query?: CrmTaskQueryRequest,
+): Promise<CrmTaskSummary[]> {
+  const page = await crmClient.listTasks(getRequiredAdminToken(), {
+    page: 1,
+    pageSize: 100,
+    ...query,
+  });
+  return [...page.items];
+}
+
+export function createOpenCoreCrmTask(
+  body: CreateCrmTaskRequest,
+): Promise<CrmTaskSummary> {
+  return crmClient.createTask(getRequiredAdminToken(), body);
+}
+
+export function completeOpenCoreCrmTask(
+  id: string,
+  body: CompleteCrmTaskRequest,
+): Promise<CrmTaskSummary> {
+  return crmClient.completeTask(getRequiredAdminToken(), id, body);
+}
+
+export async function listOpenCoreCrmAttachments(
+  query?: CrmTargetQueryRequest,
+): Promise<CrmAttachmentSummary[]> {
+  const page = await crmClient.listAttachments(getRequiredAdminToken(), {
+    page: 1,
+    pageSize: 100,
+    ...query,
+  });
+  return [...page.items];
+}
+
+export function createOpenCoreCrmAttachment(
+  body: CreateCrmAttachmentRequest,
+): Promise<CrmAttachmentSummary> {
+  return crmClient.createAttachment(getRequiredAdminToken(), body);
+}
+
+export async function listOpenCoreCrmOwnerTransfers(
+  query?: CrmTargetQueryRequest,
+): Promise<CrmOwnerTransferSummary[]> {
+  const page = await crmClient.listOwnerTransfers(getRequiredAdminToken(), {
+    page: 1,
+    pageSize: 100,
+    ...query,
+  });
+  return [...page.items];
+}
+
+export async function listOpenCoreCrmAuditEvents(
+  query?: CrmTargetQueryRequest,
+): Promise<CrmAuditEventSummary[]> {
+  const page = await crmClient.listAuditEvents(getRequiredAdminToken(), {
+    page: 1,
+    pageSize: 100,
+    ...query,
+  });
+  return [...page.items];
+}
+
+export function exportOpenCoreCrm(
+  query: CrmExportQueryRequest,
+): Promise<CrmExportPreview> {
+  return crmClient.exportCrm(getRequiredAdminToken(), query);
 }
 
 export async function listOpenCoreApprovalLiteRequests(

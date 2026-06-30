@@ -15,7 +15,6 @@ import { moduleRegistry } from './modules';
 
 export const FORBIDDEN_S3_S8_MODULE_PREFIXES = [
   'optional.tenant',
-  'industry.crm',
   'industry.erp',
   'industry.mes',
   'industry.wms',
@@ -66,6 +65,12 @@ const MENU_GROUPS = {
     path: '/integrations',
     icon: 'ApiOutlined',
     order: 790,
+  },
+  industry: {
+    title: 'Industry',
+    path: '/industry',
+    icon: 'ApartmentOutlined',
+    order: 890,
   },
   tools: {
     title: 'Tools',

@@ -38,6 +38,7 @@ TENANT_PLATFORM_GUARDS=(
   guard:tenant-collaboration-todo-scope
   guard:tenant-collaboration-ticket-scope
   guard:tenant-collaboration-approval-scope
+  guard:tenant-crm-scope
   guard:tenant-report-definition-scope
   guard:tenant-legacy-user-org
   guard:tenant-business-domain-admission

@@ -39,6 +39,18 @@ import {
   seedTicketTransitions,
   seedTickets,
 } from '../apps/api/src/modules/collaboration/ticket/ticket.seed';
+import {
+  seedCrmAttachments,
+  seedCrmAuditEvents,
+  seedCrmContacts,
+  seedCrmCustomers,
+  seedCrmFollowUps,
+  seedCrmLeads,
+  seedCrmOpportunities,
+  seedCrmOwnerTransfers,
+  seedCrmTags,
+  seedCrmTasks,
+} from '../apps/api/src/modules/industry/crm/crm.seed';
 import { seedReports } from '../apps/api/src/modules/monitor/operations/operations.seed';
 import {
   seedIntegrationOutbox,
@@ -106,6 +118,7 @@ async function main(): Promise<void> {
   const schedulerCount = await seedScheduler();
   const operationsCount = await seedOperations();
   const collaborationCount = await seedCollaboration();
+  const crmCount = await seedCrm();
 
   console.log(
     JSON.stringify({
@@ -118,6 +131,7 @@ async function main(): Promise<void> {
         onlineUserSessions: onlineUserSessionCount,
         integrations: integrationCount,
         collaboration: collaborationCount,
+        crm: crmCount,
         scheduler: schedulerCount,
         operations: operationsCount,
         systemManagement: systemManagementCount,
@@ -888,6 +902,414 @@ async function seedCollaboration(): Promise<{
     ticketTransitions: seedTicketTransitions.length,
     tickets: seedTickets.length,
     todos: seedTodos.length,
+  };
+}
+
+async function seedCrm(): Promise<{
+  attachments: number;
+  auditEvents: number;
+  contacts: number;
+  customers: number;
+  followUps: number;
+  leads: number;
+  opportunities: number;
+  ownerTransfers: number;
+  tags: number;
+  tasks: number;
+}> {
+  for (const tag of seedCrmTags) {
+    await prisma.crmTag.upsert({
+      where: { id: tag.id },
+      update: {
+        tenantId: tag.tenantId,
+        code: tag.code,
+        name: tag.name,
+        color: tag.color ?? null,
+        description: tag.description ?? null,
+        enabled: tag.enabled,
+        createdAt: new Date(tag.createdAt),
+      },
+      create: {
+        id: tag.id,
+        tenantId: tag.tenantId,
+        code: tag.code,
+        name: tag.name,
+        color: tag.color ?? null,
+        description: tag.description ?? null,
+        enabled: tag.enabled,
+        createdAt: new Date(tag.createdAt),
+      },
+    });
+  }
+
+  for (const lead of seedCrmLeads) {
+    await prisma.crmLead.upsert({
+      where: { id: lead.id },
+      update: {
+        tenantId: lead.tenantId,
+        number: lead.number,
+        name: lead.name,
+        company: lead.company ?? null,
+        mobile: lead.mobile ?? null,
+        email: lead.email ?? null,
+        source: lead.source,
+        status: lead.status,
+        rating: lead.rating,
+        owner: lead.owner,
+        tags: toInputJson(lead.tags),
+        remark: lead.remark ?? null,
+        nextContactAt: lead.nextContactAt ? new Date(lead.nextContactAt) : null,
+        lastFollowedAt: lead.lastFollowedAt
+          ? new Date(lead.lastFollowedAt)
+          : null,
+        convertedCustomerId: lead.convertedCustomerId ?? null,
+        convertedOpportunityId: lead.convertedOpportunityId ?? null,
+        convertedAt: lead.convertedAt ? new Date(lead.convertedAt) : null,
+        archivedAt: lead.archivedAt ? new Date(lead.archivedAt) : null,
+        createdAt: new Date(lead.createdAt),
+      },
+      create: {
+        id: lead.id,
+        tenantId: lead.tenantId,
+        number: lead.number,
+        name: lead.name,
+        company: lead.company ?? null,
+        mobile: lead.mobile ?? null,
+        email: lead.email ?? null,
+        source: lead.source,
+        status: lead.status,
+        rating: lead.rating,
+        owner: lead.owner,
+        tags: toInputJson(lead.tags),
+        remark: lead.remark ?? null,
+        nextContactAt: lead.nextContactAt ? new Date(lead.nextContactAt) : null,
+        lastFollowedAt: lead.lastFollowedAt
+          ? new Date(lead.lastFollowedAt)
+          : null,
+        convertedCustomerId: lead.convertedCustomerId ?? null,
+        convertedOpportunityId: lead.convertedOpportunityId ?? null,
+        convertedAt: lead.convertedAt ? new Date(lead.convertedAt) : null,
+        archivedAt: lead.archivedAt ? new Date(lead.archivedAt) : null,
+        createdAt: new Date(lead.createdAt),
+      },
+    });
+  }
+
+  for (const customer of seedCrmCustomers) {
+    await prisma.crmCustomer.upsert({
+      where: { id: customer.id },
+      update: {
+        tenantId: customer.tenantId,
+        number: customer.number,
+        name: customer.name,
+        owner: customer.owner,
+        status: customer.status,
+        level: customer.level,
+        source: customer.source,
+        industry: customer.industry ?? null,
+        region: customer.region ?? null,
+        website: customer.website ?? null,
+        phone: customer.phone ?? null,
+        email: customer.email ?? null,
+        address: customer.address ?? null,
+        tags: toInputJson(customer.tags),
+        remark: customer.remark ?? null,
+        nextContactAt: customer.nextContactAt
+          ? new Date(customer.nextContactAt)
+          : null,
+        lastFollowedAt: customer.lastFollowedAt
+          ? new Date(customer.lastFollowedAt)
+          : null,
+        archivedAt: customer.archivedAt ? new Date(customer.archivedAt) : null,
+        createdAt: new Date(customer.createdAt),
+      },
+      create: {
+        id: customer.id,
+        tenantId: customer.tenantId,
+        number: customer.number,
+        name: customer.name,
+        owner: customer.owner,
+        status: customer.status,
+        level: customer.level,
+        source: customer.source,
+        industry: customer.industry ?? null,
+        region: customer.region ?? null,
+        website: customer.website ?? null,
+        phone: customer.phone ?? null,
+        email: customer.email ?? null,
+        address: customer.address ?? null,
+        tags: toInputJson(customer.tags),
+        remark: customer.remark ?? null,
+        nextContactAt: customer.nextContactAt
+          ? new Date(customer.nextContactAt)
+          : null,
+        lastFollowedAt: customer.lastFollowedAt
+          ? new Date(customer.lastFollowedAt)
+          : null,
+        archivedAt: customer.archivedAt ? new Date(customer.archivedAt) : null,
+        createdAt: new Date(customer.createdAt),
+      },
+    });
+  }
+
+  for (const contact of seedCrmContacts) {
+    await prisma.crmContact.upsert({
+      where: { id: contact.id },
+      update: {
+        tenantId: contact.tenantId,
+        customerId: contact.customerId,
+        name: contact.name,
+        title: contact.title ?? null,
+        mobile: contact.mobile ?? null,
+        email: contact.email ?? null,
+        phone: contact.phone ?? null,
+        owner: contact.owner,
+        decisionRole: contact.decisionRole ?? null,
+        primary: contact.primary,
+        remark: contact.remark ?? null,
+        nextContactAt: contact.nextContactAt
+          ? new Date(contact.nextContactAt)
+          : null,
+        lastFollowedAt: contact.lastFollowedAt
+          ? new Date(contact.lastFollowedAt)
+          : null,
+        archivedAt: contact.archivedAt ? new Date(contact.archivedAt) : null,
+        createdAt: new Date(contact.createdAt),
+      },
+      create: {
+        id: contact.id,
+        tenantId: contact.tenantId,
+        customerId: contact.customerId,
+        name: contact.name,
+        title: contact.title ?? null,
+        mobile: contact.mobile ?? null,
+        email: contact.email ?? null,
+        phone: contact.phone ?? null,
+        owner: contact.owner,
+        decisionRole: contact.decisionRole ?? null,
+        primary: contact.primary,
+        remark: contact.remark ?? null,
+        nextContactAt: contact.nextContactAt
+          ? new Date(contact.nextContactAt)
+          : null,
+        lastFollowedAt: contact.lastFollowedAt
+          ? new Date(contact.lastFollowedAt)
+          : null,
+        archivedAt: contact.archivedAt ? new Date(contact.archivedAt) : null,
+        createdAt: new Date(contact.createdAt),
+      },
+    });
+  }
+
+  for (const opportunity of seedCrmOpportunities) {
+    await prisma.crmOpportunity.upsert({
+      where: { id: opportunity.id },
+      update: {
+        tenantId: opportunity.tenantId,
+        customerId: opportunity.customerId,
+        number: opportunity.number,
+        name: opportunity.name,
+        owner: opportunity.owner,
+        stage: opportunity.stage,
+        amount: new Prisma.Decimal(opportunity.amount),
+        probability: opportunity.probability,
+        expectedCloseAt: opportunity.expectedCloseAt
+          ? new Date(opportunity.expectedCloseAt)
+          : null,
+        closedAt: opportunity.closedAt ? new Date(opportunity.closedAt) : null,
+        closeReason: opportunity.closeReason ?? null,
+        tags: toInputJson(opportunity.tags),
+        remark: opportunity.remark ?? null,
+        archivedAt: opportunity.archivedAt
+          ? new Date(opportunity.archivedAt)
+          : null,
+        createdAt: new Date(opportunity.createdAt),
+      },
+      create: {
+        id: opportunity.id,
+        tenantId: opportunity.tenantId,
+        customerId: opportunity.customerId,
+        number: opportunity.number,
+        name: opportunity.name,
+        owner: opportunity.owner,
+        stage: opportunity.stage,
+        amount: new Prisma.Decimal(opportunity.amount),
+        probability: opportunity.probability,
+        expectedCloseAt: opportunity.expectedCloseAt
+          ? new Date(opportunity.expectedCloseAt)
+          : null,
+        closedAt: opportunity.closedAt ? new Date(opportunity.closedAt) : null,
+        closeReason: opportunity.closeReason ?? null,
+        tags: toInputJson(opportunity.tags),
+        remark: opportunity.remark ?? null,
+        archivedAt: opportunity.archivedAt
+          ? new Date(opportunity.archivedAt)
+          : null,
+        createdAt: new Date(opportunity.createdAt),
+      },
+    });
+  }
+
+  for (const followUp of seedCrmFollowUps) {
+    await prisma.crmFollowUp.upsert({
+      where: { id: followUp.id },
+      update: {
+        tenantId: followUp.tenantId,
+        targetType: followUp.targetType,
+        targetId: followUp.targetId,
+        method: followUp.method,
+        content: followUp.content,
+        outcome: followUp.outcome ?? null,
+        nextContactAt: followUp.nextContactAt
+          ? new Date(followUp.nextContactAt)
+          : null,
+        createdBy: followUp.createdBy,
+        createdAt: new Date(followUp.createdAt),
+      },
+      create: {
+        id: followUp.id,
+        tenantId: followUp.tenantId,
+        targetType: followUp.targetType,
+        targetId: followUp.targetId,
+        method: followUp.method,
+        content: followUp.content,
+        outcome: followUp.outcome ?? null,
+        nextContactAt: followUp.nextContactAt
+          ? new Date(followUp.nextContactAt)
+          : null,
+        createdBy: followUp.createdBy,
+        createdAt: new Date(followUp.createdAt),
+      },
+    });
+  }
+
+  for (const task of seedCrmTasks) {
+    await prisma.crmTask.upsert({
+      where: { id: task.id },
+      update: {
+        tenantId: task.tenantId,
+        targetType: task.targetType,
+        targetId: task.targetId,
+        title: task.title,
+        assignee: task.assignee,
+        status: task.status,
+        priority: task.priority,
+        dueAt: task.dueAt ? new Date(task.dueAt) : null,
+        completedAt: task.completedAt ? new Date(task.completedAt) : null,
+        remark: task.remark ?? null,
+        createdBy: task.createdBy,
+        createdAt: new Date(task.createdAt),
+      },
+      create: {
+        id: task.id,
+        tenantId: task.tenantId,
+        targetType: task.targetType,
+        targetId: task.targetId,
+        title: task.title,
+        assignee: task.assignee,
+        status: task.status,
+        priority: task.priority,
+        dueAt: task.dueAt ? new Date(task.dueAt) : null,
+        completedAt: task.completedAt ? new Date(task.completedAt) : null,
+        remark: task.remark ?? null,
+        createdBy: task.createdBy,
+        createdAt: new Date(task.createdAt),
+      },
+    });
+  }
+
+  for (const attachment of seedCrmAttachments) {
+    await prisma.crmAttachment.upsert({
+      where: { id: attachment.id },
+      update: {
+        tenantId: attachment.tenantId,
+        targetType: attachment.targetType,
+        targetId: attachment.targetId,
+        originalName: attachment.originalName,
+        mimeType: attachment.mimeType,
+        sizeBytes: attachment.sizeBytes,
+        storageKey: attachment.storageKey,
+        uploadedBy: attachment.uploadedBy,
+        createdAt: new Date(attachment.createdAt),
+      },
+      create: {
+        id: attachment.id,
+        tenantId: attachment.tenantId,
+        targetType: attachment.targetType,
+        targetId: attachment.targetId,
+        originalName: attachment.originalName,
+        mimeType: attachment.mimeType,
+        sizeBytes: attachment.sizeBytes,
+        storageKey: attachment.storageKey,
+        uploadedBy: attachment.uploadedBy,
+        createdAt: new Date(attachment.createdAt),
+      },
+    });
+  }
+
+  for (const transfer of seedCrmOwnerTransfers) {
+    await prisma.crmOwnerTransfer.upsert({
+      where: { id: transfer.id },
+      update: {
+        tenantId: transfer.tenantId,
+        targetType: transfer.targetType,
+        targetId: transfer.targetId,
+        fromOwner: transfer.fromOwner ?? null,
+        toOwner: transfer.toOwner,
+        actor: transfer.actor,
+        reason: transfer.reason ?? null,
+        createdAt: new Date(transfer.createdAt),
+      },
+      create: {
+        id: transfer.id,
+        tenantId: transfer.tenantId,
+        targetType: transfer.targetType,
+        targetId: transfer.targetId,
+        fromOwner: transfer.fromOwner ?? null,
+        toOwner: transfer.toOwner,
+        actor: transfer.actor,
+        reason: transfer.reason ?? null,
+        createdAt: new Date(transfer.createdAt),
+      },
+    });
+  }
+
+  for (const event of seedCrmAuditEvents) {
+    await prisma.crmAuditEvent.upsert({
+      where: { id: event.id },
+      update: {
+        tenantId: event.tenantId,
+        targetType: event.targetType,
+        targetId: event.targetId,
+        action: event.action,
+        actor: event.actor,
+        detail: toInputJson(event.detail),
+        createdAt: new Date(event.createdAt),
+      },
+      create: {
+        id: event.id,
+        tenantId: event.tenantId,
+        targetType: event.targetType,
+        targetId: event.targetId,
+        action: event.action,
+        actor: event.actor,
+        detail: toInputJson(event.detail),
+        createdAt: new Date(event.createdAt),
+      },
+    });
+  }
+
+  return {
+    attachments: seedCrmAttachments.length,
+    auditEvents: seedCrmAuditEvents.length,
+    contacts: seedCrmContacts.length,
+    customers: seedCrmCustomers.length,
+    followUps: seedCrmFollowUps.length,
+    leads: seedCrmLeads.length,
+    opportunities: seedCrmOpportunities.length,
+    ownerTransfers: seedCrmOwnerTransfers.length,
+    tags: seedCrmTags.length,
+    tasks: seedCrmTasks.length,
   };
 }
 

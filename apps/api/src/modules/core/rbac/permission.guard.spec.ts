@@ -40,6 +40,9 @@ describe('PermissionGuard', () => {
   });
 
   it('rejects authenticated users missing the required permission', async () => {
+    const viewerToken = expectAuthenticated(
+      await authService.login('viewer', 'viewer123'),
+    ).accessToken;
     const guard = new PermissionGuard(
       createReflector(['industry:crm:read']),
       authService,
@@ -49,7 +52,7 @@ describe('PermissionGuard', () => {
       guard.canActivate(
         createContext({
           headers: {
-            authorization: `Bearer ${token}`,
+            authorization: `Bearer ${viewerToken}`,
           },
         }),
       ),

@@ -139,7 +139,7 @@ echo "Starting OpenCore API smoke server on fixed port $SMOKE_PORT"
 ) >>"$LOG_FILE" 2>&1 &
 API_PID="$!"
 
-wait_for_url "$BASE_URL/health/live" "OpenCore API smoke server"
+wait_for_url "$BASE_URL/health/live" "OpenCore API smoke server" 180
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
@@ -224,6 +224,13 @@ run_with_env env \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
   run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
     "$ROOT_DIR/tools/smoke/smoke-core-collaboration-tickets.ts"
+
+run_with_env env \
+  OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
+  OPENCORE_SMOKE_PORT="$SMOKE_PORT" \
+  OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
+  run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
+    "$ROOT_DIR/tools/smoke/smoke-core-crm.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \

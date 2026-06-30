@@ -1,5 +1,5 @@
 {
-  "moduleCode": "industry.crm",
+  "moduleCode": "industry.erp",
   "resource": "customer",
   "title": "Customers",
   "fields": [
@@ -23,13 +23,13 @@
     "fields": ["name"]
   },
   "actions": ["read"],
-  "permissions": ["industry:customer:read"],
+  "permissions": ["industry:erp:read"],
   "openapi": {
-    "tags": ["Industry CRM"]
+    "tags": ["Industry ERP"]
   },
   "admin": {
-    "basePath": "/crm/customers",
-    "targetPaths": ["apps/admin/src/pages/Crm/Customers.tsx"]
+    "basePath": "/erp/customers",
+    "targetPaths": ["apps/admin/src/pages/Erp/Customers.tsx"]
   },
   "prisma": {
     "writeSchema": false,

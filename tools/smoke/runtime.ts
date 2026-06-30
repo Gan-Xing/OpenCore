@@ -1,5 +1,6 @@
 import {
   createCollaborationClient,
+  createCrmClient,
   createIntegrationClient,
   createMonitoringClient,
   createOperationsClient,
@@ -8,6 +9,7 @@ import {
   createTenancyClient,
   createToolingClient,
   type CollaborationClient,
+  type CrmClient,
   type IntegrationClient,
   type LoginResponse,
   type MonitoringClient,
@@ -70,6 +72,7 @@ export function createTypedSmokeRuntime() {
     collaboration: createCollaborationClient(
       sdkRequest,
     ) satisfies CollaborationClient,
+    crm: createCrmClient(sdkRequest) satisfies CrmClient,
     integration: createIntegrationClient(
       sdkRequest,
     ) satisfies IntegrationClient,

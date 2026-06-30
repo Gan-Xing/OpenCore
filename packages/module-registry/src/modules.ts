@@ -1092,6 +1092,47 @@ export const moduleRegistry = [
     },
   },
   {
+    code: 'industry.crm',
+    title: 'CRM',
+    layer: 'industry',
+    priority: 'P3',
+    status: 'active',
+    stage: 'S12',
+    enabledByDefault: true,
+    description:
+      'Tenant-owned commercial CRM core for leads, customers, contacts, opportunities, follow-ups, reminders, owner transfer, attachments, audit, and summary reporting.',
+    apiTags: ['Industry CRM'],
+    permissions: definePermissions('industry', 'crm', 'CRM', 'S12', [
+      { action: 'read', title: 'Read' },
+      { action: 'create', title: 'Create' },
+      { action: 'update', title: 'Update' },
+      { action: 'assign', title: 'Transfer owner for' },
+      { action: 'comment', title: 'Follow up' },
+      { action: 'export', title: 'Export' },
+      { action: 'delete', title: 'Archive', dangerous: true },
+    ]),
+    menus: [
+      defineMenu(
+        'industry.crm',
+        'CRM',
+        '/industry/crm',
+        'industry:crm:read',
+        900,
+        'S12',
+      ),
+    ],
+    admin: {
+      basePath: '/industry/crm',
+      routes: [
+        {
+          path: '/industry/crm',
+          title: 'CRM',
+          permissionCode: 'industry:crm:read',
+        },
+      ],
+    },
+  },
+  {
     code: 'monitor.job',
     title: 'Jobs',
     layer: 'monitor',
