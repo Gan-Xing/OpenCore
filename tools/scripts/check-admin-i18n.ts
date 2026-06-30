@@ -117,6 +117,7 @@ const coreI18nScanPaths = [
   join(adminRoot, 'src', 'pages', 'Collaboration', 'Messages.tsx'),
   join(adminRoot, 'src', 'pages', 'Collaboration', 'Notices.tsx'),
   join(adminRoot, 'src', 'pages', 'Collaboration', 'Todos.tsx'),
+  join(adminRoot, 'src', 'pages', 'Industry', 'Crm', 'index.tsx'),
   join(adminRoot, 'src', 'components', 'AreaCascader.tsx'),
   join(adminRoot, 'src', 'pages', 'System', 'Area.tsx'),
   join(adminRoot, 'src', 'pages', 'Tools', 'Export', 'index.tsx'),
@@ -162,10 +163,59 @@ const localizedAdminPageScanPaths = [
   join(adminRoot, 'src', 'pages', 'Collaboration', 'Messages.tsx'),
   join(adminRoot, 'src', 'pages', 'Collaboration', 'Notices.tsx'),
   join(adminRoot, 'src', 'pages', 'Collaboration', 'Todos.tsx'),
+  join(adminRoot, 'src', 'pages', 'Industry', 'Crm', 'index.tsx'),
   join(adminRoot, 'src', 'pages', 'System', 'Area.tsx'),
   join(adminRoot, 'src', 'pages', 'Tools', 'Export', 'index.tsx'),
   join(adminRoot, 'src', 'pages', 'Tools', 'OpenApi', 'index.tsx'),
   join(adminRoot, 'src', 'pages', 'Tools', 'OpenForge', 'index.tsx'),
+];
+const requiredCrmDynamicLocaleKeys = [
+  ...crmLocaleKeys('actionKind', [
+    'action',
+    'attach',
+    'convert',
+    'follow',
+    'stage',
+    'task',
+    'transfer',
+  ]),
+  ...crmLocaleKeys('activityType', [
+    'attachment',
+    'audit',
+    'follow-up',
+    'transfer',
+  ]),
+  ...crmLocaleKeys('customerStatus', ['active', 'inactive', 'churned']),
+  ...crmLocaleKeys('entityKind', [
+    'contact',
+    'customer',
+    'lead',
+    'opportunity',
+    'tag',
+  ]),
+  ...crmLocaleKeys('leadStatus', [
+    'new',
+    'contacted',
+    'qualified',
+    'converted',
+    'lost',
+  ]),
+  ...crmLocaleKeys('method', ['call', 'email', 'meeting', 'wechat', 'note']),
+  ...crmLocaleKeys('opportunityStage', [
+    'qualification',
+    'proposal',
+    'negotiation',
+    'won',
+    'lost',
+  ]),
+  ...crmLocaleKeys('priority', ['low', 'medium', 'high', 'urgent']),
+  ...crmLocaleKeys('targetType', [
+    'contact',
+    'customer',
+    'lead',
+    'opportunity',
+  ]),
+  ...crmLocaleKeys('taskStatus', ['open', 'done', 'canceled']),
 ];
 const forbiddenMarkerScanPaths = [
   localesRoot,
@@ -214,6 +264,10 @@ for (const scanPath of forbiddenMarkerScanPaths) {
 }
 checkRouteMenuKeys();
 checkCoreI18nKeys();
+checkRequiredLocaleKeys(
+  'CRM dynamic Admin i18n key',
+  requiredCrmDynamicLocaleKeys,
+);
 checkLocalizedAdminPageText();
 checkErrorLocaleParity();
 checkBackendErrorCodeTranslations();
@@ -359,6 +413,26 @@ function checkCoreI18nKeys(): void {
             )}`,
           );
         }
+      }
+    }
+  }
+}
+
+function checkRequiredLocaleKeys(
+  label: string,
+  keysToRequire: readonly string[],
+): void {
+  const localeKeysByLocale = new Map(
+    [...supportedLocales].map((locale) => [
+      locale,
+      readLocaleBundleKeys(locale),
+    ]),
+  );
+
+  for (const key of keysToRequire) {
+    for (const [locale, keys] of localeKeysByLocale) {
+      if (!keys.has(key)) {
+        failures.push(`${locale} is missing ${label}: ${key}`);
       }
     }
   }
@@ -566,6 +640,12 @@ function readI18nIds(path: string): Set<string> {
   }
 
   for (const match of content.matchAll(
+    /\bcrmMessageId\(\s*['"]([^'"]+)['"]\s*\)/g,
+  )) {
+    ids.add(`pages.industry.crm.${match[1]}`);
+  }
+
+  for (const match of content.matchAll(
     /<FormattedMessage\b[^>]*\bid=["']([^"']+)["']/g,
   )) {
     ids.add(match[1]);
@@ -579,6 +659,10 @@ function readLocaleKeys(path: string): Set<string> {
   return new Set(
     [...content.matchAll(/'([^']+)'\s*:/g)].map((match) => match[1]),
   );
+}
+
+function crmLocaleKeys(scope: string, values: readonly string[]): string[] {
+  return values.map((value) => `pages.industry.crm.${scope}.${value}`);
 }
 
 function readRootArg(): string {

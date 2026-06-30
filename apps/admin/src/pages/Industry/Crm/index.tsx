@@ -27,6 +27,7 @@ import type {
   CrmWritableLeadStatus,
 } from '@opencore/sdk';
 import { useAccess, useIntl } from '@umijs/max';
+import zhMessages from '@/locales/zh-CN';
 import {
   Alert,
   Button,
@@ -120,6 +121,7 @@ type FormatMessage = (
 ) => string;
 
 const DEFAULT_ACTOR = 'admin';
+const CRM_MESSAGE_PREFIX = 'pages.industry.crm.';
 const LEAD_STATUSES = ['new', 'contacted', 'qualified', 'converted', 'lost'];
 const WRITABLE_LEAD_STATUSES = ['new', 'contacted', 'qualified', 'lost'];
 const CUSTOMER_STATUSES = ['active', 'inactive', 'churned'];
@@ -137,6 +139,30 @@ const FOLLOW_UP_METHODS = ['call', 'email', 'meeting', 'wechat', 'note'];
 
 function crmMessageId(suffix: string): string {
   return `pages.industry.crm.${suffix}`;
+}
+
+function interpolateMessage(
+  template: string,
+  values?: Record<string, number | string>,
+): string {
+  if (!values) return template;
+
+  return template.replace(/\{(\w+)\}/g, (match, key: string) =>
+    key in values ? String(values[key]) : match,
+  );
+}
+
+function amountText(
+  value: string | undefined,
+  locale: string,
+): string | undefined {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return value;
+
+  return new Intl.NumberFormat(locale || undefined, {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 2,
+  }).format(number);
 }
 
 function valueEnum(
@@ -260,6 +286,65 @@ function statusColor(value?: string): string {
   return 'default';
 }
 
+function enumText(
+  value: string | undefined,
+  scope: string,
+  formatMessage: FormatMessage,
+): string {
+  return value ? formatMessage(crmMessageId(`${scope}.${value}`), value) : '-';
+}
+
+function statusScope(record: CrmRow): string {
+  if (record.resource === 'customers') return 'customerStatus';
+  if (record.resource === 'tasks') return 'taskStatus';
+  return 'leadStatus';
+}
+
+function statusText(record: CrmRow, formatMessage: FormatMessage): string {
+  return enumText(
+    getString(record, 'status'),
+    statusScope(record),
+    formatMessage,
+  );
+}
+
+function stageText(record: CrmRow, formatMessage: FormatMessage): string {
+  return enumText(
+    getString(record, 'stage'),
+    'opportunityStage',
+    formatMessage,
+  );
+}
+
+function activityTypeText(
+  record: CrmRow,
+  formatMessage: FormatMessage,
+): string {
+  return enumText(
+    getString(record, 'activityType'),
+    'activityType',
+    formatMessage,
+  );
+}
+
+function targetTypeText(
+  value: string | undefined,
+  formatMessage: FormatMessage,
+) {
+  return enumText(value, 'targetType', formatMessage);
+}
+
+function resourceText(
+  value: CrmTab | undefined,
+  formatMessage: FormatMessage,
+): string {
+  return value ? formatMessage(crmMessageId(`tabs.${value}`), value) : '-';
+}
+
+function priorityText(record: CrmRow, formatMessage: FormatMessage): string {
+  return enumText(getString(record, 'priority'), 'priority', formatMessage);
+}
+
 function targetForRow(row: CrmRow): TargetContext | undefined {
   if (row.resource === 'leads') {
     return {
@@ -340,6 +425,7 @@ function createExportColumns(
       {
         title: formatMessage(crmMessageId('fields.status'), 'Status'),
         dataIndex: 'status',
+        renderText: (record) => statusText(record, formatMessage),
       },
       {
         title: formatMessage(crmMessageId('fields.owner'), 'Owner'),
@@ -365,6 +451,7 @@ function createExportColumns(
       {
         title: formatMessage(crmMessageId('fields.status'), 'Status'),
         dataIndex: 'status',
+        renderText: (record) => statusText(record, formatMessage),
       },
       {
         title: formatMessage(crmMessageId('fields.level'), 'Level'),
@@ -398,6 +485,7 @@ function createExportColumns(
       {
         title: formatMessage(crmMessageId('fields.stage'), 'Stage'),
         dataIndex: 'stage',
+        renderText: (record) => stageText(record, formatMessage),
       },
       {
         title: formatMessage(crmMessageId('fields.amount'), 'Amount'),
@@ -423,10 +511,12 @@ function createExportColumns(
       {
         title: formatMessage(crmMessageId('fields.status'), 'Status'),
         dataIndex: 'status',
+        renderText: (record) => statusText(record, formatMessage),
       },
       {
         title: formatMessage(crmMessageId('fields.priority'), 'Priority'),
         dataIndex: 'priority',
+        renderText: (record) => priorityText(record, formatMessage),
       },
       {
         title: formatMessage(crmMessageId('fields.dueAt'), 'Due At'),
@@ -455,6 +545,7 @@ function createExportColumns(
     {
       title: formatMessage(crmMessageId('fields.status'), 'Status'),
       dataIndex: 'status',
+      renderText: (record) => statusText(record, formatMessage),
     },
   ];
 }
@@ -462,10 +553,20 @@ function createExportColumns(
 export default function CrmPage() {
   const intl = useIntl();
   const formatMessage: FormatMessage = useCallback(
-    (id, defaultMessage, values) =>
-      values
+    (id, defaultMessage, values) => {
+      const zhMessage =
+        intl.locale?.toLowerCase().startsWith('zh') &&
+        id.startsWith(CRM_MESSAGE_PREFIX)
+          ? (zhMessages as Record<string, string>)[id]
+          : undefined;
+      if (zhMessage) {
+        return interpolateMessage(zhMessage, values);
+      }
+
+      return values
         ? intl.formatMessage({ id, defaultMessage }, values)
-        : intl.formatMessage({ id, defaultMessage }),
+        : intl.formatMessage({ id, defaultMessage });
+    },
     [intl],
   );
   const access = useAccess() as {
@@ -1011,7 +1112,7 @@ export default function CrmPage() {
       hideInTable: ['activity', 'opportunities', 'tags'].includes(activeTab),
       render: (_, record) => (
         <Tag color={statusColor(getString(record, 'status'))}>
-          {getString(record, 'status') ?? '-'}
+          {statusText(record, formatMessage)}
         </Tag>
       ),
     },
@@ -1023,7 +1124,7 @@ export default function CrmPage() {
       hideInTable: activeTab !== 'opportunities',
       render: (_, record) => (
         <Tag color={statusColor(getString(record, 'stage'))}>
-          {getString(record, 'stage')}
+          {stageText(record, formatMessage)}
         </Tag>
       ),
     },
@@ -1042,7 +1143,10 @@ export default function CrmPage() {
       hideInTable: activeTab !== 'activity',
       render: (_, record) => (
         <Space size={4}>
-          <Tag>{getString(record, 'activityType')}</Tag>
+          <Tag>{activityTypeText(record, formatMessage)}</Tag>
+          <Tag>
+            {targetTypeText(getString(record, 'targetType'), formatMessage)}
+          </Tag>
           <Typography.Text copyable>
             {getString(record, 'targetId')}
           </Typography.Text>
@@ -1308,12 +1412,11 @@ export default function CrmPage() {
           <Card size="small">
             <Statistic
               loading={loading}
-              prefix="$"
               title={formatMessage(
                 crmMessageId('stats.openPipeline'),
                 'Open Pipeline',
               )}
-              value={summary?.openPipelineAmount}
+              value={amountText(summary?.openPipelineAmount, intl.locale)}
             />
           </Card>
         </Col>
@@ -1436,7 +1539,7 @@ export default function CrmPage() {
           },
           {
             label: formatMessage(crmMessageId('fields.resource'), 'Resource'),
-            value: selected?.resource,
+            value: selected && resourceText(selected.resource, formatMessage),
           },
           {
             label: formatMessage(crmMessageId('fields.number'), 'Number'),
@@ -1452,11 +1555,11 @@ export default function CrmPage() {
           },
           {
             label: formatMessage(crmMessageId('fields.status'), 'Status'),
-            value: selected && getString(selected, 'status'),
+            value: selected && statusText(selected, formatMessage),
           },
           {
             label: formatMessage(crmMessageId('fields.stage'), 'Stage'),
-            value: selected && getString(selected, 'stage'),
+            value: selected && stageText(selected, formatMessage),
           },
           {
             label: formatMessage(crmMessageId('fields.owner'), 'Owner'),
@@ -1467,7 +1570,10 @@ export default function CrmPage() {
             value:
               selected &&
               [
-                getString(selected, 'targetType'),
+                targetTypeText(
+                  getString(selected, 'targetType'),
+                  formatMessage,
+                ),
                 getString(selected, 'targetId'),
               ]
                 .filter(Boolean)
