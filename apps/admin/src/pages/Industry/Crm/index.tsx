@@ -292,6 +292,25 @@ function targetForRow(row: CrmRow): TargetContext | undefined {
   return undefined;
 }
 
+function isConvertedLead(row: CrmRow): boolean {
+  return row.resource === 'leads' && getString(row, 'status') === 'converted';
+}
+
+function canEditRow(row: CrmRow): boolean {
+  return (
+    ['leads', 'customers', 'contacts', 'opportunities', 'tags'].includes(
+      row.resource,
+    ) && !isConvertedLead(row)
+  );
+}
+
+function canWriteTarget(
+  row: CrmRow,
+  target: TargetContext | undefined,
+): target is TargetContext {
+  return Boolean(target) && !isConvertedLead(row);
+}
+
 function createExportColumns(
   tab: CrmTab,
   formatMessage: FormatMessage,
@@ -1043,6 +1062,7 @@ export default function CrmPage() {
       width: 260,
       render: (_, record) => {
         const target = targetForRow(record);
+        const writableTarget = canWriteTarget(record, target);
         return [
           <Tooltip
             key="detail"
@@ -1055,10 +1075,7 @@ export default function CrmPage() {
               type="link"
             />
           </Tooltip>,
-          access.canUpdateCrm &&
-          ['leads', 'customers', 'contacts', 'opportunities', 'tags'].includes(
-            record.resource,
-          ) ? (
+          access.canUpdateCrm && canEditRow(record) ? (
             <Tooltip
               key="edit"
               title={formatMessage(crmMessageId('actions.edit'), 'Edit')}
@@ -1085,7 +1102,7 @@ export default function CrmPage() {
             </Tooltip>
           ) : null,
           access.canAssignCrm &&
-          target &&
+          writableTarget &&
           ['lead', 'customer', 'opportunity'].includes(target.type) ? (
             <Tooltip
               key="transfer"
@@ -1102,7 +1119,7 @@ export default function CrmPage() {
               />
             </Tooltip>
           ) : null,
-          access.canCommentCrm && target ? (
+          access.canCommentCrm && writableTarget ? (
             <Tooltip
               key="follow"
               title={formatMessage(
@@ -1118,7 +1135,7 @@ export default function CrmPage() {
               />
             </Tooltip>
           ) : null,
-          access.canUpdateCrm && target ? (
+          access.canUpdateCrm && writableTarget ? (
             <Tooltip
               key="task"
               title={formatMessage(
@@ -1135,7 +1152,7 @@ export default function CrmPage() {
               </Button>
             </Tooltip>
           ) : null,
-          access.canUpdateCrm && target ? (
+          access.canUpdateCrm && writableTarget ? (
             <Tooltip
               key="attach"
               title={formatMessage(
@@ -1151,7 +1168,9 @@ export default function CrmPage() {
               />
             </Tooltip>
           ) : null,
-          access.canUpdateCrm && record.resource === 'leads' ? (
+          access.canUpdateCrm &&
+          record.resource === 'leads' &&
+          !isConvertedLead(record) ? (
             <Button
               key="convert"
               onClick={() =>

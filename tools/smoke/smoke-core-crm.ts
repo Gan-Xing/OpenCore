@@ -272,6 +272,62 @@ async function main() {
         token,
       },
     );
+    await smoke.apiRequest(
+      `/industry/crm/leads/${encodeURIComponent(lead.id)}`,
+      {
+        body: { rating: 'cold' },
+        expected: [400],
+        method: 'PATCH',
+        token,
+      },
+    );
+    await smoke.apiRequest(
+      `/industry/crm/leads/${encodeURIComponent(lead.id)}/transfer`,
+      {
+        body: { actor: username, toOwner: username },
+        expected: [400],
+        method: 'PATCH',
+        token,
+      },
+    );
+    await smoke.apiRequest('/industry/crm/follow-ups', {
+      body: {
+        content: 'Converted target follow-up.',
+        createdBy: username,
+        method: 'call',
+        targetId: lead.id,
+        targetType: 'lead',
+      },
+      expected: [400],
+      method: 'POST',
+      token,
+    });
+    await smoke.apiRequest('/industry/crm/tasks', {
+      body: {
+        assignee: username,
+        createdBy: username,
+        targetId: lead.id,
+        targetType: 'lead',
+        title: `Converted target task ${runId}`,
+      },
+      expected: [400],
+      method: 'POST',
+      token,
+    });
+    await smoke.apiRequest('/industry/crm/attachments', {
+      body: {
+        mimeType: 'text/plain',
+        originalName: 'converted-lead.txt',
+        sizeBytes: 1,
+        storageKey: `tenant/${ROOT_TENANT_ID}/crm/${runSafeId}/converted.txt`,
+        targetId: lead.id,
+        targetType: 'lead',
+        uploadedBy: username,
+      },
+      expected: [400],
+      method: 'POST',
+      token,
+    });
     created.customers.push(
       assertString(converted.customer.id, 'converted customer id'),
     );
@@ -364,6 +420,15 @@ async function main() {
         token,
       },
     );
+    await smoke.apiRequest(
+      `/industry/crm/opportunities/${encodeURIComponent(opportunity.id)}`,
+      {
+        body: { closeReason: 'Direct close reason is not allowed.' },
+        expected: [400],
+        method: 'PATCH',
+        token,
+      },
+    );
 
     const proposal = await clients.crm.changeOpportunityStage(
       token,
@@ -384,6 +449,15 @@ async function main() {
       },
     );
     assertEqual(won.stage, 'won', 'won opportunity stage');
+    assertPageContainsId(
+      await clients.crm.listOpportunities(token, {
+        page: 1,
+        pageSize: 50,
+        stage: 'won',
+      }),
+      opportunity.id,
+      'won CRM opportunity list',
+    );
 
     const transferredCustomer = await clients.crm.transferCustomerOwner(
       token,

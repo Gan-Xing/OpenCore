@@ -447,6 +447,7 @@ export class PrismaCrmRepository extends CrmRepository {
   async updateLead(id: string, body: UpdateCrmLeadDto): Promise<CrmLeadDto> {
     const tenantId = resolveCurrentTenantId();
     const existing = await this.findActiveLead(id);
+    assertLeadWritable(existing, id);
     const tags =
       body.tags === undefined
         ? undefined
@@ -639,6 +640,7 @@ export class PrismaCrmRepository extends CrmRepository {
   ): Promise<CrmLeadDto> {
     const tenantId = resolveCurrentTenantId();
     const existing = await this.findActiveLead(id);
+    assertLeadWritable(existing, id);
     const toOwner = requireText(body.toOwner, 'toOwner');
     const actor = requireText(body.actor, 'actor');
     const lead = await this.prisma.crmLead.update({
@@ -1156,6 +1158,15 @@ export class PrismaCrmRepository extends CrmRepository {
           { id },
         );
       }
+      if (body.stage !== undefined || body.closeReason !== undefined) {
+        throw crmBadRequest(
+          'INDUSTRY_CRM_STAGE_ENDPOINT_REQUIRED',
+          'Use the CRM stage endpoint to change opportunity stages.',
+          {
+            field: body.stage !== undefined ? 'stage' : 'closeReason',
+          },
+        );
+      }
       if (body.customerId !== undefined) {
         await findActiveCustomer(tx, tenantId, body.customerId);
       }
@@ -1171,14 +1182,6 @@ export class PrismaCrmRepository extends CrmRepository {
           ...(body.owner === undefined
             ? {}
             : { owner: requireText(body.owner, 'owner') }),
-          ...(body.stage === undefined
-            ? {}
-            : {
-                stage: parseWritableOpportunityStage(
-                  body.stage,
-                  existing.stage,
-                ),
-              }),
           ...(body.amount === undefined
             ? {}
             : { amount: parseMoney(body.amount) }),
@@ -1193,9 +1196,6 @@ export class PrismaCrmRepository extends CrmRepository {
                   'expectedCloseAt',
                 ),
               }),
-          ...(body.closeReason === undefined
-            ? {}
-            : { closeReason: normalizeNullableText(body.closeReason) }),
           ...(tags === undefined ? {} : { tags }),
           ...(body.remark === undefined
             ? {}
@@ -1767,18 +1767,35 @@ export class PrismaCrmRepository extends CrmRepository {
     targetId: string,
   ): Promise<void> {
     const id = requireText(targetId, 'targetId');
+    if (targetType === 'lead') {
+      const rows = await tx.$queryRaw<
+        { id: string; status: string; convertedAt: Date | null }[]
+      >`
+        SELECT "id", "status", "convertedAt"
+        FROM "CrmLead"
+        WHERE "tenantId" = ${tenantId}
+          AND "id" = ${id}
+          AND "archivedAt" IS NULL
+          AND "status" <> 'archived'
+        FOR UPDATE
+      `;
+      const lead = rows[0];
+      if (!lead) {
+        throw crmNotFound(
+          'INDUSTRY_CRM_TARGET_NOT_FOUND',
+          'CRM target not found.',
+          { targetType, targetId },
+        );
+      }
+      if (lead.convertedAt || lead.status === 'converted') {
+        throwConvertedLeadReadOnly(targetId);
+      }
+
+      return;
+    }
+
     const rows =
-      targetType === 'lead'
-        ? await tx.$queryRaw<{ id: string }[]>`
-            SELECT "id"
-            FROM "CrmLead"
-            WHERE "tenantId" = ${tenantId}
-              AND "id" = ${id}
-              AND "archivedAt" IS NULL
-              AND "status" <> 'archived'
-            FOR UPDATE
-          `
-        : targetType === 'customer'
+      targetType === 'customer'
           ? await tx.$queryRaw<{ id: string }[]>`
               SELECT "id"
               FROM "CrmCustomer"
@@ -1957,6 +1974,23 @@ function isCrmNumberUniqueError(error: unknown): boolean {
   return Array.isArray(target)
     ? target.includes('number')
     : String(target).includes('number');
+}
+
+function assertLeadWritable(
+  lead: Pick<CrmLeadDto, 'convertedAt' | 'status'>,
+  id: string,
+): void {
+  if (lead.convertedAt || lead.status === 'converted') {
+    throwConvertedLeadReadOnly(id);
+  }
+}
+
+function throwConvertedLeadReadOnly(targetId: string): never {
+  throw crmBadRequest(
+    'INDUSTRY_CRM_LEAD_CONVERTED_READ_ONLY',
+    'Converted CRM leads are read-only. Use the converted customer or opportunity for CRM activity.',
+    { targetType: 'lead', targetId },
+  );
 }
 
 function createCrmNumber(prefix: string): string {
@@ -2189,27 +2223,6 @@ function parseInitialOpportunityStage(
     throw crmBadRequest(
       'INDUSTRY_CRM_STAGE_ENDPOINT_REQUIRED',
       'Use the CRM stage endpoint to close opportunities.',
-      { field: 'stage' },
-    );
-  }
-
-  return stage;
-}
-
-function parseWritableOpportunityStage(
-  value: string,
-  currentStage: string,
-): CrmOpportunityStage {
-  const stage = parseChoice(value, CRM_OPPORTUNITY_STAGES, 'stage');
-  const existingStage = parseChoice(
-    currentStage,
-    CRM_OPPORTUNITY_STAGES,
-    'stage',
-  );
-  if (stage !== existingStage) {
-    throw crmBadRequest(
-      'INDUSTRY_CRM_STAGE_ENDPOINT_REQUIRED',
-      'Use the CRM stage endpoint to change opportunity stages.',
       { field: 'stage' },
     );
   }

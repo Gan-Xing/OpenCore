@@ -10848,7 +10848,13 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": ["qualification", "proposal", "negotiation"]
+              "enum": [
+                "qualification",
+                "proposal",
+                "negotiation",
+                "won",
+                "lost"
+              ]
             }
           },
           {
@@ -18811,7 +18817,7 @@
           "owner": { "type": "string" },
           "stage": {
             "type": "string",
-            "enum": ["qualification", "proposal", "negotiation", "won", "lost"]
+            "enum": ["qualification", "proposal", "negotiation"]
           },
           "amount": { "type": "string" },
           "probability": { "type": "number" },
@@ -18827,14 +18833,9 @@
           "customerId": { "type": "string" },
           "name": { "type": "string" },
           "owner": { "type": "string" },
-          "stage": {
-            "type": "string",
-            "enum": ["qualification", "proposal", "negotiation", "won", "lost"]
-          },
           "amount": { "type": "string" },
           "probability": { "type": "number" },
           "expectedCloseAt": { "type": "object" },
-          "closeReason": { "type": "object" },
           "tags": { "type": "array", "items": { "type": "string" } },
           "remark": { "type": "object" }
         }

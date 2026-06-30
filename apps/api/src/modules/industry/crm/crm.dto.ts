@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
 import { PageQueryDto } from '../../core/system-management/system-management.dto';
 
 export const CRM_TARGET_TYPES = [
@@ -747,8 +747,8 @@ export class CrmOpportunityQueryDto extends PageQueryDto {
   @ApiProperty({ required: false })
   customerId?: string;
 
-  @ApiProperty({ enum: CRM_OPEN_OPPORTUNITY_STAGES, required: false })
-  stage?: CrmOpenOpportunityStage;
+  @ApiProperty({ enum: CRM_OPPORTUNITY_STAGES, required: false })
+  stage?: CrmOpportunityStage;
 
   @ApiProperty({ required: false })
   owner?: string;
@@ -1063,8 +1063,8 @@ export class CreateCrmOpportunityDto {
   @ApiProperty()
   owner!: string;
 
-  @ApiProperty({ enum: CRM_OPPORTUNITY_STAGES, required: false })
-  stage?: CrmOpportunityStage;
+  @ApiProperty({ enum: CRM_OPEN_OPPORTUNITY_STAGES, required: false })
+  stage?: CrmOpenOpportunityStage;
 
   @ApiProperty({ required: false })
   amount?: string;
@@ -1092,7 +1092,7 @@ export class UpdateCrmOpportunityDto {
   @ApiProperty({ required: false })
   owner?: string;
 
-  @ApiProperty({ enum: CRM_OPPORTUNITY_STAGES, required: false })
+  @ApiHideProperty()
   stage?: CrmOpportunityStage;
 
   @ApiProperty({ required: false })
@@ -1104,7 +1104,7 @@ export class UpdateCrmOpportunityDto {
   @ApiProperty({ required: false })
   expectedCloseAt?: string | null;
 
-  @ApiProperty({ required: false })
+  @ApiHideProperty()
   closeReason?: string | null;
 
   @ApiProperty({ type: [String], required: false })
