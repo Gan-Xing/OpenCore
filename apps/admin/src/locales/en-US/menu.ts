@@ -37,6 +37,7 @@ export default {
   'menu.collaboration.messages': 'Messages',
   'menu.collaboration.notices': 'Notices',
   'menu.collaboration.todos': 'Todos',
+  'menu.collaboration.tickets': 'Tickets',
   'menu.collaboration.approvals': 'Approval Lite',
   'menu.optional': 'Optional',
   'menu.optional.reports': 'Reports',

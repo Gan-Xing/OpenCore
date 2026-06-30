@@ -30,6 +30,7 @@ const SHELL_MODULE_CODES = [
   'collaboration.message',
   'collaboration.notice',
   'collaboration.todo',
+  'collaboration.ticket',
   'collaboration.approval-lite',
   'monitor.job',
   'monitor.cache',

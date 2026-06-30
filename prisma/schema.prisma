@@ -105,6 +105,11 @@ model Tenant {
   collaborationNotices   CollaborationNotice[]
   collaborationTodos     CollaborationTodo[]
   collaborationApprovals CollaborationApprovalLite[]
+  ticketCategories       TicketCategory[]
+  tickets                Ticket[]
+  ticketComments         TicketComment[]
+  ticketTransitions      TicketTransition[]
+  ticketAttachments      TicketAttachment[]
   reportDefinitions      ReportDefinition[]
   auditLogs              AuditLog[]
   loginLogs              LoginLog[]
@@ -694,6 +699,112 @@ model CollaborationApprovalLite {
   @@index([tenantId, requester, status, createdAt])
   @@index([tenantId, approver, status, createdAt])
   @@index([tenantId, businessType, businessId])
+}
+
+model TicketCategory {
+  id          String   @id @default(cuid())
+  tenantId    String   @default("tenant_root")
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  code        String
+  name        String
+  description String?
+  enabled     Boolean  @default(true)
+  order       Int      @default(0)
+  tickets     Ticket[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([tenantId, code])
+  @@unique([tenantId, id])
+  @@index([tenantId, enabled, order])
+}
+
+model Ticket {
+  id               String             @id @default(cuid())
+  tenantId         String             @default("tenant_root")
+  tenant           Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  number           String
+  title            String
+  description      String
+  status           String             @default("new")
+  priority         String             @default("medium")
+  categoryId       String?
+  category         TicketCategory?    @relation(fields: [tenantId, categoryId], references: [tenantId, id], onDelete: Restrict)
+  createdBy        String
+  assignee         String?
+  dueAt            DateTime?
+  firstRespondedAt DateTime?
+  responseDueAt    DateTime?
+  resolutionDueAt  DateTime?
+  slaBreached      Boolean            @default(false)
+  slaNotifiedAt    DateTime?
+  resolvedAt       DateTime?
+  closedAt         DateTime?
+  archivedAt       DateTime?
+  comments         TicketComment[]
+  transitions      TicketTransition[]
+  attachments      TicketAttachment[]
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  @@unique([tenantId, number])
+  @@unique([tenantId, id])
+  @@index([tenantId, status, priority, createdAt])
+  @@index([tenantId, assignee, status])
+  @@index([tenantId, categoryId, status])
+  @@index([tenantId, slaBreached, responseDueAt])
+  @@index([tenantId, slaBreached, resolutionDueAt])
+  @@index([tenantId, archivedAt])
+}
+
+model TicketComment {
+  id        String   @id @default(cuid())
+  tenantId  String   @default("tenant_root")
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  ticketId  String
+  ticket    Ticket   @relation(fields: [tenantId, ticketId], references: [tenantId, id], onDelete: Cascade)
+  author    String
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, ticketId, createdAt])
+  @@index([tenantId, author, createdAt])
+}
+
+model TicketTransition {
+  id         String   @id @default(cuid())
+  tenantId   String   @default("tenant_root")
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  ticketId   String
+  ticket     Ticket   @relation(fields: [tenantId, ticketId], references: [tenantId, id], onDelete: Cascade)
+  fromStatus String?
+  toStatus   String
+  actor      String
+  comment    String?
+  createdAt  DateTime @default(now())
+
+  @@index([tenantId, ticketId, createdAt])
+  @@index([tenantId, actor, createdAt])
+}
+
+model TicketAttachment {
+  id           String   @id @default(cuid())
+  tenantId     String   @default("tenant_root")
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  ticketId     String
+  ticket       Ticket   @relation(fields: [tenantId, ticketId], references: [tenantId, id], onDelete: Cascade)
+  originalName String
+  mimeType     String
+  sizeBytes    Int
+  storageKey   String
+  uploadedBy   String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([tenantId, storageKey])
+  @@index([tenantId, ticketId, createdAt])
+  @@index([tenantId, uploadedBy, createdAt])
 }
 
 model JobDefinition {

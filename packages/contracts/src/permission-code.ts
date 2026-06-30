@@ -10,6 +10,9 @@ export const PERMISSION_ACTIONS = [
   'manage',
   'suspend',
   'visit',
+  'assign',
+  'comment',
+  'close',
 ] as const;
 
 export type PermissionAction = (typeof PERMISSION_ACTIONS)[number];

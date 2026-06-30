@@ -403,6 +403,23 @@ export default {
     'The collaboration resource is not pending.',
   'error.COLLABORATION_TODO_STATUS_TERMINAL':
     'The todo is already in a terminal status.',
+  'error.COLLABORATION_TICKET_BOOLEAN_INVALID':
+    'The ticket boolean query value is invalid.',
+  'error.COLLABORATION_TICKET_BATCH_EMPTY':
+    'Select at least one ticket before running a batch action.',
+  'error.COLLABORATION_TICKET_CATEGORY_NOT_FOUND':
+    'The ticket category does not exist.',
+  'error.COLLABORATION_TICKET_DATE_INVALID':
+    'The ticket date field is invalid.',
+  'error.COLLABORATION_TICKET_FIELD_INVALID': 'The ticket field is invalid.',
+  'error.COLLABORATION_TICKET_FIELD_REQUIRED':
+    'A required ticket field is missing.',
+  'error.COLLABORATION_TICKET_NOT_FOUND': 'The ticket does not exist.',
+  'error.COLLABORATION_TICKET_PRIORITY_INVALID':
+    'The ticket priority is invalid.',
+  'error.COLLABORATION_TICKET_STATUS_INVALID': 'The ticket status is invalid.',
+  'error.COLLABORATION_TICKET_TRANSITION_INVALID':
+    'The ticket status transition is invalid.',
   'error.SCHEDULER_DISPATCH_NOW_INVALID':
     'The scheduler dispatch time must be a valid ISO date-time.',
   'error.SCHEDULER_HANDLER_NOT_FOUND':

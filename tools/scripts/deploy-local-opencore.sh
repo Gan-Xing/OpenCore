@@ -1711,6 +1711,79 @@ verify_admin_bundle_api_base_url() {
   if grep \
     --fixed-strings \
     "createCollaborationFixtures" \
+    "$ROOT_DIR/apps/admin/src/pages/Collaboration/Tickets.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "findTicketFixture" \
+    "$ROOT_DIR/apps/admin/src/pages/Collaboration/Tickets.tsx" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Live tickets" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Overdue tickets" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Batch assign" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Export transitions" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Create ticket" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Ticket assigned" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Ticket attachment added" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "collaboration:ticket:create" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "collaboration:ticket:assign" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "collaboration:ticket:comment" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "collaboration:ticket:close" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "collaboration:ticket:delete" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null; then
+    echo "Admin bundle does not include live collaboration ticket operations." >&2
+    echo "Refusing to deploy a stale frontend Collaboration Tickets page." >&2
+    exit 1
+  fi
+
+  if grep \
+    --fixed-strings \
+    "createCollaborationFixtures" \
     "$ROOT_DIR/apps/admin/src/pages/Collaboration/Approvals.tsx" >/dev/null || \
     grep \
     --fixed-strings \
@@ -2619,6 +2692,12 @@ run_with_env env \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
   run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
     "$ROOT_DIR/tools/smoke/smoke-core-collaboration-todos.ts"
+
+run_with_env env \
+  OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \
+  OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
+  run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
+    "$ROOT_DIR/tools/smoke/smoke-core-collaboration-tickets.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \

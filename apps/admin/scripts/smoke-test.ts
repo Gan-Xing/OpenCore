@@ -130,6 +130,7 @@ for (const requiredRoute of [
   "path: '/collaboration/messages'",
   "path: '/collaboration/notices'",
   "path: '/collaboration/todos'",
+  "path: '/collaboration/tickets'",
   "path: '/collaboration/approvals'",
   "path: '/monitor/jobs'",
   "path: '/monitor/cache'",
@@ -180,6 +181,7 @@ for (const repeatedNestedName of [
   'collaboration.messages',
   'collaboration.notices',
   'collaboration.todos',
+  'collaboration.tickets',
   'collaboration.approvals',
   'optional.reports',
   'optional.exportJobs',
@@ -625,6 +627,13 @@ if (
   !accessRuntime.includes('collaboration:message:read') ||
   !accessRuntime.includes('collaboration:notice:read') ||
   !accessRuntime.includes('collaboration:todo:read') ||
+  !accessRuntime.includes('collaboration:ticket:read') ||
+  !accessRuntime.includes('collaboration:ticket:create') ||
+  !accessRuntime.includes('collaboration:ticket:update') ||
+  !accessRuntime.includes('collaboration:ticket:assign') ||
+  !accessRuntime.includes('collaboration:ticket:comment') ||
+  !accessRuntime.includes('collaboration:ticket:close') ||
+  !accessRuntime.includes('collaboration:ticket:delete') ||
   !accessRuntime.includes('collaboration:approval-lite:read') ||
   !accessRuntime.includes('monitor:job:read') ||
   !accessRuntime.includes('monitor:job:update') ||
@@ -810,6 +819,10 @@ const noticesPage = readFileSync(
 );
 const todosPage = readFileSync(
   resolve(root, 'src/pages/Collaboration/Todos.tsx'),
+  'utf8',
+);
+const ticketsPage = readFileSync(
+  resolve(root, 'src/pages/Collaboration/Tickets.tsx'),
   'utf8',
 );
 const approvalsPage = readFileSync(
@@ -1047,6 +1060,38 @@ if (
   !todosPage.includes('Cancel todo') ||
   !todosPage.includes('collaboration:todo:create') ||
   !todosPage.includes('collaboration:todo:update') ||
+  !ticketsPage.includes('@opencore/sdk') ||
+  !ticketsPage.includes('listOpenCoreTickets') ||
+  !ticketsPage.includes('getOpenCoreTicket') ||
+  !ticketsPage.includes('createOpenCoreTicket') ||
+  !ticketsPage.includes('updateOpenCoreTicket') ||
+  !ticketsPage.includes('assignOpenCoreTicket') ||
+  !ticketsPage.includes('changeOpenCoreTicketStatus') ||
+  !ticketsPage.includes('closeOpenCoreTicket') ||
+  !ticketsPage.includes('reopenOpenCoreTicket') ||
+  !ticketsPage.includes('addOpenCoreTicketComment') ||
+  !ticketsPage.includes('addOpenCoreTicketAttachment') ||
+  !ticketsPage.includes('getOpenCoreTicketDashboardSummary') ||
+  !ticketsPage.includes('sendOpenCoreTicketSlaReminders') ||
+  !ticketsPage.includes('batchAssignOpenCoreTickets') ||
+  !ticketsPage.includes('batchCloseOpenCoreTickets') ||
+  !ticketsPage.includes('batchArchiveOpenCoreTickets') ||
+  !ticketsPage.includes('exportOpenCoreTickets') ||
+  !ticketsPage.includes('exportOpenCoreTicketTransitions') ||
+  !ticketsPage.includes('archiveOpenCoreTicket') ||
+  !ticketsPage.includes('Live tickets') ||
+  !ticketsPage.includes('Overdue tickets') ||
+  !ticketsPage.includes('Batch assign') ||
+  !ticketsPage.includes('Export transitions') ||
+  !ticketsPage.includes('Create ticket') ||
+  !ticketsPage.includes('Ticket assigned') ||
+  !ticketsPage.includes('Ticket attachment added') ||
+  !ticketsPage.includes('collaboration:ticket:create') ||
+  !ticketsPage.includes('collaboration:ticket:update') ||
+  !ticketsPage.includes('collaboration:ticket:assign') ||
+  !ticketsPage.includes('collaboration:ticket:comment') ||
+  !ticketsPage.includes('collaboration:ticket:close') ||
+  !ticketsPage.includes('collaboration:ticket:delete') ||
   !approvalsPage.includes('@opencore/sdk') ||
   !approvalsPage.includes('listOpenCoreApprovalLiteRequests') ||
   !approvalsPage.includes('getOpenCoreApprovalLiteRequest') ||
@@ -1193,6 +1238,31 @@ if (
 ) {
   throw new Error(
     'Collaboration Todos page must use live todo SDK APIs instead of static fixtures.',
+  );
+}
+
+if (
+  ticketsPage.includes('createCollaborationFixtures') ||
+  ticketsPage.includes('findTicketFixture') ||
+  !opencorePlatformService.includes(
+    'collaborationClient.listTicketCategories',
+  ) ||
+  !opencorePlatformService.includes('collaborationClient.listTickets') ||
+  !opencorePlatformService.includes('collaborationClient.getTicket') ||
+  !opencorePlatformService.includes('collaborationClient.createTicket') ||
+  !opencorePlatformService.includes('collaborationClient.updateTicket') ||
+  !opencorePlatformService.includes('collaborationClient.assignTicket') ||
+  !opencorePlatformService.includes('collaborationClient.changeTicketStatus') ||
+  !opencorePlatformService.includes('collaborationClient.closeTicket') ||
+  !opencorePlatformService.includes('collaborationClient.reopenTicket') ||
+  !opencorePlatformService.includes('collaborationClient.addTicketComment') ||
+  !opencorePlatformService.includes(
+    'collaborationClient.addTicketAttachment',
+  ) ||
+  !opencorePlatformService.includes('collaborationClient.archiveTicket')
+) {
+  throw new Error(
+    'Collaboration Tickets page must use live ticket SDK APIs instead of static fixtures.',
   );
 }
 

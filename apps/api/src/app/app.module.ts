@@ -6,6 +6,7 @@ import {
 } from '@opencore/audit';
 import { DatabaseModule } from '@opencore/database';
 import { CollaborationModule } from '../modules/collaboration/collaboration/collaboration.module';
+import { TicketModule } from '../modules/collaboration/ticket/ticket.module';
 import { IntegrationModule } from '../modules/integration/integration/integration.module';
 import { MonitoringModule } from '../modules/monitor/monitoring/monitoring.module';
 import { OperationsModule } from '../modules/monitor/operations/operations.module';
@@ -23,6 +24,7 @@ import { HealthController } from './health.controller';
     TenantFoundationModule,
     SystemManagementModule,
     CollaborationModule,
+    TicketModule,
     IntegrationModule,
     MonitoringModule,
     OperationsModule,

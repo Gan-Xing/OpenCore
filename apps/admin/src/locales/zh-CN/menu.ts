@@ -37,6 +37,7 @@ export default {
   'menu.collaboration.messages': '消息',
   'menu.collaboration.notices': '公告',
   'menu.collaboration.todos': '待办',
+  'menu.collaboration.tickets': '工单',
   'menu.collaboration.approvals': '轻审批',
   'menu.optional': '可选能力',
   'menu.optional.reports': '报表',

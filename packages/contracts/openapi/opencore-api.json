@@ -9236,6 +9236,790 @@
         "tags": ["Collaboration", "Collaboration Approval Lite"]
       }
     },
+    "/api/collaboration/tickets/categories": {
+      "get": {
+        "operationId": "TicketController_listCategories",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "enabled",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketCategoryPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration Tickets", "Collaboration Tickets"]
+      },
+      "post": {
+        "operationId": "TicketController_createCategory",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTicketCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TicketCategoryDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration Tickets", "Collaboration Tickets"]
+      }
+    },
+    "/api/collaboration/tickets/categories/{id}": {
+      "patch": {
+        "operationId": "TicketController_updateCategory",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTicketCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TicketCategoryDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration Tickets", "Collaboration Tickets"]
+      }
+    },
+    "/api/collaboration/tickets": {
+      "get": {
+        "operationId": "TicketController_listTickets",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "new",
+                "processing",
+                "pending_confirmation",
+                "resolved",
+                "closed",
+                "canceled"
+              ]
+            }
+          },
+          {
+            "name": "priority",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["low", "medium", "high", "urgent"]
+            }
+          },
+          {
+            "name": "categoryId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "assignee",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "keyword",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "includeArchived",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "overdue",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "slaBreached",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TicketPageDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration Tickets", "Collaboration Tickets"]
+      },
+      "post": {
+        "operationId": "TicketController_createTicket",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateTicketDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TicketDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration Tickets", "Collaboration Tickets"]
+      }
+    },
+    "/api/collaboration/tickets/summary": {
+      "get": {
+        "operationId": "TicketController_getDashboardSummary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketDashboardSummaryDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration Tickets", "Collaboration Tickets"]
+      }
+    },
+    "/api/collaboration/tickets/export": {
+      "get": {
+        "operationId": "TicketController_exportTickets",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "new",
+                "processing",
+                "pending_confirmation",
+                "resolved",
+                "closed",
+                "canceled"
+              ]
+            }
+          },
+          {
+            "name": "priority",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["low", "medium", "high", "urgent"]
+            }
+          },
+          {
+            "name": "categoryId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "assignee",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "keyword",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "includeArchived",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "overdue",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "slaBreached",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketExportPreviewDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration Tickets", "Collaboration Tickets"]
+      }
+    },
+    "/api/collaboration/tickets/transitions/export": {
+      "get": {
+        "operationId": "TicketController_exportTicketTransitions",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "ticketId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "actor",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketExportPreviewDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration Tickets", "Collaboration Tickets"]
+      }
+    },
+    "/api/collaboration/tickets/sla/reminders": {
+      "post": {
+        "operationId": "TicketController_sendSlaReminders",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketSlaReminderDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration Tickets", "Collaboration Tickets"]
+      }
+    },
+    "/api/collaboration/tickets/batch/assign": {
+      "patch": {
+        "operationId": "TicketController_batchAssignTickets",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/BatchAssignTicketsDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketBatchMutationDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration Tickets", "Collaboration Tickets"]
+      }
+    },
+    "/api/collaboration/tickets/batch/close": {
+      "patch": {
+        "operationId": "TicketController_batchCloseTickets",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/BatchTicketActionDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketBatchMutationDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration Tickets", "Collaboration Tickets"]
+      }
+    },
+    "/api/collaboration/tickets/batch/archive": {
+      "patch": {
+        "operationId": "TicketController_batchArchiveTickets",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/BatchTicketActionDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketBatchMutationDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration Tickets", "Collaboration Tickets"]
+      }
+    },
+    "/api/collaboration/tickets/{id}": {
+      "get": {
+        "operationId": "TicketController_getTicket",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TicketDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration Tickets", "Collaboration Tickets"]
+      },
+      "patch": {
+        "operationId": "TicketController_updateTicket",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateTicketDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TicketDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration Tickets", "Collaboration Tickets"]
+      },
+      "delete": {
+        "operationId": "TicketController_archiveTicket",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DeleteResultDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration Tickets", "Collaboration Tickets"]
+      }
+    },
+    "/api/collaboration/tickets/{id}/assign": {
+      "patch": {
+        "operationId": "TicketController_assignTicket",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AssignTicketDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TicketDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration Tickets", "Collaboration Tickets"]
+      }
+    },
+    "/api/collaboration/tickets/{id}/status": {
+      "patch": {
+        "operationId": "TicketController_changeTicketStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ChangeTicketStatusDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TicketDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration Tickets", "Collaboration Tickets"]
+      }
+    },
+    "/api/collaboration/tickets/{id}/close": {
+      "patch": {
+        "operationId": "TicketController_closeTicket",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TicketActionDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TicketDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration Tickets", "Collaboration Tickets"]
+      }
+    },
+    "/api/collaboration/tickets/{id}/reopen": {
+      "patch": {
+        "operationId": "TicketController_reopenTicket",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TicketActionDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TicketDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration Tickets", "Collaboration Tickets"]
+      }
+    },
+    "/api/collaboration/tickets/{id}/comments": {
+      "post": {
+        "operationId": "TicketController_addComment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTicketCommentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TicketDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration Tickets", "Collaboration Tickets"]
+      }
+    },
+    "/api/collaboration/tickets/{id}/attachments": {
+      "post": {
+        "operationId": "TicketController_addAttachment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTicketAttachmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TicketDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration Tickets", "Collaboration Tickets"]
+      }
+    },
     "/api/monitor/status": {
       "get": {
         "operationId": "MonitoringController_getStatus",
@@ -10902,6 +11686,10 @@
       "description": "collaboration.notice: Notices"
     },
     {
+      "name": "Collaboration Tickets",
+      "description": "collaboration.ticket: Tickets"
+    },
+    {
       "name": "Collaboration Todos",
       "description": "collaboration.todo: Todos"
     },
@@ -11767,11 +12555,7 @@
         "type": "object",
         "properties": { "password": { "type": "object" } }
       },
-      "DeleteResultDto": {
-        "type": "object",
-        "properties": { "deleted": { "type": "boolean" } },
-        "required": ["deleted"]
-      },
+      "DeleteResultDto": { "type": "object", "properties": {} },
       "RoleSummaryDto": {
         "type": "object",
         "properties": {
@@ -15629,6 +16413,424 @@
           "comment": { "type": "string" }
         },
         "required": ["actor"]
+      },
+      "TicketCategoryDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "order": { "type": "number" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "code",
+          "name",
+          "enabled",
+          "order",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "TicketCategoryPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TicketCategoryDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "CreateTicketCategoryDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "order": { "type": "number" }
+        },
+        "required": ["code", "name"]
+      },
+      "UpdateTicketCategoryDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "order": { "type": "number" }
+        }
+      },
+      "TicketCommentDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "ticketId": { "type": "string" },
+          "author": { "type": "string" },
+          "body": { "type": "string" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "ticketId",
+          "author",
+          "body",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "TicketTransitionDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "ticketId": { "type": "string" },
+          "fromStatus": { "type": "string" },
+          "toStatus": {
+            "type": "string",
+            "enum": [
+              "new",
+              "processing",
+              "pending_confirmation",
+              "resolved",
+              "closed",
+              "canceled"
+            ]
+          },
+          "actor": { "type": "string" },
+          "comment": { "type": "string" },
+          "createdAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "ticketId",
+          "toStatus",
+          "actor",
+          "createdAt"
+        ]
+      },
+      "TicketAttachmentDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "ticketId": { "type": "string" },
+          "originalName": { "type": "string" },
+          "mimeType": { "type": "string" },
+          "sizeBytes": { "type": "number" },
+          "storageKey": { "type": "string" },
+          "uploadedBy": { "type": "string" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "ticketId",
+          "originalName",
+          "mimeType",
+          "sizeBytes",
+          "storageKey",
+          "uploadedBy",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "TicketDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "number": { "type": "string" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": [
+              "new",
+              "processing",
+              "pending_confirmation",
+              "resolved",
+              "closed",
+              "canceled"
+            ]
+          },
+          "priority": {
+            "type": "string",
+            "enum": ["low", "medium", "high", "urgent"]
+          },
+          "categoryId": { "type": "string" },
+          "category": { "$ref": "#/components/schemas/TicketCategoryDto" },
+          "createdBy": { "type": "string" },
+          "assignee": { "type": "string" },
+          "dueAt": { "type": "string" },
+          "firstRespondedAt": { "type": "string" },
+          "responseDueAt": { "type": "string" },
+          "resolutionDueAt": { "type": "string" },
+          "responseOverdue": { "type": "boolean" },
+          "resolutionOverdue": { "type": "boolean" },
+          "slaBreached": { "type": "boolean" },
+          "slaNotifiedAt": { "type": "string" },
+          "resolvedAt": { "type": "string" },
+          "closedAt": { "type": "string" },
+          "archivedAt": { "type": "string" },
+          "comments": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TicketCommentDto" }
+          },
+          "transitions": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TicketTransitionDto" }
+          },
+          "attachments": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TicketAttachmentDto" }
+          },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "number",
+          "title",
+          "description",
+          "status",
+          "priority",
+          "createdBy",
+          "responseOverdue",
+          "resolutionOverdue",
+          "slaBreached",
+          "comments",
+          "transitions",
+          "attachments",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "TicketPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TicketDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "TicketSummaryBucketDto": {
+        "type": "object",
+        "properties": {
+          "key": { "type": "string" },
+          "count": { "type": "number" }
+        },
+        "required": ["key", "count"]
+      },
+      "TicketDashboardSummaryDto": {
+        "type": "object",
+        "properties": {
+          "total": { "type": "number" },
+          "pending": { "type": "number" },
+          "overdue": { "type": "number" },
+          "byAssignee": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TicketSummaryBucketDto" }
+          },
+          "byCategory": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TicketSummaryBucketDto" }
+          },
+          "byPriority": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TicketSummaryBucketDto" }
+          },
+          "byStatus": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TicketSummaryBucketDto" }
+          }
+        },
+        "required": [
+          "total",
+          "pending",
+          "overdue",
+          "byAssignee",
+          "byCategory",
+          "byPriority",
+          "byStatus"
+        ]
+      },
+      "TicketExportPreviewDto": {
+        "type": "object",
+        "properties": {
+          "filename": { "type": "string" },
+          "contentType": { "type": "string" },
+          "contentBase64": { "type": "string" },
+          "scope": { "type": "string", "example": "current-page" },
+          "columns": { "type": "array", "items": { "type": "string" } },
+          "rowCount": { "type": "number" },
+          "generatedAt": { "type": "string" }
+        },
+        "required": [
+          "filename",
+          "contentType",
+          "contentBase64",
+          "scope",
+          "columns",
+          "rowCount",
+          "generatedAt"
+        ]
+      },
+      "TicketSlaReminderDto": {
+        "type": "object",
+        "properties": {
+          "scanned": { "type": "number" },
+          "markedOverdue": { "type": "number" },
+          "notified": { "type": "number" }
+        },
+        "required": ["scanned", "markedOverdue", "notified"]
+      },
+      "BatchAssignTicketsDto": {
+        "type": "object",
+        "properties": {
+          "ids": { "type": "array", "items": { "type": "string" } },
+          "assignee": { "type": "string" },
+          "actor": { "type": "string" },
+          "comment": { "type": "string" }
+        },
+        "required": ["ids", "assignee", "actor"]
+      },
+      "TicketBatchMutationDto": {
+        "type": "object",
+        "properties": {
+          "updated": { "type": "number" },
+          "skipped": { "type": "number" },
+          "ids": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["updated", "skipped", "ids"]
+      },
+      "BatchTicketActionDto": {
+        "type": "object",
+        "properties": {
+          "ids": { "type": "array", "items": { "type": "string" } },
+          "actor": { "type": "string" },
+          "comment": { "type": "string" }
+        },
+        "required": ["ids", "actor"]
+      },
+      "CreateTicketDto": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "priority": {
+            "type": "string",
+            "enum": ["low", "medium", "high", "urgent"]
+          },
+          "categoryId": { "type": "string" },
+          "createdBy": { "type": "string" },
+          "assignee": { "type": "string" },
+          "dueAt": { "type": "string" },
+          "responseDueAt": { "type": "string" },
+          "resolutionDueAt": { "type": "string" }
+        },
+        "required": ["title", "description", "createdBy"]
+      },
+      "UpdateTicketDto": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "priority": {
+            "type": "string",
+            "enum": ["low", "medium", "high", "urgent"]
+          },
+          "categoryId": { "type": "object" },
+          "assignee": { "type": "object" },
+          "dueAt": { "type": "object" },
+          "responseDueAt": { "type": "object" },
+          "resolutionDueAt": { "type": "object" }
+        }
+      },
+      "AssignTicketDto": {
+        "type": "object",
+        "properties": {
+          "assignee": { "type": "string" },
+          "actor": { "type": "string" },
+          "comment": { "type": "string" }
+        },
+        "required": ["assignee", "actor"]
+      },
+      "ChangeTicketStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "new",
+              "processing",
+              "pending_confirmation",
+              "resolved",
+              "closed",
+              "canceled"
+            ]
+          },
+          "actor": { "type": "string" },
+          "comment": { "type": "string" }
+        },
+        "required": ["status", "actor"]
+      },
+      "TicketActionDto": {
+        "type": "object",
+        "properties": {
+          "actor": { "type": "string" },
+          "comment": { "type": "string" }
+        },
+        "required": ["actor"]
+      },
+      "CreateTicketCommentDto": {
+        "type": "object",
+        "properties": {
+          "author": { "type": "string" },
+          "body": { "type": "string" }
+        },
+        "required": ["author", "body"]
+      },
+      "CreateTicketAttachmentDto": {
+        "type": "object",
+        "properties": {
+          "originalName": { "type": "string" },
+          "mimeType": { "type": "string" },
+          "sizeBytes": { "type": "number" },
+          "storageKey": { "type": "string" },
+          "uploadedBy": { "type": "string" }
+        },
+        "required": [
+          "originalName",
+          "mimeType",
+          "sizeBytes",
+          "storageKey",
+          "uploadedBy"
+        ]
       },
       "RuntimeProcessStatusDto": {
         "type": "object",

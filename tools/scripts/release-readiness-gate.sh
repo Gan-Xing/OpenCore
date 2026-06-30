@@ -36,6 +36,7 @@ TENANT_PLATFORM_GUARDS=(
   guard:tenant-collaboration-message-scope
   guard:tenant-collaboration-notice-scope
   guard:tenant-collaboration-todo-scope
+  guard:tenant-collaboration-ticket-scope
   guard:tenant-collaboration-approval-scope
   guard:tenant-report-definition-scope
   guard:tenant-legacy-user-org

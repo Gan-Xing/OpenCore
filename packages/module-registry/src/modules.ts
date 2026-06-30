@@ -1003,6 +1003,53 @@ export const moduleRegistry = [
     },
   },
   {
+    code: 'collaboration.ticket',
+    title: 'Tickets',
+    layer: 'collaboration',
+    priority: 'P2',
+    status: 'active',
+    stage: 'S10',
+    enabledByDefault: true,
+    description:
+      'Tenant-owned work orders with category, assignment, comments, attachments, and status transitions.',
+    apiTags: ['Collaboration Tickets'],
+    permissions: definePermissions(
+      'collaboration',
+      'ticket',
+      'tickets',
+      'S10',
+      [
+        { action: 'read', title: 'Read' },
+        { action: 'create', title: 'Create' },
+        { action: 'update', title: 'Update' },
+        { action: 'assign', title: 'Assign' },
+        { action: 'comment', title: 'Comment' },
+        { action: 'close', title: 'Close', dangerous: true },
+        { action: 'delete', title: 'Delete', dangerous: true },
+      ],
+    ),
+    menus: [
+      defineMenu(
+        'collaboration.tickets',
+        'Tickets',
+        '/collaboration/tickets',
+        'collaboration:ticket:read',
+        625,
+        'S10',
+      ),
+    ],
+    admin: {
+      basePath: '/collaboration/tickets',
+      routes: [
+        {
+          path: '/collaboration/tickets',
+          title: 'Tickets',
+          permissionCode: 'collaboration:ticket:read',
+        },
+      ],
+    },
+  },
+  {
     code: 'collaboration.approval-lite',
     title: 'Approval Lite',
     layer: 'collaboration',

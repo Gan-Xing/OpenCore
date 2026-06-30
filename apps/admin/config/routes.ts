@@ -237,6 +237,12 @@ export default [
         access: 'canReadTodos',
       },
       {
+        name: 'tickets',
+        path: '/collaboration/tickets',
+        component: './Collaboration/Tickets',
+        access: 'canReadTickets',
+      },
+      {
         name: 'approvals',
         path: '/collaboration/approvals',
         component: './Collaboration/Approvals',

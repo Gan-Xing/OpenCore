@@ -70,6 +70,92 @@ export type ApprovalLiteSummary = {
   createdAt: string;
 };
 
+export type TicketStatus =
+  | 'canceled'
+  | 'closed'
+  | 'new'
+  | 'pending_confirmation'
+  | 'processing'
+  | 'resolved';
+
+export type TicketPriority = 'high' | 'low' | 'medium' | 'urgent';
+
+export type TicketCategorySummary = {
+  id: string;
+  tenantId: string;
+  code: string;
+  name: string;
+  description?: string;
+  enabled: boolean;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type TicketCommentSummary = {
+  id: string;
+  tenantId: string;
+  ticketId: string;
+  author: string;
+  body: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type TicketTransitionSummary = {
+  id: string;
+  tenantId: string;
+  ticketId: string;
+  fromStatus?: TicketStatus;
+  toStatus: TicketStatus;
+  actor: string;
+  comment?: string;
+  createdAt: string;
+};
+
+export type TicketAttachmentSummary = {
+  id: string;
+  tenantId: string;
+  ticketId: string;
+  originalName: string;
+  mimeType: string;
+  sizeBytes: number;
+  storageKey: string;
+  uploadedBy: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type TicketSummary = {
+  id: string;
+  tenantId: string;
+  number: string;
+  title: string;
+  description: string;
+  status: TicketStatus;
+  priority: TicketPriority;
+  categoryId?: string;
+  category?: TicketCategorySummary;
+  createdBy: string;
+  assignee?: string;
+  dueAt?: string;
+  firstRespondedAt?: string;
+  responseDueAt?: string;
+  resolutionDueAt?: string;
+  responseOverdue: boolean;
+  resolutionOverdue: boolean;
+  slaBreached: boolean;
+  slaNotifiedAt?: string;
+  resolvedAt?: string;
+  closedAt?: string;
+  archivedAt?: string;
+  comments: readonly TicketCommentSummary[];
+  transitions: readonly TicketTransitionSummary[];
+  attachments: readonly TicketAttachmentSummary[];
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type CollaborationSummary = {
   messages: {
     total: number;
@@ -137,6 +223,120 @@ export type DecideApprovalLiteRequest = {
   comment?: string;
 };
 
+export type CreateTicketCategoryRequest = {
+  code: string;
+  name: string;
+  description?: string;
+  enabled?: boolean;
+  order?: number;
+};
+
+export type UpdateTicketCategoryRequest = Partial<CreateTicketCategoryRequest>;
+
+export type CreateTicketRequest = {
+  title: string;
+  description: string;
+  createdBy: string;
+  priority?: TicketPriority;
+  categoryId?: string;
+  assignee?: string;
+  dueAt?: string;
+  responseDueAt?: string;
+  resolutionDueAt?: string;
+};
+
+export type UpdateTicketRequest = Partial<
+  Pick<
+    TicketSummary,
+    | 'description'
+    | 'dueAt'
+    | 'priority'
+    | 'resolutionDueAt'
+    | 'responseDueAt'
+    | 'title'
+  >
+> & {
+  assignee?: string | null;
+  categoryId?: string | null;
+};
+
+export type AssignTicketRequest = {
+  assignee: string;
+  actor: string;
+  comment?: string;
+};
+
+export type ChangeTicketStatusRequest = {
+  status: TicketStatus;
+  actor: string;
+  comment?: string;
+};
+
+export type TicketActionRequest = {
+  actor: string;
+  comment?: string;
+};
+
+export type BatchAssignTicketsRequest = {
+  ids: string[];
+  assignee: string;
+  actor: string;
+  comment?: string;
+};
+
+export type BatchTicketActionRequest = {
+  ids: string[];
+  actor: string;
+  comment?: string;
+};
+
+export type TicketBatchMutationSummary = {
+  updated: number;
+  skipped: number;
+  ids: readonly string[];
+};
+
+export type TicketSlaReminderSummary = {
+  scanned: number;
+  markedOverdue: number;
+  notified: number;
+};
+
+export type TicketSummaryBucket = {
+  key: string;
+  count: number;
+};
+
+export type TicketDashboardSummary = {
+  total: number;
+  pending: number;
+  overdue: number;
+  byAssignee: readonly TicketSummaryBucket[];
+  byCategory: readonly TicketSummaryBucket[];
+  byPriority: readonly TicketSummaryBucket[];
+  byStatus: readonly TicketSummaryBucket[];
+};
+
+export type TicketExportPreview = {
+  filename: string;
+  contentType: string;
+  contentBase64: string;
+  scope: 'current-page';
+  columns: readonly string[];
+  rowCount: number;
+  generatedAt: string;
+};
+
+export type CreateTicketCommentRequest = {
+  author: string;
+  body: string;
+};
+
+export type CreateTicketAttachmentRequest = Pick<
+  TicketAttachmentSummary,
+  'mimeType' | 'originalName' | 'sizeBytes' | 'storageKey' | 'uploadedBy'
+>;
+
 export type CollaborationDeleteResult = {
   deleted: true;
 };
@@ -160,6 +360,26 @@ export type ApprovalLiteQueryRequest = PageRequest & {
   status?: 'approved' | 'pending' | 'rejected';
   requester?: string;
   approver?: string;
+};
+
+export type TicketCategoryQueryRequest = PageRequest & {
+  enabled?: boolean;
+};
+
+export type TicketQueryRequest = PageRequest & {
+  status?: TicketStatus;
+  priority?: TicketPriority;
+  categoryId?: string;
+  assignee?: string;
+  keyword?: string;
+  includeArchived?: boolean;
+  overdue?: boolean;
+  slaBreached?: boolean;
+};
+
+export type TicketTransitionExportQueryRequest = PageRequest & {
+  ticketId?: string;
+  actor?: string;
 };
 
 export type CollaborationFixtures = {
@@ -301,6 +521,8 @@ export type MessagePage = PageResponse<MessageSummary>;
 export type NoticePage = PageResponse<NoticeSummary>;
 export type TodoPage = PageResponse<TodoSummary>;
 export type ApprovalLitePage = PageResponse<ApprovalLiteSummary>;
+export type TicketCategoryPage = PageResponse<TicketCategorySummary>;
+export type TicketPage = PageResponse<TicketSummary>;
 
 function countByStatus<T extends { status: string }>(
   rows: readonly T[],

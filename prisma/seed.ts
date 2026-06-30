@@ -32,6 +32,13 @@ import {
   seedNotices,
   seedTodos,
 } from '../apps/api/src/modules/collaboration/collaboration/collaboration.seed';
+import {
+  seedTicketAttachments,
+  seedTicketCategories,
+  seedTicketComments,
+  seedTicketTransitions,
+  seedTickets,
+} from '../apps/api/src/modules/collaboration/ticket/ticket.seed';
 import { seedReports } from '../apps/api/src/modules/monitor/operations/operations.seed';
 import {
   seedIntegrationOutbox,
@@ -565,6 +572,11 @@ async function seedCollaboration(): Promise<{
   approvals: number;
   messages: number;
   notices: number;
+  ticketAttachments: number;
+  ticketCategories: number;
+  ticketComments: number;
+  ticketTransitions: number;
+  tickets: number;
   todos: number;
 }> {
   for (const message of seedMessages) {
@@ -703,10 +715,178 @@ async function seedCollaboration(): Promise<{
     });
   }
 
+  for (const category of seedTicketCategories) {
+    await prisma.ticketCategory.upsert({
+      where: { id: category.id },
+      update: {
+        tenantId: category.tenantId,
+        code: category.code,
+        name: category.name,
+        description: category.description ?? null,
+        enabled: category.enabled,
+        order: category.order,
+        createdAt: new Date(category.createdAt),
+      },
+      create: {
+        id: category.id,
+        tenantId: category.tenantId,
+        code: category.code,
+        name: category.name,
+        description: category.description ?? null,
+        enabled: category.enabled,
+        order: category.order,
+        createdAt: new Date(category.createdAt),
+      },
+    });
+  }
+
+  for (const ticket of seedTickets) {
+    await prisma.ticket.upsert({
+      where: { id: ticket.id },
+      update: {
+        tenantId: ticket.tenantId,
+        number: ticket.number,
+        title: ticket.title,
+        description: ticket.description,
+        status: ticket.status,
+        priority: ticket.priority,
+        categoryId: ticket.categoryId ?? null,
+        createdBy: ticket.createdBy,
+        assignee: ticket.assignee ?? null,
+        dueAt: ticket.dueAt ? new Date(ticket.dueAt) : null,
+        firstRespondedAt: ticket.firstRespondedAt
+          ? new Date(ticket.firstRespondedAt)
+          : null,
+        responseDueAt: ticket.responseDueAt
+          ? new Date(ticket.responseDueAt)
+          : null,
+        resolutionDueAt: ticket.resolutionDueAt
+          ? new Date(ticket.resolutionDueAt)
+          : null,
+        slaBreached: ticket.slaBreached,
+        slaNotifiedAt: ticket.slaNotifiedAt
+          ? new Date(ticket.slaNotifiedAt)
+          : null,
+        resolvedAt: ticket.resolvedAt ? new Date(ticket.resolvedAt) : null,
+        closedAt: ticket.closedAt ? new Date(ticket.closedAt) : null,
+        archivedAt: ticket.archivedAt ? new Date(ticket.archivedAt) : null,
+        createdAt: new Date(ticket.createdAt),
+      },
+      create: {
+        id: ticket.id,
+        tenantId: ticket.tenantId,
+        number: ticket.number,
+        title: ticket.title,
+        description: ticket.description,
+        status: ticket.status,
+        priority: ticket.priority,
+        categoryId: ticket.categoryId ?? null,
+        createdBy: ticket.createdBy,
+        assignee: ticket.assignee ?? null,
+        dueAt: ticket.dueAt ? new Date(ticket.dueAt) : null,
+        firstRespondedAt: ticket.firstRespondedAt
+          ? new Date(ticket.firstRespondedAt)
+          : null,
+        responseDueAt: ticket.responseDueAt
+          ? new Date(ticket.responseDueAt)
+          : null,
+        resolutionDueAt: ticket.resolutionDueAt
+          ? new Date(ticket.resolutionDueAt)
+          : null,
+        slaBreached: ticket.slaBreached,
+        slaNotifiedAt: ticket.slaNotifiedAt
+          ? new Date(ticket.slaNotifiedAt)
+          : null,
+        resolvedAt: ticket.resolvedAt ? new Date(ticket.resolvedAt) : null,
+        closedAt: ticket.closedAt ? new Date(ticket.closedAt) : null,
+        archivedAt: ticket.archivedAt ? new Date(ticket.archivedAt) : null,
+        createdAt: new Date(ticket.createdAt),
+      },
+    });
+  }
+
+  for (const comment of seedTicketComments) {
+    await prisma.ticketComment.upsert({
+      where: { id: comment.id },
+      update: {
+        tenantId: comment.tenantId,
+        ticketId: comment.ticketId,
+        author: comment.author,
+        body: comment.body,
+        createdAt: new Date(comment.createdAt),
+      },
+      create: {
+        id: comment.id,
+        tenantId: comment.tenantId,
+        ticketId: comment.ticketId,
+        author: comment.author,
+        body: comment.body,
+        createdAt: new Date(comment.createdAt),
+      },
+    });
+  }
+
+  for (const transition of seedTicketTransitions) {
+    await prisma.ticketTransition.upsert({
+      where: { id: transition.id },
+      update: {
+        tenantId: transition.tenantId,
+        ticketId: transition.ticketId,
+        fromStatus: transition.fromStatus ?? null,
+        toStatus: transition.toStatus,
+        actor: transition.actor,
+        comment: transition.comment ?? null,
+        createdAt: new Date(transition.createdAt),
+      },
+      create: {
+        id: transition.id,
+        tenantId: transition.tenantId,
+        ticketId: transition.ticketId,
+        fromStatus: transition.fromStatus ?? null,
+        toStatus: transition.toStatus,
+        actor: transition.actor,
+        comment: transition.comment ?? null,
+        createdAt: new Date(transition.createdAt),
+      },
+    });
+  }
+
+  for (const attachment of seedTicketAttachments) {
+    await prisma.ticketAttachment.upsert({
+      where: { id: attachment.id },
+      update: {
+        tenantId: attachment.tenantId,
+        ticketId: attachment.ticketId,
+        originalName: attachment.originalName,
+        mimeType: attachment.mimeType,
+        sizeBytes: attachment.sizeBytes,
+        storageKey: attachment.storageKey,
+        uploadedBy: attachment.uploadedBy,
+        createdAt: new Date(attachment.createdAt),
+      },
+      create: {
+        id: attachment.id,
+        tenantId: attachment.tenantId,
+        ticketId: attachment.ticketId,
+        originalName: attachment.originalName,
+        mimeType: attachment.mimeType,
+        sizeBytes: attachment.sizeBytes,
+        storageKey: attachment.storageKey,
+        uploadedBy: attachment.uploadedBy,
+        createdAt: new Date(attachment.createdAt),
+      },
+    });
+  }
+
   return {
     approvals: seedApprovalLiteRequests.length,
     messages: seedMessages.length,
     notices: seedNotices.length,
+    ticketAttachments: seedTicketAttachments.length,
+    ticketCategories: seedTicketCategories.length,
+    ticketComments: seedTicketComments.length,
+    ticketTransitions: seedTicketTransitions.length,
+    tickets: seedTickets.length,
     todos: seedTodos.length,
   };
 }

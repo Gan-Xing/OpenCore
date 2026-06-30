@@ -25,7 +25,10 @@ import {
   type AreaRegionSummary,
   type AreaRegionTreeListSummary,
   type AreaRegionTreeRequest,
+  type AssignTicketRequest,
   type AssignTodoRequest,
+  type BatchAssignTicketsRequest,
+  type BatchTicketActionRequest,
   type AssignUserRolesRequest,
   type AuditLogBatchMutationSummary,
   type AuditLogCleanSummary,
@@ -52,6 +55,7 @@ import {
   type CacheValueSummary,
   type CleanAuditLogsRequest,
   type ClaimQueuedJobsRequest,
+  type ChangeTicketStatusRequest,
   type CreateTenantPlanRequest,
   type CreateTenantMemberRequest,
   type CreateTenantRequest,
@@ -71,6 +75,10 @@ import {
   type CreateApprovalLiteRequest,
   type CreateMessageRequest,
   type CreateNoticeRequest,
+  type CreateTicketAttachmentRequest,
+  type CreateTicketCategoryRequest,
+  type CreateTicketCommentRequest,
+  type CreateTicketRequest,
   type CreateTodoRequest,
   type DecideApprovalLiteRequest,
   type DeleteCacheKeyRequest,
@@ -237,9 +245,21 @@ import {
   type SystemPostOrderMutationSummary,
   type SystemPostQueryRequest,
   type SystemPostSummary,
+  type TicketActionRequest,
+  type TicketBatchMutationSummary,
+  type TicketCategoryQueryRequest,
+  type TicketCategorySummary,
+  type TicketDashboardSummary,
+  type TicketExportPreview,
+  type TicketQueryRequest,
+  type TicketSlaReminderSummary,
+  type TicketSummary,
+  type TicketTransitionExportQueryRequest,
   type TodoActionRequest,
   type TodoQueryRequest,
   type TodoSummary,
+  type UpdateTicketCategoryRequest,
+  type UpdateTicketRequest,
   type ResetUserPasswordRequest,
   type ScheduleOutboxRequest,
   type SetUserStatusRequest,
@@ -548,6 +568,169 @@ export function cancelOpenCoreTodo(
   body: TodoActionRequest,
 ): Promise<TodoSummary> {
   return collaborationClient.cancelTodo(getRequiredAdminToken(), id, body);
+}
+
+export async function listOpenCoreTicketCategories(
+  query?: TicketCategoryQueryRequest,
+): Promise<TicketCategorySummary[]> {
+  const page = await collaborationClient.listTicketCategories(
+    getRequiredAdminToken(),
+    {
+      page: 1,
+      pageSize: 100,
+      ...query,
+    },
+  );
+  return [...page.items];
+}
+
+export function createOpenCoreTicketCategory(
+  body: CreateTicketCategoryRequest,
+): Promise<TicketCategorySummary> {
+  return collaborationClient.createTicketCategory(
+    getRequiredAdminToken(),
+    body,
+  );
+}
+
+export function updateOpenCoreTicketCategory(
+  id: string,
+  body: UpdateTicketCategoryRequest,
+): Promise<TicketCategorySummary> {
+  return collaborationClient.updateTicketCategory(
+    getRequiredAdminToken(),
+    id,
+    body,
+  );
+}
+
+export async function listOpenCoreTickets(
+  query?: TicketQueryRequest,
+): Promise<TicketSummary[]> {
+  const page = await collaborationClient.listTickets(getRequiredAdminToken(), {
+    page: 1,
+    pageSize: 100,
+    ...query,
+  });
+  return [...page.items];
+}
+
+export function getOpenCoreTicketDashboardSummary(): Promise<TicketDashboardSummary> {
+  return collaborationClient.getTicketDashboardSummary(getRequiredAdminToken());
+}
+
+export function exportOpenCoreTickets(
+  query?: TicketQueryRequest,
+): Promise<TicketExportPreview> {
+  return collaborationClient.exportTickets(getRequiredAdminToken(), query);
+}
+
+export function exportOpenCoreTicketTransitions(
+  query?: TicketTransitionExportQueryRequest,
+): Promise<TicketExportPreview> {
+  return collaborationClient.exportTicketTransitions(
+    getRequiredAdminToken(),
+    query,
+  );
+}
+
+export function getOpenCoreTicket(id: string): Promise<TicketSummary> {
+  return collaborationClient.getTicket(getRequiredAdminToken(), id);
+}
+
+export function createOpenCoreTicket(
+  body: CreateTicketRequest,
+): Promise<TicketSummary> {
+  return collaborationClient.createTicket(getRequiredAdminToken(), body);
+}
+
+export function updateOpenCoreTicket(
+  id: string,
+  body: UpdateTicketRequest,
+): Promise<TicketSummary> {
+  return collaborationClient.updateTicket(getRequiredAdminToken(), id, body);
+}
+
+export function assignOpenCoreTicket(
+  id: string,
+  body: AssignTicketRequest,
+): Promise<TicketSummary> {
+  return collaborationClient.assignTicket(getRequiredAdminToken(), id, body);
+}
+
+export function changeOpenCoreTicketStatus(
+  id: string,
+  body: ChangeTicketStatusRequest,
+): Promise<TicketSummary> {
+  return collaborationClient.changeTicketStatus(
+    getRequiredAdminToken(),
+    id,
+    body,
+  );
+}
+
+export function closeOpenCoreTicket(
+  id: string,
+  body: TicketActionRequest,
+): Promise<TicketSummary> {
+  return collaborationClient.closeTicket(getRequiredAdminToken(), id, body);
+}
+
+export function reopenOpenCoreTicket(
+  id: string,
+  body: TicketActionRequest,
+): Promise<TicketSummary> {
+  return collaborationClient.reopenTicket(getRequiredAdminToken(), id, body);
+}
+
+export function addOpenCoreTicketComment(
+  id: string,
+  body: CreateTicketCommentRequest,
+): Promise<TicketSummary> {
+  return collaborationClient.addTicketComment(
+    getRequiredAdminToken(),
+    id,
+    body,
+  );
+}
+
+export function addOpenCoreTicketAttachment(
+  id: string,
+  body: CreateTicketAttachmentRequest,
+): Promise<TicketSummary> {
+  return collaborationClient.addTicketAttachment(
+    getRequiredAdminToken(),
+    id,
+    body,
+  );
+}
+
+export function sendOpenCoreTicketSlaReminders(): Promise<TicketSlaReminderSummary> {
+  return collaborationClient.sendTicketSlaReminders(getRequiredAdminToken());
+}
+
+export function batchAssignOpenCoreTickets(
+  body: BatchAssignTicketsRequest,
+): Promise<TicketBatchMutationSummary> {
+  return collaborationClient.batchAssignTickets(getRequiredAdminToken(), body);
+}
+
+export function batchCloseOpenCoreTickets(
+  body: BatchTicketActionRequest,
+): Promise<TicketBatchMutationSummary> {
+  return collaborationClient.batchCloseTickets(getRequiredAdminToken(), body);
+}
+
+export function batchArchiveOpenCoreTickets(
+  body: BatchTicketActionRequest,
+): Promise<TicketBatchMutationSummary> {
+  return collaborationClient.batchArchiveTickets(getRequiredAdminToken(), body);
+}
+
+export function archiveOpenCoreTicket(
+  id: string,
+): Promise<CollaborationDeleteResult> {
+  return collaborationClient.archiveTicket(getRequiredAdminToken(), id);
 }
 
 export async function listOpenCoreApprovalLiteRequests(
