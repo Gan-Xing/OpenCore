@@ -56,6 +56,15 @@ export const schedulerJobRegistry: readonly SchedulerJobRegistryEntry[] = [
     defaultPayload: { retentionDays: 90 },
   },
   {
+    code: 'collaboration.ticket-sla-reminders',
+    title: 'Collaboration ticket SLA reminders',
+    queueName: 'collaboration',
+    handlerKey: 'collaboration.ticketSlaReminders',
+    allowManualTrigger: true,
+    defaultCron: '30 * * * *',
+    defaultPayload: { source: 'collaboration.tickets.sla' },
+  },
+  {
     code: 'report.refresh',
     title: 'Refresh reports',
     queueName: 'reports',
@@ -91,6 +100,19 @@ export const seedSchedulerJobs: readonly SchedulerJobDefinitionRecord[] = [
     timeoutSeconds: 60,
     adapter: 'bullmq',
     payload: { retentionDays: 90 },
+  },
+  {
+    id: 'job_collaboration_ticket_sla_reminders',
+    tenantId: 'tenant_root',
+    code: 'collaboration.ticket-sla-reminders',
+    name: 'Collaboration ticket SLA reminders',
+    queueName: 'collaboration',
+    cron: '30 * * * *',
+    enabled: true,
+    retryLimit: 1,
+    timeoutSeconds: 60,
+    adapter: 'bullmq',
+    payload: { source: 'collaboration.tickets.sla' },
   },
 ];
 

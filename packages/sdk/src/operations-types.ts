@@ -321,12 +321,13 @@ export function createOperationsFixtures(): OperationsFixtures {
       defaultPayload: { command: 'pnpm openapi:check' },
     },
     {
-      code: 'report.refresh',
-      title: 'Refresh reports',
-      queueName: 'reports',
-      handlerKey: 'reports.refresh',
+      code: 'collaboration.ticket-sla-reminders',
+      title: 'Collaboration ticket SLA reminders',
+      queueName: 'collaboration',
+      handlerKey: 'collaboration.ticketSlaReminders',
       allowManualTrigger: true,
-      defaultPayload: { source: 'monitor.status' },
+      defaultCron: '30 * * * *',
+      defaultPayload: { source: 'collaboration.tickets.sla' },
     },
     {
       code: 'audit-log.retention-clean',
@@ -336,6 +337,14 @@ export function createOperationsFixtures(): OperationsFixtures {
       allowManualTrigger: true,
       defaultCron: '0 3 * * *',
       defaultPayload: { retentionDays: 90 },
+    },
+    {
+      code: 'report.refresh',
+      title: 'Refresh reports',
+      queueName: 'reports',
+      handlerKey: 'reports.refresh',
+      allowManualTrigger: true,
+      defaultPayload: { source: 'monitor.status' },
     },
   ];
   const jobs: readonly JobDefinitionSummary[] = [
@@ -364,6 +373,19 @@ export function createOperationsFixtures(): OperationsFixtures {
       timeoutSeconds: 60,
       adapter: 'bullmq',
       payload: { retentionDays: 90 },
+    },
+    {
+      id: 'job_collaboration_ticket_sla_reminders',
+      tenantId: 'tenant_root',
+      code: 'collaboration.ticket-sla-reminders',
+      name: 'Collaboration ticket SLA reminders',
+      queueName: 'collaboration',
+      cron: '30 * * * *',
+      enabled: true,
+      retryLimit: 1,
+      timeoutSeconds: 60,
+      adapter: 'bullmq',
+      payload: { source: 'collaboration.tickets.sla' },
     },
   ];
   const jobRuns: readonly JobRunLogSummary[] = [

@@ -225,6 +225,9 @@ describe('registry fixtures', () => {
   it('resolves S11 operations fixture details by scoped keys', () => {
     expect(findJobFixture('openapi.drift-check')?.enabled).toBe(true);
     expect(
+      findJobFixture('collaboration.ticket-sla-reminders')?.queueName,
+    ).toBe('collaboration');
+    expect(
       findJobRunFixture('openapi.drift-check', 'run_openapi_drift_1')?.status,
     ).toBe('completed');
     expect(

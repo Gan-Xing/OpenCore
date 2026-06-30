@@ -88,12 +88,20 @@ async function main() {
     const auditRetentionRegistry = registry.find(
       (entry) => entry.code === 'audit-log.retention-clean',
     );
+    const ticketSlaRegistry = registry.find(
+      (entry) => entry.code === 'collaboration.ticket-sla-reminders',
+    );
     if (!reportRegistry) {
       throw new Error(`Expected scheduler registry to include ${JOB_CODE}`);
     }
     if (!auditRetentionRegistry) {
       throw new Error(
         'Expected scheduler registry to include audit-log.retention-clean',
+      );
+    }
+    if (!ticketSlaRegistry) {
+      throw new Error(
+        'Expected scheduler registry to include collaboration.ticket-sla-reminders',
       );
     }
     assertEqual(
@@ -110,6 +118,16 @@ async function main() {
       auditRetentionRegistry.handlerKey,
       'maintenance.auditLogRetention',
       'audit retention handler key',
+    );
+    assertEqual(
+      ticketSlaRegistry.handlerKey,
+      'collaboration.ticketSlaReminders',
+      'ticket SLA reminder handler key',
+    );
+    assertEqual(
+      ticketSlaRegistry.queueName,
+      'collaboration',
+      'ticket SLA reminder queue',
     );
 
     const queues = await apiRequest('/monitor/queues');

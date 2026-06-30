@@ -16,9 +16,22 @@ const ROOT_TENANT_ID = 'tenant_root';
 const FOREIGN_TENANT_ID = 'tenant_collaboration_ticket_smoke_foreign';
 const FOREIGN_TICKET_ID = `ticket_foreign_${runSafeId}`;
 const FOREIGN_CATEGORY_ID = `ticket_cat_foreign_${runSafeId}`;
+const TICKET_SLA_JOB_CODE = 'collaboration.ticket-sla-reminders';
 
 async function main() {
   const createdTicketIds: string[] = [];
+  let token: string | undefined;
+  let originalTicketSlaJob:
+    | {
+        cron?: string;
+        enabled: boolean;
+        name: string;
+        payload?: Record<string, unknown>;
+        queueName: string;
+        retryLimit: number;
+        timeoutSeconds: number;
+      }
+    | undefined;
 
   try {
     await request('/health/live', { expected: [200] });
@@ -51,7 +64,7 @@ async function main() {
     }
 
     const loginResponse = await smoke.login();
-    const token = assertString(loginResponse.accessToken, 'login accessToken');
+    token = assertString(loginResponse.accessToken, 'login accessToken');
     await seedForeignTenantTicket();
     await assertForeignTenantTicketHidden(token);
 
@@ -269,6 +282,112 @@ async function main() {
       'sla-overdue',
     );
 
+    const registry = await clients.operations.listJobRegistry(token);
+    const ticketSlaRegistry = registry.find(
+      (entry) => entry.code === TICKET_SLA_JOB_CODE,
+    );
+    if (!ticketSlaRegistry) {
+      throw new Error('Expected scheduler registry to include ticket SLA job');
+    }
+    assertEqual(
+      ticketSlaRegistry.handlerKey,
+      'collaboration.ticketSlaReminders',
+      'ticket SLA scheduler handler key',
+    );
+    assertEqual(
+      ticketSlaRegistry.queueName,
+      'collaboration',
+      'ticket SLA scheduler queue',
+    );
+
+    originalTicketSlaJob = await clients.operations.getJob(
+      token,
+      TICKET_SLA_JOB_CODE,
+    );
+    const schedulerNow = createSchedulerSmokeNow();
+    const schedulerCron = createCronFor(schedulerNow);
+    await clients.operations.updateJob(token, TICKET_SLA_JOB_CODE, {
+      cron: schedulerCron,
+      enabled: true,
+      name: originalTicketSlaJob.name,
+      payload: { source: 'collaboration.tickets.scheduler-smoke', runId },
+      queueName: 'collaboration',
+      retryLimit: 1,
+      timeoutSeconds: 60,
+    });
+    const schedulerOverdueTicket = await clients.collaboration.createTicket(
+      token,
+      {
+        assignee: username,
+        categoryId: 'ticket_cat_support',
+        createdBy: username,
+        description: 'Scheduler overdue collaboration ticket smoke.',
+        dueAt: '2026-06-01T00:00:00.000Z',
+        priority: 'urgent',
+        responseDueAt: '2026-06-01T00:00:00.000Z',
+        resolutionDueAt: '2026-06-01T01:00:00.000Z',
+        title: `Scheduler overdue smoke ticket ${runId}`,
+      },
+    );
+    createdTicketIds.push(
+      assertString(schedulerOverdueTicket.id, 'scheduler overdue ticket id'),
+    );
+
+    const dispatch = await clients.operations.dispatchDueJobs(token, {
+      actor: username,
+      limit: 5,
+      metadata: { source: 'collaboration.tickets.scheduler-dispatch', runId },
+      now: schedulerNow.toISOString(),
+      queueName: 'collaboration',
+    });
+    assertNumberAtLeast(
+      dispatch.dispatchedCount,
+      1,
+      'ticket SLA scheduler dispatch count',
+    );
+    const queuedTicketSlaRun = dispatch.queuedRuns.find(
+      (run) => run.jobCode === TICKET_SLA_JOB_CODE,
+    );
+    if (!queuedTicketSlaRun) {
+      throw new Error('Ticket SLA scheduler run was not queued');
+    }
+
+    const worker = await clients.operations.claimQueuedJobs(token, {
+      actor: username,
+      limit: 5,
+      metadata: { source: 'collaboration.tickets.scheduler-worker', runId },
+      queueName: 'collaboration',
+    });
+    const workerTicketSlaRun = worker.runs.find(
+      (run) => run.id === queuedTicketSlaRun.id,
+    );
+    if (!workerTicketSlaRun) {
+      throw new Error('Ticket SLA scheduler run was not claimed');
+    }
+    assertEqual(
+      workerTicketSlaRun.status,
+      'completed',
+      'ticket SLA scheduler run status',
+    );
+    const schedulerResult = workerTicketSlaRun.metadata?.result;
+    if (!isRecord(schedulerResult)) {
+      throw new Error('Ticket SLA scheduler result metadata is missing');
+    }
+    assertNumberAtLeast(
+      Number(schedulerResult.markedOverdue ?? 0),
+      1,
+      'ticket SLA scheduler marked overdue',
+    );
+    assertNumberAtLeast(
+      Number(schedulerResult.notified ?? 0),
+      1,
+      'ticket SLA scheduler notified count',
+    );
+    await assertTicketNotificationDelivered(
+      schedulerOverdueTicket.number,
+      'sla-overdue',
+    );
+
     const ticketExport = await clients.collaboration.exportTickets(token, {
       keyword: 'Overdue smoke ticket',
       overdue: true,
@@ -418,6 +537,8 @@ async function main() {
           'collaboration.tickets.attachment',
           'collaboration.tickets.sla-overdue-filter',
           'collaboration.tickets.sla-reminder-notification',
+          'collaboration.tickets.sla-scheduler-registry',
+          'collaboration.tickets.sla-scheduler-dispatch-worker',
           'collaboration.tickets.dashboard-summary',
           'collaboration.tickets.export',
           'collaboration.tickets.transition-export',
@@ -433,9 +554,37 @@ async function main() {
     await cleanupCreatedTickets(createdTicketIds);
     throw error;
   } finally {
+    if (token && originalTicketSlaJob) {
+      await restoreTicketSlaSchedulerJob(token, originalTicketSlaJob).catch(
+        () => undefined,
+      );
+    }
     await cleanupForeignTenantTicket().catch(() => undefined);
     await disconnectSmokePrisma();
   }
+}
+
+async function restoreTicketSlaSchedulerJob(
+  token: string,
+  job: {
+    cron?: string;
+    enabled: boolean;
+    name: string;
+    payload?: Record<string, unknown>;
+    queueName: string;
+    retryLimit: number;
+    timeoutSeconds: number;
+  },
+) {
+  await clients.operations.updateJob(token, TICKET_SLA_JOB_CODE, {
+    cron: job.cron,
+    enabled: job.enabled,
+    name: job.name,
+    payload: job.payload,
+    queueName: job.queueName,
+    retryLimit: job.retryLimit,
+    timeoutSeconds: job.timeoutSeconds,
+  });
 }
 
 async function cleanupCreatedTickets(ids: readonly string[]) {
@@ -642,6 +791,22 @@ async function retryUntil(predicate: () => Promise<boolean>, label: string) {
   }
 
   throw new Error(`${label} was not recorded`);
+}
+
+function createSchedulerSmokeNow(): Date {
+  const offsetMinutes = 360 + Math.floor(Math.random() * 120);
+  const now = new Date(Date.now() + offsetMinutes * 60 * 1000);
+  now.setUTCSeconds(0, 0);
+
+  return now;
+}
+
+function createCronFor(date: Date): string {
+  return `${date.getUTCMinutes()} ${date.getUTCHours()} * * *`;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
 async function cleanupForeignTenantTicket() {

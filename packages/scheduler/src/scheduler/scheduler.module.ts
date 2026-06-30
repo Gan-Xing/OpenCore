@@ -3,6 +3,7 @@ import { DatabaseModule } from '@opencore/database';
 import { SchedulerJobExecutor } from './scheduler.executor';
 import { PrismaSchedulerRepository } from './scheduler.prisma-repository';
 import { SchedulerRepository } from './scheduler.repository';
+import { SchedulerRuntimeService } from './scheduler.runtime';
 import { SchedulerService } from './scheduler.service';
 
 @Module({
@@ -13,8 +14,14 @@ import { SchedulerService } from './scheduler.service';
       useClass: PrismaSchedulerRepository,
     },
     SchedulerJobExecutor,
+    SchedulerRuntimeService,
     SchedulerService,
   ],
-  exports: [SchedulerJobExecutor, SchedulerRepository, SchedulerService],
+  exports: [
+    SchedulerJobExecutor,
+    SchedulerRepository,
+    SchedulerRuntimeService,
+    SchedulerService,
+  ],
 })
 export class SchedulerModule {}

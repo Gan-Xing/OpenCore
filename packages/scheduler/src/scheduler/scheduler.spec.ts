@@ -2,7 +2,10 @@ import { Prisma } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { runWithRequestContext } from '@opencore/core';
 import { PrismaService } from '@opencore/database';
-import { SchedulerJobExecutor } from './scheduler.executor';
+import {
+  SchedulerJobExecutor,
+  sendTicketSlaRemindersForTenant,
+} from './scheduler.executor';
 import { PrismaSchedulerRepository } from './scheduler.prisma-repository';
 import { SeedSchedulerRepository } from './scheduler.seed-repository';
 import { SchedulerService } from './scheduler.service';
@@ -28,7 +31,7 @@ describe('@opencore/scheduler', () => {
       service.listJobRuns('openapi.drift-check', { status: 'completed' }),
     ).resolves.toMatchObject({ total: 1 });
     await expect(service.getSummary()).resolves.toMatchObject({
-      jobs: { total: 2, enabled: 2, disabled: 0 },
+      jobs: { total: 3, enabled: 3, disabled: 0 },
       jobRuns: { total: 1, completed: 1 },
     });
     expect(service.listRegistryEntries()).toEqual(
@@ -40,6 +43,10 @@ describe('@opencore/scheduler', () => {
         expect.objectContaining({
           code: 'report.refresh',
           handlerKey: 'reports.refresh',
+        }),
+        expect.objectContaining({
+          code: 'collaboration.ticket-sla-reminders',
+          handlerKey: 'collaboration.ticketSlaReminders',
         }),
       ]),
     );
@@ -57,6 +64,25 @@ describe('@opencore/scheduler', () => {
         result: expect.objectContaining({
           dryRun: true,
           retentionDays: 90,
+        }),
+      }),
+    });
+
+    await expect(
+      service.triggerJob('collaboration.ticket-sla-reminders', {
+        actor: 'admin',
+        metadata: { reason: 'seed ticket SLA dry-run' },
+      }),
+    ).resolves.toMatchObject({
+      jobCode: 'collaboration.ticket-sla-reminders',
+      status: 'completed',
+      metadata: expect.objectContaining({
+        handlerKey: 'collaboration.ticketSlaReminders',
+        result: expect.objectContaining({
+          dryRun: true,
+          markedOverdue: 0,
+          notified: 0,
+          scanned: 0,
         }),
       }),
     });
@@ -403,6 +429,82 @@ describe('@opencore/scheduler', () => {
       }),
       'SCHEDULER_HANDLER_NOT_FOUND',
     );
+  });
+
+  it('marks overdue tickets and sends SLA reminder deliveries from the scheduler handler', async () => {
+    const ticket = {
+      assignee: 'admin',
+      createdBy: 'creator',
+      id: 'ticket_scheduler_sla',
+      number: 'TCK-SCHEDULER-SLA',
+      tenantId: ROOT_TENANT_ID,
+      title: 'Scheduler SLA smoke',
+    };
+    const prisma = {
+      systemNotice: {
+        create: jest.fn().mockImplementation(({ data }) =>
+          Promise.resolve({
+            ...data,
+            id: 'notice_scheduler_sla',
+          }),
+        ),
+      },
+      systemNoticeDelivery: {
+        create: jest.fn().mockResolvedValue({}),
+      },
+      tenantMembership: {
+        findUnique: jest.fn().mockResolvedValue({
+          status: 'active',
+        }),
+      },
+      ticket: {
+        findMany: jest.fn().mockResolvedValue([ticket]),
+        update: jest.fn().mockResolvedValue({}),
+      },
+      user: {
+        findUnique: jest.fn().mockResolvedValue({
+          displayName: 'Admin',
+          id: 'user_admin',
+          username: 'admin',
+        }),
+      },
+    } as unknown as PrismaService;
+
+    await expect(
+      sendTicketSlaRemindersForTenant({
+        actor: 'system',
+        prisma,
+        tenantId: ROOT_TENANT_ID,
+      }),
+    ).resolves.toEqual({
+      dryRun: false,
+      markedOverdue: 1,
+      notified: 1,
+      scanned: 1,
+    });
+
+    expect(prisma.ticket.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          archivedAt: null,
+          slaNotifiedAt: null,
+          status: { in: ['new', 'processing', 'pending_confirmation'] },
+          tenantId: ROOT_TENANT_ID,
+        }),
+      }),
+    );
+    expect(prisma.ticket.update).toHaveBeenCalledWith({
+      where: { tenantId_id: { tenantId: ROOT_TENANT_ID, id: ticket.id } },
+      data: expect.objectContaining({ slaBreached: true }),
+    });
+    expect(prisma.systemNoticeDelivery.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        providerStatus: 'sent',
+        tenantId: ROOT_TENANT_ID,
+        title: `Ticket sla-overdue: ${ticket.number}`,
+        username: 'admin',
+      }),
+    });
   });
 
   describe('PrismaSchedulerRepository integration', () => {

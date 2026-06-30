@@ -91,10 +91,12 @@ const checks: Array<{
     file: 'tools/smoke/smoke-core-collaboration-tickets.ts',
     markers: [
       'FOREIGN_TENANT_ID',
+      'TICKET_SLA_JOB_CODE',
       'assertForeignTenantTicketHidden',
       'assertForeignTenantTicketPreserved',
       'collaboration.tickets.foreign-hidden',
       'collaboration.tickets.sla-reminder-notification',
+      'collaboration.tickets.sla-scheduler-dispatch-worker',
       'collaboration.tickets.batch-assign',
       'collaboration.tickets.export',
       'collaboration.tickets.status-flow',
@@ -117,6 +119,33 @@ const checks: Array<{
       'collaboration:ticket:comment',
       'collaboration:ticket:close',
       'collaboration:ticket:delete',
+    ],
+  },
+  {
+    file: 'packages/scheduler/src/scheduler/scheduler.records.ts',
+    markers: [
+      "code: 'collaboration.ticket-sla-reminders'",
+      "queueName: 'collaboration'",
+      "handlerKey: 'collaboration.ticketSlaReminders'",
+      "cron: '30 * * * *'",
+    ],
+  },
+  {
+    file: 'packages/scheduler/src/scheduler/scheduler.executor.ts',
+    markers: [
+      "'collaboration.ticketSlaReminders'",
+      'sendTicketSlaRemindersForTenant',
+      'systemNoticeDelivery.create',
+      'slaNotifiedAt: null',
+    ],
+  },
+  {
+    file: 'packages/scheduler/src/scheduler/scheduler.runtime.ts',
+    markers: [
+      "DEFAULT_RUNTIME_QUEUE_NAMES = ['collaboration']",
+      'dispatchDueJobs',
+      'claimQueuedJobs',
+      'runWithRequestContext',
     ],
   },
   {

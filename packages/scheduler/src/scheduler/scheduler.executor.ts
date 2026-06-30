@@ -39,6 +39,15 @@ export type SchedulerJobHandler = (
   input: SchedulerJobHandlerInput,
 ) => Promise<SchedulerJobHandlerResult> | SchedulerJobHandlerResult;
 
+type TicketSlaReminderRow = {
+  id: string;
+  tenantId: string;
+  number: string;
+  title: string;
+  createdBy: string;
+  assignee: string | null;
+};
+
 @Injectable()
 export class SchedulerJobExecutor {
   private readonly handlers = defaultSchedulerJobHandlers;
@@ -133,6 +142,22 @@ export const defaultSchedulerJobHandlers: Readonly<
       },
     };
   },
+  'collaboration.ticketSlaReminders': async ({ job, prisma, tenantId }) => {
+    const result = await sendTicketSlaRemindersForTenant({
+      actor: normalizeOptionalText(job.payload?.actor) ?? 'system',
+      prisma,
+      tenantId,
+    });
+
+    return {
+      metadata: {
+        ...result,
+        source:
+          normalizeOptionalText(job.payload?.source) ??
+          'collaboration.tickets.sla',
+      },
+    };
+  },
   'reports.refresh': async ({ job }) => {
     if (job.payload?.simulateFailure === true) {
       throw new Error('Report refresh failed by scheduler payload.');
@@ -162,6 +187,69 @@ export const defaultSchedulerJobHandlers: Readonly<
     };
   },
 };
+
+export async function sendTicketSlaRemindersForTenant(input: {
+  actor: string;
+  prisma?: PrismaService;
+  tenantId: string;
+}): Promise<{
+  dryRun: boolean;
+  markedOverdue: number;
+  notified: number;
+  scanned: number;
+}> {
+  if (!input.prisma) {
+    return {
+      dryRun: true,
+      markedOverdue: 0,
+      notified: 0,
+      scanned: 0,
+    };
+  }
+
+  const now = new Date();
+  const overdue = await input.prisma.ticket.findMany({
+    where: {
+      tenantId: input.tenantId,
+      archivedAt: null,
+      status: { in: ['new', 'processing', 'pending_confirmation'] },
+      slaNotifiedAt: null,
+      OR: buildTicketOverdueConditions(now),
+    },
+    select: {
+      assignee: true,
+      createdBy: true,
+      id: true,
+      number: true,
+      tenantId: true,
+      title: true,
+    },
+  });
+  let notified = 0;
+
+  for (const ticket of overdue) {
+    await input.prisma.ticket.update({
+      where: { tenantId_id: { tenantId: input.tenantId, id: ticket.id } },
+      data: { slaBreached: true, slaNotifiedAt: now },
+    });
+
+    const delivered = await notifyTicketUser(input.prisma, ticket, {
+      action: 'sla-overdue',
+      actor: input.actor,
+      content: `${ticket.number} ${ticket.title} is overdue.`,
+    });
+    if (delivered) {
+      notified += 1;
+    }
+  }
+
+  return {
+    dryRun: false,
+    markedOverdue: overdue.length,
+    notified,
+    scanned: overdue.length,
+  };
+}
 
 function executeHandlerWithTenantContext(
   handler: SchedulerJobHandler,
@@ -197,6 +285,90 @@ function normalizeRetentionDays(value: unknown): number {
   }
 
   return normalized;
+}
+
+function buildTicketOverdueConditions(now: Date) {
+  return [
+    {
+      firstRespondedAt: null,
+      responseDueAt: { lt: now },
+    },
+    {
+      resolutionDueAt: { lt: now },
+    },
+    {
+      dueAt: { lt: now },
+    },
+  ];
+}
+
+async function notifyTicketUser(
+  prisma: PrismaService,
+  ticket: TicketSlaReminderRow,
+  event: { action: string; actor: string; content: string },
+): Promise<boolean> {
+  const username = normalizeOptionalText(ticket.assignee ?? ticket.createdBy);
+
+  if (!username) {
+    return false;
+  }
+
+  const user = await prisma.user.findUnique({ where: { username } });
+  if (!user) {
+    return false;
+  }
+
+  const membership = await prisma.tenantMembership.findUnique({
+    where: {
+      tenantId_userId: { tenantId: ticket.tenantId, userId: user.id },
+    },
+  });
+  if (!membership || membership.status !== 'active') {
+    return false;
+  }
+
+  const now = new Date();
+  const notice = await prisma.systemNotice.create({
+    data: {
+      tenantId: ticket.tenantId,
+      title: `Ticket ${event.action}: ${ticket.number}`,
+      content: event.content,
+      type: 'announcement',
+      status: 'published',
+      audience: 'admin',
+      publishedAt: now,
+      createdBy: event.actor,
+    },
+  });
+
+  await prisma.systemNoticeDelivery.create({
+    data: {
+      tenantId: ticket.tenantId,
+      noticeId: notice.id,
+      userId: user.id,
+      username: user.username,
+      displayName: user.displayName,
+      title: notice.title,
+      content: notice.content,
+      type: notice.type,
+      audience: notice.audience,
+      providerStatus: 'sent',
+      deliveredAt: now,
+      sentAt: now,
+    },
+  });
+
+  return true;
+}
+
+function normalizeOptionalText(value: unknown): string | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  const normalized = String(value).trim();
+
+  return normalized.length > 0 ? normalized : undefined;
 }
 
 function createExecutionMetadata(
