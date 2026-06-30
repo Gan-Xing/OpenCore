@@ -5,6 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 ENV_FILE="${OPENCORE_ENV_FILE:-$ROOT_DIR/.env.opencore.local}"
 API_PORT="${OPENCORE_DEPLOY_API_PORT:-39172}"
 ADMIN_PORT="${OPENCORE_DEPLOY_ADMIN_PORT:-39174}"
+API_LISTEN_HOST="${OPENCORE_DEPLOY_API_HOST:-}"
 API_BASE_URL="${OPENCORE_DEPLOY_API_BASE_URL:-http://127.0.0.1:$API_PORT}"
 ADMIN_HEALTH_URL="${OPENCORE_DEPLOY_ADMIN_HEALTH_URL:-http://127.0.0.1:$ADMIN_PORT}"
 PUBLIC_HOST="${OPENCORE_DEPLOY_PUBLIC_HOST:-$(hostname -I 2>/dev/null | awk '{print $1}')}"
@@ -29,6 +30,7 @@ process.stdout.write(String(packageJson.version || '0.0.0'));
 NODE
 )"
 DEPLOYMENT_ID="${DEPLOY_GIT_COMMIT}-${DEPLOY_BUILD_STAMP}"
+DEPLOY_SERVICES_STARTED=false
 
 mkdir -p "$RUN_DIR"
 
@@ -2461,15 +2463,20 @@ stop_pid_file() {
   kill -9 "$pid" 2>/dev/null || true
 }
 
+is_pid_alive() {
+  local pid_file="$1"
+  local pid
+
+  pid="$(cat "$pid_file" 2>/dev/null || true)"
+  [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null
+}
+
 require_pid_alive() {
   local pid_file="$1"
   local label="$2"
   local log_file="$3"
-  local pid
 
-  pid="$(cat "$pid_file" 2>/dev/null || true)"
-
-  if [ -z "$pid" ] || ! kill -0 "$pid" 2>/dev/null; then
+  if ! is_pid_alive "$pid_file"; then
     echo "$label is not running after deploy. Log tail:" >&2
     tail -100 "$log_file" >&2 || true
     exit 1
@@ -2526,6 +2533,99 @@ append_deploy_cors_origins() {
   fi
 }
 
+start_api_process() {
+  echo "Starting OpenCore API on fixed port $API_PORT"
+  (
+    cd "$ROOT_DIR"
+    set -a
+    # shellcheck disable=SC1090
+    . "$ENV_FILE"
+    set +a
+    append_deploy_cors_origins
+    export PORT="$API_PORT"
+    export API_HOST="$API_LISTEN_HOST"
+    export NODE_ENV="${OPENCORE_DEPLOY_NODE_ENV:-${NODE_ENV:-development}}"
+    export OPENCORE_APP_VERSION="$DEPLOY_APP_VERSION"
+    export OPENCORE_GIT_COMMIT="$DEPLOY_GIT_COMMIT"
+    export OPENCORE_BUILD_TIME="$DEPLOY_BUILD_TIME"
+    export OPENCORE_DEPLOYMENT_ID="$DEPLOYMENT_ID"
+    export OPENCORE_DEPLOY_PUBLIC_API_BASE_URL="$API_PUBLIC_BASE_URL"
+    export OPENCORE_DEPLOY_PUBLIC_ADMIN_BASE_URL="$ADMIN_PUBLIC_BASE_URL"
+    export OPENCORE_OAUTH_CALLBACK_REDIRECT_URL="${OPENCORE_OAUTH_CALLBACK_REDIRECT_URL:-$ADMIN_PUBLIC_BASE_URL/personal/profile}"
+    setsid node dist/apps/api/main.js </dev/null >>"$API_LOG_FILE" 2>&1 &
+    echo "$!" > "$API_PID_FILE"
+  )
+
+  if ! wait_for_url "$API_BASE_URL/health/live" "OpenCore API"; then
+    tail -100 "$API_LOG_FILE" >&2 || true
+    return 1
+  fi
+
+  if ! is_pid_alive "$API_PID_FILE"; then
+    echo "OpenCore API is not running after deploy. Log tail:" >&2
+    tail -100 "$API_LOG_FILE" >&2 || true
+    return 1
+  fi
+}
+
+start_admin_process() {
+  echo "Starting OpenCore Admin on fixed port $ADMIN_PORT"
+  (
+    cd "$ROOT_DIR"
+    export PORT="$ADMIN_PORT"
+    export HOST="$ADMIN_LISTEN_HOST"
+    export ADMIN_STATIC_ROOT="$ROOT_DIR/apps/admin/dist"
+    export ADMIN_API_BASE_URL="$ADMIN_API_BASE_URL_VALUE"
+    export ADMIN_API_PROXY_TARGET="$API_BASE_URL"
+    start_tools_ts_script_detached "$ROOT_DIR/tools/scripts/serve-admin-static.ts"
+    echo "$!" > "$ADMIN_PID_FILE"
+  )
+
+  if ! wait_for_url "$ADMIN_HEALTH_URL/" "OpenCore Admin"; then
+    tail -100 "$ADMIN_LOG_FILE" >&2 || true
+    return 1
+  fi
+
+  if ! is_pid_alive "$ADMIN_PID_FILE"; then
+    echo "OpenCore Admin is not running after deploy. Log tail:" >&2
+    tail -100 "$ADMIN_LOG_FILE" >&2 || true
+    return 1
+  fi
+}
+
+ensure_deployed_services_running() {
+  local status=0
+
+  if ! is_pid_alive "$API_PID_FILE" || ! curl -fsS "$API_BASE_URL/health/live" >/dev/null 2>&1; then
+    echo "Restarting OpenCore API after failed deploy." >&2
+    stop_pid_file "$API_PID_FILE" "OpenCore API" || true
+    start_api_process || status=1
+  fi
+
+  if ! is_pid_alive "$ADMIN_PID_FILE" || ! curl -fsS "$ADMIN_HEALTH_URL/" >/dev/null 2>&1; then
+    echo "Restarting OpenCore Admin after failed deploy." >&2
+    stop_pid_file "$ADMIN_PID_FILE" "OpenCore Admin" || true
+    start_admin_process || status=1
+  fi
+
+  return "$status"
+}
+
+handle_deploy_exit() {
+  local status=$?
+
+  trap - EXIT
+
+  if [ "$status" -ne 0 ] && [ "$DEPLOY_SERVICES_STARTED" = "true" ]; then
+    echo "OpenCore deploy failed after service startup; ensuring services remain available." >&2
+    ensure_deployed_services_running || true
+  fi
+
+  exit "$status"
+}
+
+trap handle_deploy_exit EXIT
+
 cd "$ROOT_DIR"
 
 echo "Running source guards"
@@ -2569,54 +2669,16 @@ fi
 : > "$API_LOG_FILE"
 : > "$ADMIN_LOG_FILE"
 
-echo "Starting OpenCore API on fixed port $API_PORT"
-(
-  cd "$ROOT_DIR"
-  set -a
-  # shellcheck disable=SC1090
-  . "$ENV_FILE"
-  set +a
-  append_deploy_cors_origins
-  export PORT="$API_PORT"
-  export NODE_ENV="${OPENCORE_DEPLOY_NODE_ENV:-${NODE_ENV:-development}}"
-  export OPENCORE_APP_VERSION="$DEPLOY_APP_VERSION"
-  export OPENCORE_GIT_COMMIT="$DEPLOY_GIT_COMMIT"
-  export OPENCORE_BUILD_TIME="$DEPLOY_BUILD_TIME"
-  export OPENCORE_DEPLOYMENT_ID="$DEPLOYMENT_ID"
-  export OPENCORE_DEPLOY_PUBLIC_API_BASE_URL="$API_PUBLIC_BASE_URL"
-  export OPENCORE_DEPLOY_PUBLIC_ADMIN_BASE_URL="$ADMIN_PUBLIC_BASE_URL"
-  export OPENCORE_OAUTH_CALLBACK_REDIRECT_URL="${OPENCORE_OAUTH_CALLBACK_REDIRECT_URL:-$ADMIN_PUBLIC_BASE_URL/personal/profile}"
-  setsid node dist/apps/api/main.js </dev/null >>"$API_LOG_FILE" 2>&1 &
-  echo "$!" > "$API_PID_FILE"
-)
-
-if ! wait_for_url "$API_BASE_URL/health/live" "OpenCore API"; then
-  tail -100 "$API_LOG_FILE" >&2 || true
-  exit 1
-fi
-require_pid_alive "$API_PID_FILE" "OpenCore API" "$API_LOG_FILE"
-
-echo "Starting OpenCore Admin on fixed port $ADMIN_PORT"
-(
-  cd "$ROOT_DIR"
-  export PORT="$ADMIN_PORT"
-  export HOST="$ADMIN_LISTEN_HOST"
-  export ADMIN_STATIC_ROOT="$ROOT_DIR/apps/admin/dist"
-  export ADMIN_API_BASE_URL="$ADMIN_API_BASE_URL_VALUE"
-  export ADMIN_API_PROXY_TARGET="$API_BASE_URL"
-  start_tools_ts_script_detached "$ROOT_DIR/tools/scripts/serve-admin-static.ts"
-  echo "$!" > "$ADMIN_PID_FILE"
-)
-
-if ! wait_for_url "$ADMIN_HEALTH_URL/" "OpenCore Admin"; then
-  tail -100 "$ADMIN_LOG_FILE" >&2 || true
-  exit 1
-fi
-require_pid_alive "$ADMIN_PID_FILE" "OpenCore Admin" "$ADMIN_LOG_FILE"
+start_api_process
+start_admin_process
+DEPLOY_SERVICES_STARTED=true
 
 verify_admin_api_proxy_login
 verify_api_duplicate_prefix_login
-verify_public_admin_bundle
+run_with_retry \
+  "Admin public bundle verification" \
+  "${OPENCORE_DEPLOY_ADMIN_BUNDLE_ATTEMPTS:-3}" \
+  verify_public_admin_bundle
 
 run_with_retry \
   "Admin public UI smoke" \
@@ -2626,6 +2688,15 @@ run_with_retry \
     OPENCORE_SMOKE_TIMEOUT_MS="${OPENCORE_SMOKE_TIMEOUT_MS:-120000}" \
     run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
       "$ROOT_DIR/tools/smoke/smoke-admin-error-ui.ts"
+
+run_with_retry \
+  "Admin CRM i18n smoke" \
+  "${OPENCORE_DEPLOY_ADMIN_UI_SMOKE_ATTEMPTS:-3}" \
+  run_with_env env \
+    OPENCORE_SMOKE_ADMIN_BASE_URL="$ADMIN_PUBLIC_BASE_URL" \
+    OPENCORE_SMOKE_TIMEOUT_MS="${OPENCORE_SMOKE_TIMEOUT_MS:-120000}" \
+    run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
+      "$ROOT_DIR/tools/smoke/smoke-admin-crm-i18n.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \

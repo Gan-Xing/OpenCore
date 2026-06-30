@@ -270,6 +270,10 @@ const adminErrorUiSmoke = readFileSync(
   resolve(root, '../../tools/smoke/smoke-admin-error-ui.ts'),
   'utf8',
 );
+const adminCrmI18nSmoke = readFileSync(
+  resolve(root, '../../tools/smoke/smoke-admin-crm-i18n.ts'),
+  'utf8',
+);
 
 if (
   proConfig.includes('oneapi.json') ||
@@ -313,8 +317,12 @@ if (
   !deployScript.includes('/api/api/auth/login') ||
   !deployScript.includes('admin.public-bundle.no-duplicate-api-prefix') ||
   !deployScript.includes('admin.api-proxy.duplicate-prefix-login') ||
+  !deployScript.includes('Admin public bundle verification') ||
   !deployScript.includes('smoke-admin-error-ui.ts') ||
+  !deployScript.includes('smoke-admin-crm-i18n.ts') ||
   !deployScript.includes('OPENCORE_SMOKE_ADMIN_BASE_URL') ||
+  !deployScript.includes('OpenCore deploy failed after service startup') ||
+  !deployScript.includes('ensure_deployed_services_running') ||
   !deployScript.includes('loginMaxFailedAttempts') ||
   !deployScript.includes('System Notice Templates') ||
   !deployScript.includes('admin-fallback-closure-guard.ts') ||
@@ -347,6 +355,18 @@ if (
 ) {
   throw new Error(
     'Admin error UI smoke must verify localized login errors, backend fallback absence and duplicate API prefix absence.',
+  );
+}
+
+if (
+  !adminCrmI18nSmoke.includes('admin.public-crm.zh-cn-summary') ||
+  !adminCrmI18nSmoke.includes('admin.public-crm.no-english-fallbacks') ||
+  !adminCrmI18nSmoke.includes('未结管道') ||
+  !adminCrmI18nSmoke.includes('Open Pipeline') ||
+  !adminCrmI18nSmoke.includes('qualified')
+) {
+  throw new Error(
+    'Admin CRM i18n smoke must verify the live CRM page renders zh-CN labels, translated status values and no English fallback text.',
   );
 }
 

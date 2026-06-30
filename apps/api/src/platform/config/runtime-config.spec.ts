@@ -22,6 +22,7 @@ describe('loadRuntimeConfig', () => {
   it('loads safe development defaults', () => {
     expect(loadRuntimeConfig({})).toMatchObject({
       nodeEnv: 'development',
+      host: undefined,
       port: 3000,
       globalPrefix: 'api',
       serviceName: 'opencore-api',
@@ -48,6 +49,20 @@ describe('loadRuntimeConfig', () => {
         forcePathStyle: true,
       },
     });
+  });
+
+  it('loads an explicit API listen host', () => {
+    expect(
+      loadRuntimeConfig({
+        API_HOST: '127.0.0.1',
+      }).host,
+    ).toBe('127.0.0.1');
+
+    expect(
+      loadRuntimeConfig({
+        OPENCORE_API_HOST: '100.125.203.64',
+      }).host,
+    ).toBe('100.125.203.64');
   });
 
   it('fails fast on dangerous production CORS', () => {

@@ -12,14 +12,15 @@ code changes instead of choosing ports by hand.
 The scripts do not auto-select alternate ports. If one of these fixed ports is
 occupied, the command fails with the specific port to free or override.
 
-Admin listens on `0.0.0.0` by default and the Admin build uses the detected
-server address for `ADMIN_API_BASE_URL`, so a browser outside the server can
-open the deployed UI. `ADMIN_API_BASE_URL` must be the API origin without
-`/api`, because the Admin SDK request helper prefixes `/api` itself. Override
-`OPENCORE_DEPLOY_PUBLIC_HOST` when the detected address is not the public
-address you want to use. The deploy script refuses to continue if the built
-Admin JavaScript does not contain that API base URL, or if the configured value
-ends with `/api`.
+The API and Admin listen addresses are configurable. For direct public smoke,
+Admin can listen on `0.0.0.0`; for the Cloudflare Tunnel deployment, bind the
+API to `127.0.0.1`, bind Admin to the server's `100.x` private address, and set
+the Admin API base URL to the tunnel hostname so browsers use same-origin
+`/api` requests. `ADMIN_API_BASE_URL` must be an origin without `/api`, because
+the Admin SDK request helper prefixes `/api` itself. Override
+`OPENCORE_DEPLOY_PUBLIC_HOST` when the detected address is not the address you
+want to use. The deploy script refuses to continue if the built Admin JavaScript
+does not contain that API base URL, or if the configured value ends with `/api`.
 
 The Admin static server also proxies `/api/*` to the deployed API. This keeps
 login and authenticated requests working even if a browser tries the same-origin
@@ -32,6 +33,10 @@ The deploy script skips Nx cache for the Admin build because the browser bundle
 depends on `ADMIN_API_BASE_URL`. Reusing a normal `pnpm build` Admin cache can
 produce a bundle without the deploy API origin and will be rejected by the
 bundle guard.
+
+If a deploy-time smoke test fails after service startup, the script checks the
+started API/Admin processes and restarts the last built version when needed so a
+failed smoke does not leave the tunnel endpoint on a 502.
 
 All Admin HTML route files are served with `no-cache`, while hashed JavaScript
 and CSS assets remain immutable. This prevents browsers from holding an old
@@ -94,6 +99,17 @@ OPENCORE_DEPLOY_NODE_ENV=development
 OPENCORE_ADMIN_BUNDLER=webpack
 OPENCORE_SMOKE_ADMIN_USERNAME=admin
 OPENCORE_SMOKE_ADMIN_PASSWORD=...
+```
+
+Cloudflare Tunnel deployment override example:
+
+```bash
+OPENCORE_DEPLOY_API_HOST=127.0.0.1
+OPENCORE_DEPLOY_ADMIN_HOST=100.125.203.64
+OPENCORE_DEPLOY_ADMIN_HEALTH_URL=http://100.125.203.64:39174
+OPENCORE_DEPLOY_PUBLIC_API_BASE_URL=https://opencore.byganxing.com
+OPENCORE_DEPLOY_PUBLIC_ADMIN_BASE_URL=https://opencore.byganxing.com
+OPENCORE_DEPLOY_ADMIN_API_BASE_URL=https://opencore.byganxing.com
 ```
 
 Secrets must stay in the environment file or process environment. Do not commit

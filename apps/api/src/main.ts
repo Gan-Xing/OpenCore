@@ -15,8 +15,13 @@ async function bootstrap() {
   applyApiFoundation(app, config);
   setupOpenApi(app, config);
 
-  await app.listen(config.port);
+  if (config.host) {
+    await app.listen(config.port, config.host);
+  } else {
+    await app.listen(config.port);
+  }
   logger.info('api.ready', {
+    host: config.host ?? '0.0.0.0',
     port: config.port,
     globalPrefix: config.globalPrefix,
     swaggerEnabled: config.swaggerEnabled,

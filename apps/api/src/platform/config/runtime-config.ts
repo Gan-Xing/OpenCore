@@ -5,6 +5,7 @@ export type NodeEnvironment = 'development' | 'test' | 'production';
 
 export type RuntimeConfig = {
   nodeEnv: NodeEnvironment;
+  host: string | undefined;
   port: number;
   globalPrefix: string;
   serviceName: 'opencore-api';
@@ -85,6 +86,7 @@ export function loadRuntimeConfig(
 
   const issues: string[] = [];
   const nodeEnv = parseNodeEnv(env.NODE_ENV, issues);
+  const host = parseHost(env.API_HOST ?? env.OPENCORE_API_HOST, issues);
   const port = parsePort(env.PORT, issues);
   const globalPrefix = parseGlobalPrefix(env.API_GLOBAL_PREFIX, issues);
   const swaggerEnabled = parseBoolean(
@@ -191,6 +193,7 @@ export function loadRuntimeConfig(
 
   return {
     nodeEnv,
+    host,
     port,
     globalPrefix,
     serviceName: 'opencore-api',
@@ -230,6 +233,23 @@ function parsePort(value: string | undefined, issues: string[]): number {
   }
 
   return port;
+}
+
+function parseHost(
+  value: string | undefined,
+  issues: string[],
+): string | undefined {
+  if (value === undefined || value.trim().length === 0) {
+    return undefined;
+  }
+
+  const candidate = value.trim();
+  if (/^[a-zA-Z0-9.:-]+$/.test(candidate)) {
+    return candidate;
+  }
+
+  issues.push('API_HOST must be a hostname or IP address');
+  return undefined;
 }
 
 function parseGlobalPrefix(
