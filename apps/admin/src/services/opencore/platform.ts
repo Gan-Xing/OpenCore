@@ -1,6 +1,6 @@
 import {
   createCollaborationClient,
-  createCrmClient,
+  createBusinessCoreClient,
   createIntegrationClient,
   createMonitoringClient,
   createOperationsClient,
@@ -57,10 +57,10 @@ import {
   type CleanAuditLogsRequest,
   type ClaimQueuedJobsRequest,
   type ChangeTicketStatusRequest,
-  type ChangeCrmOpportunityStageRequest,
-  type CompleteCrmTaskRequest,
-  type ConvertCrmLeadRequest,
-  type ConvertCrmLeadResult,
+  type ChangeBusinessOpportunityStageRequest,
+  type CompleteBusinessTaskRequest,
+  type ConvertBusinessLeadRequest,
+  type ConvertBusinessLeadResult,
   type CreateTenantPlanRequest,
   type CreateTenantMemberRequest,
   type CreateTenantRequest,
@@ -78,14 +78,14 @@ import {
   type CollaborationDeleteResult,
   type CollaborationSummary,
   type CreateApprovalLiteRequest,
-  type CreateCrmAttachmentRequest,
-  type CreateCrmContactRequest,
-  type CreateCrmCustomerRequest,
-  type CreateCrmFollowUpRequest,
-  type CreateCrmLeadRequest,
-  type CreateCrmOpportunityRequest,
-  type CreateCrmTagRequest,
-  type CreateCrmTaskRequest,
+  type CreateBusinessAttachmentRequest,
+  type CreateBusinessContactRequest,
+  type CreateBusinessCustomerRequest,
+  type CreateBusinessFollowUpRequest,
+  type CreateBusinessLeadRequest,
+  type CreateBusinessOpportunityRequest,
+  type CreateBusinessTagRequest,
+  type CreateBusinessTaskRequest,
   type CreateMessageRequest,
   type CreateNoticeRequest,
   type CreateTicketAttachmentRequest,
@@ -95,38 +95,38 @@ import {
   type CreateTodoRequest,
   type DecideApprovalLiteRequest,
   type DeleteCacheKeyRequest,
-  type CrmActivityPage,
-  type CrmAttachmentPage,
-  type CrmAttachmentSummary,
-  type CrmAuditEventPage,
-  type CrmAuditEventSummary,
-  type CrmContactPage,
-  type CrmContactQueryRequest,
-  type CrmContactSummary,
-  type CrmCustomerPage,
-  type CrmCustomerQueryRequest,
-  type CrmCustomerSummary,
-  type CrmDeleteResult,
-  type CrmExportPreview,
-  type CrmExportQueryRequest,
-  type CrmFollowUpPage,
-  type CrmFollowUpSummary,
-  type CrmLeadPage,
-  type CrmLeadQueryRequest,
-  type CrmLeadSummary,
-  type CrmOpportunityPage,
-  type CrmOpportunityQueryRequest,
-  type CrmOpportunitySummary,
-  type CrmOwnerTransferPage,
-  type CrmOwnerTransferSummary,
-  type CrmSummary,
-  type CrmTagPage,
-  type CrmTagQueryRequest,
-  type CrmTagSummary,
-  type CrmTargetQueryRequest,
-  type CrmTaskPage,
-  type CrmTaskQueryRequest,
-  type CrmTaskSummary,
+  type BusinessActivityPage,
+  type BusinessAttachmentPage,
+  type BusinessAttachmentSummary,
+  type BusinessAuditEventPage,
+  type BusinessAuditEventSummary,
+  type BusinessContactPage,
+  type BusinessContactQueryRequest,
+  type BusinessContactSummary,
+  type BusinessCustomerPage,
+  type BusinessCustomerQueryRequest,
+  type BusinessCustomerSummary,
+  type BusinessDeleteResult,
+  type BusinessExportPreview,
+  type BusinessExportQueryRequest,
+  type BusinessFollowUpPage,
+  type BusinessFollowUpSummary,
+  type BusinessLeadPage,
+  type BusinessLeadQueryRequest,
+  type BusinessLeadSummary,
+  type BusinessOpportunityPage,
+  type BusinessOpportunityQueryRequest,
+  type BusinessOpportunitySummary,
+  type BusinessOwnerTransferPage,
+  type BusinessOwnerTransferSummary,
+  type BusinessSummary,
+  type BusinessTagPage,
+  type BusinessTagQueryRequest,
+  type BusinessTagSummary,
+  type BusinessTargetQueryRequest,
+  type BusinessTaskPage,
+  type BusinessTaskQueryRequest,
+  type BusinessTaskSummary,
   type OpenForgeApplyDryRunRequest,
   type OpenForgeApplyDryRunSummary,
   type OpenForgeDiffSummary,
@@ -336,13 +336,13 @@ import {
   type UpdateTenantPlanRequest,
   type UpdateTenantRequest,
   type UpdateUserRequest,
-  type TransferCrmOwnerRequest,
+  type TransferBusinessOwnerRequest,
   type UpdateTenantMemberAssignmentsRequest,
-  type UpdateCrmContactRequest,
-  type UpdateCrmCustomerRequest,
-  type UpdateCrmLeadRequest,
-  type UpdateCrmOpportunityRequest,
-  type UpdateCrmTagRequest,
+  type UpdateBusinessContactRequest,
+  type UpdateBusinessCustomerRequest,
+  type UpdateBusinessLeadRequest,
+  type UpdateBusinessOpportunityRequest,
+  type UpdateBusinessTagRequest,
   type UserImportResultSummary,
   type UserImportTemplateSummary,
 } from '@opencore/sdk';
@@ -350,7 +350,7 @@ import { getRequiredAdminToken, opencoreSdkRequest } from './client';
 
 const rbacClient = createRbacClient(opencoreSdkRequest);
 const collaborationClient = createCollaborationClient(opencoreSdkRequest);
-const crmClient = createCrmClient(opencoreSdkRequest);
+const businessCoreClient = createBusinessCoreClient(opencoreSdkRequest);
 const integrationClient = createIntegrationClient(opencoreSdkRequest);
 const monitoringClient = createMonitoringClient(opencoreSdkRequest);
 const operationsClient = createOperationsClient(opencoreSdkRequest);
@@ -785,361 +785,387 @@ export function archiveOpenCoreTicket(
   return collaborationClient.archiveTicket(getRequiredAdminToken(), id);
 }
 
-export function getOpenCoreCrmSummary(): Promise<CrmSummary> {
-  return crmClient.getSummary(getRequiredAdminToken());
+export function getOpenCoreBusinessSummary(): Promise<BusinessSummary> {
+  return businessCoreClient.getSummary(getRequiredAdminToken());
 }
 
-export function pageOpenCoreCrmTags(
-  query?: CrmTagQueryRequest,
-): Promise<CrmTagPage> {
-  return crmClient.listTags(getRequiredAdminToken(), {
+export function pageOpenCoreBusinessTags(
+  query?: BusinessTagQueryRequest,
+): Promise<BusinessTagPage> {
+  return businessCoreClient.listTags(getRequiredAdminToken(), {
     page: 1,
     pageSize: 100,
     ...query,
   });
 }
 
-export async function listOpenCoreCrmTags(
-  query?: CrmTagQueryRequest,
-): Promise<CrmTagSummary[]> {
-  const page = await pageOpenCoreCrmTags(query);
+export async function listOpenCoreBusinessTags(
+  query?: BusinessTagQueryRequest,
+): Promise<BusinessTagSummary[]> {
+  const page = await pageOpenCoreBusinessTags(query);
   return [...page.items];
 }
 
-export function createOpenCoreCrmTag(
-  body: CreateCrmTagRequest,
-): Promise<CrmTagSummary> {
-  return crmClient.createTag(getRequiredAdminToken(), body);
+export function createOpenCoreBusinessTag(
+  body: CreateBusinessTagRequest,
+): Promise<BusinessTagSummary> {
+  return businessCoreClient.createTag(getRequiredAdminToken(), body);
 }
 
-export function updateOpenCoreCrmTag(
+export function updateOpenCoreBusinessTag(
   id: string,
-  body: UpdateCrmTagRequest,
-): Promise<CrmTagSummary> {
-  return crmClient.updateTag(getRequiredAdminToken(), id, body);
+  body: UpdateBusinessTagRequest,
+): Promise<BusinessTagSummary> {
+  return businessCoreClient.updateTag(getRequiredAdminToken(), id, body);
 }
 
-export function pageOpenCoreCrmLeads(
-  query?: CrmLeadQueryRequest,
-): Promise<CrmLeadPage> {
-  return crmClient.listLeads(getRequiredAdminToken(), {
+export function pageOpenCoreBusinessLeads(
+  query?: BusinessLeadQueryRequest,
+): Promise<BusinessLeadPage> {
+  return businessCoreClient.listLeads(getRequiredAdminToken(), {
     page: 1,
     pageSize: 100,
     ...query,
   });
 }
 
-export async function listOpenCoreCrmLeads(
-  query?: CrmLeadQueryRequest,
-): Promise<CrmLeadSummary[]> {
-  const page = await pageOpenCoreCrmLeads(query);
+export async function listOpenCoreBusinessLeads(
+  query?: BusinessLeadQueryRequest,
+): Promise<BusinessLeadSummary[]> {
+  const page = await pageOpenCoreBusinessLeads(query);
   return [...page.items];
 }
 
-export function getOpenCoreCrmLead(id: string): Promise<CrmLeadSummary> {
-  return crmClient.getLead(getRequiredAdminToken(), id);
-}
-
-export function createOpenCoreCrmLead(
-  body: CreateCrmLeadRequest,
-): Promise<CrmLeadSummary> {
-  return crmClient.createLead(getRequiredAdminToken(), body);
-}
-
-export function updateOpenCoreCrmLead(
+export function getOpenCoreBusinessLead(
   id: string,
-  body: UpdateCrmLeadRequest,
-): Promise<CrmLeadSummary> {
-  return crmClient.updateLead(getRequiredAdminToken(), id, body);
+): Promise<BusinessLeadSummary> {
+  return businessCoreClient.getLead(getRequiredAdminToken(), id);
 }
 
-export function convertOpenCoreCrmLead(
+export function createOpenCoreBusinessLead(
+  body: CreateBusinessLeadRequest,
+): Promise<BusinessLeadSummary> {
+  return businessCoreClient.createLead(getRequiredAdminToken(), body);
+}
+
+export function updateOpenCoreBusinessLead(
   id: string,
-  body: ConvertCrmLeadRequest,
-): Promise<ConvertCrmLeadResult> {
-  return crmClient.convertLead(getRequiredAdminToken(), id, body);
+  body: UpdateBusinessLeadRequest,
+): Promise<BusinessLeadSummary> {
+  return businessCoreClient.updateLead(getRequiredAdminToken(), id, body);
 }
 
-export function transferOpenCoreCrmLeadOwner(
+export function convertOpenCoreBusinessLead(
   id: string,
-  body: TransferCrmOwnerRequest,
-): Promise<CrmLeadSummary> {
-  return crmClient.transferLeadOwner(getRequiredAdminToken(), id, body);
+  body: ConvertBusinessLeadRequest,
+): Promise<ConvertBusinessLeadResult> {
+  return businessCoreClient.convertLead(getRequiredAdminToken(), id, body);
 }
 
-export function archiveOpenCoreCrmLead(id: string): Promise<CrmDeleteResult> {
-  return crmClient.archiveLead(getRequiredAdminToken(), id);
+export function transferOpenCoreBusinessLeadOwner(
+  id: string,
+  body: TransferBusinessOwnerRequest,
+): Promise<BusinessLeadSummary> {
+  return businessCoreClient.transferLeadOwner(
+    getRequiredAdminToken(),
+    id,
+    body,
+  );
 }
 
-export function pageOpenCoreCrmCustomers(
-  query?: CrmCustomerQueryRequest,
-): Promise<CrmCustomerPage> {
-  return crmClient.listCustomers(getRequiredAdminToken(), {
+export function archiveOpenCoreBusinessLead(
+  id: string,
+): Promise<BusinessDeleteResult> {
+  return businessCoreClient.archiveLead(getRequiredAdminToken(), id);
+}
+
+export function pageOpenCoreBusinessCustomers(
+  query?: BusinessCustomerQueryRequest,
+): Promise<BusinessCustomerPage> {
+  return businessCoreClient.listCustomers(getRequiredAdminToken(), {
     page: 1,
     pageSize: 100,
     ...query,
   });
 }
 
-export async function listOpenCoreCrmCustomers(
-  query?: CrmCustomerQueryRequest,
-): Promise<CrmCustomerSummary[]> {
-  const page = await pageOpenCoreCrmCustomers(query);
+export async function listOpenCoreBusinessCustomers(
+  query?: BusinessCustomerQueryRequest,
+): Promise<BusinessCustomerSummary[]> {
+  const page = await pageOpenCoreBusinessCustomers(query);
   return [...page.items];
 }
 
-export function getOpenCoreCrmCustomer(
+export function getOpenCoreBusinessCustomer(
   id: string,
-): Promise<CrmCustomerSummary> {
-  return crmClient.getCustomer(getRequiredAdminToken(), id);
+): Promise<BusinessCustomerSummary> {
+  return businessCoreClient.getCustomer(getRequiredAdminToken(), id);
 }
 
-export function createOpenCoreCrmCustomer(
-  body: CreateCrmCustomerRequest,
-): Promise<CrmCustomerSummary> {
-  return crmClient.createCustomer(getRequiredAdminToken(), body);
+export function createOpenCoreBusinessCustomer(
+  body: CreateBusinessCustomerRequest,
+): Promise<BusinessCustomerSummary> {
+  return businessCoreClient.createCustomer(getRequiredAdminToken(), body);
 }
 
-export function updateOpenCoreCrmCustomer(
+export function updateOpenCoreBusinessCustomer(
   id: string,
-  body: UpdateCrmCustomerRequest,
-): Promise<CrmCustomerSummary> {
-  return crmClient.updateCustomer(getRequiredAdminToken(), id, body);
+  body: UpdateBusinessCustomerRequest,
+): Promise<BusinessCustomerSummary> {
+  return businessCoreClient.updateCustomer(getRequiredAdminToken(), id, body);
 }
 
-export function transferOpenCoreCrmCustomerOwner(
+export function transferOpenCoreBusinessCustomerOwner(
   id: string,
-  body: TransferCrmOwnerRequest,
-): Promise<CrmCustomerSummary> {
-  return crmClient.transferCustomerOwner(getRequiredAdminToken(), id, body);
+  body: TransferBusinessOwnerRequest,
+): Promise<BusinessCustomerSummary> {
+  return businessCoreClient.transferCustomerOwner(
+    getRequiredAdminToken(),
+    id,
+    body,
+  );
 }
 
-export function archiveOpenCoreCrmCustomer(
+export function archiveOpenCoreBusinessCustomer(
   id: string,
-): Promise<CrmDeleteResult> {
-  return crmClient.archiveCustomer(getRequiredAdminToken(), id);
+): Promise<BusinessDeleteResult> {
+  return businessCoreClient.archiveCustomer(getRequiredAdminToken(), id);
 }
 
-export function pageOpenCoreCrmContacts(
-  query?: CrmContactQueryRequest,
-): Promise<CrmContactPage> {
-  return crmClient.listContacts(getRequiredAdminToken(), {
+export function pageOpenCoreBusinessContacts(
+  query?: BusinessContactQueryRequest,
+): Promise<BusinessContactPage> {
+  return businessCoreClient.listContacts(getRequiredAdminToken(), {
     page: 1,
     pageSize: 100,
     ...query,
   });
 }
 
-export async function listOpenCoreCrmContacts(
-  query?: CrmContactQueryRequest,
-): Promise<CrmContactSummary[]> {
-  const page = await pageOpenCoreCrmContacts(query);
+export async function listOpenCoreBusinessContacts(
+  query?: BusinessContactQueryRequest,
+): Promise<BusinessContactSummary[]> {
+  const page = await pageOpenCoreBusinessContacts(query);
   return [...page.items];
 }
 
-export function getOpenCoreCrmContact(id: string): Promise<CrmContactSummary> {
-  return crmClient.getContact(getRequiredAdminToken(), id);
-}
-
-export function createOpenCoreCrmContact(
-  body: CreateCrmContactRequest,
-): Promise<CrmContactSummary> {
-  return crmClient.createContact(getRequiredAdminToken(), body);
-}
-
-export function updateOpenCoreCrmContact(
+export function getOpenCoreBusinessContact(
   id: string,
-  body: UpdateCrmContactRequest,
-): Promise<CrmContactSummary> {
-  return crmClient.updateContact(getRequiredAdminToken(), id, body);
+): Promise<BusinessContactSummary> {
+  return businessCoreClient.getContact(getRequiredAdminToken(), id);
 }
 
-export function archiveOpenCoreCrmContact(
+export function createOpenCoreBusinessContact(
+  body: CreateBusinessContactRequest,
+): Promise<BusinessContactSummary> {
+  return businessCoreClient.createContact(getRequiredAdminToken(), body);
+}
+
+export function updateOpenCoreBusinessContact(
   id: string,
-): Promise<CrmDeleteResult> {
-  return crmClient.archiveContact(getRequiredAdminToken(), id);
+  body: UpdateBusinessContactRequest,
+): Promise<BusinessContactSummary> {
+  return businessCoreClient.updateContact(getRequiredAdminToken(), id, body);
 }
 
-export function pageOpenCoreCrmOpportunities(
-  query?: CrmOpportunityQueryRequest,
-): Promise<CrmOpportunityPage> {
-  return crmClient.listOpportunities(getRequiredAdminToken(), {
+export function archiveOpenCoreBusinessContact(
+  id: string,
+): Promise<BusinessDeleteResult> {
+  return businessCoreClient.archiveContact(getRequiredAdminToken(), id);
+}
+
+export function pageOpenCoreBusinessOpportunities(
+  query?: BusinessOpportunityQueryRequest,
+): Promise<BusinessOpportunityPage> {
+  return businessCoreClient.listOpportunities(getRequiredAdminToken(), {
     page: 1,
     pageSize: 100,
     ...query,
   });
 }
 
-export async function listOpenCoreCrmOpportunities(
-  query?: CrmOpportunityQueryRequest,
-): Promise<CrmOpportunitySummary[]> {
-  const page = await pageOpenCoreCrmOpportunities(query);
+export async function listOpenCoreBusinessOpportunities(
+  query?: BusinessOpportunityQueryRequest,
+): Promise<BusinessOpportunitySummary[]> {
+  const page = await pageOpenCoreBusinessOpportunities(query);
   return [...page.items];
 }
 
-export function pageOpenCoreCrmActivities(
-  query?: CrmTargetQueryRequest,
-): Promise<CrmActivityPage> {
-  return crmClient.listActivities(getRequiredAdminToken(), {
+export function pageOpenCoreBusinessActivities(
+  query?: BusinessTargetQueryRequest,
+): Promise<BusinessActivityPage> {
+  return businessCoreClient.listActivities(getRequiredAdminToken(), {
     page: 1,
     pageSize: 100,
     ...query,
   });
 }
 
-export function getOpenCoreCrmOpportunity(
+export function getOpenCoreBusinessOpportunity(
   id: string,
-): Promise<CrmOpportunitySummary> {
-  return crmClient.getOpportunity(getRequiredAdminToken(), id);
+): Promise<BusinessOpportunitySummary> {
+  return businessCoreClient.getOpportunity(getRequiredAdminToken(), id);
 }
 
-export function createOpenCoreCrmOpportunity(
-  body: CreateCrmOpportunityRequest,
-): Promise<CrmOpportunitySummary> {
-  return crmClient.createOpportunity(getRequiredAdminToken(), body);
+export function createOpenCoreBusinessOpportunity(
+  body: CreateBusinessOpportunityRequest,
+): Promise<BusinessOpportunitySummary> {
+  return businessCoreClient.createOpportunity(getRequiredAdminToken(), body);
 }
 
-export function updateOpenCoreCrmOpportunity(
+export function updateOpenCoreBusinessOpportunity(
   id: string,
-  body: UpdateCrmOpportunityRequest,
-): Promise<CrmOpportunitySummary> {
-  return crmClient.updateOpportunity(getRequiredAdminToken(), id, body);
+  body: UpdateBusinessOpportunityRequest,
+): Promise<BusinessOpportunitySummary> {
+  return businessCoreClient.updateOpportunity(
+    getRequiredAdminToken(),
+    id,
+    body,
+  );
 }
 
-export function changeOpenCoreCrmOpportunityStage(
+export function changeOpenCoreBusinessOpportunityStage(
   id: string,
-  body: ChangeCrmOpportunityStageRequest,
-): Promise<CrmOpportunitySummary> {
-  return crmClient.changeOpportunityStage(getRequiredAdminToken(), id, body);
+  body: ChangeBusinessOpportunityStageRequest,
+): Promise<BusinessOpportunitySummary> {
+  return businessCoreClient.changeOpportunityStage(
+    getRequiredAdminToken(),
+    id,
+    body,
+  );
 }
 
-export function transferOpenCoreCrmOpportunityOwner(
+export function transferOpenCoreBusinessOpportunityOwner(
   id: string,
-  body: TransferCrmOwnerRequest,
-): Promise<CrmOpportunitySummary> {
-  return crmClient.transferOpportunityOwner(getRequiredAdminToken(), id, body);
+  body: TransferBusinessOwnerRequest,
+): Promise<BusinessOpportunitySummary> {
+  return businessCoreClient.transferOpportunityOwner(
+    getRequiredAdminToken(),
+    id,
+    body,
+  );
 }
 
-export function archiveOpenCoreCrmOpportunity(
+export function archiveOpenCoreBusinessOpportunity(
   id: string,
-): Promise<CrmDeleteResult> {
-  return crmClient.archiveOpportunity(getRequiredAdminToken(), id);
+): Promise<BusinessDeleteResult> {
+  return businessCoreClient.archiveOpportunity(getRequiredAdminToken(), id);
 }
 
-export function pageOpenCoreCrmFollowUps(
-  query?: CrmTargetQueryRequest,
-): Promise<CrmFollowUpPage> {
-  return crmClient.listFollowUps(getRequiredAdminToken(), {
+export function pageOpenCoreBusinessFollowUps(
+  query?: BusinessTargetQueryRequest,
+): Promise<BusinessFollowUpPage> {
+  return businessCoreClient.listFollowUps(getRequiredAdminToken(), {
     page: 1,
     pageSize: 100,
     ...query,
   });
 }
 
-export async function listOpenCoreCrmFollowUps(
-  query?: CrmTargetQueryRequest,
-): Promise<CrmFollowUpSummary[]> {
-  const page = await pageOpenCoreCrmFollowUps(query);
+export async function listOpenCoreBusinessFollowUps(
+  query?: BusinessTargetQueryRequest,
+): Promise<BusinessFollowUpSummary[]> {
+  const page = await pageOpenCoreBusinessFollowUps(query);
   return [...page.items];
 }
 
-export function createOpenCoreCrmFollowUp(
-  body: CreateCrmFollowUpRequest,
-): Promise<CrmFollowUpSummary> {
-  return crmClient.createFollowUp(getRequiredAdminToken(), body);
+export function createOpenCoreBusinessFollowUp(
+  body: CreateBusinessFollowUpRequest,
+): Promise<BusinessFollowUpSummary> {
+  return businessCoreClient.createFollowUp(getRequiredAdminToken(), body);
 }
 
-export function pageOpenCoreCrmTasks(
-  query?: CrmTaskQueryRequest,
-): Promise<CrmTaskPage> {
-  return crmClient.listTasks(getRequiredAdminToken(), {
+export function pageOpenCoreBusinessTasks(
+  query?: BusinessTaskQueryRequest,
+): Promise<BusinessTaskPage> {
+  return businessCoreClient.listTasks(getRequiredAdminToken(), {
     page: 1,
     pageSize: 100,
     ...query,
   });
 }
 
-export async function listOpenCoreCrmTasks(
-  query?: CrmTaskQueryRequest,
-): Promise<CrmTaskSummary[]> {
-  const page = await pageOpenCoreCrmTasks(query);
+export async function listOpenCoreBusinessTasks(
+  query?: BusinessTaskQueryRequest,
+): Promise<BusinessTaskSummary[]> {
+  const page = await pageOpenCoreBusinessTasks(query);
   return [...page.items];
 }
 
-export function createOpenCoreCrmTask(
-  body: CreateCrmTaskRequest,
-): Promise<CrmTaskSummary> {
-  return crmClient.createTask(getRequiredAdminToken(), body);
+export function createOpenCoreBusinessTask(
+  body: CreateBusinessTaskRequest,
+): Promise<BusinessTaskSummary> {
+  return businessCoreClient.createTask(getRequiredAdminToken(), body);
 }
 
-export function completeOpenCoreCrmTask(
+export function completeOpenCoreBusinessTask(
   id: string,
-  body: CompleteCrmTaskRequest,
-): Promise<CrmTaskSummary> {
-  return crmClient.completeTask(getRequiredAdminToken(), id, body);
+  body: CompleteBusinessTaskRequest,
+): Promise<BusinessTaskSummary> {
+  return businessCoreClient.completeTask(getRequiredAdminToken(), id, body);
 }
 
-export function pageOpenCoreCrmAttachments(
-  query?: CrmTargetQueryRequest,
-): Promise<CrmAttachmentPage> {
-  return crmClient.listAttachments(getRequiredAdminToken(), {
+export function pageOpenCoreBusinessAttachments(
+  query?: BusinessTargetQueryRequest,
+): Promise<BusinessAttachmentPage> {
+  return businessCoreClient.listAttachments(getRequiredAdminToken(), {
     page: 1,
     pageSize: 100,
     ...query,
   });
 }
 
-export async function listOpenCoreCrmAttachments(
-  query?: CrmTargetQueryRequest,
-): Promise<CrmAttachmentSummary[]> {
-  const page = await pageOpenCoreCrmAttachments(query);
+export async function listOpenCoreBusinessAttachments(
+  query?: BusinessTargetQueryRequest,
+): Promise<BusinessAttachmentSummary[]> {
+  const page = await pageOpenCoreBusinessAttachments(query);
   return [...page.items];
 }
 
-export function createOpenCoreCrmAttachment(
-  body: CreateCrmAttachmentRequest,
-): Promise<CrmAttachmentSummary> {
-  return crmClient.createAttachment(getRequiredAdminToken(), body);
+export function createOpenCoreBusinessAttachment(
+  body: CreateBusinessAttachmentRequest,
+): Promise<BusinessAttachmentSummary> {
+  return businessCoreClient.createAttachment(getRequiredAdminToken(), body);
 }
 
-export function pageOpenCoreCrmOwnerTransfers(
-  query?: CrmTargetQueryRequest,
-): Promise<CrmOwnerTransferPage> {
-  return crmClient.listOwnerTransfers(getRequiredAdminToken(), {
+export function pageOpenCoreBusinessOwnerTransfers(
+  query?: BusinessTargetQueryRequest,
+): Promise<BusinessOwnerTransferPage> {
+  return businessCoreClient.listOwnerTransfers(getRequiredAdminToken(), {
     page: 1,
     pageSize: 100,
     ...query,
   });
 }
 
-export async function listOpenCoreCrmOwnerTransfers(
-  query?: CrmTargetQueryRequest,
-): Promise<CrmOwnerTransferSummary[]> {
-  const page = await pageOpenCoreCrmOwnerTransfers(query);
+export async function listOpenCoreBusinessOwnerTransfers(
+  query?: BusinessTargetQueryRequest,
+): Promise<BusinessOwnerTransferSummary[]> {
+  const page = await pageOpenCoreBusinessOwnerTransfers(query);
   return [...page.items];
 }
 
-export function pageOpenCoreCrmAuditEvents(
-  query?: CrmTargetQueryRequest,
-): Promise<CrmAuditEventPage> {
-  return crmClient.listAuditEvents(getRequiredAdminToken(), {
+export function pageOpenCoreBusinessAuditEvents(
+  query?: BusinessTargetQueryRequest,
+): Promise<BusinessAuditEventPage> {
+  return businessCoreClient.listAuditEvents(getRequiredAdminToken(), {
     page: 1,
     pageSize: 100,
     ...query,
   });
 }
 
-export async function listOpenCoreCrmAuditEvents(
-  query?: CrmTargetQueryRequest,
-): Promise<CrmAuditEventSummary[]> {
-  const page = await pageOpenCoreCrmAuditEvents(query);
+export async function listOpenCoreBusinessAuditEvents(
+  query?: BusinessTargetQueryRequest,
+): Promise<BusinessAuditEventSummary[]> {
+  const page = await pageOpenCoreBusinessAuditEvents(query);
   return [...page.items];
 }
 
-export function exportOpenCoreCrm(
-  query: CrmExportQueryRequest,
-): Promise<CrmExportPreview> {
-  return crmClient.exportCrm(getRequiredAdminToken(), query);
+export function exportOpenCoreBusiness(
+  query: BusinessExportQueryRequest,
+): Promise<BusinessExportPreview> {
+  return businessCoreClient.exportBusinessCore(getRequiredAdminToken(), query);
 }
 
 export async function listOpenCoreApprovalLiteRequests(

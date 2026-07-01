@@ -1,3 +1,5 @@
+export * from './business-core-client';
+export * from './business-core-types';
 export * from './collaboration-client';
 export * from './collaboration-types';
 export * from './crm-client';

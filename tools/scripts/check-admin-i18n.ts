@@ -184,8 +184,8 @@ const localizedAdminPageScanPaths = [
   join(adminRoot, 'src', 'pages', 'Tools', 'OpenApi', 'index.tsx'),
   join(adminRoot, 'src', 'pages', 'Tools', 'OpenForge', 'index.tsx'),
 ];
-const requiredCrmDynamicLocaleKeys = [
-  ...crmLocaleKeys('actionKind', [
+const requiredBusinessDynamicLocaleKeys = [
+  ...businessLocaleKeys('actionKind', [
     'action',
     'attach',
     'convert',
@@ -194,43 +194,49 @@ const requiredCrmDynamicLocaleKeys = [
     'task',
     'transfer',
   ]),
-  ...crmLocaleKeys('activityType', [
+  ...businessLocaleKeys('activityType', [
     'attachment',
     'audit',
     'follow-up',
     'transfer',
   ]),
-  ...crmLocaleKeys('customerStatus', ['active', 'inactive', 'churned']),
-  ...crmLocaleKeys('entityKind', [
+  ...businessLocaleKeys('customerStatus', ['active', 'inactive', 'churned']),
+  ...businessLocaleKeys('entityKind', [
     'contact',
     'customer',
     'lead',
     'opportunity',
     'tag',
   ]),
-  ...crmLocaleKeys('leadStatus', [
+  ...businessLocaleKeys('leadStatus', [
     'new',
     'contacted',
     'qualified',
     'converted',
     'lost',
   ]),
-  ...crmLocaleKeys('method', ['call', 'email', 'meeting', 'wechat', 'note']),
-  ...crmLocaleKeys('opportunityStage', [
+  ...businessLocaleKeys('method', [
+    'call',
+    'email',
+    'meeting',
+    'wechat',
+    'note',
+  ]),
+  ...businessLocaleKeys('opportunityStage', [
     'qualification',
     'proposal',
     'negotiation',
     'won',
     'lost',
   ]),
-  ...crmLocaleKeys('priority', ['low', 'medium', 'high', 'urgent']),
-  ...crmLocaleKeys('targetType', [
+  ...businessLocaleKeys('priority', ['low', 'medium', 'high', 'urgent']),
+  ...businessLocaleKeys('targetType', [
     'contact',
     'customer',
     'lead',
     'opportunity',
   ]),
-  ...crmLocaleKeys('taskStatus', ['open', 'done', 'canceled']),
+  ...businessLocaleKeys('taskStatus', ['open', 'done', 'canceled']),
 ];
 const forbiddenMarkerScanPaths = [
   localesRoot,
@@ -281,7 +287,7 @@ checkRouteMenuKeys();
 checkCoreI18nKeys();
 checkRequiredLocaleKeys(
   'CRM dynamic Admin i18n key',
-  requiredCrmDynamicLocaleKeys,
+  requiredBusinessDynamicLocaleKeys,
 );
 checkLocalizedAdminPageText();
 checkErrorLocaleParity();
@@ -655,7 +661,7 @@ function readI18nIds(path: string): Set<string> {
   }
 
   for (const match of content.matchAll(
-    /\bcrmMessageId\(\s*['"]([^'"]+)['"]\s*\)/g,
+    /\bbusinessMessageId\(\s*['"]([^'"]+)['"]\s*\)/g,
   )) {
     ids.add(`pages.business.core.${match[1]}`);
   }
@@ -676,7 +682,10 @@ function readLocaleKeys(path: string): Set<string> {
   );
 }
 
-function crmLocaleKeys(scope: string, values: readonly string[]): string[] {
+function businessLocaleKeys(
+  scope: string,
+  values: readonly string[],
+): string[] {
   return values.map((value) => `pages.business.core.${scope}.${value}`);
 }
 

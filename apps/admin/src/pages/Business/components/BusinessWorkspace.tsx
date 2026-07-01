@@ -15,16 +15,16 @@ import {
   type ProColumns,
 } from '@ant-design/pro-components';
 import type {
-  CrmCustomerSummary,
-  CrmLeadSummary,
-  CrmOpenOpportunityStage,
-  CrmOpportunitySummary,
-  CrmSummary,
-  CrmTagSummary,
-  CrmTargetType,
-  CrmTaskSummary,
-  CrmWritableCustomerStatus,
-  CrmWritableLeadStatus,
+  BusinessCustomerSummary,
+  BusinessLeadSummary,
+  BusinessOpenOpportunityStage,
+  BusinessOpportunitySummary,
+  BusinessSummary,
+  BusinessTagSummary,
+  BusinessTargetType,
+  BusinessTaskSummary,
+  BusinessWritableCustomerStatus,
+  BusinessWritableLeadStatus,
 } from '@opencore/sdk';
 import { history, useAccess, useIntl } from '@umijs/max';
 import zhMessages from '@/locales/zh-CN';
@@ -50,37 +50,37 @@ import {
 } from 'antd';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  archiveOpenCoreCrmContact,
-  archiveOpenCoreCrmCustomer,
-  archiveOpenCoreCrmLead,
-  archiveOpenCoreCrmOpportunity,
-  changeOpenCoreCrmOpportunityStage,
-  completeOpenCoreCrmTask,
-  convertOpenCoreCrmLead,
-  createOpenCoreCrmAttachment,
-  createOpenCoreCrmContact,
-  createOpenCoreCrmCustomer,
-  createOpenCoreCrmFollowUp,
-  createOpenCoreCrmLead,
-  createOpenCoreCrmOpportunity,
-  createOpenCoreCrmTag,
-  createOpenCoreCrmTask,
-  getOpenCoreCrmSummary,
-  pageOpenCoreCrmActivities,
-  pageOpenCoreCrmContacts,
-  pageOpenCoreCrmCustomers,
-  pageOpenCoreCrmLeads,
-  pageOpenCoreCrmOpportunities,
-  pageOpenCoreCrmTags,
-  pageOpenCoreCrmTasks,
-  transferOpenCoreCrmCustomerOwner,
-  transferOpenCoreCrmLeadOwner,
-  transferOpenCoreCrmOpportunityOwner,
-  updateOpenCoreCrmContact,
-  updateOpenCoreCrmCustomer,
-  updateOpenCoreCrmLead,
-  updateOpenCoreCrmOpportunity,
-  updateOpenCoreCrmTag,
+  archiveOpenCoreBusinessContact,
+  archiveOpenCoreBusinessCustomer,
+  archiveOpenCoreBusinessLead,
+  archiveOpenCoreBusinessOpportunity,
+  changeOpenCoreBusinessOpportunityStage,
+  completeOpenCoreBusinessTask,
+  convertOpenCoreBusinessLead,
+  createOpenCoreBusinessAttachment,
+  createOpenCoreBusinessContact,
+  createOpenCoreBusinessCustomer,
+  createOpenCoreBusinessFollowUp,
+  createOpenCoreBusinessLead,
+  createOpenCoreBusinessOpportunity,
+  createOpenCoreBusinessTag,
+  createOpenCoreBusinessTask,
+  getOpenCoreBusinessSummary,
+  pageOpenCoreBusinessActivities,
+  pageOpenCoreBusinessContacts,
+  pageOpenCoreBusinessCustomers,
+  pageOpenCoreBusinessLeads,
+  pageOpenCoreBusinessOpportunities,
+  pageOpenCoreBusinessTags,
+  pageOpenCoreBusinessTasks,
+  transferOpenCoreBusinessCustomerOwner,
+  transferOpenCoreBusinessLeadOwner,
+  transferOpenCoreBusinessOpportunityOwner,
+  updateOpenCoreBusinessContact,
+  updateOpenCoreBusinessCustomer,
+  updateOpenCoreBusinessLead,
+  updateOpenCoreBusinessOpportunity,
+  updateOpenCoreBusinessTag,
 } from '@/services/opencore/platform';
 import dayjs, { type Dayjs } from 'dayjs';
 import {
@@ -89,7 +89,7 @@ import {
 } from '../../shared/CurrentPageExportButton';
 import { ReadOnlyDetailDrawer } from '../../shared/ReadOnlyDetailDrawer';
 
-type CrmTab =
+type BusinessSectionKey =
   | 'activity'
   | 'contacts'
   | 'customers'
@@ -97,7 +97,7 @@ type CrmTab =
   | 'opportunities'
   | 'tags'
   | 'tasks';
-export type BusinessRouteKey = 'overview' | CrmTab;
+export type BusinessRouteKey = 'overview' | BusinessSectionKey;
 type EntityKind = 'contact' | 'customer' | 'lead' | 'opportunity' | 'tag';
 type ActionKind =
   | 'attach'
@@ -106,15 +106,15 @@ type ActionKind =
   | 'stage'
   | 'task'
   | 'transfer';
-type CrmRow = Record<string, unknown> & {
+type BusinessRow = Record<string, unknown> & {
   id: string;
   tenantId: string;
-  resource: CrmTab;
+  resource: BusinessSectionKey;
 };
 type TargetContext = {
   id: string;
   title: string;
-  type: CrmTargetType;
+  type: BusinessTargetType;
 };
 type FormatMessage = (
   id: string,
@@ -162,7 +162,7 @@ const BUSINESS_ROUTE_TITLE_FALLBACKS: Record<BusinessRouteKey, string> = {
   tasks: 'Tasks',
 };
 
-function crmMessageId(suffix: string): string {
+function businessMessageId(suffix: string): string {
   return `pages.business.core.${suffix}`;
 }
 
@@ -198,7 +198,7 @@ function valueEnum(
   return Object.fromEntries(
     values.map((value) => [
       value,
-      { text: formatMessage(crmMessageId(`${scope}.${value}`), value) },
+      { text: formatMessage(businessMessageId(`${scope}.${value}`), value) },
     ]),
   );
 }
@@ -209,7 +209,7 @@ function enumOptions(
   scope: string,
 ) {
   return values.map((value) => ({
-    label: formatMessage(crmMessageId(`${scope}.${value}`), value),
+    label: formatMessage(businessMessageId(`${scope}.${value}`), value),
     value,
   }));
 }
@@ -219,7 +219,7 @@ function businessRouteTitle(
   formatMessage: FormatMessage,
 ): string {
   return formatMessage(
-    crmMessageId(routeKey === 'overview' ? 'title' : `tabs.${routeKey}`),
+    businessMessageId(routeKey === 'overview' ? 'title' : `tabs.${routeKey}`),
     BUSINESS_ROUTE_TITLE_FALLBACKS[routeKey],
   );
 }
@@ -228,7 +228,9 @@ function entityLabel(
   kind: EntityKind | undefined,
   formatMessage: FormatMessage,
 ): string {
-  return kind ? formatMessage(crmMessageId(`entityKind.${kind}`), kind) : '';
+  return kind
+    ? formatMessage(businessMessageId(`entityKind.${kind}`), kind)
+    : '';
 }
 
 function actionLabel(
@@ -236,14 +238,14 @@ function actionLabel(
   formatMessage: FormatMessage,
 ): string {
   return kind
-    ? formatMessage(crmMessageId(`actionKind.${kind}`), kind)
-    : formatMessage(crmMessageId('actionKind.action'), 'Action');
+    ? formatMessage(businessMessageId(`actionKind.${kind}`), kind)
+    : formatMessage(businessMessageId('actionKind.action'), 'Action');
 }
 
 function rowify<T extends { id: string; tenantId: string }>(
-  resource: CrmTab,
+  resource: BusinessSectionKey,
   rows: readonly T[],
-): CrmRow[] {
+): BusinessRow[] {
   return rows.map((row) => ({
     ...(row as Record<string, unknown>),
     id: row.id,
@@ -301,7 +303,7 @@ function datePickerValue(value: unknown): Dayjs | undefined {
   return undefined;
 }
 
-function editableEntityValues(row: CrmRow): Record<string, unknown> {
+function editableEntityValues(row: BusinessRow): Record<string, unknown> {
   return {
     ...row,
     expectedCloseAt: datePickerValue(row.expectedCloseAt),
@@ -323,12 +325,12 @@ function splitTags(value: string | undefined): string[] | undefined {
   return tags.length > 0 ? tags : undefined;
 }
 
-function getString(row: CrmRow, key: string): string | undefined {
+function getString(row: BusinessRow, key: string): string | undefined {
   const value = row[key];
   return typeof value === 'string' && value.length > 0 ? value : undefined;
 }
 
-function getNumber(row: CrmRow, key: string): number | undefined {
+function getNumber(row: BusinessRow, key: string): number | undefined {
   const value = row[key];
   return typeof value === 'number' ? value : undefined;
 }
@@ -347,16 +349,18 @@ function enumText(
   scope: string,
   formatMessage: FormatMessage,
 ): string {
-  return value ? formatMessage(crmMessageId(`${scope}.${value}`), value) : '-';
+  return value
+    ? formatMessage(businessMessageId(`${scope}.${value}`), value)
+    : '-';
 }
 
-function statusScope(record: CrmRow): string {
+function statusScope(record: BusinessRow): string {
   if (record.resource === 'customers') return 'customerStatus';
   if (record.resource === 'tasks') return 'taskStatus';
   return 'leadStatus';
 }
 
-function statusText(record: CrmRow, formatMessage: FormatMessage): string {
+function statusText(record: BusinessRow, formatMessage: FormatMessage): string {
   return enumText(
     getString(record, 'status'),
     statusScope(record),
@@ -364,7 +368,7 @@ function statusText(record: CrmRow, formatMessage: FormatMessage): string {
   );
 }
 
-function stageText(record: CrmRow, formatMessage: FormatMessage): string {
+function stageText(record: BusinessRow, formatMessage: FormatMessage): string {
   return enumText(
     getString(record, 'stage'),
     'opportunityStage',
@@ -373,7 +377,7 @@ function stageText(record: CrmRow, formatMessage: FormatMessage): string {
 }
 
 function activityTypeText(
-  record: CrmRow,
+  record: BusinessRow,
   formatMessage: FormatMessage,
 ): string {
   return enumText(
@@ -391,17 +395,20 @@ function targetTypeText(
 }
 
 function resourceText(
-  value: CrmTab | undefined,
+  value: BusinessSectionKey | undefined,
   formatMessage: FormatMessage,
 ): string {
-  return value ? formatMessage(crmMessageId(`tabs.${value}`), value) : '-';
+  return value ? formatMessage(businessMessageId(`tabs.${value}`), value) : '-';
 }
 
-function priorityText(record: CrmRow, formatMessage: FormatMessage): string {
+function priorityText(
+  record: BusinessRow,
+  formatMessage: FormatMessage,
+): string {
   return enumText(getString(record, 'priority'), 'priority', formatMessage);
 }
 
-function targetForRow(row: CrmRow): TargetContext | undefined {
+function targetForRow(row: BusinessRow): TargetContext | undefined {
   if (row.resource === 'leads') {
     return {
       id: row.id,
@@ -433,11 +440,11 @@ function targetForRow(row: CrmRow): TargetContext | undefined {
   return undefined;
 }
 
-function isConvertedLead(row: CrmRow): boolean {
+function isConvertedLead(row: BusinessRow): boolean {
   return row.resource === 'leads' && getString(row, 'status') === 'converted';
 }
 
-function canEditRow(row: CrmRow): boolean {
+function canEditRow(row: BusinessRow): boolean {
   return (
     ['leads', 'customers', 'contacts', 'opportunities', 'tags'].includes(
       row.resource,
@@ -446,49 +453,52 @@ function canEditRow(row: CrmRow): boolean {
 }
 
 function canWriteTarget(
-  row: CrmRow,
+  row: BusinessRow,
   target: TargetContext | undefined,
 ): target is TargetContext {
   return Boolean(target) && !isConvertedLead(row);
 }
 
 function createExportColumns(
-  tab: CrmTab,
+  tab: BusinessSectionKey,
   formatMessage: FormatMessage,
-): CurrentPageExportColumn<CrmRow>[] {
-  const common: CurrentPageExportColumn<CrmRow>[] = [
+): CurrentPageExportColumn<BusinessRow>[] {
+  const common: CurrentPageExportColumn<BusinessRow>[] = [
     {
-      title: formatMessage(crmMessageId('fields.tenant'), 'Tenant'),
+      title: formatMessage(businessMessageId('fields.tenant'), 'Tenant'),
       dataIndex: 'tenantId',
     },
-    { title: formatMessage(crmMessageId('fields.id'), 'ID'), dataIndex: 'id' },
+    {
+      title: formatMessage(businessMessageId('fields.id'), 'ID'),
+      dataIndex: 'id',
+    },
   ];
   if (tab === 'leads') {
     return [
       ...common,
       {
-        title: formatMessage(crmMessageId('fields.number'), 'Number'),
+        title: formatMessage(businessMessageId('fields.number'), 'Number'),
         dataIndex: 'number',
       },
       {
-        title: formatMessage(crmMessageId('fields.name'), 'Name'),
+        title: formatMessage(businessMessageId('fields.name'), 'Name'),
         dataIndex: 'name',
       },
       {
-        title: formatMessage(crmMessageId('fields.company'), 'Company'),
+        title: formatMessage(businessMessageId('fields.company'), 'Company'),
         dataIndex: 'company',
       },
       {
-        title: formatMessage(crmMessageId('fields.status'), 'Status'),
+        title: formatMessage(businessMessageId('fields.status'), 'Status'),
         dataIndex: 'status',
         renderText: (record) => statusText(record, formatMessage),
       },
       {
-        title: formatMessage(crmMessageId('fields.owner'), 'Owner'),
+        title: formatMessage(businessMessageId('fields.owner'), 'Owner'),
         dataIndex: 'owner',
       },
       {
-        title: formatMessage(crmMessageId('fields.source'), 'Source'),
+        title: formatMessage(businessMessageId('fields.source'), 'Source'),
         dataIndex: 'source',
       },
     ];
@@ -497,28 +507,28 @@ function createExportColumns(
     return [
       ...common,
       {
-        title: formatMessage(crmMessageId('fields.number'), 'Number'),
+        title: formatMessage(businessMessageId('fields.number'), 'Number'),
         dataIndex: 'number',
       },
       {
-        title: formatMessage(crmMessageId('fields.name'), 'Name'),
+        title: formatMessage(businessMessageId('fields.name'), 'Name'),
         dataIndex: 'name',
       },
       {
-        title: formatMessage(crmMessageId('fields.status'), 'Status'),
+        title: formatMessage(businessMessageId('fields.status'), 'Status'),
         dataIndex: 'status',
         renderText: (record) => statusText(record, formatMessage),
       },
       {
-        title: formatMessage(crmMessageId('fields.level'), 'Level'),
+        title: formatMessage(businessMessageId('fields.level'), 'Level'),
         dataIndex: 'level',
       },
       {
-        title: formatMessage(crmMessageId('fields.owner'), 'Owner'),
+        title: formatMessage(businessMessageId('fields.owner'), 'Owner'),
         dataIndex: 'owner',
       },
       {
-        title: formatMessage(crmMessageId('fields.source'), 'Source'),
+        title: formatMessage(businessMessageId('fields.source'), 'Source'),
         dataIndex: 'source',
       },
     ];
@@ -527,28 +537,28 @@ function createExportColumns(
     return [
       ...common,
       {
-        title: formatMessage(crmMessageId('fields.number'), 'Number'),
+        title: formatMessage(businessMessageId('fields.number'), 'Number'),
         dataIndex: 'number',
       },
       {
-        title: formatMessage(crmMessageId('fields.name'), 'Name'),
+        title: formatMessage(businessMessageId('fields.name'), 'Name'),
         dataIndex: 'name',
       },
       {
-        title: formatMessage(crmMessageId('fields.customer'), 'Customer'),
+        title: formatMessage(businessMessageId('fields.customer'), 'Customer'),
         dataIndex: 'customerName',
       },
       {
-        title: formatMessage(crmMessageId('fields.stage'), 'Stage'),
+        title: formatMessage(businessMessageId('fields.stage'), 'Stage'),
         dataIndex: 'stage',
         renderText: (record) => stageText(record, formatMessage),
       },
       {
-        title: formatMessage(crmMessageId('fields.amount'), 'Amount'),
+        title: formatMessage(businessMessageId('fields.amount'), 'Amount'),
         dataIndex: 'amount',
       },
       {
-        title: formatMessage(crmMessageId('fields.owner'), 'Owner'),
+        title: formatMessage(businessMessageId('fields.owner'), 'Owner'),
         dataIndex: 'owner',
       },
     ];
@@ -557,25 +567,25 @@ function createExportColumns(
     return [
       ...common,
       {
-        title: formatMessage(crmMessageId('fields.title'), 'Title'),
+        title: formatMessage(businessMessageId('fields.title'), 'Title'),
         dataIndex: 'title',
       },
       {
-        title: formatMessage(crmMessageId('fields.assignee'), 'Assignee'),
+        title: formatMessage(businessMessageId('fields.assignee'), 'Assignee'),
         dataIndex: 'assignee',
       },
       {
-        title: formatMessage(crmMessageId('fields.status'), 'Status'),
+        title: formatMessage(businessMessageId('fields.status'), 'Status'),
         dataIndex: 'status',
         renderText: (record) => statusText(record, formatMessage),
       },
       {
-        title: formatMessage(crmMessageId('fields.priority'), 'Priority'),
+        title: formatMessage(businessMessageId('fields.priority'), 'Priority'),
         dataIndex: 'priority',
         renderText: (record) => priorityText(record, formatMessage),
       },
       {
-        title: formatMessage(crmMessageId('fields.dueAt'), 'Due At'),
+        title: formatMessage(businessMessageId('fields.dueAt'), 'Due At'),
         dataIndex: 'dueAt',
       },
     ];
@@ -583,23 +593,23 @@ function createExportColumns(
   return [
     ...common,
     {
-      title: formatMessage(crmMessageId('fields.name'), 'Name'),
+      title: formatMessage(businessMessageId('fields.name'), 'Name'),
       dataIndex: 'name',
     },
     {
-      title: formatMessage(crmMessageId('fields.title'), 'Title'),
+      title: formatMessage(businessMessageId('fields.title'), 'Title'),
       dataIndex: 'title',
     },
     {
-      title: formatMessage(crmMessageId('fields.target'), 'Target'),
+      title: formatMessage(businessMessageId('fields.target'), 'Target'),
       dataIndex: 'targetId',
     },
     {
-      title: formatMessage(crmMessageId('fields.owner'), 'Owner'),
+      title: formatMessage(businessMessageId('fields.owner'), 'Owner'),
       dataIndex: 'owner',
     },
     {
-      title: formatMessage(crmMessageId('fields.status'), 'Status'),
+      title: formatMessage(businessMessageId('fields.status'), 'Status'),
       dataIndex: 'status',
       renderText: (record) => statusText(record, formatMessage),
     },
@@ -640,26 +650,28 @@ export default function BusinessWorkspace({
   const [entityForm] = Form.useForm<Record<string, unknown>>();
   const [actionForm] = Form.useForm<Record<string, unknown>>();
   const actionRef = useRef<ActionType | undefined>(undefined);
-  const [summary, setSummary] = useState<CrmSummary>();
-  const [tags, setTags] = useState<readonly CrmTagSummary[]>([]);
-  const [customers, setCustomers] = useState<readonly CrmCustomerSummary[]>([]);
-  const [tableRows, setTableRows] = useState<CrmRow[]>([]);
+  const [summary, setSummary] = useState<BusinessSummary>();
+  const [tags, setTags] = useState<readonly BusinessTagSummary[]>([]);
+  const [customers, setCustomers] = useState<
+    readonly BusinessCustomerSummary[]
+  >([]);
+  const [tableRows, setTableRows] = useState<BusinessRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
-  const [selected, setSelected] = useState<CrmRow>();
+  const [selected, setSelected] = useState<BusinessRow>();
   const [entityKind, setEntityKind] = useState<EntityKind>();
-  const [editing, setEditing] = useState<CrmRow>();
+  const [editing, setEditing] = useState<BusinessRow>();
   const [actionKind, setActionKind] = useState<ActionKind>();
   const [actionTarget, setActionTarget] = useState<TargetContext>();
   const [submitting, setSubmitting] = useState(false);
 
-  const loadCrm = async () => {
+  const loadBusiness = async () => {
     setLoading(true);
     try {
       const [summaryResult, tagPage, customerPage] = await Promise.all([
-        getOpenCoreCrmSummary(),
-        pageOpenCoreCrmTags({ enabled: true, page: 1, pageSize: 100 }),
-        pageOpenCoreCrmCustomers({ page: 1, pageSize: 100 }),
+        getOpenCoreBusinessSummary(),
+        pageOpenCoreBusinessTags({ enabled: true, page: 1, pageSize: 100 }),
+        pageOpenCoreBusinessCustomers({ page: 1, pageSize: 100 }),
       ]);
       setSummary(summaryResult);
       setTags([...tagPage.items]);
@@ -670,7 +682,7 @@ export default function BusinessWorkspace({
         error instanceof Error
           ? error.message
           : formatMessage(
-              crmMessageId('load.failure'),
+              businessMessageId('load.failure'),
               'Unable to load business data.',
             ),
       );
@@ -680,7 +692,7 @@ export default function BusinessWorkspace({
   };
 
   useEffect(() => {
-    void loadCrm();
+    void loadBusiness();
   }, []);
 
   useEffect(() => {
@@ -689,8 +701,8 @@ export default function BusinessWorkspace({
     actionRef.current?.reload();
   }, [activeTab]);
 
-  const reloadCrm = async () => {
-    await loadCrm();
+  const reloadBusiness = async () => {
+    await loadBusiness();
     actionRef.current?.reload();
   };
 
@@ -719,7 +731,7 @@ export default function BusinessWorkspace({
     setEntityKind(kind);
   };
 
-  const openEdit = (kind: EntityKind, row: CrmRow) => {
+  const openEdit = (kind: EntityKind, row: BusinessRow) => {
     entityForm.resetFields();
     entityForm.setFieldsValue(editableEntityValues(row));
     setEditing(row);
@@ -763,8 +775,8 @@ export default function BusinessWorkspace({
           enabled: Boolean(values.enabled ?? true),
           name: textValue(values, 'name'),
         };
-        if (editing) await updateOpenCoreCrmTag(editing.id, body);
-        else await createOpenCoreCrmTag(body);
+        if (editing) await updateOpenCoreBusinessTag(editing.id, body);
+        else await createOpenCoreBusinessTag(body);
       } else if (entityKind === 'lead') {
         const body = {
           company: nullableText(values, 'company') ?? undefined,
@@ -780,13 +792,13 @@ export default function BusinessWorkspace({
         };
         if (editing) {
           const status = optionalText(values, 'status');
-          await updateOpenCoreCrmLead(editing.id, {
+          await updateOpenCoreBusinessLead(editing.id, {
             ...body,
             ...(status === undefined || status === 'converted'
               ? {}
-              : { status: status as CrmWritableLeadStatus }),
+              : { status: status as BusinessWritableLeadStatus }),
           });
-        } else await createOpenCoreCrmLead(body);
+        } else await createOpenCoreBusinessLead(body);
       } else if (entityKind === 'customer') {
         const body = {
           address: nullableText(values, 'address') ?? undefined,
@@ -800,12 +812,15 @@ export default function BusinessWorkspace({
           region: nullableText(values, 'region') ?? undefined,
           remark: nullableText(values, 'remark') ?? undefined,
           source: textValue(values, 'source'),
-          status: optionalText(values, 'status') as CrmWritableCustomerStatus,
+          status: optionalText(
+            values,
+            'status',
+          ) as BusinessWritableCustomerStatus,
           tags: splitTags(optionalText(values, 'tags')),
           website: nullableText(values, 'website') ?? undefined,
         };
-        if (editing) await updateOpenCoreCrmCustomer(editing.id, body);
-        else await createOpenCoreCrmCustomer(body);
+        if (editing) await updateOpenCoreBusinessCustomer(editing.id, body);
+        else await createOpenCoreBusinessCustomer(body);
       } else if (entityKind === 'contact') {
         const body = {
           customerId: textValue(values, 'customerId'),
@@ -820,8 +835,8 @@ export default function BusinessWorkspace({
           remark: nullableText(values, 'remark') ?? undefined,
           title: nullableText(values, 'title') ?? undefined,
         };
-        if (editing) await updateOpenCoreCrmContact(editing.id, body);
-        else await createOpenCoreCrmContact(body);
+        if (editing) await updateOpenCoreBusinessContact(editing.id, body);
+        else await createOpenCoreBusinessContact(body);
       } else if (entityKind === 'opportunity') {
         const body = {
           amount: optionalText(values, 'amount'),
@@ -829,36 +844,39 @@ export default function BusinessWorkspace({
           expectedCloseAt: dateText(values, 'expectedCloseAt'),
           name: textValue(values, 'name'),
           owner: textValue(values, 'owner'),
-          probability: getNumber(values as CrmRow, 'probability'),
+          probability: getNumber(values as BusinessRow, 'probability'),
           remark: nullableText(values, 'remark') ?? undefined,
           tags: splitTags(optionalText(values, 'tags')),
         };
-        if (editing) await updateOpenCoreCrmOpportunity(editing.id, body);
+        if (editing) await updateOpenCoreBusinessOpportunity(editing.id, body);
         else
-          await createOpenCoreCrmOpportunity({
+          await createOpenCoreBusinessOpportunity({
             ...body,
-            stage: optionalText(values, 'stage') as CrmOpenOpportunityStage,
+            stage: optionalText(
+              values,
+              'stage',
+            ) as BusinessOpenOpportunityStage,
           });
       }
       message.success(
         editing
           ? formatMessage(
-              crmMessageId('messages.updated'),
+              businessMessageId('messages.updated'),
               'Business record updated.',
             )
           : formatMessage(
-              crmMessageId('messages.created'),
+              businessMessageId('messages.created'),
               'Business record created.',
             ),
       );
       closeEntityModal();
-      await reloadCrm();
+      await reloadBusiness();
     } catch (error: unknown) {
       message.error(
         error instanceof Error
           ? error.message
           : formatMessage(
-              crmMessageId('messages.saveFailed'),
+              businessMessageId('messages.saveFailed'),
               'Business save failed.',
             ),
       );
@@ -879,13 +897,13 @@ export default function BusinessWorkspace({
           toOwner: textValue(values, 'toOwner'),
         };
         if (actionTarget.type === 'lead')
-          await transferOpenCoreCrmLeadOwner(actionTarget.id, body);
+          await transferOpenCoreBusinessLeadOwner(actionTarget.id, body);
         if (actionTarget.type === 'customer')
-          await transferOpenCoreCrmCustomerOwner(actionTarget.id, body);
+          await transferOpenCoreBusinessCustomerOwner(actionTarget.id, body);
         if (actionTarget.type === 'opportunity')
-          await transferOpenCoreCrmOpportunityOwner(actionTarget.id, body);
+          await transferOpenCoreBusinessOpportunityOwner(actionTarget.id, body);
       } else if (actionKind === 'follow') {
-        await createOpenCoreCrmFollowUp({
+        await createOpenCoreBusinessFollowUp({
           content: textValue(values, 'content'),
           createdBy: textValue(values, 'createdBy'),
           method: textValue(values, 'method') as 'call',
@@ -895,7 +913,7 @@ export default function BusinessWorkspace({
           targetType: actionTarget.type,
         });
       } else if (actionKind === 'task') {
-        await createOpenCoreCrmTask({
+        await createOpenCoreBusinessTask({
           assignee: textValue(values, 'assignee'),
           createdBy: textValue(values, 'createdBy'),
           dueAt: dateText(values, 'dueAt'),
@@ -906,7 +924,7 @@ export default function BusinessWorkspace({
           title: textValue(values, 'title'),
         });
       } else if (actionKind === 'attach') {
-        await createOpenCoreCrmAttachment({
+        await createOpenCoreBusinessAttachment({
           mimeType: textValue(values, 'mimeType'),
           originalName: textValue(values, 'originalName'),
           sizeBytes: Number(values.sizeBytes ?? 0),
@@ -916,33 +934,36 @@ export default function BusinessWorkspace({
           uploadedBy: textValue(values, 'uploadedBy'),
         });
       } else if (actionKind === 'convert') {
-        await convertOpenCoreCrmLead(actionTarget.id, {
+        await convertOpenCoreBusinessLead(actionTarget.id, {
           actor: textValue(values, 'actor'),
           amount: optionalText(values, 'amount'),
           customerName: optionalText(values, 'customerName'),
           opportunityName: optionalText(values, 'opportunityName'),
         });
       } else if (actionKind === 'stage') {
-        await changeOpenCoreCrmOpportunityStage(actionTarget.id, {
+        await changeOpenCoreBusinessOpportunityStage(actionTarget.id, {
           actor: textValue(values, 'actor'),
           closeReason: optionalText(values, 'closeReason'),
-          stage: textValue(values, 'stage') as CrmOpportunitySummary['stage'],
+          stage: textValue(
+            values,
+            'stage',
+          ) as BusinessOpportunitySummary['stage'],
         });
       }
       message.success(
         formatMessage(
-          crmMessageId('messages.actionCompleted'),
+          businessMessageId('messages.actionCompleted'),
           'Business action completed.',
         ),
       );
       closeActionModal();
-      await reloadCrm();
+      await reloadBusiness();
     } catch (error: unknown) {
       message.error(
         error instanceof Error
           ? error.message
           : formatMessage(
-              crmMessageId('messages.actionFailed'),
+              businessMessageId('messages.actionFailed'),
               'Business action failed.',
             ),
       );
@@ -951,30 +972,32 @@ export default function BusinessWorkspace({
     }
   };
 
-  const archiveRow = async (row: CrmRow) => {
-    if (row.resource === 'leads') await archiveOpenCoreCrmLead(row.id);
-    if (row.resource === 'customers') await archiveOpenCoreCrmCustomer(row.id);
-    if (row.resource === 'contacts') await archiveOpenCoreCrmContact(row.id);
+  const archiveRow = async (row: BusinessRow) => {
+    if (row.resource === 'leads') await archiveOpenCoreBusinessLead(row.id);
+    if (row.resource === 'customers')
+      await archiveOpenCoreBusinessCustomer(row.id);
+    if (row.resource === 'contacts')
+      await archiveOpenCoreBusinessContact(row.id);
     if (row.resource === 'opportunities')
-      await archiveOpenCoreCrmOpportunity(row.id);
+      await archiveOpenCoreBusinessOpportunity(row.id);
     message.success(
       formatMessage(
-        crmMessageId('messages.archived'),
+        businessMessageId('messages.archived'),
         'Business record archived.',
       ),
     );
-    await reloadCrm();
+    await reloadBusiness();
   };
 
-  const completeTask = async (row: CrmRow) => {
-    await completeOpenCoreCrmTask(row.id, { actor: DEFAULT_ACTOR });
+  const completeTask = async (row: BusinessRow) => {
+    await completeOpenCoreBusinessTask(row.id, { actor: DEFAULT_ACTOR });
     message.success(
       formatMessage(
-        crmMessageId('messages.taskCompleted'),
+        businessMessageId('messages.taskCompleted'),
         'CRM task completed.',
       ),
     );
-    await reloadCrm();
+    await reloadBusiness();
   };
 
   const requestTable = async (params: Record<string, unknown>) => {
@@ -992,31 +1015,31 @@ export default function BusinessWorkspace({
     const assignee = optionalText(params, 'assignee');
 
     if (activeTab === 'leads') {
-      const result = await pageOpenCoreCrmLeads({
+      const result = await pageOpenCoreBusinessLeads({
         keyword,
         owner,
         page,
         pageSize,
-        status: status as CrmLeadSummary['status'] | undefined,
+        status: status as BusinessLeadSummary['status'] | undefined,
       });
       const data = rowify('leads', result.items);
       setTableRows(data);
       return { data, success: true, total: result.total };
     }
     if (activeTab === 'customers') {
-      const result = await pageOpenCoreCrmCustomers({
+      const result = await pageOpenCoreBusinessCustomers({
         keyword,
         owner,
         page,
         pageSize,
-        status: status as CrmCustomerSummary['status'] | undefined,
+        status: status as BusinessCustomerSummary['status'] | undefined,
       });
       const data = rowify('customers', result.items);
       setTableRows(data);
       return { data, success: true, total: result.total };
     }
     if (activeTab === 'contacts') {
-      const result = await pageOpenCoreCrmContacts({
+      const result = await pageOpenCoreBusinessContacts({
         keyword,
         owner,
         page,
@@ -1027,36 +1050,36 @@ export default function BusinessWorkspace({
       return { data, success: true, total: result.total };
     }
     if (activeTab === 'opportunities') {
-      const result = await pageOpenCoreCrmOpportunities({
+      const result = await pageOpenCoreBusinessOpportunities({
         keyword,
         owner,
         page,
         pageSize,
-        stage: stage as CrmOpportunitySummary['stage'] | undefined,
+        stage: stage as BusinessOpportunitySummary['stage'] | undefined,
       });
       const data = rowify('opportunities', result.items);
       setTableRows(data);
       return { data, success: true, total: result.total };
     }
     if (activeTab === 'tasks') {
-      const result = await pageOpenCoreCrmTasks({
+      const result = await pageOpenCoreBusinessTasks({
         assignee,
         page,
         pageSize,
-        status: status as CrmTaskSummary['status'] | undefined,
+        status: status as BusinessTaskSummary['status'] | undefined,
       });
       const data = rowify('tasks', result.items);
       setTableRows(data);
       return { data, success: true, total: result.total };
     }
     if (activeTab === 'tags') {
-      const result = await pageOpenCoreCrmTags({ page, pageSize });
+      const result = await pageOpenCoreBusinessTags({ page, pageSize });
       const data = rowify('tags', result.items);
       setTableRows(data);
       return { data, success: true, total: result.total };
     }
 
-    const result = await pageOpenCoreCrmActivities({ page, pageSize });
+    const result = await pageOpenCoreBusinessActivities({ page, pageSize });
     const data = rowify('activity', result.items);
     setTableRows(data);
 
@@ -1067,9 +1090,9 @@ export default function BusinessWorkspace({
     };
   };
 
-  const columns: ProColumns<CrmRow>[] = [
+  const columns: ProColumns<BusinessRow>[] = [
     {
-      title: formatMessage(crmMessageId('fields.keyword'), 'Keyword'),
+      title: formatMessage(businessMessageId('fields.keyword'), 'Keyword'),
       dataIndex: 'keyword',
       hideInTable: true,
       search: !['contacts', 'customers', 'leads', 'opportunities'].includes(
@@ -1079,7 +1102,7 @@ export default function BusinessWorkspace({
         : undefined,
     },
     {
-      title: formatMessage(crmMessageId('fields.owner'), 'Owner'),
+      title: formatMessage(businessMessageId('fields.owner'), 'Owner'),
       dataIndex: 'owner',
       hideInTable: true,
       search: !['contacts', 'customers', 'leads', 'opportunities'].includes(
@@ -1089,13 +1112,13 @@ export default function BusinessWorkspace({
         : undefined,
     },
     {
-      title: formatMessage(crmMessageId('fields.assignee'), 'Assignee'),
+      title: formatMessage(businessMessageId('fields.assignee'), 'Assignee'),
       dataIndex: 'assignee',
       hideInTable: true,
       search: activeTab !== 'tasks' ? false : undefined,
     },
     {
-      title: formatMessage(crmMessageId('fields.status'), 'Status'),
+      title: formatMessage(businessMessageId('fields.status'), 'Status'),
       dataIndex: 'status',
       hideInTable: true,
       search: !['customers', 'leads', 'tasks'].includes(activeTab)
@@ -1117,7 +1140,7 @@ export default function BusinessWorkspace({
       ),
     },
     {
-      title: formatMessage(crmMessageId('fields.stage'), 'Stage'),
+      title: formatMessage(businessMessageId('fields.stage'), 'Stage'),
       dataIndex: 'stage',
       hideInTable: true,
       search: activeTab !== 'opportunities' ? false : undefined,
@@ -1129,7 +1152,7 @@ export default function BusinessWorkspace({
       ),
     },
     {
-      title: formatMessage(crmMessageId('fields.tenant'), 'Tenant'),
+      title: formatMessage(businessMessageId('fields.tenant'), 'Tenant'),
       dataIndex: 'tenantId',
       search: false,
       width: 150,
@@ -1137,8 +1160,8 @@ export default function BusinessWorkspace({
     {
       title:
         activeTab === 'tasks'
-          ? formatMessage(crmMessageId('fields.title'), 'Title')
-          : formatMessage(crmMessageId('fields.name'), 'Name'),
+          ? formatMessage(businessMessageId('fields.title'), 'Title')
+          : formatMessage(businessMessageId('fields.name'), 'Name'),
       dataIndex: activeTab === 'tasks' ? 'title' : 'name',
       search: false,
       width:
@@ -1152,35 +1175,35 @@ export default function BusinessWorkspace({
       ),
     },
     {
-      title: formatMessage(crmMessageId('fields.number'), 'Number'),
+      title: formatMessage(businessMessageId('fields.number'), 'Number'),
       dataIndex: 'number',
       search: false,
       width: 170,
       hideInTable: !['customers', 'leads', 'opportunities'].includes(activeTab),
     },
     {
-      title: formatMessage(crmMessageId('fields.customer'), 'Customer'),
+      title: formatMessage(businessMessageId('fields.customer'), 'Customer'),
       dataIndex: 'customerName',
       search: false,
       width: 180,
       hideInTable: !['contacts', 'opportunities'].includes(activeTab),
     },
     {
-      title: formatMessage(crmMessageId('fields.owner'), 'Owner'),
+      title: formatMessage(businessMessageId('fields.owner'), 'Owner'),
       dataIndex: 'owner',
       search: false,
       width: 130,
       hideInTable: ['activity', 'tags', 'tasks'].includes(activeTab),
     },
     {
-      title: formatMessage(crmMessageId('fields.assignee'), 'Assignee'),
+      title: formatMessage(businessMessageId('fields.assignee'), 'Assignee'),
       dataIndex: 'assignee',
       search: false,
       width: 130,
       hideInTable: activeTab !== 'tasks',
     },
     {
-      title: formatMessage(crmMessageId('fields.status'), 'Status'),
+      title: formatMessage(businessMessageId('fields.status'), 'Status'),
       dataIndex: 'status',
       search: false,
       width: 120,
@@ -1192,7 +1215,7 @@ export default function BusinessWorkspace({
       ),
     },
     {
-      title: formatMessage(crmMessageId('fields.stage'), 'Stage'),
+      title: formatMessage(businessMessageId('fields.stage'), 'Stage'),
       dataIndex: 'stage',
       search: false,
       width: 140,
@@ -1204,14 +1227,14 @@ export default function BusinessWorkspace({
       ),
     },
     {
-      title: formatMessage(crmMessageId('fields.amount'), 'Amount'),
+      title: formatMessage(businessMessageId('fields.amount'), 'Amount'),
       dataIndex: 'amount',
       search: false,
       width: 120,
       hideInTable: activeTab !== 'opportunities',
     },
     {
-      title: formatMessage(crmMessageId('fields.target'), 'Target'),
+      title: formatMessage(businessMessageId('fields.target'), 'Target'),
       dataIndex: 'targetId',
       search: false,
       width: 180,
@@ -1229,14 +1252,14 @@ export default function BusinessWorkspace({
       ),
     },
     {
-      title: formatMessage(crmMessageId('fields.dueAt'), 'Due'),
+      title: formatMessage(businessMessageId('fields.dueAt'), 'Due'),
       dataIndex: 'dueAt',
       search: false,
       width: 180,
       hideInTable: activeTab !== 'tasks',
     },
     {
-      title: formatMessage(crmMessageId('actions.column'), 'Action'),
+      title: formatMessage(businessMessageId('actions.column'), 'Action'),
       valueType: 'option',
       width: 260,
       render: (_, record) => {
@@ -1245,7 +1268,7 @@ export default function BusinessWorkspace({
         return [
           <Tooltip
             key="detail"
-            title={formatMessage(crmMessageId('actions.detail'), 'Detail')}
+            title={formatMessage(businessMessageId('actions.detail'), 'Detail')}
           >
             <Button
               icon={<EyeOutlined />}
@@ -1257,7 +1280,7 @@ export default function BusinessWorkspace({
           access.canUpdateBusiness && canEditRow(record) ? (
             <Tooltip
               key="edit"
-              title={formatMessage(crmMessageId('actions.edit'), 'Edit')}
+              title={formatMessage(businessMessageId('actions.edit'), 'Edit')}
             >
               <Button
                 icon={<EditOutlined />}
@@ -1286,7 +1309,7 @@ export default function BusinessWorkspace({
             <Tooltip
               key="transfer"
               title={formatMessage(
-                crmMessageId('actions.transferOwner'),
+                businessMessageId('actions.transferOwner'),
                 'Transfer owner',
               )}
             >
@@ -1302,7 +1325,7 @@ export default function BusinessWorkspace({
             <Tooltip
               key="follow"
               title={formatMessage(
-                crmMessageId('actions.followUp'),
+                businessMessageId('actions.followUp'),
                 'Follow up',
               )}
             >
@@ -1318,7 +1341,7 @@ export default function BusinessWorkspace({
             <Tooltip
               key="task"
               title={formatMessage(
-                crmMessageId('actions.reminder'),
+                businessMessageId('actions.reminder'),
                 'Reminder',
               )}
             >
@@ -1327,7 +1350,7 @@ export default function BusinessWorkspace({
                 size="small"
                 type="link"
               >
-                {formatMessage(crmMessageId('actions.task'), 'Task')}
+                {formatMessage(businessMessageId('actions.task'), 'Task')}
               </Button>
             </Tooltip>
           ) : null,
@@ -1335,7 +1358,7 @@ export default function BusinessWorkspace({
             <Tooltip
               key="attach"
               title={formatMessage(
-                crmMessageId('actions.attachment'),
+                businessMessageId('actions.attachment'),
                 'Attachment',
               )}
             >
@@ -1362,7 +1385,7 @@ export default function BusinessWorkspace({
               size="small"
               type="link"
             >
-              {formatMessage(crmMessageId('actions.convert'), 'Convert')}
+              {formatMessage(businessMessageId('actions.convert'), 'Convert')}
             </Button>
           ) : null,
           access.canUpdateBusiness && record.resource === 'opportunities' ? (
@@ -1378,7 +1401,7 @@ export default function BusinessWorkspace({
               size="small"
               type="link"
             >
-              {formatMessage(crmMessageId('actions.stage'), 'Stage')}
+              {formatMessage(businessMessageId('actions.stage'), 'Stage')}
             </Button>
           ) : null,
           access.canUpdateBusiness &&
@@ -1387,7 +1410,7 @@ export default function BusinessWorkspace({
             <Tooltip
               key="complete"
               title={formatMessage(
-                crmMessageId('actions.completeTask'),
+                businessMessageId('actions.completeTask'),
                 'Complete task',
               )}
             >
@@ -1407,12 +1430,12 @@ export default function BusinessWorkspace({
               key="archive"
               onConfirm={() => void archiveRow(record)}
               title={formatMessage(
-                crmMessageId('actions.archiveConfirm'),
+                businessMessageId('actions.archiveConfirm'),
                 'Archive this business record?',
               )}
             >
               <Button danger size="small" type="link">
-                {formatMessage(crmMessageId('actions.archive'), 'Archive')}
+                {formatMessage(businessMessageId('actions.archive'), 'Archive')}
               </Button>
             </Popconfirm>
           ) : null,
@@ -1432,17 +1455,17 @@ export default function BusinessWorkspace({
   return (
     <PageContainer
       title={businessRouteTitle(activeTab, formatMessage)}
-      subTitle={formatMessage(crmMessageId('section'), 'Business')}
+      subTitle={formatMessage(businessMessageId('section'), 'Business')}
     >
       {loadError ? (
         <Alert
           action={
-            <Button onClick={() => void reloadCrm()} size="small">
-              {formatMessage(crmMessageId('actions.retry'), 'Retry')}
+            <Button onClick={() => void reloadBusiness()} size="small">
+              {formatMessage(businessMessageId('actions.retry'), 'Retry')}
             </Button>
           }
           message={formatMessage(
-            crmMessageId('load.liveFailure'),
+            businessMessageId('load.liveFailure'),
             'Live business data unavailable',
           )}
           showIcon
@@ -1457,7 +1480,7 @@ export default function BusinessWorkspace({
           <Card size="small">
             <Statistic
               loading={loading}
-              title={formatMessage(crmMessageId('stats.leads'), 'Leads')}
+              title={formatMessage(businessMessageId('stats.leads'), 'Leads')}
               value={summary?.leads}
             />
           </Card>
@@ -1467,7 +1490,7 @@ export default function BusinessWorkspace({
             <Statistic
               loading={loading}
               title={formatMessage(
-                crmMessageId('stats.customers'),
+                businessMessageId('stats.customers'),
                 'Customers',
               )}
               value={summary?.customers}
@@ -1479,7 +1502,7 @@ export default function BusinessWorkspace({
             <Statistic
               loading={loading}
               title={formatMessage(
-                crmMessageId('stats.openTasks'),
+                businessMessageId('stats.openTasks'),
                 'Open Tasks',
               )}
               value={summary?.openTasks}
@@ -1491,7 +1514,7 @@ export default function BusinessWorkspace({
             <Statistic
               loading={loading}
               title={formatMessage(
-                crmMessageId('stats.openPipeline'),
+                businessMessageId('stats.openPipeline'),
                 'Open Pipeline',
               )}
               value={amountText(summary?.openPipelineAmount, intl.locale)}
@@ -1510,7 +1533,7 @@ export default function BusinessWorkspace({
             >
               <Statistic
                 loading={loading}
-                title={formatMessage(crmMessageId('tabs.leads'), 'Leads')}
+                title={formatMessage(businessMessageId('tabs.leads'), 'Leads')}
                 value={summary?.leads}
               />
             </Card>
@@ -1524,7 +1547,7 @@ export default function BusinessWorkspace({
               <Statistic
                 loading={loading}
                 title={formatMessage(
-                  crmMessageId('tabs.customers'),
+                  businessMessageId('tabs.customers'),
                   'Accounts',
                 )}
                 value={summary?.customers}
@@ -1539,7 +1562,7 @@ export default function BusinessWorkspace({
             >
               <Statistic
                 loading={loading}
-                title={formatMessage(crmMessageId('tabs.tasks'), 'Tasks')}
+                title={formatMessage(businessMessageId('tabs.tasks'), 'Tasks')}
                 value={summary?.openTasks}
               />
             </Card>
@@ -1553,7 +1576,7 @@ export default function BusinessWorkspace({
               <Statistic
                 loading={loading}
                 title={formatMessage(
-                  crmMessageId('stats.openPipeline'),
+                  businessMessageId('stats.openPipeline'),
                   'Open Pipeline',
                 )}
                 value={amountText(summary?.openPipelineAmount, intl.locale)}
@@ -1562,7 +1585,7 @@ export default function BusinessWorkspace({
           </Col>
         </Row>
       ) : (
-        <ProTable<CrmRow>
+        <ProTable<BusinessRow>
           actionRef={actionRef}
           columns={columns}
           params={{ activeTab }}
@@ -1585,9 +1608,9 @@ export default function BusinessWorkspace({
               <Button
                 icon={<ReloadOutlined />}
                 key="reload"
-                onClick={() => void reloadCrm()}
+                onClick={() => void reloadBusiness()}
               >
-                {formatMessage(crmMessageId('actions.reload'), 'Reload')}
+                {formatMessage(businessMessageId('actions.reload'), 'Reload')}
               </Button>,
               access.canCreateBusiness &&
               !['activity', 'tasks'].includes(activeTab) ? (
@@ -1611,11 +1634,11 @@ export default function BusinessWorkspace({
                   }
                   type="primary"
                 >
-                  {formatMessage(crmMessageId('actions.create'), 'Create')}
+                  {formatMessage(businessMessageId('actions.create'), 'Create')}
                 </Button>
               ) : null,
               access.canExportBusiness ? (
-                <CurrentPageExportButton<CrmRow>
+                <CurrentPageExportButton<BusinessRow>
                   columns={exportColumns}
                   filename={`opencore-business-${activeTab}.csv`}
                   key="export"
@@ -1631,43 +1654,46 @@ export default function BusinessWorkspace({
       <ReadOnlyDetailDrawer
         fields={[
           {
-            label: formatMessage(crmMessageId('fields.tenant'), 'Tenant'),
+            label: formatMessage(businessMessageId('fields.tenant'), 'Tenant'),
             value: selected?.tenantId,
           },
           {
-            label: formatMessage(crmMessageId('fields.id'), 'ID'),
+            label: formatMessage(businessMessageId('fields.id'), 'ID'),
             value: selected?.id,
           },
           {
-            label: formatMessage(crmMessageId('fields.resource'), 'Resource'),
+            label: formatMessage(
+              businessMessageId('fields.resource'),
+              'Resource',
+            ),
             value: selected && resourceText(selected.resource, formatMessage),
           },
           {
-            label: formatMessage(crmMessageId('fields.number'), 'Number'),
+            label: formatMessage(businessMessageId('fields.number'), 'Number'),
             value: selected && getString(selected, 'number'),
           },
           {
-            label: formatMessage(crmMessageId('fields.name'), 'Name'),
+            label: formatMessage(businessMessageId('fields.name'), 'Name'),
             value: selected && getString(selected, 'name'),
           },
           {
-            label: formatMessage(crmMessageId('fields.title'), 'Title'),
+            label: formatMessage(businessMessageId('fields.title'), 'Title'),
             value: selected && getString(selected, 'title'),
           },
           {
-            label: formatMessage(crmMessageId('fields.status'), 'Status'),
+            label: formatMessage(businessMessageId('fields.status'), 'Status'),
             value: selected && statusText(selected, formatMessage),
           },
           {
-            label: formatMessage(crmMessageId('fields.stage'), 'Stage'),
+            label: formatMessage(businessMessageId('fields.stage'), 'Stage'),
             value: selected && stageText(selected, formatMessage),
           },
           {
-            label: formatMessage(crmMessageId('fields.owner'), 'Owner'),
+            label: formatMessage(businessMessageId('fields.owner'), 'Owner'),
             value: selected && getString(selected, 'owner'),
           },
           {
-            label: formatMessage(crmMessageId('fields.target'), 'Target'),
+            label: formatMessage(businessMessageId('fields.target'), 'Target'),
             value:
               selected &&
               [
@@ -1682,14 +1708,14 @@ export default function BusinessWorkspace({
           },
           {
             label: formatMessage(
-              crmMessageId('fields.createdAt'),
+              businessMessageId('fields.createdAt'),
               'Created At',
             ),
             value: selected && getString(selected, 'createdAt'),
           },
           {
             label: formatMessage(
-              crmMessageId('fields.updatedAt'),
+              businessMessageId('fields.updatedAt'),
               'Updated At',
             ),
             value: selected && getString(selected, 'updatedAt'),
@@ -1699,7 +1725,10 @@ export default function BusinessWorkspace({
           selected
             ? [
                 {
-                  title: formatMessage(crmMessageId('fields.record'), 'Record'),
+                  title: formatMessage(
+                    businessMessageId('fields.record'),
+                    'Record',
+                  ),
                   value: selected,
                 },
               ]
@@ -1712,7 +1741,10 @@ export default function BusinessWorkspace({
             ? (getString(selected, 'name') ??
               getString(selected, 'title') ??
               selected.id)
-            : formatMessage(crmMessageId('detail.title'), 'Business Detail')
+            : formatMessage(
+                businessMessageId('detail.title'),
+                'Business Detail',
+              )
         }
       />
 
@@ -1724,8 +1756,8 @@ export default function BusinessWorkspace({
         open={Boolean(entityKind)}
         title={formatMessage(
           editing
-            ? crmMessageId('modal.editTitle')
-            : crmMessageId('modal.createTitle'),
+            ? businessMessageId('modal.editTitle')
+            : businessMessageId('modal.createTitle'),
           editing ? 'Edit {kind}' : 'Create {kind}',
           { kind: entityLabel(entityKind, formatMessage) },
         )}
@@ -1749,7 +1781,7 @@ export default function BusinessWorkspace({
         onOk={() => void submitAction()}
         open={Boolean(actionKind)}
         title={formatMessage(
-          crmMessageId('modal.actionTitle'),
+          businessMessageId('modal.actionTitle'),
           '{kind} {title}',
           {
             kind: actionLabel(actionKind, formatMessage),
@@ -1773,11 +1805,11 @@ function EntityFields({
   formatMessage,
   tags,
 }: {
-  customers: readonly CrmCustomerSummary[];
-  editing?: CrmRow;
+  customers: readonly BusinessCustomerSummary[];
+  editing?: BusinessRow;
   entityKind?: EntityKind;
   formatMessage: FormatMessage;
-  tags: readonly CrmTagSummary[];
+  tags: readonly BusinessTagSummary[];
 }) {
   if (!entityKind) return null;
   const leadStatusValues =
@@ -1793,28 +1825,28 @@ function EntityFields({
     return (
       <>
         <Form.Item
-          label={formatMessage(crmMessageId('fields.code'), 'Code')}
+          label={formatMessage(businessMessageId('fields.code'), 'Code')}
           name="code"
           rules={[{ required: true }]}
         >
           <Input />
         </Form.Item>
         <Form.Item
-          label={formatMessage(crmMessageId('fields.name'), 'Name')}
+          label={formatMessage(businessMessageId('fields.name'), 'Name')}
           name="name"
           rules={[{ required: true }]}
         >
           <Input />
         </Form.Item>
         <Form.Item
-          label={formatMessage(crmMessageId('fields.color'), 'Color')}
+          label={formatMessage(businessMessageId('fields.color'), 'Color')}
           name="color"
         >
           <Input />
         </Form.Item>
         <Form.Item
           label={formatMessage(
-            crmMessageId('fields.description'),
+            businessMessageId('fields.description'),
             'Description',
           )}
           name="description"
@@ -1822,18 +1854,21 @@ function EntityFields({
           <Input.TextArea rows={3} />
         </Form.Item>
         <Form.Item
-          label={formatMessage(crmMessageId('fields.enabled'), 'Enabled')}
+          label={formatMessage(businessMessageId('fields.enabled'), 'Enabled')}
           name="enabled"
         >
           <Select
             options={[
               {
-                label: formatMessage(crmMessageId('values.enabled'), 'enabled'),
+                label: formatMessage(
+                  businessMessageId('values.enabled'),
+                  'enabled',
+                ),
                 value: true,
               },
               {
                 label: formatMessage(
-                  crmMessageId('values.disabled'),
+                  businessMessageId('values.disabled'),
                   'disabled',
                 ),
                 value: false,
@@ -1849,7 +1884,10 @@ function EntityFields({
     <>
       {entityKind === 'contact' || entityKind === 'opportunity' ? (
         <Form.Item
-          label={formatMessage(crmMessageId('fields.customer'), 'Customer')}
+          label={formatMessage(
+            businessMessageId('fields.customer'),
+            'Customer',
+          )}
           name="customerId"
           rules={[{ required: true }]}
         >
@@ -1863,7 +1901,7 @@ function EntityFields({
         </Form.Item>
       ) : null}
       <Form.Item
-        label={formatMessage(crmMessageId('fields.name'), 'Name')}
+        label={formatMessage(businessMessageId('fields.name'), 'Name')}
         name="name"
         rules={[{ required: true }]}
       >
@@ -1871,7 +1909,7 @@ function EntityFields({
       </Form.Item>
       {entityKind !== 'contact' ? (
         <Form.Item
-          label={formatMessage(crmMessageId('fields.owner'), 'Owner')}
+          label={formatMessage(businessMessageId('fields.owner'), 'Owner')}
           name="owner"
           rules={[{ required: true }]}
         >
@@ -1879,7 +1917,7 @@ function EntityFields({
         </Form.Item>
       ) : (
         <Form.Item
-          label={formatMessage(crmMessageId('fields.owner'), 'Owner')}
+          label={formatMessage(businessMessageId('fields.owner'), 'Owner')}
           name="owner"
         >
           <Input />
@@ -1888,20 +1926,23 @@ function EntityFields({
       {entityKind === 'lead' ? (
         <>
           <Form.Item
-            label={formatMessage(crmMessageId('fields.company'), 'Company')}
+            label={formatMessage(
+              businessMessageId('fields.company'),
+              'Company',
+            )}
             name="company"
           >
             <Input />
           </Form.Item>
           <Form.Item
-            label={formatMessage(crmMessageId('fields.source'), 'Source')}
+            label={formatMessage(businessMessageId('fields.source'), 'Source')}
             name="source"
             rules={[{ required: true }]}
           >
             <Input />
           </Form.Item>
           <Form.Item
-            label={formatMessage(crmMessageId('fields.status'), 'Status')}
+            label={formatMessage(businessMessageId('fields.status'), 'Status')}
             name="status"
           >
             <Select
@@ -1913,7 +1954,7 @@ function EntityFields({
             />
           </Form.Item>
           <Form.Item
-            label={formatMessage(crmMessageId('fields.rating'), 'Rating')}
+            label={formatMessage(businessMessageId('fields.rating'), 'Rating')}
             name="rating"
           >
             <Input />
@@ -1923,7 +1964,7 @@ function EntityFields({
       {entityKind === 'customer' ? (
         <>
           <Form.Item
-            label={formatMessage(crmMessageId('fields.status'), 'Status')}
+            label={formatMessage(businessMessageId('fields.status'), 'Status')}
             name="status"
           >
             <Select
@@ -1935,26 +1976,29 @@ function EntityFields({
             />
           </Form.Item>
           <Form.Item
-            label={formatMessage(crmMessageId('fields.level'), 'Level')}
+            label={formatMessage(businessMessageId('fields.level'), 'Level')}
             name="level"
           >
             <Input />
           </Form.Item>
           <Form.Item
-            label={formatMessage(crmMessageId('fields.source'), 'Source')}
+            label={formatMessage(businessMessageId('fields.source'), 'Source')}
             name="source"
             rules={[{ required: true }]}
           >
             <Input />
           </Form.Item>
           <Form.Item
-            label={formatMessage(crmMessageId('fields.industry'), 'Industry')}
+            label={formatMessage(
+              businessMessageId('fields.industry'),
+              'Industry',
+            )}
             name="industry"
           >
             <Input />
           </Form.Item>
           <Form.Item
-            label={formatMessage(crmMessageId('fields.region'), 'Region')}
+            label={formatMessage(businessMessageId('fields.region'), 'Region')}
             name="region"
           >
             <Input />
@@ -1964,14 +2008,14 @@ function EntityFields({
       {entityKind === 'contact' ? (
         <>
           <Form.Item
-            label={formatMessage(crmMessageId('fields.title'), 'Title')}
+            label={formatMessage(businessMessageId('fields.title'), 'Title')}
             name="title"
           >
             <Input />
           </Form.Item>
           <Form.Item
             label={formatMessage(
-              crmMessageId('fields.decisionRole'),
+              businessMessageId('fields.decisionRole'),
               'Decision Role',
             )}
             name="decisionRole"
@@ -1979,21 +2023,24 @@ function EntityFields({
             <Input />
           </Form.Item>
           <Form.Item
-            label={formatMessage(crmMessageId('fields.primary'), 'Primary')}
+            label={formatMessage(
+              businessMessageId('fields.primary'),
+              'Primary',
+            )}
             name="primary"
           >
             <Select
               options={[
                 {
                   label: formatMessage(
-                    crmMessageId('values.primary'),
+                    businessMessageId('values.primary'),
                     'primary',
                   ),
                   value: true,
                 },
                 {
                   label: formatMessage(
-                    crmMessageId('values.secondary'),
+                    businessMessageId('values.secondary'),
                     'secondary',
                   ),
                   value: false,
@@ -2006,7 +2053,7 @@ function EntityFields({
       {entityKind === 'opportunity' ? (
         <>
           <Form.Item
-            label={formatMessage(crmMessageId('fields.stage'), 'Stage')}
+            label={formatMessage(businessMessageId('fields.stage'), 'Stage')}
             name="stage"
           >
             <Select
@@ -2018,14 +2065,14 @@ function EntityFields({
             />
           </Form.Item>
           <Form.Item
-            label={formatMessage(crmMessageId('fields.amount'), 'Amount')}
+            label={formatMessage(businessMessageId('fields.amount'), 'Amount')}
             name="amount"
           >
             <Input />
           </Form.Item>
           <Form.Item
             label={formatMessage(
-              crmMessageId('fields.probability'),
+              businessMessageId('fields.probability'),
               'Probability',
             )}
             name="probability"
@@ -2034,7 +2081,7 @@ function EntityFields({
           </Form.Item>
           <Form.Item
             label={formatMessage(
-              crmMessageId('fields.expectedCloseAt'),
+              businessMessageId('fields.expectedCloseAt'),
               'Expected Close',
             )}
             name="expectedCloseAt"
@@ -2048,26 +2095,26 @@ function EntityFields({
       entityKind === 'contact' ? (
         <>
           <Form.Item
-            label={formatMessage(crmMessageId('fields.mobile'), 'Mobile')}
+            label={formatMessage(businessMessageId('fields.mobile'), 'Mobile')}
             name="mobile"
           >
             <Input />
           </Form.Item>
           <Form.Item
-            label={formatMessage(crmMessageId('fields.email'), 'Email')}
+            label={formatMessage(businessMessageId('fields.email'), 'Email')}
             name="email"
           >
             <Input />
           </Form.Item>
           <Form.Item
-            label={formatMessage(crmMessageId('fields.phone'), 'Phone')}
+            label={formatMessage(businessMessageId('fields.phone'), 'Phone')}
             name="phone"
           >
             <Input />
           </Form.Item>
           <Form.Item
             label={formatMessage(
-              crmMessageId('fields.nextContactAt'),
+              businessMessageId('fields.nextContactAt'),
               'Next Contact',
             )}
             name="nextContactAt"
@@ -2079,13 +2126,19 @@ function EntityFields({
       {entityKind === 'customer' ? (
         <>
           <Form.Item
-            label={formatMessage(crmMessageId('fields.website'), 'Website')}
+            label={formatMessage(
+              businessMessageId('fields.website'),
+              'Website',
+            )}
             name="website"
           >
             <Input />
           </Form.Item>
           <Form.Item
-            label={formatMessage(crmMessageId('fields.address'), 'Address')}
+            label={formatMessage(
+              businessMessageId('fields.address'),
+              'Address',
+            )}
             name="address"
           >
             <Input />
@@ -2095,19 +2148,19 @@ function EntityFields({
       {entityKind !== 'contact' ? (
         <Form.Item
           extra={tags.map((tag) => tag.code).join(', ')}
-          label={formatMessage(crmMessageId('fields.tags'), 'Tags')}
+          label={formatMessage(businessMessageId('fields.tags'), 'Tags')}
           name="tags"
         >
           <Input
             placeholder={formatMessage(
-              crmMessageId('placeholders.tags'),
+              businessMessageId('placeholders.tags'),
               'comma separated tag codes',
             )}
           />
         </Form.Item>
       ) : null}
       <Form.Item
-        label={formatMessage(crmMessageId('fields.remark'), 'Remark')}
+        label={formatMessage(businessMessageId('fields.remark'), 'Remark')}
         name="remark"
       >
         <Input.TextArea rows={3} />
@@ -2129,21 +2182,24 @@ function ActionFields({
     return (
       <>
         <Form.Item
-          label={formatMessage(crmMessageId('fields.newOwner'), 'New Owner')}
+          label={formatMessage(
+            businessMessageId('fields.newOwner'),
+            'New Owner',
+          )}
           name="toOwner"
           rules={[{ required: true }]}
         >
           <Input />
         </Form.Item>
         <Form.Item
-          label={formatMessage(crmMessageId('fields.actor'), 'Actor')}
+          label={formatMessage(businessMessageId('fields.actor'), 'Actor')}
           name="actor"
           rules={[{ required: true }]}
         >
           <Input />
         </Form.Item>
         <Form.Item
-          label={formatMessage(crmMessageId('fields.reason'), 'Reason')}
+          label={formatMessage(businessMessageId('fields.reason'), 'Reason')}
           name="reason"
         >
           <Input.TextArea rows={3} />
@@ -2156,7 +2212,7 @@ function ActionFields({
     return (
       <>
         <Form.Item
-          label={formatMessage(crmMessageId('fields.method'), 'Method')}
+          label={formatMessage(businessMessageId('fields.method'), 'Method')}
           name="method"
           rules={[{ required: true }]}
         >
@@ -2165,21 +2221,21 @@ function ActionFields({
           />
         </Form.Item>
         <Form.Item
-          label={formatMessage(crmMessageId('fields.content'), 'Content')}
+          label={formatMessage(businessMessageId('fields.content'), 'Content')}
           name="content"
           rules={[{ required: true }]}
         >
           <Input.TextArea rows={4} />
         </Form.Item>
         <Form.Item
-          label={formatMessage(crmMessageId('fields.outcome'), 'Outcome')}
+          label={formatMessage(businessMessageId('fields.outcome'), 'Outcome')}
           name="outcome"
         >
           <Input />
         </Form.Item>
         <Form.Item
           label={formatMessage(
-            crmMessageId('fields.nextContactAt'),
+            businessMessageId('fields.nextContactAt'),
             'Next Contact',
           )}
           name="nextContactAt"
@@ -2187,7 +2243,10 @@ function ActionFields({
           <DatePicker showTime style={{ width: '100%' }} />
         </Form.Item>
         <Form.Item
-          label={formatMessage(crmMessageId('fields.createdBy'), 'Created By')}
+          label={formatMessage(
+            businessMessageId('fields.createdBy'),
+            'Created By',
+          )}
           name="createdBy"
           rules={[{ required: true }]}
         >
@@ -2201,21 +2260,27 @@ function ActionFields({
     return (
       <>
         <Form.Item
-          label={formatMessage(crmMessageId('fields.title'), 'Title')}
+          label={formatMessage(businessMessageId('fields.title'), 'Title')}
           name="title"
           rules={[{ required: true }]}
         >
           <Input />
         </Form.Item>
         <Form.Item
-          label={formatMessage(crmMessageId('fields.assignee'), 'Assignee')}
+          label={formatMessage(
+            businessMessageId('fields.assignee'),
+            'Assignee',
+          )}
           name="assignee"
           rules={[{ required: true }]}
         >
           <Input />
         </Form.Item>
         <Form.Item
-          label={formatMessage(crmMessageId('fields.priority'), 'Priority')}
+          label={formatMessage(
+            businessMessageId('fields.priority'),
+            'Priority',
+          )}
           name="priority"
         >
           <Select
@@ -2223,20 +2288,23 @@ function ActionFields({
           />
         </Form.Item>
         <Form.Item
-          label={formatMessage(crmMessageId('fields.dueAt'), 'Due At')}
+          label={formatMessage(businessMessageId('fields.dueAt'), 'Due At')}
           name="dueAt"
         >
           <DatePicker showTime style={{ width: '100%' }} />
         </Form.Item>
         <Form.Item
-          label={formatMessage(crmMessageId('fields.createdBy'), 'Created By')}
+          label={formatMessage(
+            businessMessageId('fields.createdBy'),
+            'Created By',
+          )}
           name="createdBy"
           rules={[{ required: true }]}
         >
           <Input />
         </Form.Item>
         <Form.Item
-          label={formatMessage(crmMessageId('fields.remark'), 'Remark')}
+          label={formatMessage(businessMessageId('fields.remark'), 'Remark')}
           name="remark"
         >
           <Input.TextArea rows={3} />
@@ -2250,7 +2318,7 @@ function ActionFields({
       <>
         <Form.Item
           label={formatMessage(
-            crmMessageId('fields.originalName'),
+            businessMessageId('fields.originalName'),
             'Original Name',
           )}
           name="originalName"
@@ -2259,14 +2327,20 @@ function ActionFields({
           <Input />
         </Form.Item>
         <Form.Item
-          label={formatMessage(crmMessageId('fields.mimeType'), 'MIME Type')}
+          label={formatMessage(
+            businessMessageId('fields.mimeType'),
+            'MIME Type',
+          )}
           name="mimeType"
           rules={[{ required: true }]}
         >
           <Input />
         </Form.Item>
         <Form.Item
-          label={formatMessage(crmMessageId('fields.sizeBytes'), 'Size Bytes')}
+          label={formatMessage(
+            businessMessageId('fields.sizeBytes'),
+            'Size Bytes',
+          )}
           name="sizeBytes"
           rules={[{ required: true }]}
         >
@@ -2274,7 +2348,7 @@ function ActionFields({
         </Form.Item>
         <Form.Item
           label={formatMessage(
-            crmMessageId('fields.storageKey'),
+            businessMessageId('fields.storageKey'),
             'Storage Key',
           )}
           name="storageKey"
@@ -2284,7 +2358,7 @@ function ActionFields({
         </Form.Item>
         <Form.Item
           label={formatMessage(
-            crmMessageId('fields.uploadedBy'),
+            businessMessageId('fields.uploadedBy'),
             'Uploaded By',
           )}
           name="uploadedBy"
@@ -2300,7 +2374,7 @@ function ActionFields({
     return (
       <>
         <Form.Item
-          label={formatMessage(crmMessageId('fields.actor'), 'Actor')}
+          label={formatMessage(businessMessageId('fields.actor'), 'Actor')}
           name="actor"
           rules={[{ required: true }]}
         >
@@ -2308,7 +2382,7 @@ function ActionFields({
         </Form.Item>
         <Form.Item
           label={formatMessage(
-            crmMessageId('fields.customerName'),
+            businessMessageId('fields.customerName'),
             'Customer Name',
           )}
           name="customerName"
@@ -2317,7 +2391,7 @@ function ActionFields({
         </Form.Item>
         <Form.Item
           label={formatMessage(
-            crmMessageId('fields.opportunityName'),
+            businessMessageId('fields.opportunityName'),
             'Opportunity Name',
           )}
           name="opportunityName"
@@ -2326,7 +2400,7 @@ function ActionFields({
         </Form.Item>
         <Form.Item
           label={formatMessage(
-            crmMessageId('fields.opportunityAmount'),
+            businessMessageId('fields.opportunityAmount'),
             'Opportunity Amount',
           )}
           name="amount"
@@ -2340,7 +2414,7 @@ function ActionFields({
   return (
     <>
       <Form.Item
-        label={formatMessage(crmMessageId('fields.stage'), 'Stage')}
+        label={formatMessage(businessMessageId('fields.stage'), 'Stage')}
         name="stage"
         rules={[{ required: true }]}
       >
@@ -2353,7 +2427,7 @@ function ActionFields({
         />
       </Form.Item>
       <Form.Item
-        label={formatMessage(crmMessageId('fields.actor'), 'Actor')}
+        label={formatMessage(businessMessageId('fields.actor'), 'Actor')}
         name="actor"
         rules={[{ required: true }]}
       >
@@ -2361,7 +2435,7 @@ function ActionFields({
       </Form.Item>
       <Form.Item
         label={formatMessage(
-          crmMessageId('fields.closeReason'),
+          businessMessageId('fields.closeReason'),
           'Close Reason',
         )}
         name="closeReason"
