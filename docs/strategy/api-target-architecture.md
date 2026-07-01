@@ -73,16 +73,16 @@ packages/
 
 ## 模块层级如何落地
 
-| 层级            | API 责任           | 示例 Controller                                   | 示例 Service                               | 示例 DTO / Entity                       | OpenAPI tag                                             | 第一阶段策略           |
-| --------------- | ------------------ | ------------------------------------------------- | ------------------------------------------ | --------------------------------------- | ------------------------------------------------------- | ---------------------- |
-| `core`          | 平台运行必需能力   | API-local HTTP controller 或聚合 controller       | package-owned service                      | package-owned DTO/entity                | `Core Users`、`Core Roles`、`Core Dicts`、`Core Files`  | BE20 complete          |
-| `monitor`       | 运维和诊断能力     | `HealthController`、`MonitoringController`        | `@opencore/monitor`、`@opencore/scheduler` | package-owned DTO/entity                | `Monitor Status`、`Monitor Queue`、`Monitor Logs`       | BE20 complete          |
-| `tool`          | 开发平台工具       | Tooling/OpenAPI aggregation                       | `@opencore/generator-core` + OpenForge CLI | OpenForge/contracts DTO                 | `Tool OpenAPI`、`Tool OpenForge`                        | S9/V1/BE20 complete    |
-| `collaboration` | 消息、待办、轻审批 | Collaboration aggregation                         | Q001 package/module runtime                | Q001 DTO/entity                         | `Collaboration Messages`、`Collaboration Approval Lite` | Q001 complete          |
-| `optional`      | 通用可选能力       | Optional aggregation                              | design/runtime boundary only               | DTO/entity by admitted module           | `Optional Workflow`、`Optional Report`                  | design boundary only   |
-| `integration`   | 第三方接入         | Integration aggregation                           | provider/design boundary only              | provider DTO                            | `Integration Mail`、`Integration Sms`                   | design boundary only   |
-| `industry`      | 行业模块           | `CrmController`、`ErpController`、`MesController` | 独立行业 Service                           | 行业 DTO / Entity                       | `Industry CRM` 等                                       | 不进入 core            |
-| `ai`            | AI Native 边界     | `AiProviderController`、`PromptController`        | `AiProviderService`、`PromptAuditService`  | `ModelProviderDto`、`PromptTemplateDto` | `AI Providers`、`AI Audit`                              | 只预留，不做 RAG/Agent |
+| 层级            | API 责任           | 示例 Controller                             | 示例 Service                               | 示例 DTO / Entity                       | OpenAPI tag                                             | 第一阶段策略           |
+| --------------- | ------------------ | ------------------------------------------- | ------------------------------------------ | --------------------------------------- | ------------------------------------------------------- | ---------------------- |
+| `core`          | 平台运行必需能力   | API-local HTTP controller 或聚合 controller | package-owned service                      | package-owned DTO/entity                | `Core Users`、`Core Roles`、`Core Dicts`、`Core Files`  | BE20 complete          |
+| `monitor`       | 运维和诊断能力     | `HealthController`、`MonitoringController`  | `@opencore/monitor`、`@opencore/scheduler` | package-owned DTO/entity                | `Monitor Status`、`Monitor Queue`、`Monitor Logs`       | BE20 complete          |
+| `tool`          | 开发平台工具       | Tooling/OpenAPI aggregation                 | `@opencore/generator-core` + OpenForge CLI | OpenForge/contracts DTO                 | `Tool OpenAPI`、`Tool OpenForge`                        | S9/V1/BE20 complete    |
+| `collaboration` | 消息、待办、轻审批 | Collaboration aggregation                   | Q001 package/module runtime                | Q001 DTO/entity                         | `Collaboration Messages`、`Collaboration Approval Lite` | Q001 complete          |
+| `optional`      | 通用可选能力       | Optional aggregation                        | design/runtime boundary only               | DTO/entity by admitted module           | `Optional Workflow`、`Optional Report`                  | design boundary only   |
+| `integration`   | 第三方接入         | Integration aggregation                     | provider/design boundary only              | provider DTO                            | `Integration Mail`、`Integration Sms`                   | design boundary only   |
+| `industry`      | 行业模块           | `ErpController`、`MesController`            | 独立行业 Service                           | 行业 DTO / Entity                       | 行业垂直 API 标签                                       | 不进入 core            |
+| `ai`            | AI Native 边界     | `AiProviderController`、`PromptController`  | `AiProviderService`、`PromptAuditService`  | `ModelProviderDto`、`PromptTemplateDto` | `AI Providers`、`AI Audit`                              | 只预留，不做 RAG/Agent |
 
 ## Controller / Service / DTO / Entity 约定
 

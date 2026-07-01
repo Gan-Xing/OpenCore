@@ -44,25 +44,25 @@ async function main() {
         expected: [200],
       });
       for (const path of [
-        '/api/industry/crm/summary',
-        '/api/industry/crm/export',
-        '/api/industry/crm/tags',
-        '/api/industry/crm/leads',
-        '/api/industry/crm/leads/{id}',
-        '/api/industry/crm/leads/{id}/convert',
-        '/api/industry/crm/leads/{id}/transfer',
-        '/api/industry/crm/customers',
-        '/api/industry/crm/customers/{id}',
-        '/api/industry/crm/contacts',
-        '/api/industry/crm/opportunities',
-        '/api/industry/crm/opportunities/{id}/stage',
-        '/api/industry/crm/activity',
-        '/api/industry/crm/follow-ups',
-        '/api/industry/crm/tasks',
-        '/api/industry/crm/tasks/{id}/complete',
-        '/api/industry/crm/attachments',
-        '/api/industry/crm/owner-transfers',
-        '/api/industry/crm/audit-events',
+        '/api/business/core/summary',
+        '/api/business/core/export',
+        '/api/business/core/tags',
+        '/api/business/core/leads',
+        '/api/business/core/leads/{id}',
+        '/api/business/core/leads/{id}/convert',
+        '/api/business/core/leads/{id}/transfer',
+        '/api/business/core/customers',
+        '/api/business/core/customers/{id}',
+        '/api/business/core/contacts',
+        '/api/business/core/opportunities',
+        '/api/business/core/opportunities/{id}/stage',
+        '/api/business/core/activity',
+        '/api/business/core/follow-ups',
+        '/api/business/core/tasks',
+        '/api/business/core/tasks/{id}/complete',
+        '/api/business/core/attachments',
+        '/api/business/core/owner-transfers',
+        '/api/business/core/audit-events',
       ]) {
         assertOpenApiPath(openApi, path);
       }
@@ -89,7 +89,7 @@ async function main() {
       assertOpenApiSchemaProperties(openApi, 'CrmDeleteResultDto', ['deleted']);
       assertOpenApiOperationResponseSchema(
         openApi,
-        '/api/industry/crm/leads/{id}/convert',
+        '/api/business/core/leads/{id}/convert',
         'patch',
       );
     }
@@ -117,7 +117,7 @@ async function main() {
     });
     created.tags.push(assertString(tag.id, 'created CRM tag id'));
 
-    await smoke.apiRequest('/industry/crm/leads', {
+    await smoke.apiRequest('/business/core/leads', {
       body: {
         name: `Invalid Tags Lead ${runId}`,
         owner: username,
@@ -128,7 +128,7 @@ async function main() {
       method: 'POST',
       token,
     });
-    await smoke.apiRequest('/industry/crm/customers', {
+    await smoke.apiRequest('/business/core/customers', {
       body: {
         name: `Invalid Archived Customer ${runId}`,
         owner: username,
@@ -161,7 +161,7 @@ async function main() {
     });
     assertEqual(updatedLead.status, 'qualified', 'updated CRM lead status');
     await smoke.apiRequest(
-      `/industry/crm/leads/${encodeURIComponent(lead.id)}`,
+      `/business/core/leads/${encodeURIComponent(lead.id)}`,
       {
         body: { status: 'archived' },
         expected: [400],
@@ -170,7 +170,7 @@ async function main() {
       },
     );
     await smoke.apiRequest(
-      `/industry/crm/leads/${encodeURIComponent(lead.id)}`,
+      `/business/core/leads/${encodeURIComponent(lead.id)}`,
       {
         body: { status: 'converted' },
         expected: [400],
@@ -264,7 +264,7 @@ async function main() {
       opportunityName: `Smoke Opportunity ${runId}`,
     });
     await smoke.apiRequest(
-      `/industry/crm/leads/${encodeURIComponent(lead.id)}`,
+      `/business/core/leads/${encodeURIComponent(lead.id)}`,
       {
         body: { status: 'lost' },
         expected: [400],
@@ -273,7 +273,7 @@ async function main() {
       },
     );
     await smoke.apiRequest(
-      `/industry/crm/leads/${encodeURIComponent(lead.id)}`,
+      `/business/core/leads/${encodeURIComponent(lead.id)}`,
       {
         body: { rating: 'cold' },
         expected: [400],
@@ -282,7 +282,7 @@ async function main() {
       },
     );
     await smoke.apiRequest(
-      `/industry/crm/leads/${encodeURIComponent(lead.id)}/transfer`,
+      `/business/core/leads/${encodeURIComponent(lead.id)}/transfer`,
       {
         body: { actor: username, toOwner: username },
         expected: [400],
@@ -290,7 +290,7 @@ async function main() {
         token,
       },
     );
-    await smoke.apiRequest('/industry/crm/follow-ups', {
+    await smoke.apiRequest('/business/core/follow-ups', {
       body: {
         content: 'Converted target follow-up.',
         createdBy: username,
@@ -302,7 +302,7 @@ async function main() {
       method: 'POST',
       token,
     });
-    await smoke.apiRequest('/industry/crm/tasks', {
+    await smoke.apiRequest('/business/core/tasks', {
       body: {
         assignee: username,
         createdBy: username,
@@ -314,7 +314,7 @@ async function main() {
       method: 'POST',
       token,
     });
-    await smoke.apiRequest('/industry/crm/attachments', {
+    await smoke.apiRequest('/business/core/attachments', {
       body: {
         mimeType: 'text/plain',
         originalName: 'converted-lead.txt',
@@ -346,7 +346,7 @@ async function main() {
     }
     created.opportunities.push(converted.opportunity.id);
     await smoke.apiRequest(
-      `/industry/crm/leads/${encodeURIComponent(lead.id)}/convert`,
+      `/business/core/leads/${encodeURIComponent(lead.id)}/convert`,
       {
         body: { actor: username },
         expected: [400],
@@ -361,7 +361,7 @@ async function main() {
     );
     assertEqual(customer.name, converted.customer.name, 'converted customer');
     await smoke.apiRequest(
-      `/industry/crm/customers/${encodeURIComponent(customer.id)}`,
+      `/business/core/customers/${encodeURIComponent(customer.id)}`,
       {
         body: { status: 'archived' },
         expected: [400],
@@ -369,7 +369,7 @@ async function main() {
         token,
       },
     );
-    await smoke.apiRequest('/industry/crm/opportunities', {
+    await smoke.apiRequest('/business/core/opportunities', {
       body: {
         customerId: customer.id,
         name: `Invalid Closed Opportunity ${runId}`,
@@ -412,7 +412,7 @@ async function main() {
       assertString(opportunity.id, 'created CRM opportunity id'),
     );
     await smoke.apiRequest(
-      `/industry/crm/opportunities/${encodeURIComponent(opportunity.id)}`,
+      `/business/core/opportunities/${encodeURIComponent(opportunity.id)}`,
       {
         body: { stage: 'won' },
         expected: [400],
@@ -421,7 +421,7 @@ async function main() {
       },
     );
     await smoke.apiRequest(
-      `/industry/crm/opportunities/${encodeURIComponent(opportunity.id)}`,
+      `/business/core/opportunities/${encodeURIComponent(opportunity.id)}`,
       {
         body: { closeReason: 'Direct close reason is not allowed.' },
         expected: [400],
@@ -521,11 +521,11 @@ async function main() {
     const archivedContact = await clients.crm.archiveContact(token, contact.id);
     assertEqual(archivedContact.deleted, true, 'archived CRM contact');
     await smoke.apiRequest(
-      `/industry/crm/contacts/${encodeURIComponent(contact.id)}`,
+      `/business/core/contacts/${encodeURIComponent(contact.id)}`,
       { expected: [404], token },
     );
     await smoke.apiRequest(
-      `/industry/crm/contacts/${encodeURIComponent(contact.id)}`,
+      `/business/core/contacts/${encodeURIComponent(contact.id)}`,
       {
         body: { title: 'archived contact update' },
         expected: [404],
@@ -548,11 +548,11 @@ async function main() {
     );
     assertEqual(archivedOpportunity.deleted, true, 'archived CRM opportunity');
     await smoke.apiRequest(
-      `/industry/crm/opportunities/${encodeURIComponent(opportunity.id)}`,
+      `/business/core/opportunities/${encodeURIComponent(opportunity.id)}`,
       { expected: [404], token },
     );
     await smoke.apiRequest(
-      `/industry/crm/opportunities/${encodeURIComponent(opportunity.id)}/stage`,
+      `/business/core/opportunities/${encodeURIComponent(opportunity.id)}/stage`,
       {
         body: { actor: username, stage: 'lost' },
         expected: [404],
@@ -561,7 +561,7 @@ async function main() {
       },
     );
     await smoke.apiRequest(
-      `/industry/crm/opportunities/${encodeURIComponent(opportunity.id)}/transfer`,
+      `/business/core/opportunities/${encodeURIComponent(opportunity.id)}/transfer`,
       {
         body: { actor: username, toOwner: username },
         expected: [404],
@@ -581,11 +581,11 @@ async function main() {
     const archivedLead = await clients.crm.archiveLead(token, lead.id);
     assertEqual(archivedLead.deleted, true, 'archived CRM lead');
     await smoke.apiRequest(
-      `/industry/crm/leads/${encodeURIComponent(lead.id)}`,
+      `/business/core/leads/${encodeURIComponent(lead.id)}`,
       { expected: [404], token },
     );
     await smoke.apiRequest(
-      `/industry/crm/leads/${encodeURIComponent(lead.id)}`,
+      `/business/core/leads/${encodeURIComponent(lead.id)}`,
       {
         body: { rating: 'cold' },
         expected: [404],
@@ -594,7 +594,7 @@ async function main() {
       },
     );
     await smoke.apiRequest(
-      `/industry/crm/leads/${encodeURIComponent(lead.id)}/transfer`,
+      `/business/core/leads/${encodeURIComponent(lead.id)}/transfer`,
       {
         body: { actor: username, toOwner: username },
         expected: [404],
@@ -607,7 +607,7 @@ async function main() {
       lead.id,
       'archived CRM lead list',
     );
-    await smoke.apiRequest('/industry/crm/tasks', {
+    await smoke.apiRequest('/business/core/tasks', {
       body: {
         assignee: username,
         createdBy: username,
@@ -621,11 +621,11 @@ async function main() {
     });
     await clients.crm.archiveCustomer(token, customer.id);
     await smoke.apiRequest(
-      `/industry/crm/customers/${encodeURIComponent(customer.id)}`,
+      `/business/core/customers/${encodeURIComponent(customer.id)}`,
       { expected: [404], token },
     );
     await smoke.apiRequest(
-      `/industry/crm/customers/${encodeURIComponent(customer.id)}`,
+      `/business/core/customers/${encodeURIComponent(customer.id)}`,
       {
         body: { name: 'archived customer update' },
         expected: [404],
@@ -634,7 +634,7 @@ async function main() {
       },
     );
     await smoke.apiRequest(
-      `/industry/crm/customers/${encodeURIComponent(customer.id)}/transfer`,
+      `/business/core/customers/${encodeURIComponent(customer.id)}/transfer`,
       {
         body: { actor: username, toOwner: username },
         expected: [404],
@@ -667,7 +667,7 @@ async function main() {
       0,
       'archived customer opportunity list',
     );
-    await smoke.apiRequest('/industry/crm/follow-ups', {
+    await smoke.apiRequest('/business/core/follow-ups', {
       body: {
         content: 'Archived target follow-up.',
         createdBy: username,
@@ -679,7 +679,7 @@ async function main() {
       method: 'POST',
       token,
     });
-    await smoke.apiRequest('/industry/crm/attachments', {
+    await smoke.apiRequest('/business/core/attachments', {
       body: {
         mimeType: 'text/plain',
         originalName: 'archived-customer.txt',
@@ -770,11 +770,11 @@ async function assertForeignTenantCrmHidden(rootToken: string) {
   );
 
   await smoke.apiRequest(
-    `/industry/crm/leads/${encodeURIComponent(FOREIGN_LEAD_ID)}`,
+    `/business/core/leads/${encodeURIComponent(FOREIGN_LEAD_ID)}`,
     { expected: [404], token: rootToken },
   );
   await smoke.apiRequest(
-    `/industry/crm/leads/${encodeURIComponent(FOREIGN_LEAD_ID)}`,
+    `/business/core/leads/${encodeURIComponent(FOREIGN_LEAD_ID)}`,
     {
       body: { owner: username },
       expected: [404],
@@ -783,7 +783,7 @@ async function assertForeignTenantCrmHidden(rootToken: string) {
     },
   );
   await smoke.apiRequest(
-    `/industry/crm/leads/${encodeURIComponent(FOREIGN_LEAD_ID)}/transfer`,
+    `/business/core/leads/${encodeURIComponent(FOREIGN_LEAD_ID)}/transfer`,
     {
       body: { actor: username, toOwner: username },
       expected: [404],
@@ -792,7 +792,7 @@ async function assertForeignTenantCrmHidden(rootToken: string) {
     },
   );
   await smoke.apiRequest(
-    `/industry/crm/leads/${encodeURIComponent(FOREIGN_LEAD_ID)}`,
+    `/business/core/leads/${encodeURIComponent(FOREIGN_LEAD_ID)}`,
     {
       expected: [404],
       method: 'DELETE',
@@ -800,11 +800,11 @@ async function assertForeignTenantCrmHidden(rootToken: string) {
     },
   );
   await smoke.apiRequest(
-    `/industry/crm/customers/${encodeURIComponent(FOREIGN_CUSTOMER_ID)}`,
+    `/business/core/customers/${encodeURIComponent(FOREIGN_CUSTOMER_ID)}`,
     { expected: [404], token: rootToken },
   );
   await smoke.apiRequest(
-    `/industry/crm/customers/${encodeURIComponent(FOREIGN_CUSTOMER_ID)}`,
+    `/business/core/customers/${encodeURIComponent(FOREIGN_CUSTOMER_ID)}`,
     {
       body: { name: 'cross tenant write' },
       expected: [404],

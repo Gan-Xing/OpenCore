@@ -50,7 +50,7 @@ import {
   seedCrmOwnerTransfers,
   seedCrmTags,
   seedCrmTasks,
-} from '../apps/api/src/modules/industry/crm/crm.seed';
+} from '../apps/api/src/modules/business/core/crm.seed';
 import { seedReports } from '../apps/api/src/modules/monitor/operations/operations.seed';
 import {
   seedIntegrationOutbox,
@@ -66,6 +66,15 @@ const BOOTSTRAP_ADMIN_ROLE_CODE = 'admin';
 const ROOT_TENANT_ID = 'tenant_root';
 const ROOT_TENANT_PLAN_ID = 'tenant_plan_system_full';
 const PLATFORM_ADMIN_ROLE_ID = 'platform_role_admin';
+const LEGACY_INDUSTRY_CRM_PERMISSION_MAPPINGS = [
+  ['industry:crm:read', 'business:core:read'],
+  ['industry:crm:create', 'business:core:create'],
+  ['industry:crm:update', 'business:core:update'],
+  ['industry:crm:assign', 'business:core:assign'],
+  ['industry:crm:comment', 'business:core:comment'],
+  ['industry:crm:export', 'business:core:export'],
+  ['industry:crm:delete', 'business:core:delete'],
+] as const;
 const OAUTH_RUNTIME_PROVIDERS = [
   {
     code: 'oauth.github',
@@ -107,6 +116,7 @@ async function main(): Promise<void> {
   const bootstrapPassword = readBootstrapAdminPassword();
 
   const permissionCount = await seedPermissions();
+  const legacyCrmCleanupCount = await cleanupLegacyIndustryCrmArtifacts();
   const menuCount = await seedMenus();
   const roleCount = await seedRoles();
   const integrationCount = await seedIntegrations();
@@ -124,6 +134,7 @@ async function main(): Promise<void> {
     JSON.stringify({
       seeded: {
         permissions: permissionCount,
+        legacyCrmCleanup: legacyCrmCleanupCount,
         menus: menuCount,
         roles: roleCount,
         users: userCount,
@@ -1487,6 +1498,124 @@ async function seedPermissions(): Promise<number> {
   }
 
   return permissions.length;
+}
+
+async function cleanupLegacyIndustryCrmArtifacts(): Promise<{
+  menus: number;
+  permissions: number;
+  rolePermissions: number;
+  platformRolePermissions: number;
+}> {
+  const deletedMenus = await prisma.menu.deleteMany({
+    where: {
+      OR: [
+        { key: { startsWith: 'industry.crm' } },
+        { path: { startsWith: '/industry/crm' } },
+      ],
+    },
+  });
+  const industryChildCount = await prisma.menu.count({
+    where: { parentKey: 'industry' },
+  });
+  const deletedIndustryGroup =
+    industryChildCount === 0
+      ? await prisma.menu.deleteMany({ where: { key: 'industry' } })
+      : { count: 0 };
+
+  let rolePermissions = 0;
+  let platformRolePermissions = 0;
+
+  for (const [
+    legacyPermissionCode,
+    replacementPermissionCode,
+  ] of LEGACY_INDUSTRY_CRM_PERMISSION_MAPPINGS) {
+    const [legacyPermission, replacementPermission] = await Promise.all([
+      prisma.permission.findUnique({
+        where: { code: legacyPermissionCode },
+        select: { id: true },
+      }),
+      prisma.permission.findUnique({
+        where: { code: replacementPermissionCode },
+        select: { id: true },
+      }),
+    ]);
+
+    if (!legacyPermission || !replacementPermission) {
+      continue;
+    }
+
+    await prisma.menu.updateMany({
+      where: { permissionId: legacyPermission.id },
+      data: { permissionId: replacementPermission.id },
+    });
+
+    const legacyRolePermissions = await prisma.rolePermission.findMany({
+      where: { permissionId: legacyPermission.id },
+      select: { roleId: true },
+    });
+    for (const legacyRolePermission of legacyRolePermissions) {
+      await prisma.rolePermission.upsert({
+        where: {
+          roleId_permissionId: {
+            roleId: legacyRolePermission.roleId,
+            permissionId: replacementPermission.id,
+          },
+        },
+        update: {},
+        create: {
+          roleId: legacyRolePermission.roleId,
+          permissionId: replacementPermission.id,
+        },
+      });
+    }
+    const deletedRolePermissions = await prisma.rolePermission.deleteMany({
+      where: { permissionId: legacyPermission.id },
+    });
+    rolePermissions += deletedRolePermissions.count;
+
+    const legacyPlatformRolePermissions =
+      await prisma.platformRolePermission.findMany({
+        where: { permissionId: legacyPermission.id },
+        select: { platformRoleId: true },
+      });
+    for (const legacyPlatformRolePermission of legacyPlatformRolePermissions) {
+      await prisma.platformRolePermission.upsert({
+        where: {
+          platformRoleId_permissionId: {
+            platformRoleId: legacyPlatformRolePermission.platformRoleId,
+            permissionId: replacementPermission.id,
+          },
+        },
+        update: {},
+        create: {
+          platformRoleId: legacyPlatformRolePermission.platformRoleId,
+          permissionId: replacementPermission.id,
+        },
+      });
+    }
+    const deletedPlatformRolePermissions =
+      await prisma.platformRolePermission.deleteMany({
+        where: { permissionId: legacyPermission.id },
+      });
+    platformRolePermissions += deletedPlatformRolePermissions.count;
+  }
+
+  const deletedPermissions = await prisma.permission.deleteMany({
+    where: {
+      code: {
+        in: LEGACY_INDUSTRY_CRM_PERMISSION_MAPPINGS.map(
+          ([legacyPermissionCode]) => legacyPermissionCode,
+        ),
+      },
+    },
+  });
+
+  return {
+    menus: deletedMenus.count + deletedIndustryGroup.count,
+    permissions: deletedPermissions.count,
+    rolePermissions,
+    platformRolePermissions,
+  };
 }
 
 async function seedMenus(): Promise<number> {

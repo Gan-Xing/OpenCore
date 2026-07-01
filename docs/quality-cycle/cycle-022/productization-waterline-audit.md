@@ -262,12 +262,12 @@ Cycle-022 can be described as complete SaaS tenant-foundation V1 for the current
 
 ## T7f Business-Domain Admission
 
-| Check                                 | Status | Evidence                                                                                                                                                                                                      |
-| ------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| No current unadmitted business models | Done   | Current Prisma schema has no CRM/ERP/Mall/AI/payment business-domain models to tenantize in Cycle-022.                                                                                                        |
-| Registry admission guard              | Done   | Module registry keeps non-admitted domains such as `industry.erp`, `industry.mall`, `integration.pay`, and `ai.*` out of the current SaaS foundation registry; `industry.crm` is admitted separately in C027. |
-| OpenForge admission guard             | Done   | Manual schema validation rejects forbidden P4/P5 business module inputs before generated code can enter the repo.                                                                                             |
-| Docs/guard                            | Done   | `guard:tenant-business-domain-admission` locks schema, registry, OpenForge, and Cycle-022 doc markers.                                                                                                        |
+| Check                                 | Status | Evidence                                                                                                                                                                                                       |
+| ------------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| No current unadmitted business models | Done   | Current Prisma schema has no CRM/ERP/Mall/AI/payment business-domain models to tenantize in Cycle-022.                                                                                                         |
+| Registry admission guard              | Done   | Module registry keeps non-admitted domains such as `industry.erp`, `industry.mall`, `integration.pay`, and `ai.*` out of the current SaaS foundation registry; `business.core` is admitted separately in C027. |
+| OpenForge admission guard             | Done   | Manual schema validation rejects forbidden P4/P5 business module inputs before generated code can enter the repo.                                                                                              |
+| Docs/guard                            | Done   | `guard:tenant-business-domain-admission` locks schema, registry, OpenForge, and Cycle-022 doc markers.                                                                                                         |
 
 ## T4a Audit
 

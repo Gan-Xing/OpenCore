@@ -375,7 +375,7 @@ async function seedCrmFixtures(
 ): Promise<CrmFixtures> {
   const tag = await apiRequest<Record<string, unknown>>(
     token,
-    '/industry/crm/tags',
+    '/business/core/tags',
     {
       body: {
         code: `ui-${runSafeId}`,
@@ -392,7 +392,7 @@ async function seedCrmFixtures(
 
   const customer = await apiRequest<Record<string, unknown>>(
     token,
-    '/industry/crm/customers',
+    '/business/core/customers',
     {
       body: {
         email: `ui-customer-${runSafeId}@example.com`,
@@ -416,7 +416,7 @@ async function seedCrmFixtures(
 
   const lead = await apiRequest<Record<string, unknown>>(
     token,
-    '/industry/crm/leads',
+    '/business/core/leads',
     {
       body: {
         company: `UI Lead Company ${runId}`,
@@ -438,7 +438,7 @@ async function seedCrmFixtures(
 
   const contact = await apiRequest<Record<string, unknown>>(
     token,
-    '/industry/crm/contacts',
+    '/business/core/contacts',
     {
       body: {
         customerId,
@@ -459,7 +459,7 @@ async function seedCrmFixtures(
 
   const opportunity = await apiRequest<Record<string, unknown>>(
     token,
-    '/industry/crm/opportunities',
+    '/business/core/opportunities',
     {
       body: {
         amount: '76000.00',
@@ -486,7 +486,7 @@ async function seedCrmFixtures(
 
   const task = await apiRequest<Record<string, unknown>>(
     token,
-    '/industry/crm/tasks',
+    '/business/core/tasks',
     {
       body: {
         assignee: adminUsername,
@@ -502,18 +502,22 @@ async function seedCrmFixtures(
   );
   const taskTitle = assertString(task.title, 'created CRM UI task title');
 
-  await apiRequest<Record<string, unknown>>(token, '/industry/crm/follow-ups', {
-    body: {
-      content: `UI smoke activity ${runId}`,
-      createdBy: adminUsername,
-      method: 'call',
-      nextContactAt: '2026-07-12T10:00:00.000Z',
-      outcome: 'UI smoke scheduled.',
-      targetId: leadId,
-      targetType: 'lead',
+  await apiRequest<Record<string, unknown>>(
+    token,
+    '/business/core/follow-ups',
+    {
+      body: {
+        content: `UI smoke activity ${runId}`,
+        createdBy: adminUsername,
+        method: 'call',
+        nextContactAt: '2026-07-12T10:00:00.000Z',
+        outcome: 'UI smoke scheduled.',
+        targetId: leadId,
+        targetType: 'lead',
+      },
+      method: 'POST',
     },
-    method: 'POST',
-  });
+  );
 
   return {
     activityTargetId: leadId,

@@ -124,7 +124,7 @@ type FormatMessage = (
 ) => string;
 
 const DEFAULT_ACTOR = 'admin';
-const CRM_MESSAGE_PREFIX = 'pages.industry.crm.';
+const BUSINESS_MESSAGE_PREFIX = 'pages.business.core.';
 const LEAD_STATUSES = ['new', 'contacted', 'qualified', 'converted', 'lost'];
 const WRITABLE_LEAD_STATUSES = ['new', 'contacted', 'qualified', 'lost'];
 const CUSTOMER_STATUSES = ['active', 'inactive', 'churned'];
@@ -164,7 +164,7 @@ const BUSINESS_ROUTE_TABS: readonly BusinessRouteKey[] = [
 ];
 
 function crmMessageId(suffix: string): string {
-  return `pages.industry.crm.${suffix}`;
+  return `pages.business.core.${suffix}`;
 }
 
 function interpolateMessage(
@@ -607,7 +607,7 @@ export default function BusinessWorkspace({
     (id, defaultMessage, values) => {
       const zhMessage =
         intl.locale?.toLowerCase().startsWith('zh') &&
-        id.startsWith(CRM_MESSAGE_PREFIX)
+        id.startsWith(BUSINESS_MESSAGE_PREFIX)
           ? (zhMessages as Record<string, string>)[id]
           : undefined;
       if (zhMessage) {
@@ -621,12 +621,12 @@ export default function BusinessWorkspace({
     [intl],
   );
   const access = useAccess() as {
-    canAssignCrm?: boolean;
-    canCommentCrm?: boolean;
-    canCreateCrm?: boolean;
-    canDeleteCrm?: boolean;
-    canExportCrm?: boolean;
-    canUpdateCrm?: boolean;
+    canAssignBusiness?: boolean;
+    canCommentBusiness?: boolean;
+    canCreateBusiness?: boolean;
+    canDeleteBusiness?: boolean;
+    canExportBusiness?: boolean;
+    canUpdateBusiness?: boolean;
   };
   const [entityForm] = Form.useForm<Record<string, unknown>>();
   const [actionForm] = Form.useForm<Record<string, unknown>>();
@@ -660,7 +660,10 @@ export default function BusinessWorkspace({
       setLoadError(
         error instanceof Error
           ? error.message
-          : formatMessage(crmMessageId('load.failure'), 'Unable to load CRM.'),
+          : formatMessage(
+              crmMessageId('load.failure'),
+              'Unable to load business data.',
+            ),
       );
     } finally {
       setLoading(false);
@@ -832,11 +835,11 @@ export default function BusinessWorkspace({
         editing
           ? formatMessage(
               crmMessageId('messages.updated'),
-              'CRM record updated.',
+              'Business record updated.',
             )
           : formatMessage(
               crmMessageId('messages.created'),
-              'CRM record created.',
+              'Business record created.',
             ),
       );
       closeEntityModal();
@@ -847,7 +850,7 @@ export default function BusinessWorkspace({
           ? error.message
           : formatMessage(
               crmMessageId('messages.saveFailed'),
-              'CRM save failed.',
+              'Business save failed.',
             ),
       );
     } finally {
@@ -920,7 +923,7 @@ export default function BusinessWorkspace({
       message.success(
         formatMessage(
           crmMessageId('messages.actionCompleted'),
-          'CRM action completed.',
+          'Business action completed.',
         ),
       );
       closeActionModal();
@@ -931,7 +934,7 @@ export default function BusinessWorkspace({
           ? error.message
           : formatMessage(
               crmMessageId('messages.actionFailed'),
-              'CRM action failed.',
+              'Business action failed.',
             ),
       );
     } finally {
@@ -946,7 +949,10 @@ export default function BusinessWorkspace({
     if (row.resource === 'opportunities')
       await archiveOpenCoreCrmOpportunity(row.id);
     message.success(
-      formatMessage(crmMessageId('messages.archived'), 'CRM record archived.'),
+      formatMessage(
+        crmMessageId('messages.archived'),
+        'Business record archived.',
+      ),
     );
     await reloadCrm();
   };
@@ -1239,7 +1245,7 @@ export default function BusinessWorkspace({
               type="link"
             />
           </Tooltip>,
-          access.canUpdateCrm && canEditRow(record) ? (
+          access.canUpdateBusiness && canEditRow(record) ? (
             <Tooltip
               key="edit"
               title={formatMessage(crmMessageId('actions.edit'), 'Edit')}
@@ -1265,7 +1271,7 @@ export default function BusinessWorkspace({
               />
             </Tooltip>
           ) : null,
-          access.canAssignCrm &&
+          access.canAssignBusiness &&
           writableTarget &&
           ['lead', 'customer', 'opportunity'].includes(target.type) ? (
             <Tooltip
@@ -1283,7 +1289,7 @@ export default function BusinessWorkspace({
               />
             </Tooltip>
           ) : null,
-          access.canCommentCrm && writableTarget ? (
+          access.canCommentBusiness && writableTarget ? (
             <Tooltip
               key="follow"
               title={formatMessage(
@@ -1299,7 +1305,7 @@ export default function BusinessWorkspace({
               />
             </Tooltip>
           ) : null,
-          access.canUpdateCrm && writableTarget ? (
+          access.canUpdateBusiness && writableTarget ? (
             <Tooltip
               key="task"
               title={formatMessage(
@@ -1316,7 +1322,7 @@ export default function BusinessWorkspace({
               </Button>
             </Tooltip>
           ) : null,
-          access.canUpdateCrm && writableTarget ? (
+          access.canUpdateBusiness && writableTarget ? (
             <Tooltip
               key="attach"
               title={formatMessage(
@@ -1332,7 +1338,7 @@ export default function BusinessWorkspace({
               />
             </Tooltip>
           ) : null,
-          access.canUpdateCrm &&
+          access.canUpdateBusiness &&
           record.resource === 'leads' &&
           !isConvertedLead(record) ? (
             <Button
@@ -1350,7 +1356,7 @@ export default function BusinessWorkspace({
               {formatMessage(crmMessageId('actions.convert'), 'Convert')}
             </Button>
           ) : null,
-          access.canUpdateCrm && record.resource === 'opportunities' ? (
+          access.canUpdateBusiness && record.resource === 'opportunities' ? (
             <Button
               key="stage"
               onClick={() =>
@@ -1366,7 +1372,7 @@ export default function BusinessWorkspace({
               {formatMessage(crmMessageId('actions.stage'), 'Stage')}
             </Button>
           ) : null,
-          access.canUpdateCrm &&
+          access.canUpdateBusiness &&
           record.resource === 'tasks' &&
           getString(record, 'status') === 'open' ? (
             <Tooltip
@@ -1384,7 +1390,7 @@ export default function BusinessWorkspace({
               />
             </Tooltip>
           ) : null,
-          access.canDeleteCrm &&
+          access.canDeleteBusiness &&
           ['leads', 'customers', 'contacts', 'opportunities'].includes(
             record.resource,
           ) ? (
@@ -1393,7 +1399,7 @@ export default function BusinessWorkspace({
               onConfirm={() => void archiveRow(record)}
               title={formatMessage(
                 crmMessageId('actions.archiveConfirm'),
-                'Archive this CRM record?',
+                'Archive this business record?',
               )}
             >
               <Button danger size="small" type="link">
@@ -1428,7 +1434,7 @@ export default function BusinessWorkspace({
           }
           message={formatMessage(
             crmMessageId('load.liveFailure'),
-            'Live CRM unavailable',
+            'Live business data unavailable',
           )}
           showIcon
           style={{ marginBottom: 16 }}
@@ -1590,7 +1596,7 @@ export default function BusinessWorkspace({
               >
                 {formatMessage(crmMessageId('actions.reload'), 'Reload')}
               </Button>,
-              access.canCreateCrm &&
+              access.canCreateBusiness &&
               !['activity', 'tasks'].includes(activeTab) ? (
                 <Button
                   icon={<PlusOutlined />}
@@ -1615,7 +1621,7 @@ export default function BusinessWorkspace({
                   {formatMessage(crmMessageId('actions.create'), 'Create')}
                 </Button>
               ) : null,
-              access.canExportCrm ? (
+              access.canExportBusiness ? (
                 <CurrentPageExportButton<CrmRow>
                   columns={exportColumns}
                   filename={`opencore-crm-${activeTab}.csv`}
@@ -1713,7 +1719,7 @@ export default function BusinessWorkspace({
             ? (getString(selected, 'name') ??
               getString(selected, 'title') ??
               selected.id)
-            : formatMessage(crmMessageId('detail.title'), 'CRM Detail')
+            : formatMessage(crmMessageId('detail.title'), 'Business Detail')
         }
       />
 
@@ -1727,7 +1733,7 @@ export default function BusinessWorkspace({
           editing
             ? crmMessageId('modal.editTitle')
             : crmMessageId('modal.createTitle'),
-          editing ? 'Edit CRM {kind}' : 'Create CRM {kind}',
+          editing ? 'Edit {kind}' : 'Create {kind}',
           { kind: entityLabel(entityKind, formatMessage) },
         )}
         width={720}

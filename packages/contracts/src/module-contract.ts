@@ -7,6 +7,7 @@ export const MODULE_LAYERS = [
   'monitor',
   'tool',
   'collaboration',
+  'business',
   'optional',
   'integration',
   'industry',

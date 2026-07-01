@@ -4,8 +4,8 @@ Date: 2026-06-30
 
 ## Goal
 
-Admit `industry.crm` as OpenCore's first commercial tenant-owned industry
-module. C027 delivers the sales-front-office CRM loop: lead capture, customer
+Admit `business.core` as OpenCore's first commercial tenant-owned business
+foundation. C027 delivers the sales-front-office loop: lead capture, customer
 accounting, contacts, opportunities, follow-ups, task reminders, tags, owner
 transfer, attachments, audit, and basic statistics.
 
@@ -49,10 +49,10 @@ transfer, attachments, audit, and basic statistics.
 
 ## Admission Requirements
 
-- Every persisted CRM row is tenant-owned and has tenant-scoped indexes or
+- Every persisted business row is tenant-owned and has tenant-scoped indexes or
   unique constraints.
 - API, OpenAPI, SDK, Admin, permissions, menus, smoke, guard, seed, and docs
-  use the same `industry.crm` vocabulary.
+  use the same `business.core` vocabulary.
 - Admin pages are live-only and include loading, empty, failure, create, update,
   transfer, detail, follow-up, attachment, task, summary, and safe current-page
   export states.

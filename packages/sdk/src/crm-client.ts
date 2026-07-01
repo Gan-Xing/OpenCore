@@ -196,195 +196,204 @@ export type CrmClient = {
 export function createCrmClient(request: SdkRequest): CrmClient {
   return {
     getSummary: (token) =>
-      request<CrmSummary>('/industry/crm/summary', { token }),
+      request<CrmSummary>('/business/core/summary', { token }),
     exportCrm: (token, query) =>
-      request<CrmExportPreview>(withQuery('/industry/crm/export', query), {
+      request<CrmExportPreview>(withQuery('/business/core/export', query), {
         token,
       }),
     listTags: (token, query) =>
-      request<CrmTagPage>(withQuery('/industry/crm/tags', query), { token }),
+      request<CrmTagPage>(withQuery('/business/core/tags', query), { token }),
     createTag: (token, body) =>
-      request<CrmTagSummary>('/industry/crm/tags', {
+      request<CrmTagSummary>('/business/core/tags', {
         method: 'POST',
         body,
         token,
       }),
     updateTag: (token, id, body) =>
-      request<CrmTagSummary>(`/industry/crm/tags/${encodeURIComponent(id)}`, {
+      request<CrmTagSummary>(`/business/core/tags/${encodeURIComponent(id)}`, {
         method: 'PATCH',
         body,
         token,
       }),
     listLeads: (token, query) =>
-      request<CrmLeadPage>(withQuery('/industry/crm/leads', query), { token }),
+      request<CrmLeadPage>(withQuery('/business/core/leads', query), { token }),
     getLead: (token, id) =>
-      request<CrmLeadSummary>(`/industry/crm/leads/${encodeURIComponent(id)}`, {
-        token,
-      }),
+      request<CrmLeadSummary>(
+        `/business/core/leads/${encodeURIComponent(id)}`,
+        {
+          token,
+        },
+      ),
     createLead: (token, body) =>
-      request<CrmLeadSummary>('/industry/crm/leads', {
+      request<CrmLeadSummary>('/business/core/leads', {
         method: 'POST',
         body,
         token,
       }),
     updateLead: (token, id, body) =>
-      request<CrmLeadSummary>(`/industry/crm/leads/${encodeURIComponent(id)}`, {
-        method: 'PATCH',
-        body,
-        token,
-      }),
+      request<CrmLeadSummary>(
+        `/business/core/leads/${encodeURIComponent(id)}`,
+        {
+          method: 'PATCH',
+          body,
+          token,
+        },
+      ),
     convertLead: (token, id, body) =>
       request<ConvertCrmLeadResult>(
-        `/industry/crm/leads/${encodeURIComponent(id)}/convert`,
+        `/business/core/leads/${encodeURIComponent(id)}/convert`,
         { method: 'PATCH', body, token },
       ),
     transferLeadOwner: (token, id, body) =>
       request<CrmLeadSummary>(
-        `/industry/crm/leads/${encodeURIComponent(id)}/transfer`,
+        `/business/core/leads/${encodeURIComponent(id)}/transfer`,
         { method: 'PATCH', body, token },
       ),
     archiveLead: (token, id) =>
       request<CrmDeleteResult>(
-        `/industry/crm/leads/${encodeURIComponent(id)}`,
+        `/business/core/leads/${encodeURIComponent(id)}`,
         { method: 'DELETE', token },
       ),
     listCustomers: (token, query) =>
-      request<CrmCustomerPage>(withQuery('/industry/crm/customers', query), {
+      request<CrmCustomerPage>(withQuery('/business/core/customers', query), {
         token,
       }),
     getCustomer: (token, id) =>
       request<CrmCustomerSummary>(
-        `/industry/crm/customers/${encodeURIComponent(id)}`,
+        `/business/core/customers/${encodeURIComponent(id)}`,
         { token },
       ),
     createCustomer: (token, body) =>
-      request<CrmCustomerSummary>('/industry/crm/customers', {
+      request<CrmCustomerSummary>('/business/core/customers', {
         method: 'POST',
         body,
         token,
       }),
     updateCustomer: (token, id, body) =>
       request<CrmCustomerSummary>(
-        `/industry/crm/customers/${encodeURIComponent(id)}`,
+        `/business/core/customers/${encodeURIComponent(id)}`,
         { method: 'PATCH', body, token },
       ),
     transferCustomerOwner: (token, id, body) =>
       request<CrmCustomerSummary>(
-        `/industry/crm/customers/${encodeURIComponent(id)}/transfer`,
+        `/business/core/customers/${encodeURIComponent(id)}/transfer`,
         { method: 'PATCH', body, token },
       ),
     archiveCustomer: (token, id) =>
       request<CrmDeleteResult>(
-        `/industry/crm/customers/${encodeURIComponent(id)}`,
+        `/business/core/customers/${encodeURIComponent(id)}`,
         { method: 'DELETE', token },
       ),
     listContacts: (token, query) =>
-      request<CrmContactPage>(withQuery('/industry/crm/contacts', query), {
+      request<CrmContactPage>(withQuery('/business/core/contacts', query), {
         token,
       }),
     getContact: (token, id) =>
       request<CrmContactSummary>(
-        `/industry/crm/contacts/${encodeURIComponent(id)}`,
+        `/business/core/contacts/${encodeURIComponent(id)}`,
         { token },
       ),
     createContact: (token, body) =>
-      request<CrmContactSummary>('/industry/crm/contacts', {
+      request<CrmContactSummary>('/business/core/contacts', {
         method: 'POST',
         body,
         token,
       }),
     updateContact: (token, id, body) =>
       request<CrmContactSummary>(
-        `/industry/crm/contacts/${encodeURIComponent(id)}`,
+        `/business/core/contacts/${encodeURIComponent(id)}`,
         { method: 'PATCH', body, token },
       ),
     archiveContact: (token, id) =>
       request<CrmDeleteResult>(
-        `/industry/crm/contacts/${encodeURIComponent(id)}`,
+        `/business/core/contacts/${encodeURIComponent(id)}`,
         { method: 'DELETE', token },
       ),
     listOpportunities: (token, query) =>
       request<CrmOpportunityPage>(
-        withQuery('/industry/crm/opportunities', query),
+        withQuery('/business/core/opportunities', query),
         { token },
       ),
     listActivities: (token, query) =>
-      request<CrmActivityPage>(withQuery('/industry/crm/activity', query), {
+      request<CrmActivityPage>(withQuery('/business/core/activity', query), {
         token,
       }),
     getOpportunity: (token, id) =>
       request<CrmOpportunitySummary>(
-        `/industry/crm/opportunities/${encodeURIComponent(id)}`,
+        `/business/core/opportunities/${encodeURIComponent(id)}`,
         { token },
       ),
     createOpportunity: (token, body) =>
-      request<CrmOpportunitySummary>('/industry/crm/opportunities', {
+      request<CrmOpportunitySummary>('/business/core/opportunities', {
         method: 'POST',
         body,
         token,
       }),
     updateOpportunity: (token, id, body) =>
       request<CrmOpportunitySummary>(
-        `/industry/crm/opportunities/${encodeURIComponent(id)}`,
+        `/business/core/opportunities/${encodeURIComponent(id)}`,
         { method: 'PATCH', body, token },
       ),
     changeOpportunityStage: (token, id, body) =>
       request<CrmOpportunitySummary>(
-        `/industry/crm/opportunities/${encodeURIComponent(id)}/stage`,
+        `/business/core/opportunities/${encodeURIComponent(id)}/stage`,
         { method: 'PATCH', body, token },
       ),
     transferOpportunityOwner: (token, id, body) =>
       request<CrmOpportunitySummary>(
-        `/industry/crm/opportunities/${encodeURIComponent(id)}/transfer`,
+        `/business/core/opportunities/${encodeURIComponent(id)}/transfer`,
         { method: 'PATCH', body, token },
       ),
     archiveOpportunity: (token, id) =>
       request<CrmDeleteResult>(
-        `/industry/crm/opportunities/${encodeURIComponent(id)}`,
+        `/business/core/opportunities/${encodeURIComponent(id)}`,
         { method: 'DELETE', token },
       ),
     listFollowUps: (token, query) =>
-      request<CrmFollowUpPage>(withQuery('/industry/crm/follow-ups', query), {
+      request<CrmFollowUpPage>(withQuery('/business/core/follow-ups', query), {
         token,
       }),
     createFollowUp: (token, body) =>
-      request<CrmFollowUpPage['items'][number]>('/industry/crm/follow-ups', {
+      request<CrmFollowUpPage['items'][number]>('/business/core/follow-ups', {
         method: 'POST',
         body,
         token,
       }),
     listTasks: (token, query) =>
-      request<CrmTaskPage>(withQuery('/industry/crm/tasks', query), { token }),
+      request<CrmTaskPage>(withQuery('/business/core/tasks', query), { token }),
     createTask: (token, body) =>
-      request<CrmTaskSummary>('/industry/crm/tasks', {
+      request<CrmTaskSummary>('/business/core/tasks', {
         method: 'POST',
         body,
         token,
       }),
     completeTask: (token, id, body) =>
       request<CrmTaskSummary>(
-        `/industry/crm/tasks/${encodeURIComponent(id)}/complete`,
+        `/business/core/tasks/${encodeURIComponent(id)}/complete`,
         { method: 'PATCH', body, token },
       ),
     listAttachments: (token, query) =>
       request<CrmAttachmentPage>(
-        withQuery('/industry/crm/attachments', query),
+        withQuery('/business/core/attachments', query),
         { token },
       ),
     createAttachment: (token, body) =>
-      request<CrmAttachmentPage['items'][number]>('/industry/crm/attachments', {
-        method: 'POST',
-        body,
-        token,
-      }),
+      request<CrmAttachmentPage['items'][number]>(
+        '/business/core/attachments',
+        {
+          method: 'POST',
+          body,
+          token,
+        },
+      ),
     listOwnerTransfers: (token, query) =>
       request<CrmOwnerTransferPage>(
-        withQuery('/industry/crm/owner-transfers', query),
+        withQuery('/business/core/owner-transfers', query),
         { token },
       ),
     listAuditEvents: (token, query) =>
       request<CrmAuditEventPage>(
-        withQuery('/industry/crm/audit-events', query),
+        withQuery('/business/core/audit-events', query),
         { token },
       ),
   };

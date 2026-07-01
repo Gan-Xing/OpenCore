@@ -44,7 +44,7 @@ describe('PermissionGuard', () => {
       await authService.login('viewer', 'viewer123'),
     ).accessToken;
     const guard = new PermissionGuard(
-      createReflector(['industry:crm:read']),
+      createReflector(['business:core:read']),
       authService,
     );
 

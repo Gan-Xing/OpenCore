@@ -657,7 +657,7 @@ function readI18nIds(path: string): Set<string> {
   for (const match of content.matchAll(
     /\bcrmMessageId\(\s*['"]([^'"]+)['"]\s*\)/g,
   )) {
-    ids.add(`pages.industry.crm.${match[1]}`);
+    ids.add(`pages.business.core.${match[1]}`);
   }
 
   for (const match of content.matchAll(
@@ -677,7 +677,7 @@ function readLocaleKeys(path: string): Set<string> {
 }
 
 function crmLocaleKeys(scope: string, values: readonly string[]): string[] {
-  return values.map((value) => `pages.industry.crm.${scope}.${value}`);
+  return values.map((value) => `pages.business.core.${scope}.${value}`);
 }
 
 function readRootArg(): string {

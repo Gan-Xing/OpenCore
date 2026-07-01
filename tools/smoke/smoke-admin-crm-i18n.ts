@@ -82,6 +82,7 @@ const forbiddenEnglishText = [
   'qualified',
   '$68,000.00',
   'pages.industry.crm',
+  'pages.business.core',
 ] as const;
 
 async function main() {
@@ -133,7 +134,7 @@ true;
         networkEntries.some(
           (entry) =>
             entry.status === 200 &&
-            /\/api\/industry\/crm\/leads(?:\?|$)/u.test(entry.url),
+            /\/api\/business\/core\/leads(?:\?|$)/u.test(entry.url),
         ),
       'Admin CRM live leads request',
     );

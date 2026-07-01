@@ -125,7 +125,7 @@ requireMarker(
 );
 
 for (const marker of [
-  '`industry.crm`',
+  '`business.core`',
   'tenant-owned',
   'Cross-tenant read/write/update/delete attempts',
   '`pnpm release:gate`',

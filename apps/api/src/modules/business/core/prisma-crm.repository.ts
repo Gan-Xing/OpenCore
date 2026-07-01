@@ -1796,7 +1796,7 @@ export class PrismaCrmRepository extends CrmRepository {
 
     const rows =
       targetType === 'customer'
-          ? await tx.$queryRaw<{ id: string }[]>`
+        ? await tx.$queryRaw<{ id: string }[]>`
               SELECT "id"
               FROM "CrmCustomer"
               WHERE "tenantId" = ${tenantId}
@@ -1805,8 +1805,8 @@ export class PrismaCrmRepository extends CrmRepository {
                 AND "status" <> 'archived'
               FOR UPDATE
             `
-          : targetType === 'contact'
-            ? await tx.$queryRaw<{ id: string }[]>`
+        : targetType === 'contact'
+          ? await tx.$queryRaw<{ id: string }[]>`
                 SELECT c."id"
                 FROM "CrmContact" c
                 INNER JOIN "CrmCustomer" cu
@@ -1819,7 +1819,7 @@ export class PrismaCrmRepository extends CrmRepository {
                   AND cu."status" <> 'archived'
                 FOR UPDATE OF c, cu
               `
-            : await tx.$queryRaw<{ id: string }[]>`
+          : await tx.$queryRaw<{ id: string }[]>`
                 SELECT o."id"
                 FROM "CrmOpportunity" o
                 INNER JOIN "CrmCustomer" cu

@@ -73,45 +73,45 @@ class CrmDeleteResultDto {
 }
 
 @ApiBearerAuth()
-@ApiTags('Industry CRM')
-@Controller('industry/crm')
+@ApiTags('Business Core')
+@Controller('business/core')
 export class CrmController {
   constructor(private readonly repository: CrmRepository) {}
 
   @Get('summary')
-  @RequirePermission('industry:crm:read')
+  @RequirePermission('business:core:read')
   @ApiOkResponse({ type: CrmSummaryDto })
   getSummary(): Promise<CrmSummaryDto> {
     return this.repository.getSummary();
   }
 
   @Get('export')
-  @RequirePermission('industry:crm:export')
+  @RequirePermission('business:core:export')
   @ApiOkResponse({ type: CrmExportPreviewDto })
   exportCrm(@Query() query: CrmExportQueryDto): Promise<CrmExportPreviewDto> {
     return this.repository.exportCrm(query);
   }
 
   @Get('tags')
-  @RequirePermission('industry:crm:read')
+  @RequirePermission('business:core:read')
   @ApiOkResponse({ type: CrmTagPageDto })
   listTags(@Query() query: CrmTagQueryDto): Promise<CrmTagPageDto> {
     return this.repository.listTags(query);
   }
 
   @Post('tags')
-  @RequirePermission('industry:crm:create')
-  @AuditOperation({ action: 'create-tag', resource: 'industry.crm' })
+  @RequirePermission('business:core:create')
+  @AuditOperation({ action: 'create-tag', resource: 'business.core' })
   @ApiOkResponse({ type: CrmTagDto })
   createTag(@Body() body: CreateCrmTagDto): Promise<CrmTagDto> {
     return this.repository.createTag(body);
   }
 
   @Patch('tags/:id')
-  @RequirePermission('industry:crm:update')
+  @RequirePermission('business:core:update')
   @AuditOperation({
     action: 'update-tag',
-    resource: 'industry.crm',
+    resource: 'business.core',
     resourceIdField: 'id',
   })
   @ApiOkResponse({ type: CrmTagDto })
@@ -123,32 +123,32 @@ export class CrmController {
   }
 
   @Get('leads')
-  @RequirePermission('industry:crm:read')
+  @RequirePermission('business:core:read')
   @ApiOkResponse({ type: CrmLeadPageDto })
   listLeads(@Query() query: CrmLeadQueryDto): Promise<CrmLeadPageDto> {
     return this.repository.listLeads(query);
   }
 
   @Get('leads/:id')
-  @RequirePermission('industry:crm:read')
+  @RequirePermission('business:core:read')
   @ApiOkResponse({ type: CrmLeadDto })
   getLead(@Param('id') id: string): Promise<CrmLeadDto> {
     return this.repository.getLead(id);
   }
 
   @Post('leads')
-  @RequirePermission('industry:crm:create')
-  @AuditOperation({ action: 'create-lead', resource: 'industry.crm' })
+  @RequirePermission('business:core:create')
+  @AuditOperation({ action: 'create-lead', resource: 'business.core' })
   @ApiOkResponse({ type: CrmLeadDto })
   createLead(@Body() body: CreateCrmLeadDto): Promise<CrmLeadDto> {
     return this.repository.createLead(body);
   }
 
   @Patch('leads/:id')
-  @RequirePermission('industry:crm:update')
+  @RequirePermission('business:core:update')
   @AuditOperation({
     action: 'update-lead',
-    resource: 'industry.crm',
+    resource: 'business.core',
     resourceIdField: 'id',
   })
   @ApiOkResponse({ type: CrmLeadDto })
@@ -160,10 +160,10 @@ export class CrmController {
   }
 
   @Patch('leads/:id/convert')
-  @RequirePermission('industry:crm:update')
+  @RequirePermission('business:core:update')
   @AuditOperation({
     action: 'convert-lead',
-    resource: 'industry.crm',
+    resource: 'business.core',
     resourceIdField: 'id',
   })
   @ApiOkResponse({ type: ConvertCrmLeadResultDto })
@@ -172,10 +172,10 @@ export class CrmController {
   }
 
   @Patch('leads/:id/transfer')
-  @RequirePermission('industry:crm:assign')
+  @RequirePermission('business:core:assign')
   @AuditOperation({
     action: 'transfer-lead',
-    resource: 'industry.crm',
+    resource: 'business.core',
     resourceIdField: 'id',
   })
   @ApiOkResponse({ type: CrmLeadDto })
@@ -187,10 +187,10 @@ export class CrmController {
   }
 
   @Delete('leads/:id')
-  @RequirePermission('industry:crm:delete')
+  @RequirePermission('business:core:delete')
   @AuditOperation({
     action: 'archive-lead',
-    resource: 'industry.crm',
+    resource: 'business.core',
     resourceIdField: 'id',
   })
   @ApiOkResponse({ type: CrmDeleteResultDto })
@@ -199,7 +199,7 @@ export class CrmController {
   }
 
   @Get('customers')
-  @RequirePermission('industry:crm:read')
+  @RequirePermission('business:core:read')
   @ApiOkResponse({ type: CrmCustomerPageDto })
   listCustomers(
     @Query() query: CrmCustomerQueryDto,
@@ -208,25 +208,25 @@ export class CrmController {
   }
 
   @Get('customers/:id')
-  @RequirePermission('industry:crm:read')
+  @RequirePermission('business:core:read')
   @ApiOkResponse({ type: CrmCustomerDto })
   getCustomer(@Param('id') id: string): Promise<CrmCustomerDto> {
     return this.repository.getCustomer(id);
   }
 
   @Post('customers')
-  @RequirePermission('industry:crm:create')
-  @AuditOperation({ action: 'create-customer', resource: 'industry.crm' })
+  @RequirePermission('business:core:create')
+  @AuditOperation({ action: 'create-customer', resource: 'business.core' })
   @ApiOkResponse({ type: CrmCustomerDto })
   createCustomer(@Body() body: CreateCrmCustomerDto): Promise<CrmCustomerDto> {
     return this.repository.createCustomer(body);
   }
 
   @Patch('customers/:id')
-  @RequirePermission('industry:crm:update')
+  @RequirePermission('business:core:update')
   @AuditOperation({
     action: 'update-customer',
-    resource: 'industry.crm',
+    resource: 'business.core',
     resourceIdField: 'id',
   })
   @ApiOkResponse({ type: CrmCustomerDto })
@@ -238,10 +238,10 @@ export class CrmController {
   }
 
   @Patch('customers/:id/transfer')
-  @RequirePermission('industry:crm:assign')
+  @RequirePermission('business:core:assign')
   @AuditOperation({
     action: 'transfer-customer',
-    resource: 'industry.crm',
+    resource: 'business.core',
     resourceIdField: 'id',
   })
   @ApiOkResponse({ type: CrmCustomerDto })
@@ -253,10 +253,10 @@ export class CrmController {
   }
 
   @Delete('customers/:id')
-  @RequirePermission('industry:crm:delete')
+  @RequirePermission('business:core:delete')
   @AuditOperation({
     action: 'archive-customer',
-    resource: 'industry.crm',
+    resource: 'business.core',
     resourceIdField: 'id',
   })
   @ApiOkResponse({ type: CrmDeleteResultDto })
@@ -265,32 +265,32 @@ export class CrmController {
   }
 
   @Get('contacts')
-  @RequirePermission('industry:crm:read')
+  @RequirePermission('business:core:read')
   @ApiOkResponse({ type: CrmContactPageDto })
   listContacts(@Query() query: CrmContactQueryDto): Promise<CrmContactPageDto> {
     return this.repository.listContacts(query);
   }
 
   @Get('contacts/:id')
-  @RequirePermission('industry:crm:read')
+  @RequirePermission('business:core:read')
   @ApiOkResponse({ type: CrmContactDto })
   getContact(@Param('id') id: string): Promise<CrmContactDto> {
     return this.repository.getContact(id);
   }
 
   @Post('contacts')
-  @RequirePermission('industry:crm:create')
-  @AuditOperation({ action: 'create-contact', resource: 'industry.crm' })
+  @RequirePermission('business:core:create')
+  @AuditOperation({ action: 'create-contact', resource: 'business.core' })
   @ApiOkResponse({ type: CrmContactDto })
   createContact(@Body() body: CreateCrmContactDto): Promise<CrmContactDto> {
     return this.repository.createContact(body);
   }
 
   @Patch('contacts/:id')
-  @RequirePermission('industry:crm:update')
+  @RequirePermission('business:core:update')
   @AuditOperation({
     action: 'update-contact',
-    resource: 'industry.crm',
+    resource: 'business.core',
     resourceIdField: 'id',
   })
   @ApiOkResponse({ type: CrmContactDto })
@@ -302,10 +302,10 @@ export class CrmController {
   }
 
   @Delete('contacts/:id')
-  @RequirePermission('industry:crm:delete')
+  @RequirePermission('business:core:delete')
   @AuditOperation({
     action: 'archive-contact',
-    resource: 'industry.crm',
+    resource: 'business.core',
     resourceIdField: 'id',
   })
   @ApiOkResponse({ type: CrmDeleteResultDto })
@@ -314,7 +314,7 @@ export class CrmController {
   }
 
   @Get('opportunities')
-  @RequirePermission('industry:crm:read')
+  @RequirePermission('business:core:read')
   @ApiOkResponse({ type: CrmOpportunityPageDto })
   listOpportunities(
     @Query() query: CrmOpportunityQueryDto,
@@ -323,15 +323,15 @@ export class CrmController {
   }
 
   @Get('opportunities/:id')
-  @RequirePermission('industry:crm:read')
+  @RequirePermission('business:core:read')
   @ApiOkResponse({ type: CrmOpportunityDto })
   getOpportunity(@Param('id') id: string): Promise<CrmOpportunityDto> {
     return this.repository.getOpportunity(id);
   }
 
   @Post('opportunities')
-  @RequirePermission('industry:crm:create')
-  @AuditOperation({ action: 'create-opportunity', resource: 'industry.crm' })
+  @RequirePermission('business:core:create')
+  @AuditOperation({ action: 'create-opportunity', resource: 'business.core' })
   @ApiOkResponse({ type: CrmOpportunityDto })
   createOpportunity(
     @Body() body: CreateCrmOpportunityDto,
@@ -340,10 +340,10 @@ export class CrmController {
   }
 
   @Patch('opportunities/:id')
-  @RequirePermission('industry:crm:update')
+  @RequirePermission('business:core:update')
   @AuditOperation({
     action: 'update-opportunity',
-    resource: 'industry.crm',
+    resource: 'business.core',
     resourceIdField: 'id',
   })
   @ApiOkResponse({ type: CrmOpportunityDto })
@@ -355,10 +355,10 @@ export class CrmController {
   }
 
   @Patch('opportunities/:id/stage')
-  @RequirePermission('industry:crm:update')
+  @RequirePermission('business:core:update')
   @AuditOperation({
     action: 'change-opportunity-stage',
-    resource: 'industry.crm',
+    resource: 'business.core',
     resourceIdField: 'id',
   })
   @ApiOkResponse({ type: CrmOpportunityDto })
@@ -370,10 +370,10 @@ export class CrmController {
   }
 
   @Patch('opportunities/:id/transfer')
-  @RequirePermission('industry:crm:assign')
+  @RequirePermission('business:core:assign')
   @AuditOperation({
     action: 'transfer-opportunity',
-    resource: 'industry.crm',
+    resource: 'business.core',
     resourceIdField: 'id',
   })
   @ApiOkResponse({ type: CrmOpportunityDto })
@@ -385,10 +385,10 @@ export class CrmController {
   }
 
   @Delete('opportunities/:id')
-  @RequirePermission('industry:crm:delete')
+  @RequirePermission('business:core:delete')
   @AuditOperation({
     action: 'archive-opportunity',
-    resource: 'industry.crm',
+    resource: 'business.core',
     resourceIdField: 'id',
   })
   @ApiOkResponse({ type: CrmDeleteResultDto })
@@ -397,7 +397,7 @@ export class CrmController {
   }
 
   @Get('activity')
-  @RequirePermission('industry:crm:read')
+  @RequirePermission('business:core:read')
   @ApiOkResponse({ type: CrmActivityPageDto })
   listActivities(
     @Query() query: CrmTargetQueryDto,
@@ -406,7 +406,7 @@ export class CrmController {
   }
 
   @Get('follow-ups')
-  @RequirePermission('industry:crm:read')
+  @RequirePermission('business:core:read')
   @ApiOkResponse({ type: CrmFollowUpPageDto })
   listFollowUps(
     @Query() query: CrmTargetQueryDto,
@@ -415,33 +415,33 @@ export class CrmController {
   }
 
   @Post('follow-ups')
-  @RequirePermission('industry:crm:comment')
-  @AuditOperation({ action: 'create-follow-up', resource: 'industry.crm' })
+  @RequirePermission('business:core:comment')
+  @AuditOperation({ action: 'create-follow-up', resource: 'business.core' })
   @ApiOkResponse({ type: CrmFollowUpDto })
   createFollowUp(@Body() body: CreateCrmFollowUpDto): Promise<CrmFollowUpDto> {
     return this.repository.createFollowUp(body);
   }
 
   @Get('tasks')
-  @RequirePermission('industry:crm:read')
+  @RequirePermission('business:core:read')
   @ApiOkResponse({ type: CrmTaskPageDto })
   listTasks(@Query() query: CrmTaskQueryDto): Promise<CrmTaskPageDto> {
     return this.repository.listTasks(query);
   }
 
   @Post('tasks')
-  @RequirePermission('industry:crm:update')
-  @AuditOperation({ action: 'create-task', resource: 'industry.crm' })
+  @RequirePermission('business:core:update')
+  @AuditOperation({ action: 'create-task', resource: 'business.core' })
   @ApiOkResponse({ type: CrmTaskDto })
   createTask(@Body() body: CreateCrmTaskDto): Promise<CrmTaskDto> {
     return this.repository.createTask(body);
   }
 
   @Patch('tasks/:id/complete')
-  @RequirePermission('industry:crm:update')
+  @RequirePermission('business:core:update')
   @AuditOperation({
     action: 'complete-task',
-    resource: 'industry.crm',
+    resource: 'business.core',
     resourceIdField: 'id',
   })
   @ApiOkResponse({ type: CrmTaskDto })
@@ -453,7 +453,7 @@ export class CrmController {
   }
 
   @Get('attachments')
-  @RequirePermission('industry:crm:read')
+  @RequirePermission('business:core:read')
   @ApiOkResponse({ type: CrmAttachmentPageDto })
   listAttachments(
     @Query() query: CrmTargetQueryDto,
@@ -462,8 +462,8 @@ export class CrmController {
   }
 
   @Post('attachments')
-  @RequirePermission('industry:crm:update')
-  @AuditOperation({ action: 'create-attachment', resource: 'industry.crm' })
+  @RequirePermission('business:core:update')
+  @AuditOperation({ action: 'create-attachment', resource: 'business.core' })
   @ApiOkResponse({ type: CrmAttachmentDto })
   createAttachment(
     @Body() body: CreateCrmAttachmentDto,
@@ -472,7 +472,7 @@ export class CrmController {
   }
 
   @Get('owner-transfers')
-  @RequirePermission('industry:crm:read')
+  @RequirePermission('business:core:read')
   @ApiOkResponse({ type: CrmOwnerTransferPageDto })
   listOwnerTransfers(
     @Query() query: CrmTargetQueryDto,
@@ -481,7 +481,7 @@ export class CrmController {
   }
 
   @Get('audit-events')
-  @RequirePermission('industry:crm:read')
+  @RequirePermission('business:core:read')
   @ApiOkResponse({ type: CrmAuditEventPageDto })
   listAuditEvents(
     @Query() query: CrmTargetQueryDto,

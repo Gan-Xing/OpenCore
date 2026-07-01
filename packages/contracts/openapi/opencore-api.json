@@ -10020,7 +10020,7 @@
         "tags": ["Collaboration Tickets", "Collaboration Tickets"]
       }
     },
-    "/api/industry/crm/summary": {
+    "/api/business/core/summary": {
       "get": {
         "operationId": "CrmController_getSummary",
         "parameters": [],
@@ -10035,10 +10035,10 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       }
     },
-    "/api/industry/crm/export": {
+    "/api/business/core/export": {
       "get": {
         "operationId": "CrmController_exportCrm",
         "parameters": [
@@ -10087,10 +10087,10 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       }
     },
-    "/api/industry/crm/tags": {
+    "/api/business/core/tags": {
       "get": {
         "operationId": "CrmController_listTags",
         "parameters": [
@@ -10130,7 +10130,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       },
       "post": {
         "operationId": "CrmController_createTag",
@@ -10154,10 +10154,10 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       }
     },
-    "/api/industry/crm/tags/{id}": {
+    "/api/business/core/tags/{id}": {
       "patch": {
         "operationId": "CrmController_updateTag",
         "parameters": [
@@ -10187,10 +10187,10 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       }
     },
-    "/api/industry/crm/leads": {
+    "/api/business/core/leads": {
       "get": {
         "operationId": "CrmController_listLeads",
         "parameters": [
@@ -10264,7 +10264,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       },
       "post": {
         "operationId": "CrmController_createLead",
@@ -10288,10 +10288,10 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       }
     },
-    "/api/industry/crm/leads/{id}": {
+    "/api/business/core/leads/{id}": {
       "get": {
         "operationId": "CrmController_getLead",
         "parameters": [
@@ -10313,7 +10313,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       },
       "patch": {
         "operationId": "CrmController_updateLead",
@@ -10344,7 +10344,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       },
       "delete": {
         "operationId": "CrmController_archiveLead",
@@ -10367,10 +10367,10 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       }
     },
-    "/api/industry/crm/leads/{id}/convert": {
+    "/api/business/core/leads/{id}/convert": {
       "patch": {
         "operationId": "CrmController_convertLead",
         "parameters": [
@@ -10402,10 +10402,10 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       }
     },
-    "/api/industry/crm/leads/{id}/transfer": {
+    "/api/business/core/leads/{id}/transfer": {
       "patch": {
         "operationId": "CrmController_transferLeadOwner",
         "parameters": [
@@ -10435,10 +10435,10 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       }
     },
-    "/api/industry/crm/customers": {
+    "/api/business/core/customers": {
       "get": {
         "operationId": "CrmController_listCustomers",
         "parameters": [
@@ -10511,7 +10511,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       },
       "post": {
         "operationId": "CrmController_createCustomer",
@@ -10535,10 +10535,10 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       }
     },
-    "/api/industry/crm/customers/{id}": {
+    "/api/business/core/customers/{id}": {
       "get": {
         "operationId": "CrmController_getCustomer",
         "parameters": [
@@ -10560,7 +10560,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       },
       "patch": {
         "operationId": "CrmController_updateCustomer",
@@ -10591,7 +10591,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       },
       "delete": {
         "operationId": "CrmController_archiveCustomer",
@@ -10614,10 +10614,10 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       }
     },
-    "/api/industry/crm/customers/{id}/transfer": {
+    "/api/business/core/customers/{id}/transfer": {
       "patch": {
         "operationId": "CrmController_transferCustomerOwner",
         "parameters": [
@@ -10647,10 +10647,10 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       }
     },
-    "/api/industry/crm/contacts": {
+    "/api/business/core/contacts": {
       "get": {
         "operationId": "CrmController_listContacts",
         "parameters": [
@@ -10708,7 +10708,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       },
       "post": {
         "operationId": "CrmController_createContact",
@@ -10732,10 +10732,10 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       }
     },
-    "/api/industry/crm/contacts/{id}": {
+    "/api/business/core/contacts/{id}": {
       "get": {
         "operationId": "CrmController_getContact",
         "parameters": [
@@ -10757,7 +10757,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       },
       "patch": {
         "operationId": "CrmController_updateContact",
@@ -10788,7 +10788,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       },
       "delete": {
         "operationId": "CrmController_archiveContact",
@@ -10811,10 +10811,10 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       }
     },
-    "/api/industry/crm/opportunities": {
+    "/api/business/core/opportunities": {
       "get": {
         "operationId": "CrmController_listOpportunities",
         "parameters": [
@@ -10889,7 +10889,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       },
       "post": {
         "operationId": "CrmController_createOpportunity",
@@ -10915,10 +10915,10 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       }
     },
-    "/api/industry/crm/opportunities/{id}": {
+    "/api/business/core/opportunities/{id}": {
       "get": {
         "operationId": "CrmController_getOpportunity",
         "parameters": [
@@ -10940,7 +10940,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       },
       "patch": {
         "operationId": "CrmController_updateOpportunity",
@@ -10973,7 +10973,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       },
       "delete": {
         "operationId": "CrmController_archiveOpportunity",
@@ -10996,10 +10996,10 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       }
     },
-    "/api/industry/crm/opportunities/{id}/stage": {
+    "/api/business/core/opportunities/{id}/stage": {
       "patch": {
         "operationId": "CrmController_changeOpportunityStage",
         "parameters": [
@@ -11031,10 +11031,10 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       }
     },
-    "/api/industry/crm/opportunities/{id}/transfer": {
+    "/api/business/core/opportunities/{id}/transfer": {
       "patch": {
         "operationId": "CrmController_transferOpportunityOwner",
         "parameters": [
@@ -11064,10 +11064,10 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       }
     },
-    "/api/industry/crm/activity": {
+    "/api/business/core/activity": {
       "get": {
         "operationId": "CrmController_listActivities",
         "parameters": [
@@ -11116,10 +11116,10 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       }
     },
-    "/api/industry/crm/follow-ups": {
+    "/api/business/core/follow-ups": {
       "get": {
         "operationId": "CrmController_listFollowUps",
         "parameters": [
@@ -11168,7 +11168,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       },
       "post": {
         "operationId": "CrmController_createFollowUp",
@@ -11192,10 +11192,10 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       }
     },
-    "/api/industry/crm/tasks": {
+    "/api/business/core/tasks": {
       "get": {
         "operationId": "CrmController_listTasks",
         "parameters": [
@@ -11256,7 +11256,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       },
       "post": {
         "operationId": "CrmController_createTask",
@@ -11280,10 +11280,10 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       }
     },
-    "/api/industry/crm/tasks/{id}/complete": {
+    "/api/business/core/tasks/{id}/complete": {
       "patch": {
         "operationId": "CrmController_completeTask",
         "parameters": [
@@ -11313,10 +11313,10 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       }
     },
-    "/api/industry/crm/attachments": {
+    "/api/business/core/attachments": {
       "get": {
         "operationId": "CrmController_listAttachments",
         "parameters": [
@@ -11367,7 +11367,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       },
       "post": {
         "operationId": "CrmController_createAttachment",
@@ -11393,10 +11393,10 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       }
     },
-    "/api/industry/crm/owner-transfers": {
+    "/api/business/core/owner-transfers": {
       "get": {
         "operationId": "CrmController_listOwnerTransfers",
         "parameters": [
@@ -11447,10 +11447,10 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       }
     },
-    "/api/industry/crm/audit-events": {
+    "/api/business/core/audit-events": {
       "get": {
         "operationId": "CrmController_listAuditEvents",
         "parameters": [
@@ -11501,7 +11501,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Industry CRM"]
+        "tags": ["Business Core"]
       }
     },
     "/api/monitor/status": {
@@ -13207,7 +13207,7 @@
       "description": "core.tenant-member: Tenant Members"
     },
     { "name": "Core Users", "description": "core.user: Users" },
-    { "name": "Industry CRM", "description": "industry.crm: CRM" },
+    { "name": "Business Core", "description": "business.core: Business Core" },
     { "name": "Integration Mail", "description": "integration.mail: Mail" },
     { "name": "Integration OAuth", "description": "integration.oauth: OAuth" },
     {
