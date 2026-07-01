@@ -61,7 +61,7 @@ const expectedChineseText = [
 ] as const;
 
 const forbiddenEnglishText = [
-  'CRM',
+  'Admin business',
   'Industry',
   'Open Tasks',
   'Open Pipeline',
@@ -104,7 +104,7 @@ async function main() {
     await page.send('Runtime.enable');
     await page.send('Network.enable');
     await page.send('Page.navigate', {
-      url: `${adminBaseUrl}/user/login?admin-crm-i18n-smoke=${runId}`,
+      url: `${adminBaseUrl}/user/login?admin-business-i18n-smoke=${runId}`,
     });
     await waitForExpression(
       page,
@@ -120,7 +120,7 @@ true;
 `,
     );
     await page.send('Page.navigate', {
-      url: `${adminBaseUrl}/business/leads?admin-crm-i18n-smoke=${runId}`,
+      url: `${adminBaseUrl}/business/leads?admin-business-i18n-smoke=${runId}`,
     });
     await waitForExpression(
       page,
@@ -132,14 +132,14 @@ true;
         networkEntries.some(
           (entry) =>
             entry.status === 200 &&
-            /\/api\/business\/core\/leads(?:\?|$)/u.test(entry.url),
+            /\/api\/business\/sales\/leads(?:\?|$)/u.test(entry.url),
         ),
-      'Admin CRM live leads request',
+      'Admin business live leads request',
     );
     await waitForExpression(
       page,
       `document.body.innerText.includes('未结管道') && document.body.innerText.includes('已合格')`,
-      'Admin CRM zh-CN text settled',
+      'Admin business zh-CN text settled',
     );
 
     const state = await evaluate(
@@ -159,12 +159,14 @@ true;
     );
 
     if (!isRecord(state)) {
-      throw new Error(`Admin CRM i18n state is invalid: ${formatBody(state)}`);
+      throw new Error(
+        `Admin business i18n state is invalid: ${formatBody(state)}`,
+      );
     }
 
     if (Array.isArray(state.missing) && state.missing.length > 0) {
       throw new Error(
-        `Admin CRM page is missing zh-CN text ${formatBody(
+        `Admin business page is missing zh-CN text ${formatBody(
           state.missing,
         )}: ${String(state.text)}`,
       );
@@ -172,7 +174,7 @@ true;
 
     if (Array.isArray(state.forbidden) && state.forbidden.length > 0) {
       throw new Error(
-        `Admin CRM page still displays English/raw text ${formatBody(
+        `Admin business page still displays English/raw text ${formatBody(
           state.forbidden,
         )}: ${String(state.text)}`,
       );
@@ -187,15 +189,15 @@ true;
         status: 'pass',
         baseUrl: adminBaseUrl,
         checks: [
-          'admin.public-crm.authenticated-access',
-          'admin.public-crm.live-list-request',
-          'admin.public-crm.zh-cn-summary',
-          'admin.public-crm.zh-cn-page-title',
-          'admin.public-crm.no-tab-shell',
-          'admin.public-crm.zh-cn-table',
-          'admin.public-crm.zh-cn-status-values',
-          'admin.public-crm.no-raw-keys',
-          'admin.public-crm.no-english-fallbacks',
+          'admin.public-business.authenticated-access',
+          'admin.public-business.live-list-request',
+          'admin.public-business.zh-cn-summary',
+          'admin.public-business.zh-cn-page-title',
+          'admin.public-business.no-tab-shell',
+          'admin.public-business.zh-cn-table',
+          'admin.public-business.zh-cn-status-values',
+          'admin.public-business.no-raw-keys',
+          'admin.public-business.no-english-fallbacks',
         ],
       }),
     );
@@ -227,18 +229,23 @@ async function resolveAdminToken(): Promise<string> {
     lastStatus = response.status;
     if (response.ok) {
       const body = (await response.json()) as { accessToken?: unknown };
-      return assertString(body.accessToken, 'Admin CRM smoke accessToken');
+      return assertString(
+        body.accessToken,
+        'Admin Admin business smoke accessToken',
+      );
     }
   }
 
   throw new Error(
-    `Unable to authenticate Admin CRM smoke user ${adminUsername}; last status ${lastStatus}.`,
+    `Unable to authenticate Admin Admin business smoke user ${adminUsername}; last status ${lastStatus}.`,
   );
 }
 
 async function launchChrome(): Promise<ChromeInstance> {
   const executable = findChromeExecutable();
-  const profileDir = mkdtempSync(join(tmpdir(), 'opencore-admin-crm-smoke-'));
+  const profileDir = mkdtempSync(
+    join(tmpdir(), 'opencore-admin-business-smoke-'),
+  );
   const child = spawn(executable, [
     '--headless=new',
     '--disable-gpu',
@@ -283,7 +290,7 @@ function findChromeExecutable(): string {
   }
 
   throw new Error(
-    'Chrome or Chromium is required for Admin CRM smoke. Set OPENCORE_SMOKE_CHROME_BIN.',
+    'Chrome or Chromium is required for Admin Admin business smoke. Set OPENCORE_SMOKE_CHROME_BIN.',
   );
 }
 

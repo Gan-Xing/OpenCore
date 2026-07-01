@@ -2690,23 +2690,23 @@ run_with_retry \
       "$ROOT_DIR/tools/smoke/smoke-admin-error-ui.ts"
 
 run_with_retry \
-  "Admin CRM i18n smoke" \
+  "Admin business i18n smoke" \
   "${OPENCORE_DEPLOY_ADMIN_UI_SMOKE_ATTEMPTS:-3}" \
   run_with_env env \
     OPENCORE_SMOKE_ADMIN_BASE_URL="$ADMIN_PUBLIC_BASE_URL" \
     OPENCORE_SMOKE_TIMEOUT_MS="${OPENCORE_SMOKE_TIMEOUT_MS:-120000}" \
     run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
-      "$ROOT_DIR/tools/smoke/smoke-admin-crm-i18n.ts"
+      "$ROOT_DIR/tools/smoke/smoke-admin-business-i18n.ts"
 
 run_with_retry \
-  "Admin CRM actions smoke" \
+  "Admin business actions smoke" \
   "${OPENCORE_DEPLOY_ADMIN_UI_SMOKE_ATTEMPTS:-3}" \
   run_with_env env \
     OPENCORE_SMOKE_ADMIN_BASE_URL="$ADMIN_PUBLIC_BASE_URL" \
     OPENCORE_SMOKE_ADMIN_API_BASE_URL="$API_BASE_URL" \
     OPENCORE_SMOKE_TIMEOUT_MS="${OPENCORE_SMOKE_TIMEOUT_MS:-120000}" \
     run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
-      "$ROOT_DIR/tools/smoke/smoke-admin-crm-actions.ts"
+      "$ROOT_DIR/tools/smoke/smoke-admin-business-actions.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \

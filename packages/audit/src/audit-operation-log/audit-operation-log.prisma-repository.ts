@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
 import { getRequestContext } from '@opencore/core';
-import { PrismaService } from '@opencore/database';
-import { Prisma } from '@prisma/client';
+import { Prisma, PrismaService } from '@opencore/database';
 import type {
   AuditOperationLogRecord,
   CreateAuditOperationLogRecord,

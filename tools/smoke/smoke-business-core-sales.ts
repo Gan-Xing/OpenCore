@@ -13,11 +13,11 @@ const { apiPrefix, baseUrl, checkDocs, clients, request, username } = smoke;
 const runId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 const runSafeId = runId.replace(/[^a-z0-9]/gi, '_').toLowerCase();
 const ROOT_TENANT_ID = 'tenant_root';
-const FOREIGN_TENANT_ID = 'tenant_crm_smoke_foreign';
-const FOREIGN_LEAD_ID = `crm_foreign_lead_${runSafeId}`;
-const FOREIGN_CUSTOMER_ID = `crm_foreign_customer_${runSafeId}`;
+const FOREIGN_TENANT_ID = 'tenant_business_smoke_foreign';
+const FOREIGN_LEAD_ID = `business_foreign_lead_${runSafeId}`;
+const FOREIGN_CUSTOMER_ID = `business_foreign_customer_${runSafeId}`;
 
-type CreatedCrmIds = {
+type CreatedBusinessIds = {
   contacts: string[];
   customers: string[];
   leads: string[];
@@ -26,7 +26,7 @@ type CreatedCrmIds = {
 };
 
 async function main() {
-  const created: CreatedCrmIds = {
+  const created: CreatedBusinessIds = {
     contacts: [],
     customers: [],
     leads: [],
@@ -44,18 +44,18 @@ async function main() {
         expected: [200],
       });
       for (const path of [
-        '/api/business/core/summary',
+        '/api/business/sales/summary',
         '/api/business/core/export',
         '/api/business/core/tags',
-        '/api/business/core/leads',
-        '/api/business/core/leads/{id}',
-        '/api/business/core/leads/{id}/convert',
-        '/api/business/core/leads/{id}/transfer',
+        '/api/business/sales/leads',
+        '/api/business/sales/leads/{id}',
+        '/api/business/sales/leads/{id}/convert',
+        '/api/business/sales/leads/{id}/transfer',
         '/api/business/core/customers',
         '/api/business/core/customers/{id}',
         '/api/business/core/contacts',
-        '/api/business/core/opportunities',
-        '/api/business/core/opportunities/{id}/stage',
+        '/api/business/sales/opportunities',
+        '/api/business/sales/opportunities/{id}/stage',
         '/api/business/core/activity',
         '/api/business/core/follow-ups',
         '/api/business/core/tasks',
@@ -67,12 +67,12 @@ async function main() {
         assertOpenApiPath(openApi, path);
       }
       for (const schemaName of [
-        'CrmLeadPageDto',
-        'CrmCustomerPageDto',
-        'CrmContactPageDto',
-        'CrmOpportunityPageDto',
-        'CrmActivityPageDto',
-        'CrmTaskPageDto',
+        'BusinessLeadPageDto',
+        'BusinessCustomerPageDto',
+        'BusinessContactPageDto',
+        'BusinessOpportunityPageDto',
+        'BusinessActivityPageDto',
+        'BusinessTaskPageDto',
       ]) {
         assertOpenApiSchemaProperties(openApi, schemaName, [
           'items',
@@ -82,14 +82,16 @@ async function main() {
           'totalPages',
         ]);
       }
-      assertOpenApiSchemaProperties(openApi, 'ConvertCrmLeadResultDto', [
+      assertOpenApiSchemaProperties(openApi, 'ConvertBusinessLeadResultDto', [
         'lead',
         'customer',
       ]);
-      assertOpenApiSchemaProperties(openApi, 'CrmDeleteResultDto', ['deleted']);
+      assertOpenApiSchemaProperties(openApi, 'BusinessDeleteResultDto', [
+        'deleted',
+      ]);
       assertOpenApiOperationResponseSchema(
         openApi,
-        '/api/business/core/leads/{id}/convert',
+        '/api/business/sales/leads/{id}/convert',
         'patch',
       );
     }
@@ -98,26 +100,30 @@ async function main() {
     token = assertString(loginResponse.accessToken, 'login accessToken');
     smoke.setToken(token);
 
-    await seedForeignTenantCrm();
-    await assertForeignTenantCrmHidden(token);
+    await seedForeignTenantBusiness();
+    await assertForeignTenantBusinessHidden(token);
 
-    const seededTags = await clients.crm.listTags(token);
-    assertPageContainsId(seededTags, 'crm_tag_key_account', 'seeded CRM tags');
-    const seededCustomers = await clients.crm.listCustomers(token);
+    const seededTags = await clients.businessCore.listTags(token);
+    assertPageContainsId(
+      seededTags,
+      'business_tag_key_account',
+      'seeded business tags',
+    );
+    const seededCustomers = await clients.businessCore.listCustomers(token);
     assertPageContainsId(
       seededCustomers,
-      'crm_customer_northstar',
-      'seeded CRM customers',
+      'business_customer_northstar',
+      'seeded business customers',
     );
 
-    const tag = await clients.crm.createTag(token, {
+    const tag = await clients.businessCore.createTag(token, {
       code: `smoke-${runSafeId}`,
       color: 'cyan',
       name: `Smoke ${runId}`,
     });
-    created.tags.push(assertString(tag.id, 'created CRM tag id'));
+    created.tags.push(assertString(tag.id, 'created business tag id'));
 
-    await smoke.apiRequest('/business/core/leads', {
+    await smoke.apiRequest('/business/sales/leads', {
       body: {
         name: `Invalid Tags Lead ${runId}`,
         owner: username,
@@ -140,7 +146,7 @@ async function main() {
       token,
     });
 
-    const lead = await clients.crm.createLead(token, {
+    const lead = await clients.businessSales.createLead(token, {
       company: `Smoke Co ${runId}`,
       email: `lead-${runSafeId}@example.com`,
       mobile: '+1-555-0300',
@@ -151,17 +157,25 @@ async function main() {
       source: 'website',
       tags: ['key-account', tag.code],
     });
-    created.leads.push(assertString(lead.id, 'created CRM lead id'));
-    assertEqual(lead.tenantId, ROOT_TENANT_ID, 'created CRM lead tenant id');
-    assertEqual(lead.status, 'new', 'created CRM lead status');
+    created.leads.push(assertString(lead.id, 'created business lead id'));
+    assertEqual(
+      lead.tenantId,
+      ROOT_TENANT_ID,
+      'created business lead tenant id',
+    );
+    assertEqual(lead.status, 'new', 'created business lead status');
 
-    const updatedLead = await clients.crm.updateLead(token, lead.id, {
+    const updatedLead = await clients.businessSales.updateLead(token, lead.id, {
       rating: 'hot',
       status: 'qualified',
     });
-    assertEqual(updatedLead.status, 'qualified', 'updated CRM lead status');
+    assertEqual(
+      updatedLead.status,
+      'qualified',
+      'updated business lead status',
+    );
     await smoke.apiRequest(
-      `/business/core/leads/${encodeURIComponent(lead.id)}`,
+      `/business/sales/leads/${encodeURIComponent(lead.id)}`,
       {
         body: { status: 'archived' },
         expected: [400],
@@ -170,7 +184,7 @@ async function main() {
       },
     );
     await smoke.apiRequest(
-      `/business/core/leads/${encodeURIComponent(lead.id)}`,
+      `/business/sales/leads/${encodeURIComponent(lead.id)}`,
       {
         body: { status: 'converted' },
         expected: [400],
@@ -179,8 +193,8 @@ async function main() {
       },
     );
 
-    const leadFollowUp = await clients.crm.createFollowUp(token, {
-      content: 'CRM smoke follow-up.',
+    const leadFollowUp = await clients.businessCore.createFollowUp(token, {
+      content: 'business smoke follow-up.',
       createdBy: username,
       method: 'call',
       nextContactAt: '2026-07-05T10:00:00.000Z',
@@ -190,7 +204,7 @@ async function main() {
     });
     assertEqual(leadFollowUp.targetId, lead.id, 'lead follow-up target id');
 
-    const leadTask = await clients.crm.createTask(token, {
+    const leadTask = await clients.businessCore.createTask(token, {
       assignee: username,
       createdBy: username,
       dueAt: '2026-07-05T11:00:00.000Z',
@@ -199,39 +213,43 @@ async function main() {
       targetType: 'lead',
       title: `Qualify lead ${runId}`,
     });
-    const completedLeadTask = await clients.crm.completeTask(
+    const completedLeadTask = await clients.businessCore.completeTask(
       token,
       leadTask.id,
       { actor: username },
     );
-    assertEqual(completedLeadTask.status, 'done', 'completed CRM task status');
+    assertEqual(
+      completedLeadTask.status,
+      'done',
+      'completed business task status',
+    );
 
-    const leadAttachment = await clients.crm.createAttachment(token, {
+    const leadAttachment = await clients.businessCore.createAttachment(token, {
       mimeType: 'text/plain',
       originalName: `lead-${runSafeId}.txt`,
       sizeBytes: 128,
-      storageKey: `tenant/${ROOT_TENANT_ID}/crm/${runSafeId}/lead.txt`,
+      storageKey: `tenant//business/${runSafeId}/lead.txt`,
       targetId: lead.id,
       targetType: 'lead',
       uploadedBy: username,
     });
     assertEqual(leadAttachment.targetId, lead.id, 'lead attachment target id');
 
-    const transferredLead = await clients.crm.transferLeadOwner(
+    const transferredLead = await clients.businessSales.transferLeadOwner(
       token,
       lead.id,
       {
         actor: username,
-        reason: 'CRM smoke reassignment.',
+        reason: 'business smoke reassignment.',
         toOwner: 'sales-admin',
       },
     );
     assertEqual(
       transferredLead.owner,
       'sales-admin',
-      'transferred CRM lead owner',
+      'transferred business lead owner',
     );
-    const leadActivities = await clients.crm.listActivities(token, {
+    const leadActivities = await clients.businessCore.listActivities(token, {
       page: 1,
       pageSize: 20,
       targetId: lead.id,
@@ -240,7 +258,7 @@ async function main() {
     assertNumberAtLeast(
       leadActivities.total,
       4,
-      'CRM unified activity feed total',
+      'business unified activity feed total',
     );
     for (const activityType of [
       'attachment',
@@ -253,18 +271,18 @@ async function main() {
           return activity.activityType === activityType;
         })
       ) {
-        throw new Error(`CRM activity feed missing ${activityType}`);
+        throw new Error(`business activity feed missing ${activityType}`);
       }
     }
 
-    const converted = await clients.crm.convertLead(token, lead.id, {
+    const converted = await clients.businessSales.convertLead(token, lead.id, {
       actor: username,
       amount: '25000.00',
       customerName: `Smoke Customer ${runId}`,
       opportunityName: `Smoke Opportunity ${runId}`,
     });
     await smoke.apiRequest(
-      `/business/core/leads/${encodeURIComponent(lead.id)}`,
+      `/business/sales/leads/${encodeURIComponent(lead.id)}`,
       {
         body: { status: 'lost' },
         expected: [400],
@@ -273,7 +291,7 @@ async function main() {
       },
     );
     await smoke.apiRequest(
-      `/business/core/leads/${encodeURIComponent(lead.id)}`,
+      `/business/sales/leads/${encodeURIComponent(lead.id)}`,
       {
         body: { rating: 'cold' },
         expected: [400],
@@ -282,7 +300,7 @@ async function main() {
       },
     );
     await smoke.apiRequest(
-      `/business/core/leads/${encodeURIComponent(lead.id)}/transfer`,
+      `/business/sales/leads/${encodeURIComponent(lead.id)}/transfer`,
       {
         body: { actor: username, toOwner: username },
         expected: [400],
@@ -319,7 +337,7 @@ async function main() {
         mimeType: 'text/plain',
         originalName: 'converted-lead.txt',
         sizeBytes: 1,
-        storageKey: `tenant/${ROOT_TENANT_ID}/crm/${runSafeId}/converted.txt`,
+        storageKey: `tenant//business/${runSafeId}/converted.txt`,
         targetId: lead.id,
         targetType: 'lead',
         uploadedBy: username,
@@ -334,19 +352,19 @@ async function main() {
     assertEqual(
       converted.lead.status,
       'converted',
-      'converted CRM lead status',
+      'converted business lead status',
     );
     assertEqual(
       converted.customer.tenantId,
       ROOT_TENANT_ID,
-      'converted CRM customer tenant id',
+      'converted business customer tenant id',
     );
     if (!converted.opportunity) {
-      throw new Error('CRM lead conversion did not create an opportunity');
+      throw new Error('business lead conversion did not create an opportunity');
     }
     created.opportunities.push(converted.opportunity.id);
     await smoke.apiRequest(
-      `/business/core/leads/${encodeURIComponent(lead.id)}/convert`,
+      `/business/sales/leads/${encodeURIComponent(lead.id)}/convert`,
       {
         body: { actor: username },
         expected: [400],
@@ -355,7 +373,7 @@ async function main() {
       },
     );
 
-    const customer = await clients.crm.getCustomer(
+    const customer = await clients.businessCore.getCustomer(
       token,
       converted.customer.id,
     );
@@ -369,7 +387,7 @@ async function main() {
         token,
       },
     );
-    await smoke.apiRequest('/business/core/opportunities', {
+    await smoke.apiRequest('/business/sales/opportunities', {
       body: {
         customerId: customer.id,
         name: `Invalid Closed Opportunity ${runId}`,
@@ -381,7 +399,7 @@ async function main() {
       token,
     });
 
-    const contact = await clients.crm.createContact(token, {
+    const contact = await clients.businessCore.createContact(token, {
       customerId: customer.id,
       decisionRole: 'decision-maker',
       email: `buyer-${runSafeId}@example.com`,
@@ -391,14 +409,16 @@ async function main() {
       primary: true,
       title: 'VP Operations',
     });
-    created.contacts.push(assertString(contact.id, 'created CRM contact id'));
+    created.contacts.push(
+      assertString(contact.id, 'created business contact id'),
+    );
     assertEqual(
       contact.customerId,
       customer.id,
-      'created CRM contact customer',
+      'created business contact customer',
     );
 
-    const opportunity = await clients.crm.createOpportunity(token, {
+    const opportunity = await clients.businessSales.createOpportunity(token, {
       amount: '42000.00',
       customerId: customer.id,
       expectedCloseAt: '2026-08-15T00:00:00.000Z',
@@ -409,10 +429,10 @@ async function main() {
       tags: [tag.code],
     });
     created.opportunities.push(
-      assertString(opportunity.id, 'created CRM opportunity id'),
+      assertString(opportunity.id, 'created business opportunity id'),
     );
     await smoke.apiRequest(
-      `/business/core/opportunities/${encodeURIComponent(opportunity.id)}`,
+      `/business/sales/opportunities/${encodeURIComponent(opportunity.id)}`,
       {
         body: { stage: 'won' },
         expected: [400],
@@ -421,7 +441,7 @@ async function main() {
       },
     );
     await smoke.apiRequest(
-      `/business/core/opportunities/${encodeURIComponent(opportunity.id)}`,
+      `/business/sales/opportunities/${encodeURIComponent(opportunity.id)}`,
       {
         body: { closeReason: 'Direct close reason is not allowed.' },
         expected: [400],
@@ -430,7 +450,7 @@ async function main() {
       },
     );
 
-    const proposal = await clients.crm.changeOpportunityStage(
+    const proposal = await clients.businessSales.changeOpportunityStage(
       token,
       opportunity.id,
       {
@@ -439,87 +459,100 @@ async function main() {
       },
     );
     assertEqual(proposal.stage, 'proposal', 'proposal opportunity stage');
-    const won = await clients.crm.changeOpportunityStage(
+    const won = await clients.businessSales.changeOpportunityStage(
       token,
       opportunity.id,
       {
         actor: username,
-        closeReason: 'CRM smoke won.',
+        closeReason: 'business smoke won.',
         stage: 'won',
       },
     );
     assertEqual(won.stage, 'won', 'won opportunity stage');
     assertPageContainsId(
-      await clients.crm.listOpportunities(token, {
+      await clients.businessSales.listOpportunities(token, {
         page: 1,
         pageSize: 50,
         stage: 'won',
       }),
       opportunity.id,
-      'won CRM opportunity list',
+      'won business opportunity list',
     );
 
-    const transferredCustomer = await clients.crm.transferCustomerOwner(
-      token,
-      customer.id,
-      {
+    const transferredCustomer =
+      await clients.businessCore.transferCustomerOwner(token, customer.id, {
         actor: username,
-        reason: 'CRM smoke customer owner handoff.',
+        reason: 'business smoke customer owner handoff.',
         toOwner: 'account-admin',
-      },
-    );
+      });
     assertEqual(
       transferredCustomer.owner,
       'account-admin',
-      'transferred CRM customer owner',
+      'transferred business customer owner',
     );
 
-    const transferredOpportunity = await clients.crm.transferOpportunityOwner(
-      token,
-      opportunity.id,
-      {
-        actor: username,
-        reason: 'CRM smoke opportunity owner handoff.',
-        toOwner: 'sales-admin',
-      },
-    );
+    const transferredOpportunity =
+      await clients.businessSales.transferOpportunityOwner(
+        token,
+        opportunity.id,
+        {
+          actor: username,
+          reason: 'business smoke opportunity owner handoff.',
+          toOwner: 'sales-admin',
+        },
+      );
     assertEqual(
       transferredOpportunity.owner,
       'sales-admin',
-      'transferred CRM opportunity owner',
+      'transferred business opportunity owner',
     );
 
-    const summary = await clients.crm.getSummary(token);
-    assertNumberAtLeast(summary.leads, 1, 'CRM summary leads');
-    assertNumberAtLeast(summary.customers, 1, 'CRM summary customers');
-    assertNumberAtLeast(summary.opportunities, 1, 'CRM summary opportunities');
+    const summary = await clients.businessSales.getSummary(token);
+    assertNumberAtLeast(summary.leads, 1, 'business summary leads');
+    assertNumberAtLeast(summary.customers, 1, 'business summary customers');
+    assertNumberAtLeast(
+      summary.opportunities,
+      1,
+      'business summary opportunities',
+    );
 
-    const exported = await clients.crm.exportCrm(token, {
+    const exported = await clients.businessSales.exportBusinessSales(token, {
       page: 1,
       pageSize: 50,
       resource: 'leads',
     });
-    assertEqual(exported.scope, 'current-page', 'CRM export scope');
-    assertDecodedExportIncludes(exported.contentBase64, lead.name, 'CRM leads');
+    assertEqual(exported.scope, 'current-page', 'business export scope');
+    assertDecodedExportIncludes(
+      exported.contentBase64,
+      lead.name,
+      'business leads',
+    );
 
-    const transfers = await clients.crm.listOwnerTransfers(token, {
+    const transfers = await clients.businessCore.listOwnerTransfers(token, {
       targetId: customer.id,
       targetType: 'customer',
     });
-    assertNumberAtLeast(transfers.items.length, 1, 'CRM owner transfer ledger');
-    const auditEvents = await clients.crm.listAuditEvents(token, {
+    assertNumberAtLeast(
+      transfers.items.length,
+      1,
+      'business owner transfer ledger',
+    );
+    const auditEvents = await clients.businessCore.listAuditEvents(token, {
       targetId: lead.id,
       targetType: 'lead',
     });
-    assertArray(auditEvents.items, 'CRM audit event items');
+    assertArray(auditEvents.items, 'business audit event items');
     if (
       !auditEvents.items.some((event) => event.action === 'create-follow-up')
     ) {
-      throw new Error('CRM audit events did not include create-follow-up');
+      throw new Error('business audit events did not include create-follow-up');
     }
 
-    const archivedContact = await clients.crm.archiveContact(token, contact.id);
-    assertEqual(archivedContact.deleted, true, 'archived CRM contact');
+    const archivedContact = await clients.businessCore.archiveContact(
+      token,
+      contact.id,
+    );
+    assertEqual(archivedContact.deleted, true, 'archived business contact');
     await smoke.apiRequest(
       `/business/core/contacts/${encodeURIComponent(contact.id)}`,
       { expected: [404], token },
@@ -534,25 +567,29 @@ async function main() {
       },
     );
     assertPageExcludesId(
-      await clients.crm.listContacts(token, {
+      await clients.businessCore.listContacts(token, {
         customerId: customer.id,
         page: 1,
         pageSize: 50,
       }),
       contact.id,
-      'archived CRM contact list',
+      'archived business contact list',
     );
-    const archivedOpportunity = await clients.crm.archiveOpportunity(
+    const archivedOpportunity = await clients.businessSales.archiveOpportunity(
       token,
       opportunity.id,
     );
-    assertEqual(archivedOpportunity.deleted, true, 'archived CRM opportunity');
+    assertEqual(
+      archivedOpportunity.deleted,
+      true,
+      'archived business opportunity',
+    );
     await smoke.apiRequest(
-      `/business/core/opportunities/${encodeURIComponent(opportunity.id)}`,
+      `/business/sales/opportunities/${encodeURIComponent(opportunity.id)}`,
       { expected: [404], token },
     );
     await smoke.apiRequest(
-      `/business/core/opportunities/${encodeURIComponent(opportunity.id)}/stage`,
+      `/business/sales/opportunities/${encodeURIComponent(opportunity.id)}/stage`,
       {
         body: { actor: username, stage: 'lost' },
         expected: [404],
@@ -561,7 +598,7 @@ async function main() {
       },
     );
     await smoke.apiRequest(
-      `/business/core/opportunities/${encodeURIComponent(opportunity.id)}/transfer`,
+      `/business/sales/opportunities/${encodeURIComponent(opportunity.id)}/transfer`,
       {
         body: { actor: username, toOwner: username },
         expected: [404],
@@ -570,22 +607,25 @@ async function main() {
       },
     );
     assertPageExcludesId(
-      await clients.crm.listOpportunities(token, {
+      await clients.businessSales.listOpportunities(token, {
         customerId: customer.id,
         page: 1,
         pageSize: 50,
       }),
       opportunity.id,
-      'archived CRM opportunity list',
+      'archived business opportunity list',
     );
-    const archivedLead = await clients.crm.archiveLead(token, lead.id);
-    assertEqual(archivedLead.deleted, true, 'archived CRM lead');
+    const archivedLead = await clients.businessSales.archiveLead(
+      token,
+      lead.id,
+    );
+    assertEqual(archivedLead.deleted, true, 'archived business lead');
     await smoke.apiRequest(
-      `/business/core/leads/${encodeURIComponent(lead.id)}`,
+      `/business/sales/leads/${encodeURIComponent(lead.id)}`,
       { expected: [404], token },
     );
     await smoke.apiRequest(
-      `/business/core/leads/${encodeURIComponent(lead.id)}`,
+      `/business/sales/leads/${encodeURIComponent(lead.id)}`,
       {
         body: { rating: 'cold' },
         expected: [404],
@@ -594,7 +634,7 @@ async function main() {
       },
     );
     await smoke.apiRequest(
-      `/business/core/leads/${encodeURIComponent(lead.id)}/transfer`,
+      `/business/sales/leads/${encodeURIComponent(lead.id)}/transfer`,
       {
         body: { actor: username, toOwner: username },
         expected: [404],
@@ -603,9 +643,9 @@ async function main() {
       },
     );
     assertPageExcludesId(
-      await clients.crm.listLeads(token, { page: 1, pageSize: 50 }),
+      await clients.businessSales.listLeads(token, { page: 1, pageSize: 50 }),
       lead.id,
-      'archived CRM lead list',
+      'archived business lead list',
     );
     await smoke.apiRequest('/business/core/tasks', {
       body: {
@@ -619,7 +659,7 @@ async function main() {
       method: 'POST',
       token,
     });
-    await clients.crm.archiveCustomer(token, customer.id);
+    await clients.businessCore.archiveCustomer(token, customer.id);
     await smoke.apiRequest(
       `/business/core/customers/${encodeURIComponent(customer.id)}`,
       { expected: [404], token },
@@ -643,11 +683,14 @@ async function main() {
       },
     );
     assertPageExcludesId(
-      await clients.crm.listCustomers(token, { page: 1, pageSize: 50 }),
+      await clients.businessCore.listCustomers(token, {
+        page: 1,
+        pageSize: 50,
+      }),
       customer.id,
-      'archived CRM customer list',
+      'archived business customer list',
     );
-    const customerContacts = await clients.crm.listContacts(token, {
+    const customerContacts = await clients.businessCore.listContacts(token, {
       customerId: customer.id,
       page: 1,
       pageSize: 50,
@@ -657,11 +700,14 @@ async function main() {
       0,
       'archived customer contact list',
     );
-    const customerOpportunities = await clients.crm.listOpportunities(token, {
-      customerId: customer.id,
-      page: 1,
-      pageSize: 50,
-    });
+    const customerOpportunities = await clients.businessSales.listOpportunities(
+      token,
+      {
+        customerId: customer.id,
+        page: 1,
+        pageSize: 50,
+      },
+    );
     assertEqual(
       customerOpportunities.items.length,
       0,
@@ -684,7 +730,7 @@ async function main() {
         mimeType: 'text/plain',
         originalName: 'archived-customer.txt',
         sizeBytes: 1,
-        storageKey: `tenant/${ROOT_TENANT_ID}/crm/${runSafeId}/archived.txt`,
+        storageKey: `tenant//business/${runSafeId}/archived.txt`,
         targetId: customer.id,
         targetType: 'customer',
         uploadedBy: username,
@@ -694,48 +740,48 @@ async function main() {
       token,
     });
 
-    console.log('crm.foreign-hidden');
-    console.log('crm.lead-conversion');
-    console.log('crm.follow-up-task-attachment');
-    console.log('crm.owner-transfer');
-    console.log('crm.export');
-    console.log('crm.audit');
-    console.log('crm.archive');
-    console.log(`OpenCore CRM smoke passed on ${baseUrl}`);
+    console.log('business.foreign-hidden');
+    console.log('business.lead-conversion');
+    console.log('business.follow-up-task-attachment');
+    console.log('business.owner-transfer');
+    console.log('business.export');
+    console.log('business.audit');
+    console.log('business.archive');
+    console.log(`OpenCore business platform smoke passed on ${baseUrl}`);
   } finally {
-    await cleanupCreatedCrm(created);
-    await cleanupForeignTenantCrm();
+    await cleanupCreatedBusiness(created);
+    await cleanupForeignTenantBusiness();
     smoke.setToken(undefined);
     await disconnectSmokePrisma();
   }
 }
 
-async function seedForeignTenantCrm() {
+async function seedForeignTenantBusiness() {
   const prisma = getSmokePrisma();
 
-  await cleanupForeignTenantCrm();
+  await cleanupForeignTenantBusiness();
   await prisma.tenant.upsert({
     where: { id: FOREIGN_TENANT_ID },
     update: {
-      code: 'crm-smoke-foreign',
-      name: 'CRM Smoke Foreign',
-      slug: 'crm-smoke-foreign',
+      code: 'business-smoke-foreign',
+      name: 'business Smoke Foreign',
+      slug: 'business-smoke-foreign',
       status: 'active',
     },
     create: {
       id: FOREIGN_TENANT_ID,
-      code: 'crm-smoke-foreign',
-      name: 'CRM Smoke Foreign',
-      slug: 'crm-smoke-foreign',
+      code: 'business-smoke-foreign',
+      name: 'business Smoke Foreign',
+      slug: 'business-smoke-foreign',
       status: 'active',
     },
   });
-  await prisma.crmLead.create({
+  await prisma.salesLead.create({
     data: {
       id: FOREIGN_LEAD_ID,
       tenantId: FOREIGN_TENANT_ID,
-      company: 'Foreign CRM Co',
-      name: `Foreign CRM lead ${runId}`,
+      company: 'Foreign business Co',
+      name: `Foreign business lead ${runId}`,
       number: `LEAD-FOREIGN-${runSafeId}`,
       owner: 'foreign-admin',
       rating: 'warm',
@@ -743,12 +789,12 @@ async function seedForeignTenantCrm() {
       status: 'new',
     },
   });
-  await prisma.crmCustomer.create({
+  await prisma.businessCustomer.create({
     data: {
       id: FOREIGN_CUSTOMER_ID,
       tenantId: FOREIGN_TENANT_ID,
       level: 'standard',
-      name: `Foreign CRM customer ${runId}`,
+      name: `Foreign business customer ${runId}`,
       number: `CUS-FOREIGN-${runSafeId}`,
       owner: 'foreign-admin',
       source: 'partner',
@@ -757,24 +803,26 @@ async function seedForeignTenantCrm() {
   });
 }
 
-async function assertForeignTenantCrmHidden(rootToken: string) {
-  const leads = await clients.crm.listLeads(rootToken, { status: 'new' });
-  assertPageExcludesId(leads, FOREIGN_LEAD_ID, 'foreign CRM lead list');
-  const customers = await clients.crm.listCustomers(rootToken, {
+async function assertForeignTenantBusinessHidden(rootToken: string) {
+  const leads = await clients.businessSales.listLeads(rootToken, {
+    status: 'new',
+  });
+  assertPageExcludesId(leads, FOREIGN_LEAD_ID, 'foreign business lead list');
+  const customers = await clients.businessCore.listCustomers(rootToken, {
     status: 'active',
   });
   assertPageExcludesId(
     customers,
     FOREIGN_CUSTOMER_ID,
-    'foreign CRM customer list',
+    'foreign business customer list',
   );
 
   await smoke.apiRequest(
-    `/business/core/leads/${encodeURIComponent(FOREIGN_LEAD_ID)}`,
+    `/business/sales/leads/${encodeURIComponent(FOREIGN_LEAD_ID)}`,
     { expected: [404], token: rootToken },
   );
   await smoke.apiRequest(
-    `/business/core/leads/${encodeURIComponent(FOREIGN_LEAD_ID)}`,
+    `/business/sales/leads/${encodeURIComponent(FOREIGN_LEAD_ID)}`,
     {
       body: { owner: username },
       expected: [404],
@@ -783,7 +831,7 @@ async function assertForeignTenantCrmHidden(rootToken: string) {
     },
   );
   await smoke.apiRequest(
-    `/business/core/leads/${encodeURIComponent(FOREIGN_LEAD_ID)}/transfer`,
+    `/business/sales/leads/${encodeURIComponent(FOREIGN_LEAD_ID)}/transfer`,
     {
       body: { actor: username, toOwner: username },
       expected: [404],
@@ -792,7 +840,7 @@ async function assertForeignTenantCrmHidden(rootToken: string) {
     },
   );
   await smoke.apiRequest(
-    `/business/core/leads/${encodeURIComponent(FOREIGN_LEAD_ID)}`,
+    `/business/sales/leads/${encodeURIComponent(FOREIGN_LEAD_ID)}`,
     {
       expected: [404],
       method: 'DELETE',
@@ -812,15 +860,15 @@ async function assertForeignTenantCrmHidden(rootToken: string) {
       token: rootToken,
     },
   );
-  await assertForeignTenantCrmPreserved();
+  await assertForeignTenantBusinessPreserved();
 }
 
-async function assertForeignTenantCrmPreserved() {
+async function assertForeignTenantBusinessPreserved() {
   const prisma = getSmokePrisma();
-  const lead = await prisma.crmLead.findUnique({
+  const lead = await prisma.salesLead.findUnique({
     where: { id: FOREIGN_LEAD_ID },
   });
-  const customer = await prisma.crmCustomer.findUnique({
+  const customer = await prisma.businessCustomer.findUnique({
     where: { id: FOREIGN_CUSTOMER_ID },
   });
 
@@ -834,11 +882,11 @@ async function assertForeignTenantCrmPreserved() {
     customer.owner !== 'foreign-admin' ||
     customer.archivedAt
   ) {
-    throw new Error('Foreign tenant CRM rows were changed');
+    throw new Error('Foreign tenant business rows were changed');
   }
 }
 
-async function cleanupCreatedCrm(created: CreatedCrmIds) {
+async function cleanupCreatedBusiness(created: CreatedBusinessIds) {
   const prisma = getSmokePrisma();
   const targetIds = [
     ...created.leads,
@@ -848,81 +896,85 @@ async function cleanupCreatedCrm(created: CreatedCrmIds) {
   ];
 
   if (targetIds.length > 0) {
-    await prisma.crmAuditEvent.deleteMany({
+    await prisma.businessAuditEvent.deleteMany({
       where: { tenantId: ROOT_TENANT_ID, targetId: { in: targetIds } },
     });
-    await prisma.crmOwnerTransfer.deleteMany({
+    await prisma.businessOwnerTransfer.deleteMany({
       where: { tenantId: ROOT_TENANT_ID, targetId: { in: targetIds } },
     });
-    await prisma.crmAttachment.deleteMany({
+    await prisma.businessAttachment.deleteMany({
       where: { tenantId: ROOT_TENANT_ID, targetId: { in: targetIds } },
     });
-    await prisma.crmTask.deleteMany({
+    await prisma.businessTask.deleteMany({
       where: { tenantId: ROOT_TENANT_ID, targetId: { in: targetIds } },
     });
-    await prisma.crmFollowUp.deleteMany({
+    await prisma.businessFollowUp.deleteMany({
       where: { tenantId: ROOT_TENANT_ID, targetId: { in: targetIds } },
     });
   }
 
   if (created.customers.length > 0) {
-    await prisma.crmOpportunity.deleteMany({
+    await prisma.salesOpportunity.deleteMany({
       where: {
         tenantId: ROOT_TENANT_ID,
         customerId: { in: created.customers },
       },
     });
-    await prisma.crmContact.deleteMany({
+    await prisma.businessContact.deleteMany({
       where: {
         tenantId: ROOT_TENANT_ID,
         customerId: { in: created.customers },
       },
     });
-    await prisma.crmCustomer.deleteMany({
+    await prisma.businessCustomer.deleteMany({
       where: { tenantId: ROOT_TENANT_ID, id: { in: created.customers } },
     });
   }
 
   if (created.leads.length > 0) {
-    await prisma.crmLead.deleteMany({
+    await prisma.salesLead.deleteMany({
       where: { tenantId: ROOT_TENANT_ID, id: { in: created.leads } },
     });
   }
 
   if (created.tags.length > 0) {
-    await prisma.crmTag.deleteMany({
+    await prisma.businessTag.deleteMany({
       where: { tenantId: ROOT_TENANT_ID, id: { in: created.tags } },
     });
   }
 }
 
-async function cleanupForeignTenantCrm() {
+async function cleanupForeignTenantBusiness() {
   const prisma = getSmokePrisma();
 
-  await prisma.crmAuditEvent.deleteMany({
+  await prisma.businessAuditEvent.deleteMany({
     where: { tenantId: FOREIGN_TENANT_ID },
   });
-  await prisma.crmOwnerTransfer.deleteMany({
+  await prisma.businessOwnerTransfer.deleteMany({
     where: { tenantId: FOREIGN_TENANT_ID },
   });
-  await prisma.crmAttachment.deleteMany({
+  await prisma.businessAttachment.deleteMany({
     where: { tenantId: FOREIGN_TENANT_ID },
   });
-  await prisma.crmTask.deleteMany({ where: { tenantId: FOREIGN_TENANT_ID } });
-  await prisma.crmFollowUp.deleteMany({
+  await prisma.businessTask.deleteMany({
     where: { tenantId: FOREIGN_TENANT_ID },
   });
-  await prisma.crmOpportunity.deleteMany({
+  await prisma.businessFollowUp.deleteMany({
     where: { tenantId: FOREIGN_TENANT_ID },
   });
-  await prisma.crmContact.deleteMany({
+  await prisma.salesOpportunity.deleteMany({
     where: { tenantId: FOREIGN_TENANT_ID },
   });
-  await prisma.crmCustomer.deleteMany({
+  await prisma.businessContact.deleteMany({
     where: { tenantId: FOREIGN_TENANT_ID },
   });
-  await prisma.crmLead.deleteMany({ where: { tenantId: FOREIGN_TENANT_ID } });
-  await prisma.crmTag.deleteMany({ where: { tenantId: FOREIGN_TENANT_ID } });
+  await prisma.businessCustomer.deleteMany({
+    where: { tenantId: FOREIGN_TENANT_ID },
+  });
+  await prisma.salesLead.deleteMany({ where: { tenantId: FOREIGN_TENANT_ID } });
+  await prisma.businessTag.deleteMany({
+    where: { tenantId: FOREIGN_TENANT_ID },
+  });
   await prisma.tenant.deleteMany({ where: { id: FOREIGN_TENANT_ID } });
 }
 

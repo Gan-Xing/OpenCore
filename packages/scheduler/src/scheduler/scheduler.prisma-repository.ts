@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
 import { normalizeOptionalString, type PageResult } from '@opencore/common';
-import { PrismaService } from '@opencore/database';
+import { Prisma, PrismaService } from '@opencore/database';
 import { SchedulerJobExecutor } from './scheduler.executor';
 import type {
   SchedulerJobDefinitionRecord,

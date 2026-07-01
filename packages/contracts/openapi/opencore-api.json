@@ -10020,27 +10020,9 @@
         "tags": ["Collaboration Tickets", "Collaboration Tickets"]
       }
     },
-    "/api/business/core/summary": {
-      "get": {
-        "operationId": "CrmController_getSummary",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/CrmSummaryDto" }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Business Core"]
-      }
-    },
     "/api/business/core/export": {
       "get": {
-        "operationId": "CrmController_exportCrm",
+        "operationId": "BusinessCoreController_exportBusiness",
         "parameters": [
           {
             "name": "page",
@@ -10081,7 +10063,9 @@
             "description": "",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/CrmExportPreviewDto" }
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessExportPreviewDto"
+                }
               }
             }
           }
@@ -10092,7 +10076,7 @@
     },
     "/api/business/core/tags": {
       "get": {
-        "operationId": "CrmController_listTags",
+        "operationId": "BusinessCoreController_listTags",
         "parameters": [
           {
             "name": "page",
@@ -10124,7 +10108,7 @@
             "description": "",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/CrmTagPageDto" }
+                "schema": { "$ref": "#/components/schemas/BusinessTagPageDto" }
               }
             }
           }
@@ -10133,13 +10117,13 @@
         "tags": ["Business Core"]
       },
       "post": {
-        "operationId": "CrmController_createTag",
+        "operationId": "BusinessCoreController_createTag",
         "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateCrmTagDto" }
+              "schema": { "$ref": "#/components/schemas/CreateBusinessTagDto" }
             }
           }
         },
@@ -10148,7 +10132,7 @@
             "description": "",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/CrmTagDto" }
+                "schema": { "$ref": "#/components/schemas/BusinessTagDto" }
               }
             }
           }
@@ -10159,7 +10143,7 @@
     },
     "/api/business/core/tags/{id}": {
       "patch": {
-        "operationId": "CrmController_updateTag",
+        "operationId": "BusinessCoreController_updateTag",
         "parameters": [
           {
             "name": "id",
@@ -10172,7 +10156,7 @@
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/UpdateCrmTagDto" }
+              "schema": { "$ref": "#/components/schemas/UpdateBusinessTagDto" }
             }
           }
         },
@@ -10181,7 +10165,7 @@
             "description": "",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/CrmTagDto" }
+                "schema": { "$ref": "#/components/schemas/BusinessTagDto" }
               }
             }
           }
@@ -10190,9 +10174,922 @@
         "tags": ["Business Core"]
       }
     },
-    "/api/business/core/leads": {
+    "/api/business/core/customers": {
       "get": {
-        "operationId": "CrmController_listLeads",
+        "operationId": "BusinessCoreController_listCustomers",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["active", "inactive", "churned", "archived"]
+            }
+          },
+          {
+            "name": "level",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "source",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "owner",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "keyword",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "includeArchived",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessCustomerPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Core"]
+      },
+      "post": {
+        "operationId": "BusinessCoreController_createCustomer",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBusinessCustomerDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BusinessCustomerDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Core"]
+      }
+    },
+    "/api/business/core/customers/{id}": {
+      "get": {
+        "operationId": "BusinessCoreController_getCustomer",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BusinessCustomerDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Core"]
+      },
+      "patch": {
+        "operationId": "BusinessCoreController_updateCustomer",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBusinessCustomerDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BusinessCustomerDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Core"]
+      },
+      "delete": {
+        "operationId": "BusinessCoreController_archiveCustomer",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessDeleteResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Core"]
+      }
+    },
+    "/api/business/core/customers/{id}/transfer": {
+      "patch": {
+        "operationId": "BusinessCoreController_transferCustomerOwner",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransferBusinessOwnerDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BusinessCustomerDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Core"]
+      }
+    },
+    "/api/business/core/contacts": {
+      "get": {
+        "operationId": "BusinessCoreController_listContacts",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "owner",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "keyword",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "includeArchived",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessContactPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Core"]
+      },
+      "post": {
+        "operationId": "BusinessCoreController_createContact",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBusinessContactDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BusinessContactDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Core"]
+      }
+    },
+    "/api/business/core/contacts/{id}": {
+      "get": {
+        "operationId": "BusinessCoreController_getContact",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BusinessContactDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Core"]
+      },
+      "patch": {
+        "operationId": "BusinessCoreController_updateContact",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBusinessContactDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BusinessContactDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Core"]
+      },
+      "delete": {
+        "operationId": "BusinessCoreController_archiveContact",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessDeleteResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Core"]
+      }
+    },
+    "/api/business/core/activity": {
+      "get": {
+        "operationId": "BusinessCoreController_listActivities",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "targetType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["lead", "customer", "contact", "opportunity"]
+            }
+          },
+          {
+            "name": "targetId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessActivityPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Core"]
+      }
+    },
+    "/api/business/core/follow-ups": {
+      "get": {
+        "operationId": "BusinessCoreController_listFollowUps",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "targetType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["lead", "customer", "contact", "opportunity"]
+            }
+          },
+          {
+            "name": "targetId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessFollowUpPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Core"]
+      },
+      "post": {
+        "operationId": "BusinessCoreController_createFollowUp",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBusinessFollowUpDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BusinessFollowUpDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Core"]
+      }
+    },
+    "/api/business/core/tasks": {
+      "get": {
+        "operationId": "BusinessCoreController_listTasks",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "targetType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["lead", "customer", "contact", "opportunity"]
+            }
+          },
+          {
+            "name": "targetId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string", "enum": ["open", "done", "canceled"] }
+          },
+          {
+            "name": "assignee",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BusinessTaskPageDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Core"]
+      },
+      "post": {
+        "operationId": "BusinessCoreController_createTask",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateBusinessTaskDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BusinessTaskDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Core"]
+      }
+    },
+    "/api/business/core/tasks/{id}/complete": {
+      "patch": {
+        "operationId": "BusinessCoreController_completeTask",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteBusinessTaskDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BusinessTaskDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Core"]
+      }
+    },
+    "/api/business/core/attachments": {
+      "get": {
+        "operationId": "BusinessCoreController_listAttachments",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "targetType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["lead", "customer", "contact", "opportunity"]
+            }
+          },
+          {
+            "name": "targetId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAttachmentPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Core"]
+      },
+      "post": {
+        "operationId": "BusinessCoreController_createAttachment",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBusinessAttachmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAttachmentDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Core"]
+      }
+    },
+    "/api/business/core/owner-transfers": {
+      "get": {
+        "operationId": "BusinessCoreController_listOwnerTransfers",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "targetType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["lead", "customer", "contact", "opportunity"]
+            }
+          },
+          {
+            "name": "targetId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessOwnerTransferPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Core"]
+      }
+    },
+    "/api/business/core/audit-events": {
+      "get": {
+        "operationId": "BusinessCoreController_listAuditEvents",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "targetType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["lead", "customer", "contact", "opportunity"]
+            }
+          },
+          {
+            "name": "targetId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAuditEventPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Core"]
+      }
+    },
+    "/api/business/sales/summary": {
+      "get": {
+        "operationId": "SalesController_getSummary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BusinessSummaryDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Sales"]
+      }
+    },
+    "/api/business/sales/export": {
+      "get": {
+        "operationId": "SalesController_exportSales",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "resource",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "leads",
+                "customers",
+                "contacts",
+                "opportunities",
+                "tasks"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessExportPreviewDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Sales"]
+      }
+    },
+    "/api/business/sales/leads": {
+      "get": {
+        "operationId": "SalesController_listLeads",
         "parameters": [
           {
             "name": "page",
@@ -10258,22 +11155,22 @@
             "description": "",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/CrmLeadPageDto" }
+                "schema": { "$ref": "#/components/schemas/BusinessLeadPageDto" }
               }
             }
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Business Core"]
+        "tags": ["Business Sales"]
       },
       "post": {
-        "operationId": "CrmController_createLead",
+        "operationId": "SalesController_createLead",
         "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateCrmLeadDto" }
+              "schema": { "$ref": "#/components/schemas/CreateBusinessLeadDto" }
             }
           }
         },
@@ -10282,18 +11179,18 @@
             "description": "",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/CrmLeadDto" }
+                "schema": { "$ref": "#/components/schemas/BusinessLeadDto" }
               }
             }
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Business Core"]
+        "tags": ["Business Sales"]
       }
     },
-    "/api/business/core/leads/{id}": {
+    "/api/business/sales/leads/{id}": {
       "get": {
-        "operationId": "CrmController_getLead",
+        "operationId": "SalesController_getLead",
         "parameters": [
           {
             "name": "id",
@@ -10307,16 +11204,16 @@
             "description": "",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/CrmLeadDto" }
+                "schema": { "$ref": "#/components/schemas/BusinessLeadDto" }
               }
             }
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Business Core"]
+        "tags": ["Business Sales"]
       },
       "patch": {
-        "operationId": "CrmController_updateLead",
+        "operationId": "SalesController_updateLead",
         "parameters": [
           {
             "name": "id",
@@ -10329,7 +11226,7 @@
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/UpdateCrmLeadDto" }
+              "schema": { "$ref": "#/components/schemas/UpdateBusinessLeadDto" }
             }
           }
         },
@@ -10338,16 +11235,16 @@
             "description": "",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/CrmLeadDto" }
+                "schema": { "$ref": "#/components/schemas/BusinessLeadDto" }
               }
             }
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Business Core"]
+        "tags": ["Business Sales"]
       },
       "delete": {
-        "operationId": "CrmController_archiveLead",
+        "operationId": "SalesController_archiveLead",
         "parameters": [
           {
             "name": "id",
@@ -10361,18 +11258,20 @@
             "description": "",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/CrmDeleteResultDto" }
+                "schema": {
+                  "$ref": "#/components/schemas/SalesDeleteResultDto"
+                }
               }
             }
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Business Core"]
+        "tags": ["Business Sales"]
       }
     },
-    "/api/business/core/leads/{id}/convert": {
+    "/api/business/sales/leads/{id}/convert": {
       "patch": {
-        "operationId": "CrmController_convertLead",
+        "operationId": "SalesController_convertLead",
         "parameters": [
           {
             "name": "id",
@@ -10385,7 +11284,9 @@
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/ConvertCrmLeadDto" }
+              "schema": {
+                "$ref": "#/components/schemas/ConvertBusinessLeadDto"
+              }
             }
           }
         },
@@ -10395,19 +11296,19 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ConvertCrmLeadResultDto"
+                  "$ref": "#/components/schemas/ConvertBusinessLeadResultDto"
                 }
               }
             }
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Business Core"]
+        "tags": ["Business Sales"]
       }
     },
-    "/api/business/core/leads/{id}/transfer": {
+    "/api/business/sales/leads/{id}/transfer": {
       "patch": {
-        "operationId": "CrmController_transferLeadOwner",
+        "operationId": "SalesController_transferLeadOwner",
         "parameters": [
           {
             "name": "id",
@@ -10420,7 +11321,9 @@
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/TransferCrmOwnerDto" }
+              "schema": {
+                "$ref": "#/components/schemas/TransferBusinessOwnerDto"
+              }
             }
           }
         },
@@ -10429,394 +11332,18 @@
             "description": "",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/CrmLeadDto" }
+                "schema": { "$ref": "#/components/schemas/BusinessLeadDto" }
               }
             }
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Business Core"]
+        "tags": ["Business Sales"]
       }
     },
-    "/api/business/core/customers": {
+    "/api/business/sales/opportunities": {
       "get": {
-        "operationId": "CrmController_listCustomers",
-        "parameters": [
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 1,
-              "allOf": [{ "$ref": "#/components/schemas/Object" }]
-            }
-          },
-          {
-            "name": "pageSize",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 10,
-              "allOf": [{ "$ref": "#/components/schemas/Object" }]
-            }
-          },
-          {
-            "name": "status",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": ["active", "inactive", "churned", "archived"]
-            }
-          },
-          {
-            "name": "level",
-            "required": false,
-            "in": "query",
-            "schema": { "type": "string" }
-          },
-          {
-            "name": "source",
-            "required": false,
-            "in": "query",
-            "schema": { "type": "string" }
-          },
-          {
-            "name": "owner",
-            "required": false,
-            "in": "query",
-            "schema": { "type": "string" }
-          },
-          {
-            "name": "keyword",
-            "required": false,
-            "in": "query",
-            "schema": { "type": "string" }
-          },
-          {
-            "name": "includeArchived",
-            "required": false,
-            "in": "query",
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/CrmCustomerPageDto" }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Business Core"]
-      },
-      "post": {
-        "operationId": "CrmController_createCustomer",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateCrmCustomerDto" }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/CrmCustomerDto" }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Business Core"]
-      }
-    },
-    "/api/business/core/customers/{id}": {
-      "get": {
-        "operationId": "CrmController_getCustomer",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/CrmCustomerDto" }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Business Core"]
-      },
-      "patch": {
-        "operationId": "CrmController_updateCustomer",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/UpdateCrmCustomerDto" }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/CrmCustomerDto" }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Business Core"]
-      },
-      "delete": {
-        "operationId": "CrmController_archiveCustomer",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/CrmDeleteResultDto" }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Business Core"]
-      }
-    },
-    "/api/business/core/customers/{id}/transfer": {
-      "patch": {
-        "operationId": "CrmController_transferCustomerOwner",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/TransferCrmOwnerDto" }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/CrmCustomerDto" }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Business Core"]
-      }
-    },
-    "/api/business/core/contacts": {
-      "get": {
-        "operationId": "CrmController_listContacts",
-        "parameters": [
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 1,
-              "allOf": [{ "$ref": "#/components/schemas/Object" }]
-            }
-          },
-          {
-            "name": "pageSize",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 10,
-              "allOf": [{ "$ref": "#/components/schemas/Object" }]
-            }
-          },
-          {
-            "name": "customerId",
-            "required": false,
-            "in": "query",
-            "schema": { "type": "string" }
-          },
-          {
-            "name": "owner",
-            "required": false,
-            "in": "query",
-            "schema": { "type": "string" }
-          },
-          {
-            "name": "keyword",
-            "required": false,
-            "in": "query",
-            "schema": { "type": "string" }
-          },
-          {
-            "name": "includeArchived",
-            "required": false,
-            "in": "query",
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/CrmContactPageDto" }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Business Core"]
-      },
-      "post": {
-        "operationId": "CrmController_createContact",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateCrmContactDto" }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/CrmContactDto" }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Business Core"]
-      }
-    },
-    "/api/business/core/contacts/{id}": {
-      "get": {
-        "operationId": "CrmController_getContact",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/CrmContactDto" }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Business Core"]
-      },
-      "patch": {
-        "operationId": "CrmController_updateContact",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/UpdateCrmContactDto" }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/CrmContactDto" }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Business Core"]
-      },
-      "delete": {
-        "operationId": "CrmController_archiveContact",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/CrmDeleteResultDto" }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Business Core"]
-      }
-    },
-    "/api/business/core/opportunities": {
-      "get": {
-        "operationId": "CrmController_listOpportunities",
+        "operationId": "SalesController_listOpportunities",
         "parameters": [
           {
             "name": "page",
@@ -10882,24 +11409,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CrmOpportunityPageDto"
+                  "$ref": "#/components/schemas/BusinessOpportunityPageDto"
                 }
               }
             }
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Business Core"]
+        "tags": ["Business Sales"]
       },
       "post": {
-        "operationId": "CrmController_createOpportunity",
+        "operationId": "SalesController_createOpportunity",
         "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateCrmOpportunityDto"
+                "$ref": "#/components/schemas/CreateBusinessOpportunityDto"
               }
             }
           }
@@ -10909,18 +11436,20 @@
             "description": "",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/CrmOpportunityDto" }
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessOpportunityDto"
+                }
               }
             }
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Business Core"]
+        "tags": ["Business Sales"]
       }
     },
-    "/api/business/core/opportunities/{id}": {
+    "/api/business/sales/opportunities/{id}": {
       "get": {
-        "operationId": "CrmController_getOpportunity",
+        "operationId": "SalesController_getOpportunity",
         "parameters": [
           {
             "name": "id",
@@ -10934,16 +11463,18 @@
             "description": "",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/CrmOpportunityDto" }
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessOpportunityDto"
+                }
               }
             }
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Business Core"]
+        "tags": ["Business Sales"]
       },
       "patch": {
-        "operationId": "CrmController_updateOpportunity",
+        "operationId": "SalesController_updateOpportunity",
         "parameters": [
           {
             "name": "id",
@@ -10957,7 +11488,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateCrmOpportunityDto"
+                "$ref": "#/components/schemas/UpdateBusinessOpportunityDto"
               }
             }
           }
@@ -10967,16 +11498,18 @@
             "description": "",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/CrmOpportunityDto" }
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessOpportunityDto"
+                }
               }
             }
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Business Core"]
+        "tags": ["Business Sales"]
       },
       "delete": {
-        "operationId": "CrmController_archiveOpportunity",
+        "operationId": "SalesController_archiveOpportunity",
         "parameters": [
           {
             "name": "id",
@@ -10990,18 +11523,20 @@
             "description": "",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/CrmDeleteResultDto" }
+                "schema": {
+                  "$ref": "#/components/schemas/SalesDeleteResultDto"
+                }
               }
             }
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Business Core"]
+        "tags": ["Business Sales"]
       }
     },
-    "/api/business/core/opportunities/{id}/stage": {
+    "/api/business/sales/opportunities/{id}/stage": {
       "patch": {
-        "operationId": "CrmController_changeOpportunityStage",
+        "operationId": "SalesController_changeOpportunityStage",
         "parameters": [
           {
             "name": "id",
@@ -11015,493 +11550,62 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ChangeCrmOpportunityStageDto"
+                "$ref": "#/components/schemas/ChangeBusinessOpportunityStageDto"
               }
             }
           }
         },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/CrmOpportunityDto" }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Business Core"]
-      }
-    },
-    "/api/business/core/opportunities/{id}/transfer": {
-      "patch": {
-        "operationId": "CrmController_transferOpportunityOwner",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/TransferCrmOwnerDto" }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/CrmOpportunityDto" }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Business Core"]
-      }
-    },
-    "/api/business/core/activity": {
-      "get": {
-        "operationId": "CrmController_listActivities",
-        "parameters": [
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 1,
-              "allOf": [{ "$ref": "#/components/schemas/Object" }]
-            }
-          },
-          {
-            "name": "pageSize",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 10,
-              "allOf": [{ "$ref": "#/components/schemas/Object" }]
-            }
-          },
-          {
-            "name": "targetType",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": ["lead", "customer", "contact", "opportunity"]
-            }
-          },
-          {
-            "name": "targetId",
-            "required": false,
-            "in": "query",
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/CrmActivityPageDto" }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Business Core"]
-      }
-    },
-    "/api/business/core/follow-ups": {
-      "get": {
-        "operationId": "CrmController_listFollowUps",
-        "parameters": [
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 1,
-              "allOf": [{ "$ref": "#/components/schemas/Object" }]
-            }
-          },
-          {
-            "name": "pageSize",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 10,
-              "allOf": [{ "$ref": "#/components/schemas/Object" }]
-            }
-          },
-          {
-            "name": "targetType",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": ["lead", "customer", "contact", "opportunity"]
-            }
-          },
-          {
-            "name": "targetId",
-            "required": false,
-            "in": "query",
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/CrmFollowUpPageDto" }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Business Core"]
-      },
-      "post": {
-        "operationId": "CrmController_createFollowUp",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateCrmFollowUpDto" }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/CrmFollowUpDto" }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Business Core"]
-      }
-    },
-    "/api/business/core/tasks": {
-      "get": {
-        "operationId": "CrmController_listTasks",
-        "parameters": [
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 1,
-              "allOf": [{ "$ref": "#/components/schemas/Object" }]
-            }
-          },
-          {
-            "name": "pageSize",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 10,
-              "allOf": [{ "$ref": "#/components/schemas/Object" }]
-            }
-          },
-          {
-            "name": "targetType",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": ["lead", "customer", "contact", "opportunity"]
-            }
-          },
-          {
-            "name": "targetId",
-            "required": false,
-            "in": "query",
-            "schema": { "type": "string" }
-          },
-          {
-            "name": "status",
-            "required": false,
-            "in": "query",
-            "schema": { "type": "string", "enum": ["open", "done", "canceled"] }
-          },
-          {
-            "name": "assignee",
-            "required": false,
-            "in": "query",
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/CrmTaskPageDto" }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Business Core"]
-      },
-      "post": {
-        "operationId": "CrmController_createTask",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateCrmTaskDto" }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/CrmTaskDto" }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Business Core"]
-      }
-    },
-    "/api/business/core/tasks/{id}/complete": {
-      "patch": {
-        "operationId": "CrmController_completeTask",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/CompleteCrmTaskDto" }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/CrmTaskDto" }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Business Core"]
-      }
-    },
-    "/api/business/core/attachments": {
-      "get": {
-        "operationId": "CrmController_listAttachments",
-        "parameters": [
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 1,
-              "allOf": [{ "$ref": "#/components/schemas/Object" }]
-            }
-          },
-          {
-            "name": "pageSize",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 10,
-              "allOf": [{ "$ref": "#/components/schemas/Object" }]
-            }
-          },
-          {
-            "name": "targetType",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": ["lead", "customer", "contact", "opportunity"]
-            }
-          },
-          {
-            "name": "targetId",
-            "required": false,
-            "in": "query",
-            "schema": { "type": "string" }
-          }
-        ],
         "responses": {
           "200": {
             "description": "",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CrmAttachmentPageDto"
+                  "$ref": "#/components/schemas/BusinessOpportunityDto"
                 }
               }
             }
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Business Core"]
-      },
-      "post": {
-        "operationId": "CrmController_createAttachment",
-        "parameters": [],
+        "tags": ["Business Sales"]
+      }
+    },
+    "/api/business/sales/opportunities/{id}/transfer": {
+      "patch": {
+        "operationId": "SalesController_transferOpportunityOwner",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateCrmAttachmentDto"
+                "$ref": "#/components/schemas/TransferBusinessOwnerDto"
               }
             }
           }
         },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/CrmAttachmentDto" }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Business Core"]
-      }
-    },
-    "/api/business/core/owner-transfers": {
-      "get": {
-        "operationId": "CrmController_listOwnerTransfers",
-        "parameters": [
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 1,
-              "allOf": [{ "$ref": "#/components/schemas/Object" }]
-            }
-          },
-          {
-            "name": "pageSize",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 10,
-              "allOf": [{ "$ref": "#/components/schemas/Object" }]
-            }
-          },
-          {
-            "name": "targetType",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": ["lead", "customer", "contact", "opportunity"]
-            }
-          },
-          {
-            "name": "targetId",
-            "required": false,
-            "in": "query",
-            "schema": { "type": "string" }
-          }
-        ],
         "responses": {
           "200": {
             "description": "",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CrmOwnerTransferPageDto"
+                  "$ref": "#/components/schemas/BusinessOpportunityDto"
                 }
               }
             }
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Business Core"]
-      }
-    },
-    "/api/business/core/audit-events": {
-      "get": {
-        "operationId": "CrmController_listAuditEvents",
-        "parameters": [
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 1,
-              "allOf": [{ "$ref": "#/components/schemas/Object" }]
-            }
-          },
-          {
-            "name": "pageSize",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 10,
-              "allOf": [{ "$ref": "#/components/schemas/Object" }]
-            }
-          },
-          {
-            "name": "targetType",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": ["lead", "customer", "contact", "opportunity"]
-            }
-          },
-          {
-            "name": "targetId",
-            "required": false,
-            "in": "query",
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CrmAuditEventPageDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Business Core"]
+        "tags": ["Business Sales"]
       }
     },
     "/api/monitor/status": {
@@ -13157,6 +13261,11 @@
     "contact": {}
   },
   "tags": [
+    { "name": "Business Core", "description": "business.core: Business Core" },
+    {
+      "name": "Business Sales",
+      "description": "business.sales: Business Sales"
+    },
     {
       "name": "Collaboration Approval Lite",
       "description": "collaboration.approval-lite: Approval Lite"
@@ -13207,7 +13316,6 @@
       "description": "core.tenant-member: Tenant Members"
     },
     { "name": "Core Users", "description": "core.user: Users" },
-    { "name": "Business Core", "description": "business.core: Business Core" },
     { "name": "Integration Mail", "description": "integration.mail: Mail" },
     { "name": "Integration OAuth", "description": "integration.oauth: OAuth" },
     {
@@ -18317,51 +18425,7 @@
           "uploadedBy"
         ]
       },
-      "CrmSummaryBucketDto": {
-        "type": "object",
-        "properties": {
-          "key": { "type": "string" },
-          "count": { "type": "number" }
-        },
-        "required": ["key", "count"]
-      },
-      "CrmSummaryDto": {
-        "type": "object",
-        "properties": {
-          "leads": { "type": "number" },
-          "customers": { "type": "number" },
-          "contacts": { "type": "number" },
-          "opportunities": { "type": "number" },
-          "openTasks": { "type": "number" },
-          "overdueTasks": { "type": "number" },
-          "openPipelineAmount": { "type": "string" },
-          "leadsByStatus": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/CrmSummaryBucketDto" }
-          },
-          "customersByLevel": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/CrmSummaryBucketDto" }
-          },
-          "opportunitiesByStage": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/CrmSummaryBucketDto" }
-          }
-        },
-        "required": [
-          "leads",
-          "customers",
-          "contacts",
-          "opportunities",
-          "openTasks",
-          "overdueTasks",
-          "openPipelineAmount",
-          "leadsByStatus",
-          "customersByLevel",
-          "opportunitiesByStage"
-        ]
-      },
-      "CrmExportPreviewDto": {
+      "BusinessExportPreviewDto": {
         "type": "object",
         "properties": {
           "filename": { "type": "string" },
@@ -18382,7 +18446,7 @@
           "generatedAt"
         ]
       },
-      "CrmTagDto": {
+      "BusinessTagDto": {
         "type": "object",
         "properties": {
           "id": { "type": "string" },
@@ -18405,12 +18469,12 @@
           "updatedAt"
         ]
       },
-      "CrmTagPageDto": {
+      "BusinessTagPageDto": {
         "type": "object",
         "properties": {
           "items": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/CrmTagDto" }
+            "items": { "$ref": "#/components/schemas/BusinessTagDto" }
           },
           "page": { "type": "number" },
           "pageSize": { "type": "number" },
@@ -18419,7 +18483,7 @@
         },
         "required": ["items", "page", "pageSize", "total", "totalPages"]
       },
-      "CreateCrmTagDto": {
+      "CreateBusinessTagDto": {
         "type": "object",
         "properties": {
           "code": { "type": "string" },
@@ -18430,7 +18494,7 @@
         },
         "required": ["code", "name"]
       },
-      "UpdateCrmTagDto": {
+      "UpdateBusinessTagDto": {
         "type": "object",
         "properties": {
           "code": { "type": "string" },
@@ -18440,7 +18504,583 @@
           "enabled": { "type": "boolean" }
         }
       },
-      "CrmLeadDto": {
+      "BusinessCustomerDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "number": { "type": "string" },
+          "name": { "type": "string" },
+          "owner": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["active", "inactive", "churned", "archived"]
+          },
+          "level": { "type": "string" },
+          "source": { "type": "string" },
+          "industry": { "type": "string" },
+          "region": { "type": "string" },
+          "website": { "type": "string" },
+          "phone": { "type": "string" },
+          "email": { "type": "string" },
+          "address": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "remark": { "type": "string" },
+          "nextContactAt": { "type": "string" },
+          "lastFollowedAt": { "type": "string" },
+          "archivedAt": { "type": "string" },
+          "contactCount": { "type": "number" },
+          "opportunityCount": { "type": "number" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "number",
+          "name",
+          "owner",
+          "status",
+          "level",
+          "source",
+          "tags",
+          "contactCount",
+          "opportunityCount",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "BusinessCustomerPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/BusinessCustomerDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "CreateBusinessCustomerDto": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "owner": { "type": "string" },
+          "level": { "type": "string" },
+          "source": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["active", "inactive", "churned"]
+          },
+          "industry": { "type": "string" },
+          "region": { "type": "string" },
+          "website": { "type": "string" },
+          "phone": { "type": "string" },
+          "email": { "type": "string" },
+          "address": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "remark": { "type": "string" },
+          "nextContactAt": { "type": "string" }
+        },
+        "required": ["name", "owner", "source"]
+      },
+      "UpdateBusinessCustomerDto": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "owner": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["active", "inactive", "churned"]
+          },
+          "level": { "type": "string" },
+          "source": { "type": "string" },
+          "industry": { "type": "object" },
+          "region": { "type": "object" },
+          "website": { "type": "object" },
+          "phone": { "type": "object" },
+          "email": { "type": "object" },
+          "address": { "type": "object" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "remark": { "type": "object" },
+          "nextContactAt": { "type": "object" }
+        }
+      },
+      "TransferBusinessOwnerDto": {
+        "type": "object",
+        "properties": {
+          "toOwner": { "type": "string" },
+          "actor": { "type": "string" },
+          "reason": { "type": "string" }
+        },
+        "required": ["toOwner", "actor"]
+      },
+      "BusinessDeleteResultDto": {
+        "type": "object",
+        "properties": { "deleted": { "type": "boolean" } },
+        "required": ["deleted"]
+      },
+      "BusinessContactDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "customerId": { "type": "string" },
+          "customerName": { "type": "string" },
+          "name": { "type": "string" },
+          "title": { "type": "string" },
+          "mobile": { "type": "string" },
+          "email": { "type": "string" },
+          "phone": { "type": "string" },
+          "owner": { "type": "string" },
+          "decisionRole": { "type": "string" },
+          "primary": { "type": "boolean" },
+          "remark": { "type": "string" },
+          "nextContactAt": { "type": "string" },
+          "lastFollowedAt": { "type": "string" },
+          "archivedAt": { "type": "string" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "customerId",
+          "name",
+          "owner",
+          "primary",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "BusinessContactPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/BusinessContactDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "CreateBusinessContactDto": {
+        "type": "object",
+        "properties": {
+          "customerId": { "type": "string" },
+          "name": { "type": "string" },
+          "title": { "type": "string" },
+          "mobile": { "type": "string" },
+          "email": { "type": "string" },
+          "phone": { "type": "string" },
+          "owner": { "type": "string" },
+          "decisionRole": { "type": "string" },
+          "primary": { "type": "boolean" },
+          "remark": { "type": "string" },
+          "nextContactAt": { "type": "string" }
+        },
+        "required": ["customerId", "name"]
+      },
+      "UpdateBusinessContactDto": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "title": { "type": "object" },
+          "mobile": { "type": "object" },
+          "email": { "type": "object" },
+          "phone": { "type": "object" },
+          "owner": { "type": "string" },
+          "decisionRole": { "type": "object" },
+          "primary": { "type": "boolean" },
+          "remark": { "type": "object" },
+          "nextContactAt": { "type": "object" }
+        }
+      },
+      "BusinessActivityDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "activityType": {
+            "type": "string",
+            "enum": ["follow-up", "attachment", "transfer", "audit"]
+          },
+          "targetType": {
+            "type": "string",
+            "enum": ["lead", "customer", "contact", "opportunity"]
+          },
+          "targetId": { "type": "string" },
+          "actor": { "type": "string" },
+          "title": { "type": "string" },
+          "createdAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "activityType",
+          "targetType",
+          "targetId",
+          "createdAt"
+        ]
+      },
+      "BusinessActivityPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/BusinessActivityDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "BusinessFollowUpDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "targetType": {
+            "type": "string",
+            "enum": ["lead", "customer", "contact", "opportunity"]
+          },
+          "targetId": { "type": "string" },
+          "method": {
+            "type": "string",
+            "enum": ["call", "email", "meeting", "wechat", "note"]
+          },
+          "content": { "type": "string" },
+          "outcome": { "type": "string" },
+          "nextContactAt": { "type": "string" },
+          "createdBy": { "type": "string" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "targetType",
+          "targetId",
+          "method",
+          "content",
+          "createdBy",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "BusinessFollowUpPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/BusinessFollowUpDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "CreateBusinessFollowUpDto": {
+        "type": "object",
+        "properties": {
+          "targetType": {
+            "type": "string",
+            "enum": ["lead", "customer", "contact", "opportunity"]
+          },
+          "targetId": { "type": "string" },
+          "method": {
+            "type": "string",
+            "enum": ["call", "email", "meeting", "wechat", "note"]
+          },
+          "content": { "type": "string" },
+          "outcome": { "type": "string" },
+          "nextContactAt": { "type": "string" },
+          "createdBy": { "type": "string" }
+        },
+        "required": ["targetType", "targetId", "method", "content", "createdBy"]
+      },
+      "BusinessTaskDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "targetType": {
+            "type": "string",
+            "enum": ["lead", "customer", "contact", "opportunity"]
+          },
+          "targetId": { "type": "string" },
+          "title": { "type": "string" },
+          "assignee": { "type": "string" },
+          "status": { "type": "string", "enum": ["open", "done", "canceled"] },
+          "priority": {
+            "type": "string",
+            "enum": ["low", "medium", "high", "urgent"]
+          },
+          "dueAt": { "type": "string" },
+          "completedAt": { "type": "string" },
+          "remark": { "type": "string" },
+          "createdBy": { "type": "string" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "targetType",
+          "targetId",
+          "title",
+          "assignee",
+          "status",
+          "priority",
+          "createdBy",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "BusinessTaskPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/BusinessTaskDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "CreateBusinessTaskDto": {
+        "type": "object",
+        "properties": {
+          "targetType": {
+            "type": "string",
+            "enum": ["lead", "customer", "contact", "opportunity"]
+          },
+          "targetId": { "type": "string" },
+          "title": { "type": "string" },
+          "assignee": { "type": "string" },
+          "priority": {
+            "type": "string",
+            "enum": ["low", "medium", "high", "urgent"]
+          },
+          "dueAt": { "type": "string" },
+          "remark": { "type": "string" },
+          "createdBy": { "type": "string" }
+        },
+        "required": ["targetType", "targetId", "title", "assignee", "createdBy"]
+      },
+      "CompleteBusinessTaskDto": {
+        "type": "object",
+        "properties": { "actor": { "type": "string" } },
+        "required": ["actor"]
+      },
+      "BusinessAttachmentDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "targetType": {
+            "type": "string",
+            "enum": ["lead", "customer", "contact", "opportunity"]
+          },
+          "targetId": { "type": "string" },
+          "originalName": { "type": "string" },
+          "mimeType": { "type": "string" },
+          "sizeBytes": { "type": "number" },
+          "storageKey": { "type": "string" },
+          "uploadedBy": { "type": "string" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "targetType",
+          "targetId",
+          "originalName",
+          "mimeType",
+          "sizeBytes",
+          "storageKey",
+          "uploadedBy",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "BusinessAttachmentPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/BusinessAttachmentDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "CreateBusinessAttachmentDto": {
+        "type": "object",
+        "properties": {
+          "targetType": {
+            "type": "string",
+            "enum": ["lead", "customer", "contact", "opportunity"]
+          },
+          "targetId": { "type": "string" },
+          "originalName": { "type": "string" },
+          "mimeType": { "type": "string" },
+          "sizeBytes": { "type": "number" },
+          "storageKey": { "type": "string" },
+          "uploadedBy": { "type": "string" }
+        },
+        "required": [
+          "targetType",
+          "targetId",
+          "originalName",
+          "mimeType",
+          "sizeBytes",
+          "storageKey",
+          "uploadedBy"
+        ]
+      },
+      "BusinessOwnerTransferDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "targetType": {
+            "type": "string",
+            "enum": ["lead", "customer", "contact", "opportunity"]
+          },
+          "targetId": { "type": "string" },
+          "fromOwner": { "type": "string" },
+          "toOwner": { "type": "string" },
+          "actor": { "type": "string" },
+          "reason": { "type": "string" },
+          "createdAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "targetType",
+          "targetId",
+          "toOwner",
+          "actor",
+          "createdAt"
+        ]
+      },
+      "BusinessOwnerTransferPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/BusinessOwnerTransferDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "BusinessAuditEventDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "targetType": {
+            "type": "string",
+            "enum": ["lead", "customer", "contact", "opportunity"]
+          },
+          "targetId": { "type": "string" },
+          "action": { "type": "string" },
+          "actor": { "type": "string" },
+          "detail": { "type": "object" },
+          "createdAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "targetType",
+          "targetId",
+          "action",
+          "actor",
+          "detail",
+          "createdAt"
+        ]
+      },
+      "BusinessAuditEventPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/BusinessAuditEventDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "BusinessSummaryBucketDto": {
+        "type": "object",
+        "properties": {
+          "key": { "type": "string" },
+          "count": { "type": "number" }
+        },
+        "required": ["key", "count"]
+      },
+      "BusinessSummaryDto": {
+        "type": "object",
+        "properties": {
+          "leads": { "type": "number" },
+          "customers": { "type": "number" },
+          "contacts": { "type": "number" },
+          "opportunities": { "type": "number" },
+          "openTasks": { "type": "number" },
+          "overdueTasks": { "type": "number" },
+          "openPipelineAmount": { "type": "string" },
+          "leadsByStatus": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/BusinessSummaryBucketDto" }
+          },
+          "customersByLevel": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/BusinessSummaryBucketDto" }
+          },
+          "opportunitiesByStage": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/BusinessSummaryBucketDto" }
+          }
+        },
+        "required": [
+          "leads",
+          "customers",
+          "contacts",
+          "opportunities",
+          "openTasks",
+          "overdueTasks",
+          "openPipelineAmount",
+          "leadsByStatus",
+          "customersByLevel",
+          "opportunitiesByStage"
+        ]
+      },
+      "BusinessLeadDto": {
         "type": "object",
         "properties": {
           "id": { "type": "string" },
@@ -18489,12 +19129,12 @@
           "updatedAt"
         ]
       },
-      "CrmLeadPageDto": {
+      "BusinessLeadPageDto": {
         "type": "object",
         "properties": {
           "items": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/CrmLeadDto" }
+            "items": { "$ref": "#/components/schemas/BusinessLeadDto" }
           },
           "page": { "type": "number" },
           "pageSize": { "type": "number" },
@@ -18503,7 +19143,7 @@
         },
         "required": ["items", "page", "pageSize", "total", "totalPages"]
       },
-      "CreateCrmLeadDto": {
+      "CreateBusinessLeadDto": {
         "type": "object",
         "properties": {
           "name": { "type": "string" },
@@ -18519,7 +19159,7 @@
         },
         "required": ["name", "source", "owner"]
       },
-      "UpdateCrmLeadDto": {
+      "UpdateBusinessLeadDto": {
         "type": "object",
         "properties": {
           "name": { "type": "string" },
@@ -18538,7 +19178,7 @@
           "nextContactAt": { "type": "object" }
         }
       },
-      "ConvertCrmLeadDto": {
+      "ConvertBusinessLeadDto": {
         "type": "object",
         "properties": {
           "actor": { "type": "string" },
@@ -18548,53 +19188,7 @@
         },
         "required": ["actor"]
       },
-      "CrmCustomerDto": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string" },
-          "tenantId": { "type": "string" },
-          "number": { "type": "string" },
-          "name": { "type": "string" },
-          "owner": { "type": "string" },
-          "status": {
-            "type": "string",
-            "enum": ["active", "inactive", "churned", "archived"]
-          },
-          "level": { "type": "string" },
-          "source": { "type": "string" },
-          "industry": { "type": "string" },
-          "region": { "type": "string" },
-          "website": { "type": "string" },
-          "phone": { "type": "string" },
-          "email": { "type": "string" },
-          "address": { "type": "string" },
-          "tags": { "type": "array", "items": { "type": "string" } },
-          "remark": { "type": "string" },
-          "nextContactAt": { "type": "string" },
-          "lastFollowedAt": { "type": "string" },
-          "archivedAt": { "type": "string" },
-          "contactCount": { "type": "number" },
-          "opportunityCount": { "type": "number" },
-          "createdAt": { "type": "string" },
-          "updatedAt": { "type": "string" }
-        },
-        "required": [
-          "id",
-          "tenantId",
-          "number",
-          "name",
-          "owner",
-          "status",
-          "level",
-          "source",
-          "tags",
-          "contactCount",
-          "opportunityCount",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "CrmOpportunityDto": {
+      "BusinessOpportunityDto": {
         "type": "object",
         "properties": {
           "id": { "type": "string" },
@@ -18634,35 +19228,28 @@
           "updatedAt"
         ]
       },
-      "ConvertCrmLeadResultDto": {
+      "ConvertBusinessLeadResultDto": {
         "type": "object",
         "properties": {
-          "lead": { "$ref": "#/components/schemas/CrmLeadDto" },
-          "customer": { "$ref": "#/components/schemas/CrmCustomerDto" },
-          "opportunity": { "$ref": "#/components/schemas/CrmOpportunityDto" }
+          "lead": { "$ref": "#/components/schemas/BusinessLeadDto" },
+          "customer": { "$ref": "#/components/schemas/BusinessCustomerDto" },
+          "opportunity": {
+            "$ref": "#/components/schemas/BusinessOpportunityDto"
+          }
         },
         "required": ["lead", "customer"]
       },
-      "TransferCrmOwnerDto": {
-        "type": "object",
-        "properties": {
-          "toOwner": { "type": "string" },
-          "actor": { "type": "string" },
-          "reason": { "type": "string" }
-        },
-        "required": ["toOwner", "actor"]
-      },
-      "CrmDeleteResultDto": {
+      "SalesDeleteResultDto": {
         "type": "object",
         "properties": { "deleted": { "type": "boolean" } },
         "required": ["deleted"]
       },
-      "CrmCustomerPageDto": {
+      "BusinessOpportunityPageDto": {
         "type": "object",
         "properties": {
           "items": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/CrmCustomerDto" }
+            "items": { "$ref": "#/components/schemas/BusinessOpportunityDto" }
           },
           "page": { "type": "number" },
           "pageSize": { "type": "number" },
@@ -18671,145 +19258,7 @@
         },
         "required": ["items", "page", "pageSize", "total", "totalPages"]
       },
-      "CreateCrmCustomerDto": {
-        "type": "object",
-        "properties": {
-          "name": { "type": "string" },
-          "owner": { "type": "string" },
-          "level": { "type": "string" },
-          "source": { "type": "string" },
-          "status": {
-            "type": "string",
-            "enum": ["active", "inactive", "churned"]
-          },
-          "industry": { "type": "string" },
-          "region": { "type": "string" },
-          "website": { "type": "string" },
-          "phone": { "type": "string" },
-          "email": { "type": "string" },
-          "address": { "type": "string" },
-          "tags": { "type": "array", "items": { "type": "string" } },
-          "remark": { "type": "string" },
-          "nextContactAt": { "type": "string" }
-        },
-        "required": ["name", "owner", "source"]
-      },
-      "UpdateCrmCustomerDto": {
-        "type": "object",
-        "properties": {
-          "name": { "type": "string" },
-          "owner": { "type": "string" },
-          "status": {
-            "type": "string",
-            "enum": ["active", "inactive", "churned"]
-          },
-          "level": { "type": "string" },
-          "source": { "type": "string" },
-          "industry": { "type": "object" },
-          "region": { "type": "object" },
-          "website": { "type": "object" },
-          "phone": { "type": "object" },
-          "email": { "type": "object" },
-          "address": { "type": "object" },
-          "tags": { "type": "array", "items": { "type": "string" } },
-          "remark": { "type": "object" },
-          "nextContactAt": { "type": "object" }
-        }
-      },
-      "CrmContactDto": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string" },
-          "tenantId": { "type": "string" },
-          "customerId": { "type": "string" },
-          "customerName": { "type": "string" },
-          "name": { "type": "string" },
-          "title": { "type": "string" },
-          "mobile": { "type": "string" },
-          "email": { "type": "string" },
-          "phone": { "type": "string" },
-          "owner": { "type": "string" },
-          "decisionRole": { "type": "string" },
-          "primary": { "type": "boolean" },
-          "remark": { "type": "string" },
-          "nextContactAt": { "type": "string" },
-          "lastFollowedAt": { "type": "string" },
-          "archivedAt": { "type": "string" },
-          "createdAt": { "type": "string" },
-          "updatedAt": { "type": "string" }
-        },
-        "required": [
-          "id",
-          "tenantId",
-          "customerId",
-          "name",
-          "owner",
-          "primary",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "CrmContactPageDto": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/CrmContactDto" }
-          },
-          "page": { "type": "number" },
-          "pageSize": { "type": "number" },
-          "total": { "type": "number" },
-          "totalPages": { "type": "number" }
-        },
-        "required": ["items", "page", "pageSize", "total", "totalPages"]
-      },
-      "CreateCrmContactDto": {
-        "type": "object",
-        "properties": {
-          "customerId": { "type": "string" },
-          "name": { "type": "string" },
-          "title": { "type": "string" },
-          "mobile": { "type": "string" },
-          "email": { "type": "string" },
-          "phone": { "type": "string" },
-          "owner": { "type": "string" },
-          "decisionRole": { "type": "string" },
-          "primary": { "type": "boolean" },
-          "remark": { "type": "string" },
-          "nextContactAt": { "type": "string" }
-        },
-        "required": ["customerId", "name"]
-      },
-      "UpdateCrmContactDto": {
-        "type": "object",
-        "properties": {
-          "name": { "type": "string" },
-          "title": { "type": "object" },
-          "mobile": { "type": "object" },
-          "email": { "type": "object" },
-          "phone": { "type": "object" },
-          "owner": { "type": "string" },
-          "decisionRole": { "type": "object" },
-          "primary": { "type": "boolean" },
-          "remark": { "type": "object" },
-          "nextContactAt": { "type": "object" }
-        }
-      },
-      "CrmOpportunityPageDto": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/CrmOpportunityDto" }
-          },
-          "page": { "type": "number" },
-          "pageSize": { "type": "number" },
-          "total": { "type": "number" },
-          "totalPages": { "type": "number" }
-        },
-        "required": ["items", "page", "pageSize", "total", "totalPages"]
-      },
-      "CreateCrmOpportunityDto": {
+      "CreateBusinessOpportunityDto": {
         "type": "object",
         "properties": {
           "customerId": { "type": "string" },
@@ -18827,7 +19276,7 @@
         },
         "required": ["customerId", "name", "owner"]
       },
-      "UpdateCrmOpportunityDto": {
+      "UpdateBusinessOpportunityDto": {
         "type": "object",
         "properties": {
           "customerId": { "type": "string" },
@@ -18840,7 +19289,7 @@
           "remark": { "type": "object" }
         }
       },
-      "ChangeCrmOpportunityStageDto": {
+      "ChangeBusinessOpportunityStageDto": {
         "type": "object",
         "properties": {
           "stage": {
@@ -18851,340 +19300,6 @@
           "closeReason": { "type": "string" }
         },
         "required": ["stage", "actor"]
-      },
-      "CrmActivityDto": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string" },
-          "tenantId": { "type": "string" },
-          "activityType": {
-            "type": "string",
-            "enum": ["follow-up", "attachment", "transfer", "audit"]
-          },
-          "targetType": {
-            "type": "string",
-            "enum": ["lead", "customer", "contact", "opportunity"]
-          },
-          "targetId": { "type": "string" },
-          "actor": { "type": "string" },
-          "title": { "type": "string" },
-          "createdAt": { "type": "string" }
-        },
-        "required": [
-          "id",
-          "tenantId",
-          "activityType",
-          "targetType",
-          "targetId",
-          "createdAt"
-        ]
-      },
-      "CrmActivityPageDto": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/CrmActivityDto" }
-          },
-          "page": { "type": "number" },
-          "pageSize": { "type": "number" },
-          "total": { "type": "number" },
-          "totalPages": { "type": "number" }
-        },
-        "required": ["items", "page", "pageSize", "total", "totalPages"]
-      },
-      "CrmFollowUpDto": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string" },
-          "tenantId": { "type": "string" },
-          "targetType": {
-            "type": "string",
-            "enum": ["lead", "customer", "contact", "opportunity"]
-          },
-          "targetId": { "type": "string" },
-          "method": {
-            "type": "string",
-            "enum": ["call", "email", "meeting", "wechat", "note"]
-          },
-          "content": { "type": "string" },
-          "outcome": { "type": "string" },
-          "nextContactAt": { "type": "string" },
-          "createdBy": { "type": "string" },
-          "createdAt": { "type": "string" },
-          "updatedAt": { "type": "string" }
-        },
-        "required": [
-          "id",
-          "tenantId",
-          "targetType",
-          "targetId",
-          "method",
-          "content",
-          "createdBy",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "CrmFollowUpPageDto": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/CrmFollowUpDto" }
-          },
-          "page": { "type": "number" },
-          "pageSize": { "type": "number" },
-          "total": { "type": "number" },
-          "totalPages": { "type": "number" }
-        },
-        "required": ["items", "page", "pageSize", "total", "totalPages"]
-      },
-      "CreateCrmFollowUpDto": {
-        "type": "object",
-        "properties": {
-          "targetType": {
-            "type": "string",
-            "enum": ["lead", "customer", "contact", "opportunity"]
-          },
-          "targetId": { "type": "string" },
-          "method": {
-            "type": "string",
-            "enum": ["call", "email", "meeting", "wechat", "note"]
-          },
-          "content": { "type": "string" },
-          "outcome": { "type": "string" },
-          "nextContactAt": { "type": "string" },
-          "createdBy": { "type": "string" }
-        },
-        "required": ["targetType", "targetId", "method", "content", "createdBy"]
-      },
-      "CrmTaskDto": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string" },
-          "tenantId": { "type": "string" },
-          "targetType": {
-            "type": "string",
-            "enum": ["lead", "customer", "contact", "opportunity"]
-          },
-          "targetId": { "type": "string" },
-          "title": { "type": "string" },
-          "assignee": { "type": "string" },
-          "status": { "type": "string", "enum": ["open", "done", "canceled"] },
-          "priority": {
-            "type": "string",
-            "enum": ["low", "medium", "high", "urgent"]
-          },
-          "dueAt": { "type": "string" },
-          "completedAt": { "type": "string" },
-          "remark": { "type": "string" },
-          "createdBy": { "type": "string" },
-          "createdAt": { "type": "string" },
-          "updatedAt": { "type": "string" }
-        },
-        "required": [
-          "id",
-          "tenantId",
-          "targetType",
-          "targetId",
-          "title",
-          "assignee",
-          "status",
-          "priority",
-          "createdBy",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "CrmTaskPageDto": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/CrmTaskDto" }
-          },
-          "page": { "type": "number" },
-          "pageSize": { "type": "number" },
-          "total": { "type": "number" },
-          "totalPages": { "type": "number" }
-        },
-        "required": ["items", "page", "pageSize", "total", "totalPages"]
-      },
-      "CreateCrmTaskDto": {
-        "type": "object",
-        "properties": {
-          "targetType": {
-            "type": "string",
-            "enum": ["lead", "customer", "contact", "opportunity"]
-          },
-          "targetId": { "type": "string" },
-          "title": { "type": "string" },
-          "assignee": { "type": "string" },
-          "priority": {
-            "type": "string",
-            "enum": ["low", "medium", "high", "urgent"]
-          },
-          "dueAt": { "type": "string" },
-          "remark": { "type": "string" },
-          "createdBy": { "type": "string" }
-        },
-        "required": ["targetType", "targetId", "title", "assignee", "createdBy"]
-      },
-      "CompleteCrmTaskDto": {
-        "type": "object",
-        "properties": { "actor": { "type": "string" } },
-        "required": ["actor"]
-      },
-      "CrmAttachmentDto": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string" },
-          "tenantId": { "type": "string" },
-          "targetType": {
-            "type": "string",
-            "enum": ["lead", "customer", "contact", "opportunity"]
-          },
-          "targetId": { "type": "string" },
-          "originalName": { "type": "string" },
-          "mimeType": { "type": "string" },
-          "sizeBytes": { "type": "number" },
-          "storageKey": { "type": "string" },
-          "uploadedBy": { "type": "string" },
-          "createdAt": { "type": "string" },
-          "updatedAt": { "type": "string" }
-        },
-        "required": [
-          "id",
-          "tenantId",
-          "targetType",
-          "targetId",
-          "originalName",
-          "mimeType",
-          "sizeBytes",
-          "storageKey",
-          "uploadedBy",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "CrmAttachmentPageDto": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/CrmAttachmentDto" }
-          },
-          "page": { "type": "number" },
-          "pageSize": { "type": "number" },
-          "total": { "type": "number" },
-          "totalPages": { "type": "number" }
-        },
-        "required": ["items", "page", "pageSize", "total", "totalPages"]
-      },
-      "CreateCrmAttachmentDto": {
-        "type": "object",
-        "properties": {
-          "targetType": {
-            "type": "string",
-            "enum": ["lead", "customer", "contact", "opportunity"]
-          },
-          "targetId": { "type": "string" },
-          "originalName": { "type": "string" },
-          "mimeType": { "type": "string" },
-          "sizeBytes": { "type": "number" },
-          "storageKey": { "type": "string" },
-          "uploadedBy": { "type": "string" }
-        },
-        "required": [
-          "targetType",
-          "targetId",
-          "originalName",
-          "mimeType",
-          "sizeBytes",
-          "storageKey",
-          "uploadedBy"
-        ]
-      },
-      "CrmOwnerTransferDto": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string" },
-          "tenantId": { "type": "string" },
-          "targetType": {
-            "type": "string",
-            "enum": ["lead", "customer", "contact", "opportunity"]
-          },
-          "targetId": { "type": "string" },
-          "fromOwner": { "type": "string" },
-          "toOwner": { "type": "string" },
-          "actor": { "type": "string" },
-          "reason": { "type": "string" },
-          "createdAt": { "type": "string" }
-        },
-        "required": [
-          "id",
-          "tenantId",
-          "targetType",
-          "targetId",
-          "toOwner",
-          "actor",
-          "createdAt"
-        ]
-      },
-      "CrmOwnerTransferPageDto": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/CrmOwnerTransferDto" }
-          },
-          "page": { "type": "number" },
-          "pageSize": { "type": "number" },
-          "total": { "type": "number" },
-          "totalPages": { "type": "number" }
-        },
-        "required": ["items", "page", "pageSize", "total", "totalPages"]
-      },
-      "CrmAuditEventDto": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string" },
-          "tenantId": { "type": "string" },
-          "targetType": {
-            "type": "string",
-            "enum": ["lead", "customer", "contact", "opportunity"]
-          },
-          "targetId": { "type": "string" },
-          "action": { "type": "string" },
-          "actor": { "type": "string" },
-          "detail": { "type": "object" },
-          "createdAt": { "type": "string" }
-        },
-        "required": [
-          "id",
-          "tenantId",
-          "targetType",
-          "targetId",
-          "action",
-          "actor",
-          "detail",
-          "createdAt"
-        ]
-      },
-      "CrmAuditEventPageDto": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/CrmAuditEventDto" }
-          },
-          "page": { "type": "number" },
-          "pageSize": { "type": "number" },
-          "total": { "type": "number" },
-          "totalPages": { "type": "number" }
-        },
-        "required": ["items", "page", "pageSize", "total", "totalPages"]
       },
       "RuntimeProcessStatusDto": {
         "type": "object",

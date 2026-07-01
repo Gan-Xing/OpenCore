@@ -1,19 +1,19 @@
 import type {
-  CrmAttachmentDto,
-  CrmAuditEventDto,
-  CrmContactDto,
-  CrmCustomerDto,
-  CrmFollowUpDto,
-  CrmLeadDto,
-  CrmOpportunityDto,
-  CrmOwnerTransferDto,
-  CrmTagDto,
-  CrmTaskDto,
-} from './crm.dto';
+  BusinessAttachmentDto,
+  BusinessAuditEventDto,
+  BusinessContactDto,
+  BusinessCustomerDto,
+  BusinessFollowUpDto,
+  BusinessLeadDto,
+  BusinessOpportunityDto,
+  BusinessOwnerTransferDto,
+  BusinessTagDto,
+  BusinessTaskDto,
+} from './business.dto';
 
-export const seedCrmTags: readonly CrmTagDto[] = [
+export const seedBusinessTags: readonly BusinessTagDto[] = [
   {
-    id: 'crm_tag_key_account',
+    id: 'business_tag_key_account',
     tenantId: 'tenant_root',
     code: 'key-account',
     name: 'Key Account',
@@ -24,7 +24,7 @@ export const seedCrmTags: readonly CrmTagDto[] = [
     updatedAt: '2026-06-30T00:00:00.000Z',
   },
   {
-    id: 'crm_tag_expansion',
+    id: 'business_tag_expansion',
     tenantId: 'tenant_root',
     code: 'expansion',
     name: 'Expansion',
@@ -36,9 +36,9 @@ export const seedCrmTags: readonly CrmTagDto[] = [
   },
 ];
 
-export const seedCrmLeads: readonly CrmLeadDto[] = [
+export const seedBusinessLeads: readonly BusinessLeadDto[] = [
   {
-    id: 'crm_lead_acme_demo',
+    id: 'sales_lead_acme_demo',
     tenantId: 'tenant_root',
     number: 'LEAD-20260630-0001',
     name: 'Ivy Chen',
@@ -50,7 +50,7 @@ export const seedCrmLeads: readonly CrmLeadDto[] = [
     rating: 'hot',
     owner: 'admin',
     tags: ['key-account'],
-    remark: 'Interested in OpenCore CRM and operations modules.',
+    remark: 'Interested in OpenCore business and operations modules.',
     nextContactAt: '2026-07-02T09:00:00.000Z',
     lastFollowedAt: '2026-06-30T01:00:00.000Z',
     createdAt: '2026-06-30T00:10:00.000Z',
@@ -58,9 +58,9 @@ export const seedCrmLeads: readonly CrmLeadDto[] = [
   },
 ];
 
-export const seedCrmCustomers: readonly CrmCustomerDto[] = [
+export const seedBusinessCustomers: readonly BusinessCustomerDto[] = [
   {
-    id: 'crm_customer_northstar',
+    id: 'business_customer_northstar',
     tenantId: 'tenant_root',
     number: 'CUS-20260630-0001',
     name: 'Northstar Manufacturing',
@@ -75,7 +75,7 @@ export const seedCrmCustomers: readonly CrmCustomerDto[] = [
     email: 'ops@northstar.example.com',
     address: '100 Industrial Way',
     tags: ['key-account', 'expansion'],
-    remark: 'Reference account for CRM smoke and demo data.',
+    remark: 'Reference account for business smoke and demo data.',
     nextContactAt: '2026-07-03T10:00:00.000Z',
     lastFollowedAt: '2026-06-30T02:00:00.000Z',
     contactCount: 1,
@@ -85,11 +85,11 @@ export const seedCrmCustomers: readonly CrmCustomerDto[] = [
   },
 ];
 
-export const seedCrmContacts: readonly CrmContactDto[] = [
+export const seedBusinessContacts: readonly BusinessContactDto[] = [
   {
-    id: 'crm_contact_northstar_mia',
+    id: 'business_contact_northstar_mia',
     tenantId: 'tenant_root',
-    customerId: 'crm_customer_northstar',
+    customerId: 'business_customer_northstar',
     customerName: 'Northstar Manufacturing',
     name: 'Mia Johnson',
     title: 'VP Operations',
@@ -106,11 +106,11 @@ export const seedCrmContacts: readonly CrmContactDto[] = [
   },
 ];
 
-export const seedCrmOpportunities: readonly CrmOpportunityDto[] = [
+export const seedBusinessOpportunities: readonly BusinessOpportunityDto[] = [
   {
-    id: 'crm_opportunity_northstar_q3',
+    id: 'sales_opportunity_northstar_q3',
     tenantId: 'tenant_root',
-    customerId: 'crm_customer_northstar',
+    customerId: 'business_customer_northstar',
     customerName: 'Northstar Manufacturing',
     number: 'OPP-20260630-0001',
     name: 'Northstar Q3 rollout',
@@ -120,18 +120,18 @@ export const seedCrmOpportunities: readonly CrmOpportunityDto[] = [
     probability: 50,
     expectedCloseAt: '2026-08-15T00:00:00.000Z',
     tags: ['expansion'],
-    remark: 'Commercial CRM rollout opportunity.',
+    remark: 'Commercial business rollout opportunity.',
     createdAt: '2026-06-30T00:40:00.000Z',
     updatedAt: '2026-06-30T00:40:00.000Z',
   },
 ];
 
-export const seedCrmFollowUps: readonly CrmFollowUpDto[] = [
+export const seedBusinessFollowUps: readonly BusinessFollowUpDto[] = [
   {
-    id: 'crm_followup_northstar_1',
+    id: 'business_followup_northstar_1',
     tenantId: 'tenant_root',
     targetType: 'customer',
-    targetId: 'crm_customer_northstar',
+    targetId: 'business_customer_northstar',
     method: 'meeting',
     content: 'Reviewed rollout scope and success criteria.',
     outcome: 'Send proposal and confirm timeline.',
@@ -142,46 +142,46 @@ export const seedCrmFollowUps: readonly CrmFollowUpDto[] = [
   },
 ];
 
-export const seedCrmTasks: readonly CrmTaskDto[] = [
+export const seedBusinessTasks: readonly BusinessTaskDto[] = [
   {
-    id: 'crm_task_northstar_followup',
+    id: 'business_task_northstar_followup',
     tenantId: 'tenant_root',
     targetType: 'opportunity',
-    targetId: 'crm_opportunity_northstar_q3',
+    targetId: 'sales_opportunity_northstar_q3',
     title: 'Send commercial proposal',
     assignee: 'admin',
     status: 'open',
     priority: 'high',
     dueAt: '2026-07-03T10:00:00.000Z',
-    remark: 'Include CRM, scheduler, and integration scope.',
+    remark: 'Include business, scheduler, and integration scope.',
     createdBy: 'admin',
     createdAt: '2026-06-30T02:05:00.000Z',
     updatedAt: '2026-06-30T02:05:00.000Z',
   },
 ];
 
-export const seedCrmAttachments: readonly CrmAttachmentDto[] = [
+export const seedBusinessAttachments: readonly BusinessAttachmentDto[] = [
   {
-    id: 'crm_attachment_northstar_scope',
+    id: 'business_attachment_northstar_scope',
     tenantId: 'tenant_root',
     targetType: 'customer',
-    targetId: 'crm_customer_northstar',
+    targetId: 'business_customer_northstar',
     originalName: 'northstar-scope.txt',
     mimeType: 'text/plain',
     sizeBytes: 256,
-    storageKey: 'tenant/tenant_root/crm/northstar-scope.txt',
+    storageKey: 'tenant/tenant_root/business/northstar-scope.txt',
     uploadedBy: 'admin',
     createdAt: '2026-06-30T02:10:00.000Z',
     updatedAt: '2026-06-30T02:10:00.000Z',
   },
 ];
 
-export const seedCrmOwnerTransfers: readonly CrmOwnerTransferDto[] = [
+export const seedBusinessOwnerTransfers: readonly BusinessOwnerTransferDto[] = [
   {
-    id: 'crm_transfer_northstar_seed',
+    id: 'business_transfer_northstar_seed',
     tenantId: 'tenant_root',
     targetType: 'customer',
-    targetId: 'crm_customer_northstar',
+    targetId: 'business_customer_northstar',
     fromOwner: 'ops',
     toOwner: 'admin',
     actor: 'system',
@@ -190,12 +190,12 @@ export const seedCrmOwnerTransfers: readonly CrmOwnerTransferDto[] = [
   },
 ];
 
-export const seedCrmAuditEvents: readonly CrmAuditEventDto[] = [
+export const seedBusinessAuditEvents: readonly BusinessAuditEventDto[] = [
   {
-    id: 'crm_audit_northstar_seed',
+    id: 'business_audit_northstar_seed',
     tenantId: 'tenant_root',
     targetType: 'customer',
-    targetId: 'crm_customer_northstar',
+    targetId: 'business_customer_northstar',
     action: 'seed-customer',
     actor: 'system',
     detail: { source: 'seed' },

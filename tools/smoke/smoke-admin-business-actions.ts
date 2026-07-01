@@ -22,7 +22,7 @@ type ChromeInstance = {
   wsUrl: string;
 };
 
-type CreatedCrmIds = {
+type CreatedBusinessIds = {
   contacts: string[];
   customers: string[];
   leads: string[];
@@ -30,7 +30,7 @@ type CreatedCrmIds = {
   tags: string[];
 };
 
-type CrmFixtures = {
+type BusinessFixtures = {
   activityTargetId: string;
   contactName: string;
   customerName: string;
@@ -71,7 +71,7 @@ async function main() {
   let page: CdpPage | undefined;
   const browserFailures: string[] = [];
   const networkFailures: NetworkFailure[] = [];
-  const created: CreatedCrmIds = {
+  const created: CreatedBusinessIds = {
     contacts: [],
     customers: [],
     leads: [],
@@ -81,7 +81,7 @@ async function main() {
 
   try {
     const adminToken = await resolveAdminToken();
-    const fixtures = await seedCrmFixtures(adminToken, created);
+    const fixtures = await seedBusinessFixtures(adminToken, created);
 
     chrome = await launchChrome();
     page = await CdpPage.connect(await createPageTarget(chrome.wsUrl));
@@ -102,7 +102,7 @@ async function main() {
     await page.send('Log.enable');
     await page.send('Network.enable');
     await page.send('Page.navigate', {
-      url: `${adminBaseUrl}/user/login?admin-crm-actions-smoke=${runId}`,
+      url: `${adminBaseUrl}/user/login?admin-business-actions-smoke=${runId}`,
     });
     await waitForExpression(
       page,
@@ -118,7 +118,7 @@ true;
 `,
     );
     await page.send('Page.navigate', {
-      url: `${adminBaseUrl}/business/leads?admin-crm-actions-smoke=${runId}`,
+      url: `${adminBaseUrl}/business/leads?admin-business-actions-smoke=${runId}`,
     });
     await waitForExpression(
       page,
@@ -130,7 +130,7 @@ true;
       `document.body.innerText.includes('线索') && document.body.innerText.includes(${JSON.stringify(
         fixtures.leadName,
       )})`,
-      'Admin CRM seeded lead row',
+      'Admin Admin business seeded lead row',
     );
     await assertHealthy(page, browserFailures, networkFailures, 'initial load');
 
@@ -138,7 +138,7 @@ true;
     await waitForExpression(
       page,
       `document.body.innerText.includes(${JSON.stringify(fixtures.leadName)})`,
-      'Admin CRM reload settled',
+      'Admin Admin business reload settled',
     );
     await assertHealthy(page, browserFailures, networkFailures, 'reload');
     await clickButtonByText(page, '导出');
@@ -269,20 +269,20 @@ true;
         baseUrl: adminBaseUrl,
         apiBaseUrl,
         checks: [
-          'admin.crm-actions.seeded-fixtures',
-          'admin.crm-actions.reload',
-          'admin.crm-actions.export',
-          'admin.crm-actions.search-reset',
-          'admin.crm-actions.create-modals',
-          'admin.crm-actions.detail-drawers',
-          'admin.crm-actions.edit-modals',
-          'admin.crm-actions.transfer-follow-task-attach-modals',
-          'admin.crm-actions.convert-stage-modals',
-          'admin.crm-actions.archive-popconfirm',
-          'admin.crm-actions.complete-task',
-          'admin.crm-actions.activity-detail',
-          'admin.crm-actions.no-browser-errors',
-          'admin.crm-actions.no-api-failures',
+          'admin.business-actions.seeded-fixtures',
+          'admin.business-actions.reload',
+          'admin.business-actions.export',
+          'admin.business-actions.search-reset',
+          'admin.business-actions.create-modals',
+          'admin.business-actions.detail-drawers',
+          'admin.business-actions.edit-modals',
+          'admin.business-actions.transfer-follow-task-attach-modals',
+          'admin.business-actions.convert-stage-modals',
+          'admin.business-actions.archive-popconfirm',
+          'admin.business-actions.complete-task',
+          'admin.business-actions.activity-detail',
+          'admin.business-actions.no-browser-errors',
+          'admin.business-actions.no-api-failures',
         ],
       }),
     );
@@ -299,7 +299,7 @@ true;
   } finally {
     page?.close();
     cleanupChrome(chrome);
-    await cleanupCreatedCrm(created);
+    await cleanupCreatedBusiness(created);
     await disconnectSmokePrisma();
   }
 }
@@ -369,10 +369,10 @@ async function exerciseEntityTab(
   }
 }
 
-async function seedCrmFixtures(
+async function seedBusinessFixtures(
   token: string,
-  created: CreatedCrmIds,
-): Promise<CrmFixtures> {
+  created: CreatedBusinessIds,
+): Promise<BusinessFixtures> {
   const tag = await apiRequest<Record<string, unknown>>(
     token,
     '/business/core/tags',
@@ -385,9 +385,9 @@ async function seedCrmFixtures(
       method: 'POST',
     },
   );
-  const tagId = assertString(tag.id, 'created CRM UI tag id');
-  const tagCode = assertString(tag.code, 'created CRM UI tag code');
-  const tagName = assertString(tag.name, 'created CRM UI tag name');
+  const tagId = assertString(tag.id, 'created Admin business UI tag id');
+  const tagCode = assertString(tag.code, 'created Admin business UI tag code');
+  const tagName = assertString(tag.name, 'created Admin business UI tag name');
   created.tags.push(tagId);
 
   const customer = await apiRequest<Record<string, unknown>>(
@@ -407,16 +407,19 @@ async function seedCrmFixtures(
       method: 'POST',
     },
   );
-  const customerId = assertString(customer.id, 'created CRM UI customer id');
+  const customerId = assertString(
+    customer.id,
+    'created Admin business UI customer id',
+  );
   const customerName = assertString(
     customer.name,
-    'created CRM UI customer name',
+    'created Admin business UI customer name',
   );
   created.customers.push(customerId);
 
   const lead = await apiRequest<Record<string, unknown>>(
     token,
-    '/business/core/leads',
+    '/business/sales/leads',
     {
       body: {
         company: `UI Lead Company ${runId}`,
@@ -432,8 +435,11 @@ async function seedCrmFixtures(
       method: 'POST',
     },
   );
-  const leadId = assertString(lead.id, 'created CRM UI lead id');
-  const leadName = assertString(lead.name, 'created CRM UI lead name');
+  const leadId = assertString(lead.id, 'created Admin business UI lead id');
+  const leadName = assertString(
+    lead.name,
+    'created Admin business UI lead name',
+  );
   created.leads.push(leadId);
 
   const contact = await apiRequest<Record<string, unknown>>(
@@ -453,13 +459,19 @@ async function seedCrmFixtures(
       method: 'POST',
     },
   );
-  const contactId = assertString(contact.id, 'created CRM UI contact id');
-  const contactName = assertString(contact.name, 'created CRM UI contact name');
+  const contactId = assertString(
+    contact.id,
+    'created Admin business UI contact id',
+  );
+  const contactName = assertString(
+    contact.name,
+    'created Admin business UI contact name',
+  );
   created.contacts.push(contactId);
 
   const opportunity = await apiRequest<Record<string, unknown>>(
     token,
-    '/business/core/opportunities',
+    '/business/sales/opportunities',
     {
       body: {
         amount: '76000.00',
@@ -476,11 +488,11 @@ async function seedCrmFixtures(
   );
   const opportunityId = assertString(
     opportunity.id,
-    'created CRM UI opportunity id',
+    'created Admin business UI opportunity id',
   );
   const opportunityName = assertString(
     opportunity.name,
-    'created CRM UI opportunity name',
+    'created Admin business UI opportunity name',
   );
   created.opportunities.push(opportunityId);
 
@@ -500,7 +512,10 @@ async function seedCrmFixtures(
       method: 'POST',
     },
   );
-  const taskTitle = assertString(task.title, 'created CRM UI task title');
+  const taskTitle = assertString(
+    task.title,
+    'created Admin business UI task title',
+  );
 
   await apiRequest<Record<string, unknown>>(
     token,
@@ -530,7 +545,9 @@ async function seedCrmFixtures(
   };
 }
 
-async function cleanupCreatedCrm(created: CreatedCrmIds): Promise<void> {
+async function cleanupCreatedBusiness(
+  created: CreatedBusinessIds,
+): Promise<void> {
   const targetIds = [
     ...created.leads,
     ...created.customers,
@@ -547,25 +564,25 @@ async function cleanupCreatedCrm(created: CreatedCrmIds): Promise<void> {
   const prisma = getSmokePrisma();
 
   if (targetIds.length > 0) {
-    await prisma.crmAuditEvent.deleteMany({
+    await prisma.businessAuditEvent.deleteMany({
       where: { tenantId: ROOT_TENANT_ID, targetId: { in: targetIds } },
     });
-    await prisma.crmOwnerTransfer.deleteMany({
+    await prisma.businessOwnerTransfer.deleteMany({
       where: { tenantId: ROOT_TENANT_ID, targetId: { in: targetIds } },
     });
-    await prisma.crmAttachment.deleteMany({
+    await prisma.businessAttachment.deleteMany({
       where: { tenantId: ROOT_TENANT_ID, targetId: { in: targetIds } },
     });
-    await prisma.crmTask.deleteMany({
+    await prisma.businessTask.deleteMany({
       where: { tenantId: ROOT_TENANT_ID, targetId: { in: targetIds } },
     });
-    await prisma.crmFollowUp.deleteMany({
+    await prisma.businessFollowUp.deleteMany({
       where: { tenantId: ROOT_TENANT_ID, targetId: { in: targetIds } },
     });
   }
 
   if (created.opportunities.length > 0) {
-    await prisma.crmOpportunity.deleteMany({
+    await prisma.salesOpportunity.deleteMany({
       where: {
         id: { in: created.opportunities },
         tenantId: ROOT_TENANT_ID,
@@ -574,7 +591,7 @@ async function cleanupCreatedCrm(created: CreatedCrmIds): Promise<void> {
   }
 
   if (created.contacts.length > 0) {
-    await prisma.crmContact.deleteMany({
+    await prisma.businessContact.deleteMany({
       where: {
         id: { in: created.contacts },
         tenantId: ROOT_TENANT_ID,
@@ -583,31 +600,31 @@ async function cleanupCreatedCrm(created: CreatedCrmIds): Promise<void> {
   }
 
   if (created.customers.length > 0) {
-    await prisma.crmOpportunity.deleteMany({
+    await prisma.salesOpportunity.deleteMany({
       where: {
         customerId: { in: created.customers },
         tenantId: ROOT_TENANT_ID,
       },
     });
-    await prisma.crmContact.deleteMany({
+    await prisma.businessContact.deleteMany({
       where: {
         customerId: { in: created.customers },
         tenantId: ROOT_TENANT_ID,
       },
     });
-    await prisma.crmCustomer.deleteMany({
+    await prisma.businessCustomer.deleteMany({
       where: { id: { in: created.customers }, tenantId: ROOT_TENANT_ID },
     });
   }
 
   if (created.leads.length > 0) {
-    await prisma.crmLead.deleteMany({
+    await prisma.salesLead.deleteMany({
       where: { id: { in: created.leads }, tenantId: ROOT_TENANT_ID },
     });
   }
 
   if (created.tags.length > 0) {
-    await prisma.crmTag.deleteMany({
+    await prisma.businessTag.deleteMany({
       where: { id: { in: created.tags }, tenantId: ROOT_TENANT_ID },
     });
   }
@@ -630,12 +647,15 @@ async function resolveAdminToken(): Promise<string> {
     lastStatus = response.status;
     if (response.ok) {
       const body = (await response.json()) as { accessToken?: unknown };
-      return assertString(body.accessToken, 'Admin CRM actions token');
+      return assertString(
+        body.accessToken,
+        'Admin Admin business actions token',
+      );
     }
   }
 
   throw new Error(
-    `Unable to authenticate Admin CRM actions smoke user ${adminUsername}; last status ${lastStatus}.`,
+    `Unable to authenticate Admin Admin business actions smoke user ${adminUsername}; last status ${lastStatus}.`,
   );
 }
 
@@ -700,7 +720,7 @@ async function navigateBusinessPage(
   label: string,
 ): Promise<void> {
   await page.send('Page.navigate', {
-    url: `${adminBaseUrl}${path}?admin-crm-actions-smoke=${runId}`,
+    url: `${adminBaseUrl}${path}?admin-business-actions-smoke=${runId}`,
   });
   await waitForExpression(
     page,
@@ -970,7 +990,9 @@ function assertClickResult(result: unknown, label: string): void {
 
 async function launchChrome(): Promise<ChromeInstance> {
   const executable = findChromeExecutable();
-  const profileDir = mkdtempSync(join(tmpdir(), 'opencore-admin-crm-smoke-'));
+  const profileDir = mkdtempSync(
+    join(tmpdir(), 'opencore-admin-business-smoke-'),
+  );
   const child = spawn(executable, [
     '--headless=new',
     '--disable-gpu',
@@ -1015,7 +1037,7 @@ function findChromeExecutable(): string {
   }
 
   throw new Error(
-    'Chrome or Chromium is required for Admin CRM actions smoke. Set OPENCORE_SMOKE_CHROME_BIN.',
+    'Chrome or Chromium is required for Admin Admin business actions smoke. Set OPENCORE_SMOKE_CHROME_BIN.',
   );
 }
 

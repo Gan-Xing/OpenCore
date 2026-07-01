@@ -1,6 +1,7 @@
 import {
   createCollaborationClient,
   createBusinessCoreClient,
+  createBusinessSalesClient,
   createIntegrationClient,
   createMonitoringClient,
   createOperationsClient,
@@ -127,6 +128,8 @@ import {
   type BusinessTaskPage,
   type BusinessTaskQueryRequest,
   type BusinessTaskSummary,
+  type SalesExportPreview,
+  type SalesExportQueryRequest,
   type OpenForgeApplyDryRunRequest,
   type OpenForgeApplyDryRunSummary,
   type OpenForgeDiffSummary,
@@ -351,6 +354,7 @@ import { getRequiredAdminToken, opencoreSdkRequest } from './client';
 const rbacClient = createRbacClient(opencoreSdkRequest);
 const collaborationClient = createCollaborationClient(opencoreSdkRequest);
 const businessCoreClient = createBusinessCoreClient(opencoreSdkRequest);
+const businessSalesClient = createBusinessSalesClient(opencoreSdkRequest);
 const integrationClient = createIntegrationClient(opencoreSdkRequest);
 const monitoringClient = createMonitoringClient(opencoreSdkRequest);
 const operationsClient = createOperationsClient(opencoreSdkRequest);
@@ -786,7 +790,7 @@ export function archiveOpenCoreTicket(
 }
 
 export function getOpenCoreBusinessSummary(): Promise<BusinessSummary> {
-  return businessCoreClient.getSummary(getRequiredAdminToken());
+  return businessSalesClient.getSummary(getRequiredAdminToken());
 }
 
 export function pageOpenCoreBusinessTags(
@@ -822,7 +826,7 @@ export function updateOpenCoreBusinessTag(
 export function pageOpenCoreBusinessLeads(
   query?: BusinessLeadQueryRequest,
 ): Promise<BusinessLeadPage> {
-  return businessCoreClient.listLeads(getRequiredAdminToken(), {
+  return businessSalesClient.listLeads(getRequiredAdminToken(), {
     page: 1,
     pageSize: 100,
     ...query,
@@ -839,34 +843,34 @@ export async function listOpenCoreBusinessLeads(
 export function getOpenCoreBusinessLead(
   id: string,
 ): Promise<BusinessLeadSummary> {
-  return businessCoreClient.getLead(getRequiredAdminToken(), id);
+  return businessSalesClient.getLead(getRequiredAdminToken(), id);
 }
 
 export function createOpenCoreBusinessLead(
   body: CreateBusinessLeadRequest,
 ): Promise<BusinessLeadSummary> {
-  return businessCoreClient.createLead(getRequiredAdminToken(), body);
+  return businessSalesClient.createLead(getRequiredAdminToken(), body);
 }
 
 export function updateOpenCoreBusinessLead(
   id: string,
   body: UpdateBusinessLeadRequest,
 ): Promise<BusinessLeadSummary> {
-  return businessCoreClient.updateLead(getRequiredAdminToken(), id, body);
+  return businessSalesClient.updateLead(getRequiredAdminToken(), id, body);
 }
 
 export function convertOpenCoreBusinessLead(
   id: string,
   body: ConvertBusinessLeadRequest,
 ): Promise<ConvertBusinessLeadResult> {
-  return businessCoreClient.convertLead(getRequiredAdminToken(), id, body);
+  return businessSalesClient.convertLead(getRequiredAdminToken(), id, body);
 }
 
 export function transferOpenCoreBusinessLeadOwner(
   id: string,
   body: TransferBusinessOwnerRequest,
 ): Promise<BusinessLeadSummary> {
-  return businessCoreClient.transferLeadOwner(
+  return businessSalesClient.transferLeadOwner(
     getRequiredAdminToken(),
     id,
     body,
@@ -876,7 +880,7 @@ export function transferOpenCoreBusinessLeadOwner(
 export function archiveOpenCoreBusinessLead(
   id: string,
 ): Promise<BusinessDeleteResult> {
-  return businessCoreClient.archiveLead(getRequiredAdminToken(), id);
+  return businessSalesClient.archiveLead(getRequiredAdminToken(), id);
 }
 
 export function pageOpenCoreBusinessCustomers(
@@ -977,7 +981,7 @@ export function archiveOpenCoreBusinessContact(
 export function pageOpenCoreBusinessOpportunities(
   query?: BusinessOpportunityQueryRequest,
 ): Promise<BusinessOpportunityPage> {
-  return businessCoreClient.listOpportunities(getRequiredAdminToken(), {
+  return businessSalesClient.listOpportunities(getRequiredAdminToken(), {
     page: 1,
     pageSize: 100,
     ...query,
@@ -1004,20 +1008,20 @@ export function pageOpenCoreBusinessActivities(
 export function getOpenCoreBusinessOpportunity(
   id: string,
 ): Promise<BusinessOpportunitySummary> {
-  return businessCoreClient.getOpportunity(getRequiredAdminToken(), id);
+  return businessSalesClient.getOpportunity(getRequiredAdminToken(), id);
 }
 
 export function createOpenCoreBusinessOpportunity(
   body: CreateBusinessOpportunityRequest,
 ): Promise<BusinessOpportunitySummary> {
-  return businessCoreClient.createOpportunity(getRequiredAdminToken(), body);
+  return businessSalesClient.createOpportunity(getRequiredAdminToken(), body);
 }
 
 export function updateOpenCoreBusinessOpportunity(
   id: string,
   body: UpdateBusinessOpportunityRequest,
 ): Promise<BusinessOpportunitySummary> {
-  return businessCoreClient.updateOpportunity(
+  return businessSalesClient.updateOpportunity(
     getRequiredAdminToken(),
     id,
     body,
@@ -1028,7 +1032,7 @@ export function changeOpenCoreBusinessOpportunityStage(
   id: string,
   body: ChangeBusinessOpportunityStageRequest,
 ): Promise<BusinessOpportunitySummary> {
-  return businessCoreClient.changeOpportunityStage(
+  return businessSalesClient.changeOpportunityStage(
     getRequiredAdminToken(),
     id,
     body,
@@ -1039,7 +1043,7 @@ export function transferOpenCoreBusinessOpportunityOwner(
   id: string,
   body: TransferBusinessOwnerRequest,
 ): Promise<BusinessOpportunitySummary> {
-  return businessCoreClient.transferOpportunityOwner(
+  return businessSalesClient.transferOpportunityOwner(
     getRequiredAdminToken(),
     id,
     body,
@@ -1049,7 +1053,7 @@ export function transferOpenCoreBusinessOpportunityOwner(
 export function archiveOpenCoreBusinessOpportunity(
   id: string,
 ): Promise<BusinessDeleteResult> {
-  return businessCoreClient.archiveOpportunity(getRequiredAdminToken(), id);
+  return businessSalesClient.archiveOpportunity(getRequiredAdminToken(), id);
 }
 
 export function pageOpenCoreBusinessFollowUps(
@@ -1163,9 +1167,19 @@ export async function listOpenCoreBusinessAuditEvents(
 }
 
 export function exportOpenCoreBusiness(
-  query: BusinessExportQueryRequest,
-): Promise<BusinessExportPreview> {
-  return businessCoreClient.exportBusinessCore(getRequiredAdminToken(), query);
+  query: BusinessExportQueryRequest | SalesExportQueryRequest,
+): Promise<BusinessExportPreview | SalesExportPreview> {
+  if (query.resource === 'leads' || query.resource === 'opportunities') {
+    return businessSalesClient.exportBusinessSales(
+      getRequiredAdminToken(),
+      query,
+    );
+  }
+
+  return businessCoreClient.exportBusinessCore(
+    getRequiredAdminToken(),
+    query as BusinessExportQueryRequest,
+  );
 }
 
 export async function listOpenCoreApprovalLiteRequests(

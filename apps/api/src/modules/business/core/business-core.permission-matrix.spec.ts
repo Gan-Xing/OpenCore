@@ -1,22 +1,14 @@
 import 'reflect-metadata';
 import { REQUIRED_PERMISSIONS_KEY } from '../../core/rbac/permissions.decorator';
-import { CrmController } from './crm.controller';
+import { BusinessCoreController } from './business-core.controller';
 
-describe('CrmController permission matrix', () => {
-  it('guards commercial CRM routes', () => {
-    const expected: Array<[keyof CrmController, string[]]> = [
-      ['getSummary', ['business:core:read']],
-      ['exportCrm', ['business:core:export']],
+describe('BusinessCoreController permission matrix', () => {
+  it('guards reusable business core routes', () => {
+    const expected: Array<[keyof BusinessCoreController, string[]]> = [
+      ['exportBusiness', ['business:core:export']],
       ['listTags', ['business:core:read']],
       ['createTag', ['business:core:create']],
       ['updateTag', ['business:core:update']],
-      ['listLeads', ['business:core:read']],
-      ['getLead', ['business:core:read']],
-      ['createLead', ['business:core:create']],
-      ['updateLead', ['business:core:update']],
-      ['convertLead', ['business:core:update']],
-      ['transferLeadOwner', ['business:core:assign']],
-      ['archiveLead', ['business:core:delete']],
       ['listCustomers', ['business:core:read']],
       ['getCustomer', ['business:core:read']],
       ['createCustomer', ['business:core:create']],
@@ -28,13 +20,7 @@ describe('CrmController permission matrix', () => {
       ['createContact', ['business:core:create']],
       ['updateContact', ['business:core:update']],
       ['archiveContact', ['business:core:delete']],
-      ['listOpportunities', ['business:core:read']],
-      ['getOpportunity', ['business:core:read']],
-      ['createOpportunity', ['business:core:create']],
-      ['updateOpportunity', ['business:core:update']],
-      ['changeOpportunityStage', ['business:core:update']],
-      ['transferOpportunityOwner', ['business:core:assign']],
-      ['archiveOpportunity', ['business:core:delete']],
+      ['listActivities', ['business:core:read']],
       ['listFollowUps', ['business:core:read']],
       ['createFollowUp', ['business:core:comment']],
       ['listTasks', ['business:core:read']],
@@ -50,7 +36,7 @@ describe('CrmController permission matrix', () => {
       expect(
         Reflect.getMetadata(
           REQUIRED_PERMISSIONS_KEY,
-          CrmController.prototype[method],
+          BusinessCoreController.prototype[method],
         ),
       ).toEqual(permissions);
     }

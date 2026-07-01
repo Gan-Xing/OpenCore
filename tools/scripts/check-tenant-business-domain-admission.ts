@@ -130,18 +130,22 @@ for (const marker of [
   'Cross-tenant read/write/update/delete attempts',
   '`pnpm release:gate`',
 ]) {
-  requireMarker('cycle-027 CRM admission', cycle027Admission, marker);
+  requireMarker('cycle-027 business admission', cycle027Admission, marker);
 }
 
 for (const marker of [
   'Typed smoke and tenant guard',
   'release gate plus public smoke',
 ]) {
-  requireMarker('cycle-027 CRM backlog', cycle027Backlog, marker);
+  requireMarker('cycle-027 business backlog', cycle027Backlog, marker);
 }
 
-requireMarker('package.json', packageJson, 'guard:tenant-crm-scope');
-requireMarker('package.json', packageJson, 'smoke:core-crm');
+requireMarker(
+  'package.json',
+  packageJson,
+  'guard:tenant-business-platform-scope',
+);
+requireMarker('package.json', packageJson, 'smoke:business-core-sales');
 
 if (missing.length > 0) {
   throw new Error(

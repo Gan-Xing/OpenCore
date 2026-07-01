@@ -1,3 +1,4 @@
+export { Prisma, PrismaClient } from '@prisma/client';
 export * from './database.module';
 export * from './database-options';
 export * from './prisma-client';

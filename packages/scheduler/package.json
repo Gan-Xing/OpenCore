@@ -14,7 +14,6 @@
     "@opencore/common": "workspace:*",
     "@opencore/core": "workspace:*",
     "@opencore/database": "workspace:*",
-    "@prisma/client": "^7.8.0",
     "bullmq": "^5.78.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.0"

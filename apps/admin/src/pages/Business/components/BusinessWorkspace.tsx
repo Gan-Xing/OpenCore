@@ -994,7 +994,7 @@ export default function BusinessWorkspace({
     message.success(
       formatMessage(
         businessMessageId('messages.taskCompleted'),
-        'CRM task completed.',
+        'Business task completed.',
       ),
     );
     await reloadBusiness();

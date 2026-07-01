@@ -270,8 +270,8 @@ const adminErrorUiSmoke = readFileSync(
   resolve(root, '../../tools/smoke/smoke-admin-error-ui.ts'),
   'utf8',
 );
-const adminCrmI18nSmoke = readFileSync(
-  resolve(root, '../../tools/smoke/smoke-admin-crm-i18n.ts'),
+const adminBusinessI18nSmoke = readFileSync(
+  resolve(root, '../../tools/smoke/smoke-admin-business-i18n.ts'),
   'utf8',
 );
 
@@ -319,7 +319,7 @@ if (
   !deployScript.includes('admin.api-proxy.duplicate-prefix-login') ||
   !deployScript.includes('Admin public bundle verification') ||
   !deployScript.includes('smoke-admin-error-ui.ts') ||
-  !deployScript.includes('smoke-admin-crm-i18n.ts') ||
+  !deployScript.includes('smoke-admin-business-i18n.ts') ||
   !deployScript.includes('OPENCORE_SMOKE_ADMIN_BASE_URL') ||
   !deployScript.includes('OpenCore deploy failed after service startup') ||
   !deployScript.includes('ensure_deployed_services_running') ||
@@ -359,14 +359,16 @@ if (
 }
 
 if (
-  !adminCrmI18nSmoke.includes('admin.public-crm.zh-cn-summary') ||
-  !adminCrmI18nSmoke.includes('admin.public-crm.no-english-fallbacks') ||
-  !adminCrmI18nSmoke.includes('未结管道') ||
-  !adminCrmI18nSmoke.includes('Open Pipeline') ||
-  !adminCrmI18nSmoke.includes('qualified')
+  !adminBusinessI18nSmoke.includes('admin.public-business.zh-cn-summary') ||
+  !adminBusinessI18nSmoke.includes(
+    'admin.public-business.no-english-fallbacks',
+  ) ||
+  !adminBusinessI18nSmoke.includes('未结管道') ||
+  !adminBusinessI18nSmoke.includes('Open Pipeline') ||
+  !adminBusinessI18nSmoke.includes('qualified')
 ) {
   throw new Error(
-    'Admin CRM i18n smoke must verify the live CRM page renders zh-CN labels, translated status values and no English fallback text.',
+    'Admin business i18n smoke must verify the live business page renders zh-CN labels, translated status values and no English fallback text.',
   );
 }
 

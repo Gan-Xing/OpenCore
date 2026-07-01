@@ -8,6 +8,8 @@ export default function access(initialState: InitialState = {}) {
   const permissions = new Set(initialState.permissions ?? []);
   const hasPermission = (permissionCode: string) =>
     permissions.has(permissionCode);
+  const hasAnyPermission = (...permissionCodes: readonly string[]) =>
+    permissionCodes.some((permissionCode) => hasPermission(permissionCode));
 
   return {
     canAccessDashboard: hasPermission('core:dashboard:read'),
@@ -66,13 +68,31 @@ export default function access(initialState: InitialState = {}) {
     canCloseTickets: hasPermission('collaboration:ticket:close'),
     canDeleteTickets: hasPermission('collaboration:ticket:delete'),
     canReadApprovalLite: hasPermission('collaboration:approval-lite:read'),
-    canReadBusiness: hasPermission('business:core:read'),
-    canCreateBusiness: hasPermission('business:core:create'),
-    canUpdateBusiness: hasPermission('business:core:update'),
-    canAssignBusiness: hasPermission('business:core:assign'),
+    canReadBusiness: hasAnyPermission(
+      'business:core:read',
+      'business:sales:read',
+    ),
+    canCreateBusiness: hasAnyPermission(
+      'business:core:create',
+      'business:sales:create',
+    ),
+    canUpdateBusiness: hasAnyPermission(
+      'business:core:update',
+      'business:sales:update',
+    ),
+    canAssignBusiness: hasAnyPermission(
+      'business:core:assign',
+      'business:sales:assign',
+    ),
     canCommentBusiness: hasPermission('business:core:comment'),
-    canExportBusiness: hasPermission('business:core:export'),
-    canDeleteBusiness: hasPermission('business:core:delete'),
+    canExportBusiness: hasAnyPermission(
+      'business:core:export',
+      'business:sales:export',
+    ),
+    canDeleteBusiness: hasAnyPermission(
+      'business:core:delete',
+      'business:sales:delete',
+    ),
     canReadJobs: hasPermission('monitor:job:read'),
     canUpdateJobs: hasPermission('monitor:job:update'),
     canManageJobs: hasPermission('monitor:job:manage'),

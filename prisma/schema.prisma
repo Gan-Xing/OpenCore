@@ -110,16 +110,16 @@ model Tenant {
   ticketComments         TicketComment[]
   ticketTransitions      TicketTransition[]
   ticketAttachments      TicketAttachment[]
-  crmTags                CrmTag[]
-  crmLeads               CrmLead[]
-  crmCustomers           CrmCustomer[]
-  crmContacts            CrmContact[]
-  crmOpportunities       CrmOpportunity[]
-  crmFollowUps           CrmFollowUp[]
-  crmTasks               CrmTask[]
-  crmAttachments         CrmAttachment[]
-  crmOwnerTransfers      CrmOwnerTransfer[]
-  crmAuditEvents         CrmAuditEvent[]
+  businessTags           BusinessTag[]
+  salesLeads             SalesLead[]
+  businessCustomers      BusinessCustomer[]
+  businessContacts       BusinessContact[]
+  salesOpportunities     SalesOpportunity[]
+  businessFollowUps      BusinessFollowUp[]
+  businessTasks          BusinessTask[]
+  businessAttachments    BusinessAttachment[]
+  businessOwnerTransfers BusinessOwnerTransfer[]
+  businessAuditEvents    BusinessAuditEvent[]
   reportDefinitions      ReportDefinition[]
   auditLogs              AuditLog[]
   loginLogs              LoginLog[]
@@ -817,7 +817,7 @@ model TicketAttachment {
   @@index([tenantId, uploadedBy, createdAt])
 }
 
-model CrmTag {
+model BusinessTag {
   id          String   @id @default(cuid())
   tenantId    String   @default("tenant_root")
   tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -834,7 +834,7 @@ model CrmTag {
   @@index([tenantId, enabled, name])
 }
 
-model CrmLead {
+model SalesLead {
   id                     String    @id @default(cuid())
   tenantId               String    @default("tenant_root")
   tenant                 Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -866,15 +866,15 @@ model CrmLead {
   @@index([tenantId, archivedAt])
 }
 
-model CrmCustomer {
-  id             String           @id @default(cuid())
-  tenantId       String           @default("tenant_root")
-  tenant         Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+model BusinessCustomer {
+  id             String             @id @default(cuid())
+  tenantId       String             @default("tenant_root")
+  tenant         Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   number         String
   name           String
   owner          String
-  status         String           @default("active")
-  level          String           @default("standard")
+  status         String             @default("active")
+  level          String             @default("standard")
   source         String
   industry       String?
   region         String?
@@ -882,15 +882,15 @@ model CrmCustomer {
   phone          String?
   email          String?
   address        String?
-  tags           Json             @default("[]")
+  tags           Json               @default("[]")
   remark         String?
   nextContactAt  DateTime?
   lastFollowedAt DateTime?
   archivedAt     DateTime?
-  contacts       CrmContact[]
-  opportunities  CrmOpportunity[]
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  contacts       BusinessContact[]
+  opportunities  SalesOpportunity[]
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
 
   @@unique([tenantId, number])
   @@unique([tenantId, id])
@@ -900,12 +900,12 @@ model CrmCustomer {
   @@index([tenantId, archivedAt])
 }
 
-model CrmContact {
-  id             String      @id @default(cuid())
-  tenantId       String      @default("tenant_root")
-  tenant         Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+model BusinessContact {
+  id             String           @id @default(cuid())
+  tenantId       String           @default("tenant_root")
+  tenant         Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   customerId     String
-  customer       CrmCustomer @relation(fields: [tenantId, customerId], references: [tenantId, id], onDelete: Cascade)
+  customer       BusinessCustomer @relation(fields: [tenantId, customerId], references: [tenantId, id], onDelete: Cascade)
   name           String
   title          String?
   mobile         String?
@@ -913,13 +913,13 @@ model CrmContact {
   phone          String?
   owner          String
   decisionRole   String?
-  primary        Boolean     @default(false)
+  primary        Boolean          @default(false)
   remark         String?
   nextContactAt  DateTime?
   lastFollowedAt DateTime?
   archivedAt     DateTime?
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 
   @@unique([tenantId, id])
   @@index([tenantId, customerId, primary])
@@ -928,26 +928,26 @@ model CrmContact {
   @@index([tenantId, archivedAt])
 }
 
-model CrmOpportunity {
-  id              String      @id @default(cuid())
-  tenantId        String      @default("tenant_root")
-  tenant          Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+model SalesOpportunity {
+  id              String           @id @default(cuid())
+  tenantId        String           @default("tenant_root")
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   customerId      String
-  customer        CrmCustomer @relation(fields: [tenantId, customerId], references: [tenantId, id], onDelete: Cascade)
+  customer        BusinessCustomer @relation(fields: [tenantId, customerId], references: [tenantId, id], onDelete: Cascade)
   number          String
   name            String
   owner           String
-  stage           String      @default("qualification")
-  amount          Decimal     @default(0) @db.Decimal(18, 2)
-  probability     Int         @default(10)
+  stage           String           @default("qualification")
+  amount          Decimal          @default(0) @db.Decimal(18, 2)
+  probability     Int              @default(10)
   expectedCloseAt DateTime?
   closedAt        DateTime?
   closeReason     String?
-  tags            Json        @default("[]")
+  tags            Json             @default("[]")
   remark          String?
   archivedAt      DateTime?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
   @@unique([tenantId, number])
   @@unique([tenantId, id])
@@ -957,7 +957,7 @@ model CrmOpportunity {
   @@index([tenantId, archivedAt])
 }
 
-model CrmFollowUp {
+model BusinessFollowUp {
   id            String    @id @default(cuid())
   tenantId      String    @default("tenant_root")
   tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -977,7 +977,7 @@ model CrmFollowUp {
   @@index([tenantId, nextContactAt])
 }
 
-model CrmTask {
+model BusinessTask {
   id          String    @id @default(cuid())
   tenantId    String    @default("tenant_root")
   tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -999,7 +999,7 @@ model CrmTask {
   @@index([tenantId, targetType, targetId])
 }
 
-model CrmAttachment {
+model BusinessAttachment {
   id           String   @id @default(cuid())
   tenantId     String   @default("tenant_root")
   tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -1019,7 +1019,7 @@ model CrmAttachment {
   @@index([tenantId, uploadedBy, createdAt])
 }
 
-model CrmOwnerTransfer {
+model BusinessOwnerTransfer {
   id         String   @id @default(cuid())
   tenantId   String   @default("tenant_root")
   tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -1036,7 +1036,7 @@ model CrmOwnerTransfer {
   @@index([tenantId, toOwner, createdAt])
 }
 
-model CrmAuditEvent {
+model BusinessAuditEvent {
   id         String   @id @default(cuid())
   tenantId   String   @default("tenant_root")
   tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)

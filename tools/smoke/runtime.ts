@@ -1,6 +1,7 @@
 import {
+  createBusinessCoreClient,
+  createBusinessSalesClient,
   createCollaborationClient,
-  createCrmClient,
   createIntegrationClient,
   createMonitoringClient,
   createOperationsClient,
@@ -8,8 +9,9 @@ import {
   createSystemManagementClient,
   createTenancyClient,
   createToolingClient,
+  type BusinessCoreClient,
+  type BusinessSalesClient,
   type CollaborationClient,
-  type CrmClient,
   type IntegrationClient,
   type LoginResponse,
   type MonitoringClient,
@@ -69,10 +71,15 @@ export function createTypedSmokeRuntime() {
     return apiRequest(path, options);
   };
   const clients = {
+    businessCore: createBusinessCoreClient(
+      sdkRequest,
+    ) satisfies BusinessCoreClient,
+    businessSales: createBusinessSalesClient(
+      sdkRequest,
+    ) satisfies BusinessSalesClient,
     collaboration: createCollaborationClient(
       sdkRequest,
     ) satisfies CollaborationClient,
-    crm: createCrmClient(sdkRequest) satisfies CrmClient,
     integration: createIntegrationClient(
       sdkRequest,
     ) satisfies IntegrationClient,

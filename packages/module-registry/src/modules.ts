@@ -1100,7 +1100,7 @@ export const moduleRegistry = [
     stage: 'S12',
     enabledByDefault: true,
     description:
-      'Tenant-owned business foundation for accounts, contacts, leads, opportunities, follow-ups, reminders, owner transfer, attachments, tags, audit, and summary reporting.',
+      'Tenant-owned business foundation for accounts, contacts, follow-ups, reminders, owner transfer, attachments, tags, and audit.',
     apiTags: ['Business Core'],
     permissions: definePermissions('business', 'core', 'business core', 'S12', [
       { action: 'read', title: 'Read' },
@@ -1112,22 +1112,6 @@ export const moduleRegistry = [
       { action: 'delete', title: 'Archive', dangerous: true },
     ]),
     menus: [
-      defineMenu(
-        'business.overview',
-        'Business Overview',
-        '/business/overview',
-        'business:core:read',
-        900,
-        'S12',
-      ),
-      defineMenu(
-        'business.leads',
-        'Leads',
-        '/business/leads',
-        'business:core:read',
-        910,
-        'S12',
-      ),
       defineMenu(
         'business.accounts',
         'Accounts',
@@ -1142,14 +1126,6 @@ export const moduleRegistry = [
         '/business/contacts',
         'business:core:read',
         930,
-        'S12',
-      ),
-      defineMenu(
-        'business.opportunities',
-        'Opportunities',
-        '/business/opportunities',
-        'business:core:read',
-        940,
         'S12',
       ),
       defineMenu(
@@ -1181,16 +1157,6 @@ export const moduleRegistry = [
       basePath: '/business',
       routes: [
         {
-          path: '/business/overview',
-          title: 'Business Overview',
-          permissionCode: 'business:core:read',
-        },
-        {
-          path: '/business/leads',
-          title: 'Leads',
-          permissionCode: 'business:core:read',
-        },
-        {
           path: '/business/accounts',
           title: 'Accounts',
           permissionCode: 'business:core:read',
@@ -1198,11 +1164,6 @@ export const moduleRegistry = [
         {
           path: '/business/contacts',
           title: 'Contacts',
-          permissionCode: 'business:core:read',
-        },
-        {
-          path: '/business/opportunities',
-          title: 'Opportunities',
           permissionCode: 'business:core:read',
         },
         {
@@ -1219,6 +1180,78 @@ export const moduleRegistry = [
           path: '/business/activity',
           title: 'Activity',
           permissionCode: 'business:core:read',
+        },
+      ],
+    },
+  },
+  {
+    code: 'business.sales',
+    title: 'Business Sales',
+    layer: 'business',
+    priority: 'P3',
+    status: 'active',
+    stage: 'S12',
+    enabledByDefault: true,
+    description:
+      'Sales suite for leads, opportunities, funnel movement, lead conversion, exports, and sales dashboard reporting.',
+    apiTags: ['Business Sales'],
+    permissions: definePermissions(
+      'business',
+      'sales',
+      'business sales',
+      'S12',
+      [
+        { action: 'read', title: 'Read' },
+        { action: 'create', title: 'Create' },
+        { action: 'update', title: 'Update' },
+        { action: 'assign', title: 'Transfer owner for' },
+        { action: 'export', title: 'Export' },
+        { action: 'delete', title: 'Archive', dangerous: true },
+      ],
+    ),
+    menus: [
+      defineMenu(
+        'business.overview',
+        'Business Overview',
+        '/business/overview',
+        'business:sales:read',
+        900,
+        'S12',
+      ),
+      defineMenu(
+        'business.leads',
+        'Leads',
+        '/business/leads',
+        'business:sales:read',
+        910,
+        'S12',
+      ),
+      defineMenu(
+        'business.opportunities',
+        'Opportunities',
+        '/business/opportunities',
+        'business:sales:read',
+        940,
+        'S12',
+      ),
+    ],
+    admin: {
+      basePath: '/business',
+      routes: [
+        {
+          path: '/business/overview',
+          title: 'Business Overview',
+          permissionCode: 'business:sales:read',
+        },
+        {
+          path: '/business/leads',
+          title: 'Leads',
+          permissionCode: 'business:sales:read',
+        },
+        {
+          path: '/business/opportunities',
+          title: 'Opportunities',
+          permissionCode: 'business:sales:read',
         },
       ],
     },

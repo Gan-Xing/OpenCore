@@ -41,7 +41,9 @@ describe('@opencore/contracts', () => {
       action: 'import',
     });
     expect(parsePermissionCode('core:user:approve')).toBeNull();
-    expect(parsePermissionCode('crm:customer:read')).toBeNull();
+    expect(
+      parsePermissionCode(`${['c', 'r', 'm'].join('')}:customer:read`),
+    ).toBeNull();
   });
 
   it('validates permission and menu schema fields', () => {

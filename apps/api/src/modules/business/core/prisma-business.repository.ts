@@ -7,76 +7,76 @@ import {
   type PrismaTransactionClient,
 } from '@opencore/database';
 import type {
-  ChangeCrmOpportunityStageDto,
-  CompleteCrmTaskDto,
-  ConvertCrmLeadDto,
-  ConvertCrmLeadResultDto,
-  CreateCrmAttachmentDto,
-  CreateCrmContactDto,
-  CreateCrmCustomerDto,
-  CreateCrmFollowUpDto,
-  CreateCrmLeadDto,
-  CreateCrmOpportunityDto,
-  CreateCrmTagDto,
-  CreateCrmTaskDto,
-  CrmAttachmentDto,
-  CrmActivityDto,
-  CrmActivityPageDto,
-  CrmAttachmentPageDto,
-  CrmAuditEventDto,
-  CrmAuditEventPageDto,
-  CrmContactDto,
-  CrmContactPageDto,
-  CrmContactQueryDto,
-  CrmCustomerDto,
-  CrmCustomerPageDto,
-  CrmCustomerQueryDto,
-  CrmExportPreviewDto,
-  CrmExportQueryDto,
-  CrmFollowUpDto,
-  CrmFollowUpPageDto,
-  CrmLeadDto,
-  CrmLeadPageDto,
-  CrmLeadQueryDto,
-  CrmLeadStatus,
-  CrmOpportunityDto,
-  CrmOpportunityPageDto,
-  CrmOpportunityQueryDto,
-  CrmOpportunityStage,
-  CrmOwnerTransferDto,
-  CrmOwnerTransferPageDto,
-  CrmSummaryDto,
-  CrmTagDto,
-  CrmTagPageDto,
-  CrmTagQueryDto,
-  CrmTargetQueryDto,
-  CrmTargetType,
-  CrmTaskDto,
-  CrmTaskPageDto,
-  CrmTaskQueryDto,
-  TransferCrmOwnerDto,
-  UpdateCrmContactDto,
-  UpdateCrmCustomerDto,
-  UpdateCrmLeadDto,
-  UpdateCrmOpportunityDto,
-  UpdateCrmTagDto,
-} from './crm.dto';
+  ChangeBusinessOpportunityStageDto,
+  CompleteBusinessTaskDto,
+  ConvertBusinessLeadDto,
+  ConvertBusinessLeadResultDto,
+  CreateBusinessAttachmentDto,
+  CreateBusinessContactDto,
+  CreateBusinessCustomerDto,
+  CreateBusinessFollowUpDto,
+  CreateBusinessLeadDto,
+  CreateBusinessOpportunityDto,
+  CreateBusinessTagDto,
+  CreateBusinessTaskDto,
+  BusinessAttachmentDto,
+  BusinessActivityDto,
+  BusinessActivityPageDto,
+  BusinessAttachmentPageDto,
+  BusinessAuditEventDto,
+  BusinessAuditEventPageDto,
+  BusinessContactDto,
+  BusinessContactPageDto,
+  BusinessContactQueryDto,
+  BusinessCustomerDto,
+  BusinessCustomerPageDto,
+  BusinessCustomerQueryDto,
+  BusinessExportPreviewDto,
+  BusinessExportQueryDto,
+  BusinessFollowUpDto,
+  BusinessFollowUpPageDto,
+  BusinessLeadDto,
+  BusinessLeadPageDto,
+  BusinessLeadQueryDto,
+  BusinessLeadStatus,
+  BusinessOpportunityDto,
+  BusinessOpportunityPageDto,
+  BusinessOpportunityQueryDto,
+  BusinessOpportunityStage,
+  BusinessOwnerTransferDto,
+  BusinessOwnerTransferPageDto,
+  BusinessSummaryDto,
+  BusinessTagDto,
+  BusinessTagPageDto,
+  BusinessTagQueryDto,
+  BusinessTargetQueryDto,
+  BusinessTargetType,
+  BusinessTaskDto,
+  BusinessTaskPageDto,
+  BusinessTaskQueryDto,
+  TransferBusinessOwnerDto,
+  UpdateBusinessContactDto,
+  UpdateBusinessCustomerDto,
+  UpdateBusinessLeadDto,
+  UpdateBusinessOpportunityDto,
+  UpdateBusinessTagDto,
+} from './business.dto';
 import {
-  CRM_CUSTOMER_STATUSES,
-  CRM_FOLLOW_UP_METHODS,
-  CRM_LEAD_STATUSES,
-  CRM_OPPORTUNITY_STAGES,
-  CRM_TARGET_TYPES,
-  CRM_TASK_PRIORITIES,
-  CRM_TASK_STATUSES,
-} from './crm.dto';
+  BUSINESS_CUSTOMER_STATUSES,
+  BUSINESS_FOLLOW_UP_METHODS,
+  BUSINESS_LEAD_STATUSES,
+  BUSINESS_OPPORTUNITY_STAGES,
+  BUSINESS_TARGET_TYPES,
+  BUSINESS_TASK_PRIORITIES,
+  BUSINESS_TASK_STATUSES,
+} from './business.dto';
 import {
-  createCrmDbPage,
-  crmBadRequest,
-  CrmRepository,
-  crmNotFound,
-  normalizeCrmPageWindow,
-} from './crm.repository';
+  createBusinessDbPage,
+  businessBadRequest,
+  BusinessRepository,
+  businessNotFound,
+  normalizeBusinessPageWindow,
+} from './business.repository';
 
 const ROOT_TENANT_ID = 'tenant_root';
 const CSV_CONTENT_TYPE = 'text/csv;charset=utf-8';
@@ -92,16 +92,16 @@ const CUSTOMER_INCLUDE = {
 const CONTACT_INCLUDE = { customer: true };
 const OPPORTUNITY_INCLUDE = { customer: true };
 
-type CrmCustomerRow = Prisma.CrmCustomerGetPayload<{
+type BusinessCustomerRow = Prisma.BusinessCustomerGetPayload<{
   include: typeof CUSTOMER_INCLUDE;
 }>;
-type CrmContactRow = Prisma.CrmContactGetPayload<{
+type BusinessContactRow = Prisma.BusinessContactGetPayload<{
   include: typeof CONTACT_INCLUDE;
 }>;
-type CrmOpportunityRow = Prisma.CrmOpportunityGetPayload<{
+type BusinessOpportunityRow = Prisma.SalesOpportunityGetPayload<{
   include: typeof OPPORTUNITY_INCLUDE;
 }>;
-type CrmActivityRow = {
+type BusinessActivityRow = {
   id: string;
   tenantId: string;
   activityType: 'follow-up' | 'attachment' | 'transfer' | 'audit';
@@ -113,12 +113,12 @@ type CrmActivityRow = {
 };
 
 @Injectable()
-export class PrismaCrmRepository extends CrmRepository {
+export class PrismaBusinessRepository extends BusinessRepository {
   constructor(private readonly prisma: PrismaService) {
     super();
   }
 
-  async getSummary(): Promise<CrmSummaryDto> {
+  async getSummary(): Promise<BusinessSummaryDto> {
     const tenantId = resolveCurrentTenantId();
     const activeLeadWhere = {
       tenantId,
@@ -151,38 +151,38 @@ export class PrismaCrmRepository extends CrmRepository {
       customersByLevel,
       opportunitiesByStage,
     ] = await Promise.all([
-      this.prisma.crmLead.count({ where: activeLeadWhere }),
-      this.prisma.crmCustomer.count({ where: activeCustomerWhere }),
-      this.prisma.crmContact.count({
+      this.prisma.salesLead.count({ where: activeLeadWhere }),
+      this.prisma.businessCustomer.count({ where: activeCustomerWhere }),
+      this.prisma.businessContact.count({
         where: {
           tenantId,
           archivedAt: null,
           customer: activeCustomerRelationWhere,
         },
       }),
-      this.prisma.crmOpportunity.count({ where: activeOpportunityWhere }),
-      this.prisma.crmTask.count({ where: { tenantId, status: 'open' } }),
-      this.prisma.crmTask.count({
+      this.prisma.salesOpportunity.count({ where: activeOpportunityWhere }),
+      this.prisma.businessTask.count({ where: { tenantId, status: 'open' } }),
+      this.prisma.businessTask.count({
         where: { tenantId, status: 'open', dueAt: { lt: new Date() } },
       }),
-      this.prisma.crmOpportunity.aggregate({
+      this.prisma.salesOpportunity.aggregate({
         _sum: { amount: true },
         where: {
           ...activeOpportunityWhere,
           stage: { notIn: ['won', 'lost'] },
         },
       }),
-      this.prisma.crmLead.groupBy({
+      this.prisma.salesLead.groupBy({
         by: ['status'],
         _count: { _all: true },
         where: activeLeadWhere,
       }),
-      this.prisma.crmCustomer.groupBy({
+      this.prisma.businessCustomer.groupBy({
         by: ['level'],
         _count: { _all: true },
         where: activeCustomerWhere,
       }),
-      this.prisma.crmOpportunity.groupBy({
+      this.prisma.salesOpportunity.groupBy({
         by: ['stage'],
         _count: { _all: true },
         where: activeOpportunityWhere,
@@ -214,19 +214,21 @@ export class PrismaCrmRepository extends CrmRepository {
     };
   }
 
-  async exportCrm(query: CrmExportQueryDto): Promise<CrmExportPreviewDto> {
+  async exportBusiness(
+    query: BusinessExportQueryDto,
+  ): Promise<BusinessExportPreviewDto> {
     const resource = normalizeOptionalText(query.resource);
     if (!resource) {
-      throw crmBadRequest(
-        'INDUSTRY_CRM_EXPORT_RESOURCE_REQUIRED',
-        'CRM export resource is required.',
+      throw businessBadRequest(
+        'BUSINESS_PLATFORM_EXPORT_RESOURCE_REQUIRED',
+        'business export resource is required.',
       );
     }
 
     if (resource === 'leads') {
       const page = await this.listLeads(query);
       return createCsvExportPreview(
-        'opencore-crm-leads.csv',
+        'opencore-sales-leads.csv',
         ['number', 'name', 'company', 'status', 'source', 'owner', 'createdAt'],
         page.items.map((row) => [
           row.number,
@@ -243,7 +245,7 @@ export class PrismaCrmRepository extends CrmRepository {
     if (resource === 'customers') {
       const page = await this.listCustomers(query);
       return createCsvExportPreview(
-        'opencore-crm-customers.csv',
+        'opencore-business-customers.csv',
         ['number', 'name', 'status', 'level', 'source', 'owner', 'createdAt'],
         page.items.map((row) => [
           row.number,
@@ -260,7 +262,7 @@ export class PrismaCrmRepository extends CrmRepository {
     if (resource === 'contacts') {
       const page = await this.listContacts(query);
       return createCsvExportPreview(
-        'opencore-crm-contacts.csv',
+        'opencore-business-contacts.csv',
         ['name', 'customerName', 'title', 'mobile', 'email', 'owner'],
         page.items.map((row) => [
           row.name,
@@ -276,7 +278,7 @@ export class PrismaCrmRepository extends CrmRepository {
     if (resource === 'opportunities') {
       const page = await this.listOpportunities(query);
       return createCsvExportPreview(
-        'opencore-crm-opportunities.csv',
+        'opencore-sales-opportunities.csv',
         [
           'number',
           'name',
@@ -301,7 +303,7 @@ export class PrismaCrmRepository extends CrmRepository {
     if (resource === 'tasks') {
       const page = await this.listTasks(query);
       return createCsvExportPreview(
-        'opencore-crm-tasks.csv',
+        'opencore-business-tasks.csv',
         ['title', 'targetType', 'targetId', 'assignee', 'status', 'dueAt'],
         page.items.map((row) => [
           row.title,
@@ -314,34 +316,34 @@ export class PrismaCrmRepository extends CrmRepository {
       );
     }
 
-    throw crmBadRequest(
-      'INDUSTRY_CRM_EXPORT_RESOURCE_INVALID',
-      'CRM export resource is invalid.',
+    throw businessBadRequest(
+      'BUSINESS_PLATFORM_EXPORT_RESOURCE_INVALID',
+      'business export resource is invalid.',
       { resource },
     );
   }
 
-  async listTags(query: CrmTagQueryDto = {}): Promise<CrmTagPageDto> {
+  async listTags(query: BusinessTagQueryDto = {}): Promise<BusinessTagPageDto> {
     const tenantId = resolveCurrentTenantId();
     const enabled = parseOptionalBoolean(query.enabled);
     const where = { tenantId, ...(enabled === undefined ? {} : { enabled }) };
-    const page = normalizeCrmPageWindow(query);
+    const page = normalizeBusinessPageWindow(query);
     const [rows, total] = await this.prisma.$transaction([
-      this.prisma.crmTag.findMany({
+      this.prisma.businessTag.findMany({
         where,
         orderBy: [{ enabled: 'desc' }, { name: 'asc' }, { id: 'asc' }],
         skip: page.skip,
         take: page.take,
       }),
-      this.prisma.crmTag.count({ where }),
+      this.prisma.businessTag.count({ where }),
     ]);
 
-    return createCrmDbPage(rows.map(toTagRecord), query, total);
+    return createBusinessDbPage(rows.map(toTagRecord), query, total);
   }
 
-  async createTag(body: CreateCrmTagDto): Promise<CrmTagDto> {
+  async createTag(body: CreateBusinessTagDto): Promise<BusinessTagDto> {
     const tenantId = resolveCurrentTenantId();
-    const tag = await this.prisma.crmTag.create({
+    const tag = await this.prisma.businessTag.create({
       data: {
         tenantId,
         code: requireText(body.code, 'code'),
@@ -355,10 +357,13 @@ export class PrismaCrmRepository extends CrmRepository {
     return toTagRecord(tag);
   }
 
-  async updateTag(id: string, body: UpdateCrmTagDto): Promise<CrmTagDto> {
+  async updateTag(
+    id: string,
+    body: UpdateBusinessTagDto,
+  ): Promise<BusinessTagDto> {
     const tenantId = resolveCurrentTenantId();
     await this.findTag(id);
-    const tag = await this.prisma.crmTag.update({
+    const tag = await this.prisma.businessTag.update({
       where: { tenantId_id: { tenantId, id } },
       data: {
         ...(body.code === undefined
@@ -380,36 +385,38 @@ export class PrismaCrmRepository extends CrmRepository {
     return toTagRecord(tag);
   }
 
-  async listLeads(query: CrmLeadQueryDto = {}): Promise<CrmLeadPageDto> {
+  async listLeads(
+    query: BusinessLeadQueryDto = {},
+  ): Promise<BusinessLeadPageDto> {
     const tenantId = resolveCurrentTenantId();
     const where = buildLeadWhere(tenantId, query);
-    const page = normalizeCrmPageWindow(query);
+    const page = normalizeBusinessPageWindow(query);
     const [rows, total] = await this.prisma.$transaction([
-      this.prisma.crmLead.findMany({
+      this.prisma.salesLead.findMany({
         where,
         orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
         skip: page.skip,
         take: page.take,
       }),
-      this.prisma.crmLead.count({ where }),
+      this.prisma.salesLead.count({ where }),
     ]);
 
-    return createCrmDbPage(rows.map(toLeadRecord), query, total);
+    return createBusinessDbPage(rows.map(toLeadRecord), query, total);
   }
 
-  async getLead(id: string): Promise<CrmLeadDto> {
+  async getLead(id: string): Promise<BusinessLeadDto> {
     return this.findActiveLead(id);
   }
 
-  async createLead(body: CreateCrmLeadDto): Promise<CrmLeadDto> {
+  async createLead(body: CreateBusinessLeadDto): Promise<BusinessLeadDto> {
     const tenantId = resolveCurrentTenantId();
     const tags = await this.normalizeTags(tenantId, body.tags);
-    const lead = await retryCrmNumberConflicts(() =>
+    const lead = await retryBusinessNumberConflicts(() =>
       this.prisma.$transaction(async (tx) => {
-        const created = await tx.crmLead.create({
+        const created = await tx.salesLead.create({
           data: {
             tenantId,
-            number: createCrmNumber('LEAD'),
+            number: createBusinessNumber('LEAD'),
             name: requireText(body.name, 'name'),
             company: normalizeOptionalText(body.company),
             mobile: normalizeOptionalText(body.mobile),
@@ -426,7 +433,7 @@ export class PrismaCrmRepository extends CrmRepository {
             ),
           },
         });
-        await tx.crmAuditEvent.create({
+        await tx.businessAuditEvent.create({
           data: {
             tenantId,
             targetType: 'lead',
@@ -444,7 +451,10 @@ export class PrismaCrmRepository extends CrmRepository {
     return toLeadRecord(lead);
   }
 
-  async updateLead(id: string, body: UpdateCrmLeadDto): Promise<CrmLeadDto> {
+  async updateLead(
+    id: string,
+    body: UpdateBusinessLeadDto,
+  ): Promise<BusinessLeadDto> {
     const tenantId = resolveCurrentTenantId();
     const existing = await this.findActiveLead(id);
     assertLeadWritable(existing, id);
@@ -452,7 +462,7 @@ export class PrismaCrmRepository extends CrmRepository {
       body.tags === undefined
         ? undefined
         : await this.normalizeTags(tenantId, body.tags);
-    const lead = await this.prisma.crmLead.update({
+    const lead = await this.prisma.salesLead.update({
       where: { tenantId_id: { tenantId, id } },
       data: {
         ...(body.name === undefined
@@ -500,34 +510,34 @@ export class PrismaCrmRepository extends CrmRepository {
 
   async convertLead(
     id: string,
-    body: ConvertCrmLeadDto,
-  ): Promise<ConvertCrmLeadResultDto> {
+    body: ConvertBusinessLeadDto,
+  ): Promise<ConvertBusinessLeadResultDto> {
     const tenantId = resolveCurrentTenantId();
     const actor = requireText(body.actor, 'actor');
-    const result = await retryCrmNumberConflicts(() =>
+    const result = await retryBusinessNumberConflicts(() =>
       this.prisma.$transaction(async (tx) => {
-        const lead = await tx.crmLead.findUnique({
+        const lead = await tx.salesLead.findUnique({
           where: { tenantId_id: { tenantId, id } },
         });
         if (!lead || lead.archivedAt || lead.status === 'archived') {
-          throw crmNotFound(
-            'INDUSTRY_CRM_LEAD_NOT_FOUND',
-            'CRM lead not found.',
+          throw businessNotFound(
+            'BUSINESS_PLATFORM_LEAD_NOT_FOUND',
+            'business lead not found.',
             { id },
           );
         }
         if (lead.convertedAt || lead.status === 'converted') {
-          throw crmBadRequest(
-            'INDUSTRY_CRM_LEAD_ALREADY_CONVERTED',
-            'CRM lead is already converted.',
+          throw businessBadRequest(
+            'BUSINESS_PLATFORM_LEAD_ALREADY_CONVERTED',
+            'business lead is already converted.',
             { id },
           );
         }
 
-        const customer = await tx.crmCustomer.create({
+        const customer = await tx.businessCustomer.create({
           data: {
             tenantId,
-            number: createCrmNumber('CUS'),
+            number: createBusinessNumber('CUS'),
             name:
               normalizeOptionalText(body.customerName) ??
               lead.company ??
@@ -545,7 +555,7 @@ export class PrismaCrmRepository extends CrmRepository {
           },
           include: CUSTOMER_INCLUDE,
         });
-        await tx.crmContact.create({
+        await tx.businessContact.create({
           data: {
             tenantId,
             customerId: customer.id,
@@ -559,11 +569,11 @@ export class PrismaCrmRepository extends CrmRepository {
 
         const opportunityName = normalizeOptionalText(body.opportunityName);
         const opportunity = opportunityName
-          ? await tx.crmOpportunity.create({
+          ? await tx.salesOpportunity.create({
               data: {
                 tenantId,
                 customerId: customer.id,
-                number: createCrmNumber('OPP'),
+                number: createBusinessNumber('OPP'),
                 name: opportunityName,
                 owner: lead.owner,
                 stage: 'qualification',
@@ -575,7 +585,7 @@ export class PrismaCrmRepository extends CrmRepository {
             })
           : undefined;
 
-        const updated = await tx.crmLead.updateMany({
+        const updated = await tx.salesLead.updateMany({
           where: {
             tenantId,
             id,
@@ -591,13 +601,13 @@ export class PrismaCrmRepository extends CrmRepository {
           },
         });
         if (updated.count !== 1) {
-          throw crmBadRequest(
-            'INDUSTRY_CRM_LEAD_ALREADY_CONVERTED',
-            'CRM lead is already converted.',
+          throw businessBadRequest(
+            'BUSINESS_PLATFORM_LEAD_ALREADY_CONVERTED',
+            'business lead is already converted.',
             { id },
           );
         }
-        await tx.crmAuditEvent.create({
+        await tx.businessAuditEvent.create({
           data: {
             tenantId,
             targetType: 'lead',
@@ -610,13 +620,13 @@ export class PrismaCrmRepository extends CrmRepository {
             }),
           },
         });
-        const convertedLead = await tx.crmLead.findUnique({
+        const convertedLead = await tx.salesLead.findUnique({
           where: { tenantId_id: { tenantId, id } },
         });
         if (!convertedLead) {
-          throw crmNotFound(
-            'INDUSTRY_CRM_LEAD_NOT_FOUND',
-            'CRM lead not found.',
+          throw businessNotFound(
+            'BUSINESS_PLATFORM_LEAD_NOT_FOUND',
+            'business lead not found.',
             { id },
           );
         }
@@ -636,14 +646,14 @@ export class PrismaCrmRepository extends CrmRepository {
 
   async transferLeadOwner(
     id: string,
-    body: TransferCrmOwnerDto,
-  ): Promise<CrmLeadDto> {
+    body: TransferBusinessOwnerDto,
+  ): Promise<BusinessLeadDto> {
     const tenantId = resolveCurrentTenantId();
     const existing = await this.findActiveLead(id);
     assertLeadWritable(existing, id);
     const toOwner = requireText(body.toOwner, 'toOwner');
     const actor = requireText(body.actor, 'actor');
-    const lead = await this.prisma.crmLead.update({
+    const lead = await this.prisma.salesLead.update({
       where: { tenantId_id: { tenantId, id } },
       data: { owner: toOwner },
     });
@@ -659,7 +669,7 @@ export class PrismaCrmRepository extends CrmRepository {
   async archiveLead(id: string): Promise<{ deleted: true }> {
     const tenantId = resolveCurrentTenantId();
     await this.findActiveLead(id);
-    await this.prisma.crmLead.update({
+    await this.prisma.salesLead.update({
       where: { tenantId_id: { tenantId, id } },
       data: { archivedAt: new Date(), status: 'archived' },
     });
@@ -669,38 +679,40 @@ export class PrismaCrmRepository extends CrmRepository {
   }
 
   async listCustomers(
-    query: CrmCustomerQueryDto = {},
-  ): Promise<CrmCustomerPageDto> {
+    query: BusinessCustomerQueryDto = {},
+  ): Promise<BusinessCustomerPageDto> {
     const tenantId = resolveCurrentTenantId();
     const where = buildCustomerWhere(tenantId, query);
-    const page = normalizeCrmPageWindow(query);
+    const page = normalizeBusinessPageWindow(query);
     const [rows, total] = await this.prisma.$transaction([
-      this.prisma.crmCustomer.findMany({
+      this.prisma.businessCustomer.findMany({
         where,
         include: CUSTOMER_INCLUDE,
         orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
         skip: page.skip,
         take: page.take,
       }),
-      this.prisma.crmCustomer.count({ where }),
+      this.prisma.businessCustomer.count({ where }),
     ]);
 
-    return createCrmDbPage(rows.map(toCustomerRecord), query, total);
+    return createBusinessDbPage(rows.map(toCustomerRecord), query, total);
   }
 
-  async getCustomer(id: string): Promise<CrmCustomerDto> {
+  async getCustomer(id: string): Promise<BusinessCustomerDto> {
     return this.findActiveCustomer(id);
   }
 
-  async createCustomer(body: CreateCrmCustomerDto): Promise<CrmCustomerDto> {
+  async createCustomer(
+    body: CreateBusinessCustomerDto,
+  ): Promise<BusinessCustomerDto> {
     const tenantId = resolveCurrentTenantId();
     const tags = await this.normalizeTags(tenantId, body.tags);
-    const customer = await retryCrmNumberConflicts(() =>
+    const customer = await retryBusinessNumberConflicts(() =>
       this.prisma.$transaction(async (tx) => {
-        const created = await tx.crmCustomer.create({
+        const created = await tx.businessCustomer.create({
           data: {
             tenantId,
-            number: createCrmNumber('CUS'),
+            number: createBusinessNumber('CUS'),
             name: requireText(body.name, 'name'),
             owner: requireText(body.owner, 'owner'),
             status: parseWritableCustomerStatus(body.status ?? 'active'),
@@ -721,7 +733,7 @@ export class PrismaCrmRepository extends CrmRepository {
           },
           include: CUSTOMER_INCLUDE,
         });
-        await tx.crmAuditEvent.create({
+        await tx.businessAuditEvent.create({
           data: {
             tenantId,
             targetType: 'customer',
@@ -741,15 +753,15 @@ export class PrismaCrmRepository extends CrmRepository {
 
   async updateCustomer(
     id: string,
-    body: UpdateCrmCustomerDto,
-  ): Promise<CrmCustomerDto> {
+    body: UpdateBusinessCustomerDto,
+  ): Promise<BusinessCustomerDto> {
     const tenantId = resolveCurrentTenantId();
     await this.findActiveCustomer(id);
     const tags =
       body.tags === undefined
         ? undefined
         : await this.normalizeTags(tenantId, body.tags);
-    const customer = await this.prisma.crmCustomer.update({
+    const customer = await this.prisma.businessCustomer.update({
       where: { tenantId_id: { tenantId, id } },
       data: {
         ...(body.name === undefined
@@ -815,13 +827,13 @@ export class PrismaCrmRepository extends CrmRepository {
 
   async transferCustomerOwner(
     id: string,
-    body: TransferCrmOwnerDto,
-  ): Promise<CrmCustomerDto> {
+    body: TransferBusinessOwnerDto,
+  ): Promise<BusinessCustomerDto> {
     const tenantId = resolveCurrentTenantId();
     const existing = await this.findActiveCustomer(id);
     const toOwner = requireText(body.toOwner, 'toOwner');
     const actor = requireText(body.actor, 'actor');
-    const customer = await this.prisma.crmCustomer.update({
+    const customer = await this.prisma.businessCustomer.update({
       where: { tenantId_id: { tenantId, id } },
       data: { owner: toOwner },
       include: CUSTOMER_INCLUDE,
@@ -845,30 +857,30 @@ export class PrismaCrmRepository extends CrmRepository {
   async archiveCustomer(id: string): Promise<{ deleted: true }> {
     const tenantId = resolveCurrentTenantId();
     await this.prisma.$transaction(async (tx) => {
-      const existing = await tx.crmCustomer.findUnique({
+      const existing = await tx.businessCustomer.findUnique({
         where: { tenantId_id: { tenantId, id } },
       });
       if (!existing || existing.archivedAt || existing.status === 'archived') {
-        throw crmNotFound(
-          'INDUSTRY_CRM_CUSTOMER_NOT_FOUND',
-          'CRM customer not found.',
+        throw businessNotFound(
+          'BUSINESS_PLATFORM_CUSTOMER_NOT_FOUND',
+          'business customer not found.',
           { id },
         );
       }
       const archivedAt = new Date();
-      await tx.crmCustomer.update({
+      await tx.businessCustomer.update({
         where: { tenantId_id: { tenantId, id } },
         data: { archivedAt, status: 'archived' },
       });
-      await tx.crmContact.updateMany({
+      await tx.businessContact.updateMany({
         where: { tenantId, customerId: id, archivedAt: null },
         data: { archivedAt },
       });
-      await tx.crmOpportunity.updateMany({
+      await tx.salesOpportunity.updateMany({
         where: { tenantId, customerId: id, archivedAt: null },
         data: { archivedAt },
       });
-      await tx.crmAuditEvent.create({
+      await tx.businessAuditEvent.create({
         data: {
           tenantId,
           targetType: 'customer',
@@ -884,35 +896,37 @@ export class PrismaCrmRepository extends CrmRepository {
   }
 
   async listContacts(
-    query: CrmContactQueryDto = {},
-  ): Promise<CrmContactPageDto> {
+    query: BusinessContactQueryDto = {},
+  ): Promise<BusinessContactPageDto> {
     const tenantId = resolveCurrentTenantId();
     const where = buildContactWhere(tenantId, query);
-    const page = normalizeCrmPageWindow(query);
+    const page = normalizeBusinessPageWindow(query);
     const [rows, total] = await this.prisma.$transaction([
-      this.prisma.crmContact.findMany({
+      this.prisma.businessContact.findMany({
         where,
         include: CONTACT_INCLUDE,
         orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
         skip: page.skip,
         take: page.take,
       }),
-      this.prisma.crmContact.count({ where }),
+      this.prisma.businessContact.count({ where }),
     ]);
 
-    return createCrmDbPage(rows.map(toContactRecord), query, total);
+    return createBusinessDbPage(rows.map(toContactRecord), query, total);
   }
 
-  async getContact(id: string): Promise<CrmContactDto> {
+  async getContact(id: string): Promise<BusinessContactDto> {
     return this.findActiveContact(id);
   }
 
-  async createContact(body: CreateCrmContactDto): Promise<CrmContactDto> {
+  async createContact(
+    body: CreateBusinessContactDto,
+  ): Promise<BusinessContactDto> {
     const tenantId = resolveCurrentTenantId();
     const contact = await this.prisma.$transaction(async (tx) => {
       const customer = await findActiveCustomer(tx, tenantId, body.customerId);
       if (body.primary === true) {
-        await tx.crmContact.updateMany({
+        await tx.businessContact.updateMany({
           where: {
             tenantId,
             customerId: customer.id,
@@ -922,7 +936,7 @@ export class PrismaCrmRepository extends CrmRepository {
           data: { primary: false },
         });
       }
-      const created = await tx.crmContact.create({
+      const created = await tx.businessContact.create({
         data: {
           tenantId,
           customerId: customer.id,
@@ -939,7 +953,7 @@ export class PrismaCrmRepository extends CrmRepository {
         },
         include: CONTACT_INCLUDE,
       });
-      await tx.crmAuditEvent.create({
+      await tx.businessAuditEvent.create({
         data: {
           tenantId,
           targetType: 'contact',
@@ -958,11 +972,11 @@ export class PrismaCrmRepository extends CrmRepository {
 
   async updateContact(
     id: string,
-    body: UpdateCrmContactDto,
-  ): Promise<CrmContactDto> {
+    body: UpdateBusinessContactDto,
+  ): Promise<BusinessContactDto> {
     const tenantId = resolveCurrentTenantId();
     const contact = await this.prisma.$transaction(async (tx) => {
-      const existing = await tx.crmContact.findFirst({
+      const existing = await tx.businessContact.findFirst({
         where: {
           tenantId,
           id,
@@ -972,14 +986,14 @@ export class PrismaCrmRepository extends CrmRepository {
         include: CONTACT_INCLUDE,
       });
       if (!existing) {
-        throw crmNotFound(
-          'INDUSTRY_CRM_CONTACT_NOT_FOUND',
-          'CRM contact not found.',
+        throw businessNotFound(
+          'BUSINESS_PLATFORM_CONTACT_NOT_FOUND',
+          'business contact not found.',
           { id },
         );
       }
       if (body.primary === true) {
-        await tx.crmContact.updateMany({
+        await tx.businessContact.updateMany({
           where: {
             tenantId,
             customerId: existing.customerId,
@@ -989,7 +1003,7 @@ export class PrismaCrmRepository extends CrmRepository {
           data: { primary: false },
         });
       }
-      const updated = await tx.crmContact.update({
+      const updated = await tx.businessContact.update({
         where: { tenantId_id: { tenantId, id } },
         data: {
           ...(body.name === undefined
@@ -1028,7 +1042,7 @@ export class PrismaCrmRepository extends CrmRepository {
         },
         include: CONTACT_INCLUDE,
       });
-      await tx.crmAuditEvent.create({
+      await tx.businessAuditEvent.create({
         data: {
           tenantId,
           targetType: 'contact',
@@ -1048,7 +1062,7 @@ export class PrismaCrmRepository extends CrmRepository {
   async archiveContact(id: string): Promise<{ deleted: true }> {
     const tenantId = resolveCurrentTenantId();
     await this.findActiveContact(id);
-    await this.prisma.crmContact.update({
+    await this.prisma.businessContact.update({
       where: { tenantId_id: { tenantId, id } },
       data: { archivedAt: new Date() },
     });
@@ -1058,47 +1072,47 @@ export class PrismaCrmRepository extends CrmRepository {
   }
 
   async listOpportunities(
-    query: CrmOpportunityQueryDto = {},
-  ): Promise<CrmOpportunityPageDto> {
+    query: BusinessOpportunityQueryDto = {},
+  ): Promise<BusinessOpportunityPageDto> {
     const tenantId = resolveCurrentTenantId();
     const where = buildOpportunityWhere(tenantId, query);
-    const page = normalizeCrmPageWindow(query);
+    const page = normalizeBusinessPageWindow(query);
     const [rows, total] = await this.prisma.$transaction([
-      this.prisma.crmOpportunity.findMany({
+      this.prisma.salesOpportunity.findMany({
         where,
         include: OPPORTUNITY_INCLUDE,
         orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
         skip: page.skip,
         take: page.take,
       }),
-      this.prisma.crmOpportunity.count({ where }),
+      this.prisma.salesOpportunity.count({ where }),
     ]);
 
-    return createCrmDbPage(rows.map(toOpportunityRecord), query, total);
+    return createBusinessDbPage(rows.map(toOpportunityRecord), query, total);
   }
 
-  async getOpportunity(id: string): Promise<CrmOpportunityDto> {
+  async getOpportunity(id: string): Promise<BusinessOpportunityDto> {
     return this.findActiveOpportunity(id);
   }
 
   async createOpportunity(
-    body: CreateCrmOpportunityDto,
-  ): Promise<CrmOpportunityDto> {
+    body: CreateBusinessOpportunityDto,
+  ): Promise<BusinessOpportunityDto> {
     const tenantId = resolveCurrentTenantId();
     const tags = await this.normalizeTags(tenantId, body.tags);
     const stage = parseInitialOpportunityStage(body.stage);
-    const opportunity = await retryCrmNumberConflicts(() =>
+    const opportunity = await retryBusinessNumberConflicts(() =>
       this.prisma.$transaction(async (tx) => {
         const customer = await findActiveCustomer(
           tx,
           tenantId,
           body.customerId,
         );
-        const created = await tx.crmOpportunity.create({
+        const created = await tx.salesOpportunity.create({
           data: {
             tenantId,
             customerId: customer.id,
-            number: createCrmNumber('OPP'),
+            number: createBusinessNumber('OPP'),
             name: requireText(body.name, 'name'),
             owner: requireText(body.owner, 'owner'),
             stage,
@@ -1115,7 +1129,7 @@ export class PrismaCrmRepository extends CrmRepository {
           },
           include: OPPORTUNITY_INCLUDE,
         });
-        await tx.crmAuditEvent.create({
+        await tx.businessAuditEvent.create({
           data: {
             tenantId,
             targetType: 'opportunity',
@@ -1135,15 +1149,15 @@ export class PrismaCrmRepository extends CrmRepository {
 
   async updateOpportunity(
     id: string,
-    body: UpdateCrmOpportunityDto,
-  ): Promise<CrmOpportunityDto> {
+    body: UpdateBusinessOpportunityDto,
+  ): Promise<BusinessOpportunityDto> {
     const tenantId = resolveCurrentTenantId();
     const tags =
       body.tags === undefined
         ? undefined
         : await this.normalizeTags(tenantId, body.tags);
     const opportunity = await this.prisma.$transaction(async (tx) => {
-      const existing = await tx.crmOpportunity.findFirst({
+      const existing = await tx.salesOpportunity.findFirst({
         where: {
           tenantId,
           id,
@@ -1152,16 +1166,16 @@ export class PrismaCrmRepository extends CrmRepository {
         },
       });
       if (!existing) {
-        throw crmNotFound(
-          'INDUSTRY_CRM_OPPORTUNITY_NOT_FOUND',
-          'CRM opportunity not found.',
+        throw businessNotFound(
+          'BUSINESS_PLATFORM_OPPORTUNITY_NOT_FOUND',
+          'business opportunity not found.',
           { id },
         );
       }
       if (body.stage !== undefined || body.closeReason !== undefined) {
-        throw crmBadRequest(
-          'INDUSTRY_CRM_STAGE_ENDPOINT_REQUIRED',
-          'Use the CRM stage endpoint to change opportunity stages.',
+        throw businessBadRequest(
+          'BUSINESS_PLATFORM_STAGE_ENDPOINT_REQUIRED',
+          'Use the business stage endpoint to change opportunity stages.',
           {
             field: body.stage !== undefined ? 'stage' : 'closeReason',
           },
@@ -1170,7 +1184,7 @@ export class PrismaCrmRepository extends CrmRepository {
       if (body.customerId !== undefined) {
         await findActiveCustomer(tx, tenantId, body.customerId);
       }
-      const updated = await tx.crmOpportunity.update({
+      const updated = await tx.salesOpportunity.update({
         where: { tenantId_id: { tenantId, id } },
         data: {
           ...(body.customerId === undefined
@@ -1203,7 +1217,7 @@ export class PrismaCrmRepository extends CrmRepository {
         },
         include: OPPORTUNITY_INCLUDE,
       });
-      await tx.crmAuditEvent.create({
+      await tx.businessAuditEvent.create({
         data: {
           tenantId,
           targetType: 'opportunity',
@@ -1222,13 +1236,13 @@ export class PrismaCrmRepository extends CrmRepository {
 
   async changeOpportunityStage(
     id: string,
-    body: ChangeCrmOpportunityStageDto,
-  ): Promise<CrmOpportunityDto> {
+    body: ChangeBusinessOpportunityStageDto,
+  ): Promise<BusinessOpportunityDto> {
     const tenantId = resolveCurrentTenantId();
     const existing = await this.findActiveOpportunity(id);
-    const stage = parseChoice(body.stage, CRM_OPPORTUNITY_STAGES, 'stage');
+    const stage = parseChoice(body.stage, BUSINESS_OPPORTUNITY_STAGES, 'stage');
     const actor = requireText(body.actor, 'actor');
-    const opportunity = await this.prisma.crmOpportunity.update({
+    const opportunity = await this.prisma.salesOpportunity.update({
       where: { tenantId_id: { tenantId, id } },
       data: {
         stage,
@@ -1257,13 +1271,13 @@ export class PrismaCrmRepository extends CrmRepository {
 
   async transferOpportunityOwner(
     id: string,
-    body: TransferCrmOwnerDto,
-  ): Promise<CrmOpportunityDto> {
+    body: TransferBusinessOwnerDto,
+  ): Promise<BusinessOpportunityDto> {
     const tenantId = resolveCurrentTenantId();
     const existing = await this.findActiveOpportunity(id);
     const toOwner = requireText(body.toOwner, 'toOwner');
     const actor = requireText(body.actor, 'actor');
-    const opportunity = await this.prisma.crmOpportunity.update({
+    const opportunity = await this.prisma.salesOpportunity.update({
       where: { tenantId_id: { tenantId, id } },
       data: { owner: toOwner },
       include: OPPORTUNITY_INCLUDE,
@@ -1284,7 +1298,7 @@ export class PrismaCrmRepository extends CrmRepository {
   async archiveOpportunity(id: string): Promise<{ deleted: true }> {
     const tenantId = resolveCurrentTenantId();
     await this.findActiveOpportunity(id);
-    await this.prisma.crmOpportunity.update({
+    await this.prisma.salesOpportunity.update({
       where: { tenantId_id: { tenantId, id } },
       data: { archivedAt: new Date() },
     });
@@ -1300,13 +1314,13 @@ export class PrismaCrmRepository extends CrmRepository {
   }
 
   async listActivities(
-    query: CrmTargetQueryDto = {},
-  ): Promise<CrmActivityPageDto> {
+    query: BusinessTargetQueryDto = {},
+  ): Promise<BusinessActivityPageDto> {
     const tenantId = resolveCurrentTenantId();
-    const page = normalizeCrmPageWindow(query);
+    const page = normalizeBusinessPageWindow(query);
     const whereSql = buildActivityWhereSql(tenantId, query);
     const [rows, countRows] = await this.prisma.$transaction([
-      this.prisma.$queryRaw<CrmActivityRow[]>`
+      this.prisma.$queryRaw<BusinessActivityRow[]>`
         SELECT * FROM (
           SELECT
             "id",
@@ -1317,7 +1331,7 @@ export class PrismaCrmRepository extends CrmRepository {
             "createdBy" AS "actor",
             "content" AS "title",
             "createdAt"
-          FROM "CrmFollowUp"
+          FROM "BusinessFollowUp"
           ${whereSql}
           UNION ALL
           SELECT
@@ -1329,7 +1343,7 @@ export class PrismaCrmRepository extends CrmRepository {
             "uploadedBy" AS "actor",
             "originalName" AS "title",
             "createdAt"
-          FROM "CrmAttachment"
+          FROM "BusinessAttachment"
           ${whereSql}
           UNION ALL
           SELECT
@@ -1341,7 +1355,7 @@ export class PrismaCrmRepository extends CrmRepository {
             "actor",
             "reason" AS "title",
             "createdAt"
-          FROM "CrmOwnerTransfer"
+          FROM "BusinessOwnerTransfer"
           ${whereSql}
           UNION ALL
           SELECT
@@ -1353,7 +1367,7 @@ export class PrismaCrmRepository extends CrmRepository {
             "actor",
             "action" AS "title",
             "createdAt"
-          FROM "CrmAuditEvent"
+          FROM "BusinessAuditEvent"
           ${whereSql}
         ) activity
         ORDER BY "createdAt" DESC, "id" ASC
@@ -1362,41 +1376,43 @@ export class PrismaCrmRepository extends CrmRepository {
       `,
       this.prisma.$queryRaw<{ count: bigint }[]>`
         SELECT COUNT(*)::bigint AS "count" FROM (
-          SELECT "id" FROM "CrmFollowUp" ${whereSql}
+          SELECT "id" FROM "BusinessFollowUp" ${whereSql}
           UNION ALL
-          SELECT "id" FROM "CrmAttachment" ${whereSql}
+          SELECT "id" FROM "BusinessAttachment" ${whereSql}
           UNION ALL
-          SELECT "id" FROM "CrmOwnerTransfer" ${whereSql}
+          SELECT "id" FROM "BusinessOwnerTransfer" ${whereSql}
           UNION ALL
-          SELECT "id" FROM "CrmAuditEvent" ${whereSql}
+          SELECT "id" FROM "BusinessAuditEvent" ${whereSql}
         ) activity
       `,
     ]);
     const total = Number(countRows[0]?.count ?? 0n);
 
-    return createCrmDbPage(rows.map(toActivityRecord), query, total);
+    return createBusinessDbPage(rows.map(toActivityRecord), query, total);
   }
 
   async listFollowUps(
-    query: CrmTargetQueryDto = {},
-  ): Promise<CrmFollowUpPageDto> {
+    query: BusinessTargetQueryDto = {},
+  ): Promise<BusinessFollowUpPageDto> {
     const tenantId = resolveCurrentTenantId();
     const where = buildTargetWhere(tenantId, query);
-    const page = normalizeCrmPageWindow(query);
+    const page = normalizeBusinessPageWindow(query);
     const [rows, total] = await this.prisma.$transaction([
-      this.prisma.crmFollowUp.findMany({
+      this.prisma.businessFollowUp.findMany({
         where,
         orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
         skip: page.skip,
         take: page.take,
       }),
-      this.prisma.crmFollowUp.count({ where }),
+      this.prisma.businessFollowUp.count({ where }),
     ]);
 
-    return createCrmDbPage(rows.map(toFollowUpRecord), query, total);
+    return createBusinessDbPage(rows.map(toFollowUpRecord), query, total);
   }
 
-  async createFollowUp(body: CreateCrmFollowUpDto): Promise<CrmFollowUpDto> {
+  async createFollowUp(
+    body: CreateBusinessFollowUpDto,
+  ): Promise<BusinessFollowUpDto> {
     const tenantId = resolveCurrentTenantId();
     const targetType = parseTargetType(body.targetType);
     const targetId = requireText(body.targetId, 'targetId');
@@ -1406,12 +1422,16 @@ export class PrismaCrmRepository extends CrmRepository {
     );
     const followUp = await this.prisma.$transaction(async (tx) => {
       await this.ensureTarget(tx, tenantId, targetType, targetId);
-      const created = await tx.crmFollowUp.create({
+      const created = await tx.businessFollowUp.create({
         data: {
           tenantId,
           targetType,
           targetId,
-          method: parseChoice(body.method, CRM_FOLLOW_UP_METHODS, 'method'),
+          method: parseChoice(
+            body.method,
+            BUSINESS_FOLLOW_UP_METHODS,
+            'method',
+          ),
           content: requireText(body.content, 'content'),
           outcome: normalizeOptionalText(body.outcome),
           nextContactAt,
@@ -1425,7 +1445,7 @@ export class PrismaCrmRepository extends CrmRepository {
         targetId,
         nextContactAt,
       );
-      await tx.crmAuditEvent.create({
+      await tx.businessAuditEvent.create({
         data: {
           tenantId,
           targetType,
@@ -1442,30 +1462,32 @@ export class PrismaCrmRepository extends CrmRepository {
     return toFollowUpRecord(followUp);
   }
 
-  async listTasks(query: CrmTaskQueryDto = {}): Promise<CrmTaskPageDto> {
+  async listTasks(
+    query: BusinessTaskQueryDto = {},
+  ): Promise<BusinessTaskPageDto> {
     const tenantId = resolveCurrentTenantId();
     const where = buildTaskWhere(tenantId, query);
-    const page = normalizeCrmPageWindow(query);
+    const page = normalizeBusinessPageWindow(query);
     const [rows, total] = await this.prisma.$transaction([
-      this.prisma.crmTask.findMany({
+      this.prisma.businessTask.findMany({
         where,
         orderBy: [{ dueAt: 'asc' }, { createdAt: 'desc' }, { id: 'asc' }],
         skip: page.skip,
         take: page.take,
       }),
-      this.prisma.crmTask.count({ where }),
+      this.prisma.businessTask.count({ where }),
     ]);
 
-    return createCrmDbPage(rows.map(toTaskRecord), query, total);
+    return createBusinessDbPage(rows.map(toTaskRecord), query, total);
   }
 
-  async createTask(body: CreateCrmTaskDto): Promise<CrmTaskDto> {
+  async createTask(body: CreateBusinessTaskDto): Promise<BusinessTaskDto> {
     const tenantId = resolveCurrentTenantId();
     const targetType = parseTargetType(body.targetType);
     const targetId = requireText(body.targetId, 'targetId');
     const task = await this.prisma.$transaction(async (tx) => {
       await this.ensureTarget(tx, tenantId, targetType, targetId);
-      const created = await tx.crmTask.create({
+      const created = await tx.businessTask.create({
         data: {
           tenantId,
           targetType,
@@ -1475,7 +1497,7 @@ export class PrismaCrmRepository extends CrmRepository {
           status: 'open',
           priority: parseChoice(
             body.priority ?? 'medium',
-            CRM_TASK_PRIORITIES,
+            BUSINESS_TASK_PRIORITIES,
             'priority',
           ),
           dueAt: parseOptionalDate(body.dueAt, 'dueAt'),
@@ -1483,7 +1505,7 @@ export class PrismaCrmRepository extends CrmRepository {
           createdBy: requireText(body.createdBy, 'createdBy'),
         },
       });
-      await tx.crmAuditEvent.create({
+      await tx.businessAuditEvent.create({
         data: {
           tenantId,
           targetType,
@@ -1502,21 +1524,21 @@ export class PrismaCrmRepository extends CrmRepository {
 
   async completeTask(
     id: string,
-    body: CompleteCrmTaskDto,
-  ): Promise<CrmTaskDto> {
+    body: CompleteBusinessTaskDto,
+  ): Promise<BusinessTaskDto> {
     const tenantId = resolveCurrentTenantId();
     const existing = await this.findTask(id);
     const actor = requireText(body.actor, 'actor');
     if (existing.status !== 'open') {
       return existing;
     }
-    const task = await this.prisma.crmTask.update({
+    const task = await this.prisma.businessTask.update({
       where: { tenantId_id: { tenantId, id } },
       data: { status: 'done', completedAt: new Date() },
     });
     await this.writeAudit(
       tenantId,
-      task.targetType as CrmTargetType,
+      task.targetType as BusinessTargetType,
       task.targetId,
       'complete-task',
       actor,
@@ -1527,33 +1549,33 @@ export class PrismaCrmRepository extends CrmRepository {
   }
 
   async listAttachments(
-    query: CrmTargetQueryDto = {},
-  ): Promise<CrmAttachmentPageDto> {
+    query: BusinessTargetQueryDto = {},
+  ): Promise<BusinessAttachmentPageDto> {
     const tenantId = resolveCurrentTenantId();
     const where = buildTargetWhere(tenantId, query);
-    const page = normalizeCrmPageWindow(query);
+    const page = normalizeBusinessPageWindow(query);
     const [rows, total] = await this.prisma.$transaction([
-      this.prisma.crmAttachment.findMany({
+      this.prisma.businessAttachment.findMany({
         where,
         orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
         skip: page.skip,
         take: page.take,
       }),
-      this.prisma.crmAttachment.count({ where }),
+      this.prisma.businessAttachment.count({ where }),
     ]);
 
-    return createCrmDbPage(rows.map(toAttachmentRecord), query, total);
+    return createBusinessDbPage(rows.map(toAttachmentRecord), query, total);
   }
 
   async createAttachment(
-    body: CreateCrmAttachmentDto,
-  ): Promise<CrmAttachmentDto> {
+    body: CreateBusinessAttachmentDto,
+  ): Promise<BusinessAttachmentDto> {
     const tenantId = resolveCurrentTenantId();
     const targetType = parseTargetType(body.targetType);
     const targetId = requireText(body.targetId, 'targetId');
     const attachment = await this.prisma.$transaction(async (tx) => {
       await this.ensureTarget(tx, tenantId, targetType, targetId);
-      const created = await tx.crmAttachment.create({
+      const created = await tx.businessAttachment.create({
         data: {
           tenantId,
           targetType,
@@ -1565,7 +1587,7 @@ export class PrismaCrmRepository extends CrmRepository {
           uploadedBy: requireText(body.uploadedBy, 'uploadedBy'),
         },
       });
-      await tx.crmAuditEvent.create({
+      await tx.businessAuditEvent.create({
         data: {
           tenantId,
           targetType,
@@ -1583,60 +1605,64 @@ export class PrismaCrmRepository extends CrmRepository {
   }
 
   async listOwnerTransfers(
-    query: CrmTargetQueryDto = {},
-  ): Promise<CrmOwnerTransferPageDto> {
+    query: BusinessTargetQueryDto = {},
+  ): Promise<BusinessOwnerTransferPageDto> {
     const tenantId = resolveCurrentTenantId();
     const where = buildTargetWhere(tenantId, query);
-    const page = normalizeCrmPageWindow(query);
+    const page = normalizeBusinessPageWindow(query);
     const [rows, total] = await this.prisma.$transaction([
-      this.prisma.crmOwnerTransfer.findMany({
+      this.prisma.businessOwnerTransfer.findMany({
         where,
         orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
         skip: page.skip,
         take: page.take,
       }),
-      this.prisma.crmOwnerTransfer.count({ where }),
+      this.prisma.businessOwnerTransfer.count({ where }),
     ]);
 
-    return createCrmDbPage(rows.map(toOwnerTransferRecord), query, total);
+    return createBusinessDbPage(rows.map(toOwnerTransferRecord), query, total);
   }
 
   async listAuditEvents(
-    query: CrmTargetQueryDto = {},
-  ): Promise<CrmAuditEventPageDto> {
+    query: BusinessTargetQueryDto = {},
+  ): Promise<BusinessAuditEventPageDto> {
     const tenantId = resolveCurrentTenantId();
     const where = buildTargetWhere(tenantId, query);
-    const page = normalizeCrmPageWindow(query);
+    const page = normalizeBusinessPageWindow(query);
     const [rows, total] = await this.prisma.$transaction([
-      this.prisma.crmAuditEvent.findMany({
+      this.prisma.businessAuditEvent.findMany({
         where,
         orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
         skip: page.skip,
         take: page.take,
       }),
-      this.prisma.crmAuditEvent.count({ where }),
+      this.prisma.businessAuditEvent.count({ where }),
     ]);
 
-    return createCrmDbPage(rows.map(toAuditEventRecord), query, total);
+    return createBusinessDbPage(rows.map(toAuditEventRecord), query, total);
   }
 
-  private async findTag(id: string): Promise<CrmTagDto> {
+  private async findTag(id: string): Promise<BusinessTagDto> {
     const tenantId = resolveCurrentTenantId();
-    const tag = await this.prisma.crmTag.findUnique({
+    const tag = await this.prisma.businessTag.findUnique({
       where: { tenantId_id: { tenantId, id } },
     });
     if (!tag) {
-      throw crmNotFound('INDUSTRY_CRM_TAG_NOT_FOUND', 'CRM tag not found.', {
-        id,
-      });
+      throw businessNotFound(
+        'BUSINESS_PLATFORM_TAG_NOT_FOUND',
+        'business tag not found.',
+        {
+          id,
+        },
+      );
     }
 
     return toTagRecord(tag);
   }
 
-  private async findActiveLead(id: string): Promise<CrmLeadDto> {
+  private async findActiveLead(id: string): Promise<BusinessLeadDto> {
     const tenantId = resolveCurrentTenantId();
-    const lead = await this.prisma.crmLead.findFirst({
+    const lead = await this.prisma.salesLead.findFirst({
       where: {
         tenantId,
         id,
@@ -1645,17 +1671,21 @@ export class PrismaCrmRepository extends CrmRepository {
       },
     });
     if (!lead) {
-      throw crmNotFound('INDUSTRY_CRM_LEAD_NOT_FOUND', 'CRM lead not found.', {
-        id,
-      });
+      throw businessNotFound(
+        'BUSINESS_PLATFORM_LEAD_NOT_FOUND',
+        'business lead not found.',
+        {
+          id,
+        },
+      );
     }
 
     return toLeadRecord(lead);
   }
 
-  private async findActiveCustomer(id: string): Promise<CrmCustomerDto> {
+  private async findActiveCustomer(id: string): Promise<BusinessCustomerDto> {
     const tenantId = resolveCurrentTenantId();
-    const customer = await this.prisma.crmCustomer.findFirst({
+    const customer = await this.prisma.businessCustomer.findFirst({
       where: {
         tenantId,
         id,
@@ -1665,9 +1695,9 @@ export class PrismaCrmRepository extends CrmRepository {
       include: CUSTOMER_INCLUDE,
     });
     if (!customer) {
-      throw crmNotFound(
-        'INDUSTRY_CRM_CUSTOMER_NOT_FOUND',
-        'CRM customer not found.',
+      throw businessNotFound(
+        'BUSINESS_PLATFORM_CUSTOMER_NOT_FOUND',
+        'business customer not found.',
         { id },
       );
     }
@@ -1675,9 +1705,9 @@ export class PrismaCrmRepository extends CrmRepository {
     return toCustomerRecord(customer);
   }
 
-  private async findActiveContact(id: string): Promise<CrmContactDto> {
+  private async findActiveContact(id: string): Promise<BusinessContactDto> {
     const tenantId = resolveCurrentTenantId();
-    const contact = await this.prisma.crmContact.findFirst({
+    const contact = await this.prisma.businessContact.findFirst({
       where: {
         tenantId,
         id,
@@ -1687,9 +1717,9 @@ export class PrismaCrmRepository extends CrmRepository {
       include: CONTACT_INCLUDE,
     });
     if (!contact) {
-      throw crmNotFound(
-        'INDUSTRY_CRM_CONTACT_NOT_FOUND',
-        'CRM contact not found.',
+      throw businessNotFound(
+        'BUSINESS_PLATFORM_CONTACT_NOT_FOUND',
+        'business contact not found.',
         { id },
       );
     }
@@ -1697,9 +1727,11 @@ export class PrismaCrmRepository extends CrmRepository {
     return toContactRecord(contact);
   }
 
-  private async findActiveOpportunity(id: string): Promise<CrmOpportunityDto> {
+  private async findActiveOpportunity(
+    id: string,
+  ): Promise<BusinessOpportunityDto> {
     const tenantId = resolveCurrentTenantId();
-    const opportunity = await this.prisma.crmOpportunity.findFirst({
+    const opportunity = await this.prisma.salesOpportunity.findFirst({
       where: {
         tenantId,
         id,
@@ -1709,9 +1741,9 @@ export class PrismaCrmRepository extends CrmRepository {
       include: OPPORTUNITY_INCLUDE,
     });
     if (!opportunity) {
-      throw crmNotFound(
-        'INDUSTRY_CRM_OPPORTUNITY_NOT_FOUND',
-        'CRM opportunity not found.',
+      throw businessNotFound(
+        'BUSINESS_PLATFORM_OPPORTUNITY_NOT_FOUND',
+        'business opportunity not found.',
         { id },
       );
     }
@@ -1719,15 +1751,19 @@ export class PrismaCrmRepository extends CrmRepository {
     return toOpportunityRecord(opportunity);
   }
 
-  private async findTask(id: string): Promise<CrmTaskDto> {
+  private async findTask(id: string): Promise<BusinessTaskDto> {
     const tenantId = resolveCurrentTenantId();
-    const task = await this.prisma.crmTask.findUnique({
+    const task = await this.prisma.businessTask.findUnique({
       where: { tenantId_id: { tenantId, id } },
     });
     if (!task) {
-      throw crmNotFound('INDUSTRY_CRM_TASK_NOT_FOUND', 'CRM task not found.', {
-        id,
-      });
+      throw businessNotFound(
+        'BUSINESS_PLATFORM_TASK_NOT_FOUND',
+        'business task not found.',
+        {
+          id,
+        },
+      );
     }
 
     return toTaskRecord(task);
@@ -1742,7 +1778,7 @@ export class PrismaCrmRepository extends CrmRepository {
       return [];
     }
 
-    const rows = await this.prisma.crmTag.findMany({
+    const rows = await this.prisma.businessTag.findMany({
       where: { tenantId, code: { in: tags }, enabled: true },
       select: { code: true },
     });
@@ -1750,9 +1786,9 @@ export class PrismaCrmRepository extends CrmRepository {
     const missing = tags.filter((tag) => !found.has(tag));
 
     if (missing.length > 0) {
-      throw crmBadRequest(
-        'INDUSTRY_CRM_TAG_INVALID',
-        'CRM tag code is invalid.',
+      throw businessBadRequest(
+        'BUSINESS_PLATFORM_TAG_INVALID',
+        'business tag code is invalid.',
         { tags: missing },
       );
     }
@@ -1763,7 +1799,7 @@ export class PrismaCrmRepository extends CrmRepository {
   private async ensureTarget(
     tx: PrismaTransactionClient,
     tenantId: string,
-    targetType: CrmTargetType,
+    targetType: BusinessTargetType,
     targetId: string,
   ): Promise<void> {
     const id = requireText(targetId, 'targetId');
@@ -1772,7 +1808,7 @@ export class PrismaCrmRepository extends CrmRepository {
         { id: string; status: string; convertedAt: Date | null }[]
       >`
         SELECT "id", "status", "convertedAt"
-        FROM "CrmLead"
+        FROM "SalesLead"
         WHERE "tenantId" = ${tenantId}
           AND "id" = ${id}
           AND "archivedAt" IS NULL
@@ -1781,9 +1817,9 @@ export class PrismaCrmRepository extends CrmRepository {
       `;
       const lead = rows[0];
       if (!lead) {
-        throw crmNotFound(
-          'INDUSTRY_CRM_TARGET_NOT_FOUND',
-          'CRM target not found.',
+        throw businessNotFound(
+          'BUSINESS_PLATFORM_TARGET_NOT_FOUND',
+          'business target not found.',
           { targetType, targetId },
         );
       }
@@ -1798,7 +1834,7 @@ export class PrismaCrmRepository extends CrmRepository {
       targetType === 'customer'
         ? await tx.$queryRaw<{ id: string }[]>`
               SELECT "id"
-              FROM "CrmCustomer"
+              FROM "BusinessCustomer"
               WHERE "tenantId" = ${tenantId}
                 AND "id" = ${id}
                 AND "archivedAt" IS NULL
@@ -1808,8 +1844,8 @@ export class PrismaCrmRepository extends CrmRepository {
         : targetType === 'contact'
           ? await tx.$queryRaw<{ id: string }[]>`
                 SELECT c."id"
-                FROM "CrmContact" c
-                INNER JOIN "CrmCustomer" cu
+                FROM "BusinessContact" c
+                INNER JOIN "BusinessCustomer" cu
                   ON cu."tenantId" = c."tenantId"
                  AND cu."id" = c."customerId"
                 WHERE c."tenantId" = ${tenantId}
@@ -1821,8 +1857,8 @@ export class PrismaCrmRepository extends CrmRepository {
               `
           : await tx.$queryRaw<{ id: string }[]>`
                 SELECT o."id"
-                FROM "CrmOpportunity" o
-                INNER JOIN "CrmCustomer" cu
+                FROM "SalesOpportunity" o
+                INNER JOIN "BusinessCustomer" cu
                   ON cu."tenantId" = o."tenantId"
                  AND cu."id" = o."customerId"
                 WHERE o."tenantId" = ${tenantId}
@@ -1834,9 +1870,9 @@ export class PrismaCrmRepository extends CrmRepository {
               `;
 
     if (rows.length === 0) {
-      throw crmNotFound(
-        'INDUSTRY_CRM_TARGET_NOT_FOUND',
-        'CRM target not found.',
+      throw businessNotFound(
+        'BUSINESS_PLATFORM_TARGET_NOT_FOUND',
+        'business target not found.',
         { targetType, targetId },
       );
     }
@@ -1845,7 +1881,7 @@ export class PrismaCrmRepository extends CrmRepository {
   private async touchFollowUpTarget(
     tx: PrismaTransactionClient,
     tenantId: string,
-    targetType: CrmTargetType,
+    targetType: BusinessTargetType,
     targetId: string,
     nextContactAt: Date | undefined,
   ): Promise<void> {
@@ -1855,17 +1891,17 @@ export class PrismaCrmRepository extends CrmRepository {
     };
 
     if (targetType === 'lead') {
-      await tx.crmLead.update({
+      await tx.salesLead.update({
         where: { tenantId_id: { tenantId, id: targetId } },
         data,
       });
     } else if (targetType === 'customer') {
-      await tx.crmCustomer.update({
+      await tx.businessCustomer.update({
         where: { tenantId_id: { tenantId, id: targetId } },
         data,
       });
     } else if (targetType === 'contact') {
-      await tx.crmContact.update({
+      await tx.businessContact.update({
         where: { tenantId_id: { tenantId, id: targetId } },
         data,
       });
@@ -1874,12 +1910,12 @@ export class PrismaCrmRepository extends CrmRepository {
 
   private async writeTransfer(
     tenantId: string,
-    targetType: CrmTargetType,
+    targetType: BusinessTargetType,
     targetId: string,
     fromOwner: string | undefined,
-    body: TransferCrmOwnerDto,
+    body: TransferBusinessOwnerDto,
   ): Promise<void> {
-    await this.prisma.crmOwnerTransfer.create({
+    await this.prisma.businessOwnerTransfer.create({
       data: {
         tenantId,
         targetType,
@@ -1894,13 +1930,13 @@ export class PrismaCrmRepository extends CrmRepository {
 
   private async writeAudit(
     tenantId: string,
-    targetType: CrmTargetType,
+    targetType: BusinessTargetType,
     targetId: string,
     action: string,
     actor: string,
     detail: Record<string, unknown> = {},
   ): Promise<void> {
-    await this.prisma.crmAuditEvent.create({
+    await this.prisma.businessAuditEvent.create({
       data: {
         tenantId,
         targetType,
@@ -1917,7 +1953,7 @@ function resolveCurrentTenantId(): string {
   return getRequestContext()?.tenantId ?? ROOT_TENANT_ID;
 }
 
-async function retryCrmNumberConflicts<T>(
+async function retryBusinessNumberConflicts<T>(
   operation: () => Promise<T>,
 ): Promise<T> {
   let lastError: unknown;
@@ -1925,7 +1961,7 @@ async function retryCrmNumberConflicts<T>(
     try {
       return await operation();
     } catch (error) {
-      if (!isCrmNumberUniqueError(error)) {
+      if (!isBusinessNumberUniqueError(error)) {
         throw error;
       }
       lastError = error;
@@ -1943,7 +1979,7 @@ async function findActiveCustomer(
   const id = requireText(customerId, 'customerId');
   const rows = await tx.$queryRaw<{ id: string; owner: string }[]>`
     SELECT "id", "owner"
-    FROM "CrmCustomer"
+    FROM "BusinessCustomer"
     WHERE "tenantId" = ${tenantId}
       AND "id" = ${id}
       AND "archivedAt" IS NULL
@@ -1952,9 +1988,9 @@ async function findActiveCustomer(
   `;
   const customer = rows[0];
   if (!customer) {
-    throw crmNotFound(
-      'INDUSTRY_CRM_CUSTOMER_NOT_FOUND',
-      'CRM customer not found.',
+    throw businessNotFound(
+      'BUSINESS_PLATFORM_CUSTOMER_NOT_FOUND',
+      'business customer not found.',
       { id },
     );
   }
@@ -1962,7 +1998,7 @@ async function findActiveCustomer(
   return customer;
 }
 
-function isCrmNumberUniqueError(error: unknown): boolean {
+function isBusinessNumberUniqueError(error: unknown): boolean {
   if (
     !(error instanceof Prisma.PrismaClientKnownRequestError) ||
     error.code !== 'P2002'
@@ -1977,7 +2013,7 @@ function isCrmNumberUniqueError(error: unknown): boolean {
 }
 
 function assertLeadWritable(
-  lead: Pick<CrmLeadDto, 'convertedAt' | 'status'>,
+  lead: Pick<BusinessLeadDto, 'convertedAt' | 'status'>,
   id: string,
 ): void {
   if (lead.convertedAt || lead.status === 'converted') {
@@ -1986,21 +2022,21 @@ function assertLeadWritable(
 }
 
 function throwConvertedLeadReadOnly(targetId: string): never {
-  throw crmBadRequest(
-    'INDUSTRY_CRM_LEAD_CONVERTED_READ_ONLY',
-    'Converted CRM leads are read-only. Use the converted customer or opportunity for CRM activity.',
+  throw businessBadRequest(
+    'BUSINESS_PLATFORM_LEAD_CONVERTED_READ_ONLY',
+    'Converted business leads are read-only. Use the converted customer or opportunity for business activity.',
     { targetType: 'lead', targetId },
   );
 }
 
-function createCrmNumber(prefix: string): string {
+function createBusinessNumber(prefix: string): string {
   const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
   const suffix = randomUUID().replace(/-/g, '').slice(0, 16).toUpperCase();
 
   return `${prefix}-${date}-${suffix}`;
 }
 
-function buildLeadWhere(tenantId: string, query: CrmLeadQueryDto) {
+function buildLeadWhere(tenantId: string, query: BusinessLeadQueryDto) {
   const keyword = normalizeOptionalText(query.keyword);
   const includeArchived = parseOptionalBoolean(query.includeArchived) === true;
   const and: object[] = [];
@@ -2023,14 +2059,16 @@ function buildLeadWhere(tenantId: string, query: CrmLeadQueryDto) {
       : { archivedAt: null, status: { not: 'archived' } }),
     ...(query.status === undefined
       ? {}
-      : { status: parseChoice(query.status, CRM_LEAD_STATUSES, 'status') }),
+      : {
+          status: parseChoice(query.status, BUSINESS_LEAD_STATUSES, 'status'),
+        }),
     ...(query.source === undefined ? {} : { source: query.source }),
     ...(query.owner === undefined ? {} : { owner: query.owner }),
     ...(and.length === 0 ? {} : { AND: and }),
   };
 }
 
-function buildCustomerWhere(tenantId: string, query: CrmCustomerQueryDto) {
+function buildCustomerWhere(tenantId: string, query: BusinessCustomerQueryDto) {
   const keyword = normalizeOptionalText(query.keyword);
   const includeArchived = parseOptionalBoolean(query.includeArchived) === true;
   const and: object[] = [];
@@ -2055,7 +2093,11 @@ function buildCustomerWhere(tenantId: string, query: CrmCustomerQueryDto) {
     ...(query.status === undefined
       ? {}
       : {
-          status: parseChoice(query.status, CRM_CUSTOMER_STATUSES, 'status'),
+          status: parseChoice(
+            query.status,
+            BUSINESS_CUSTOMER_STATUSES,
+            'status',
+          ),
         }),
     ...(query.level === undefined ? {} : { level: query.level }),
     ...(query.source === undefined ? {} : { source: query.source }),
@@ -2064,7 +2106,7 @@ function buildCustomerWhere(tenantId: string, query: CrmCustomerQueryDto) {
   };
 }
 
-function buildContactWhere(tenantId: string, query: CrmContactQueryDto) {
+function buildContactWhere(tenantId: string, query: BusinessContactQueryDto) {
   const keyword = normalizeOptionalText(query.keyword);
   const includeArchived = parseOptionalBoolean(query.includeArchived) === true;
   const and: object[] = [];
@@ -2095,7 +2137,7 @@ function buildContactWhere(tenantId: string, query: CrmContactQueryDto) {
 
 function buildOpportunityWhere(
   tenantId: string,
-  query: CrmOpportunityQueryDto,
+  query: BusinessOpportunityQueryDto,
 ) {
   const keyword = normalizeOptionalText(query.keyword);
   const includeArchived = parseOptionalBoolean(query.includeArchived) === true;
@@ -2121,26 +2163,28 @@ function buildOpportunityWhere(
     ...(query.stage === undefined
       ? {}
       : {
-          stage: parseChoice(query.stage, CRM_OPPORTUNITY_STAGES, 'stage'),
+          stage: parseChoice(query.stage, BUSINESS_OPPORTUNITY_STAGES, 'stage'),
         }),
     ...(query.owner === undefined ? {} : { owner: query.owner }),
     ...(and.length === 0 ? {} : { AND: and }),
   };
 }
 
-function buildTaskWhere(tenantId: string, query: CrmTaskQueryDto) {
+function buildTaskWhere(tenantId: string, query: BusinessTaskQueryDto) {
   return {
     ...buildTargetWhere(tenantId, query),
     ...(query.status === undefined
       ? {}
-      : { status: parseChoice(query.status, CRM_TASK_STATUSES, 'status') }),
+      : {
+          status: parseChoice(query.status, BUSINESS_TASK_STATUSES, 'status'),
+        }),
     ...(query.assignee === undefined ? {} : { assignee: query.assignee }),
   };
 }
 
 function buildActivityWhereSql(
   tenantId: string,
-  query: CrmTargetQueryDto,
+  query: BusinessTargetQueryDto,
 ): Prisma.Sql {
   const filters: Prisma.Sql[] = [Prisma.sql`"tenantId" = ${tenantId}`];
   if (query.targetType !== undefined) {
@@ -2157,7 +2201,7 @@ function buildActivityWhereSql(
   return Prisma.sql`WHERE ${Prisma.join(filters, ' AND ')}`;
 }
 
-function buildTargetWhere(tenantId: string, query: CrmTargetQueryDto) {
+function buildTargetWhere(tenantId: string, query: BusinessTargetQueryDto) {
   return {
     tenantId,
     ...(query.targetType === undefined
@@ -2167,30 +2211,33 @@ function buildTargetWhere(tenantId: string, query: CrmTargetQueryDto) {
   };
 }
 
-function parseTargetType(value: string): CrmTargetType {
-  return parseChoice(value, CRM_TARGET_TYPES, 'targetType');
+function parseTargetType(value: string): BusinessTargetType {
+  return parseChoice(value, BUSINESS_TARGET_TYPES, 'targetType');
 }
 
-function parseWritableLeadStatus(value: string, currentStatus?: CrmLeadStatus) {
-  const status = parseChoice(value, CRM_LEAD_STATUSES, 'status');
+function parseWritableLeadStatus(
+  value: string,
+  currentStatus?: BusinessLeadStatus,
+) {
+  const status = parseChoice(value, BUSINESS_LEAD_STATUSES, 'status');
   if (status === 'archived') {
-    throw crmBadRequest(
-      'INDUSTRY_CRM_ARCHIVE_ENDPOINT_REQUIRED',
-      'Use the CRM archive endpoint to archive records.',
+    throw businessBadRequest(
+      'BUSINESS_PLATFORM_ARCHIVE_ENDPOINT_REQUIRED',
+      'Use the business archive endpoint to archive records.',
       { field: 'status' },
     );
   }
   if (status === 'converted' && currentStatus !== 'converted') {
-    throw crmBadRequest(
-      'INDUSTRY_CRM_CONVERT_ENDPOINT_REQUIRED',
-      'Use the CRM convert endpoint to convert leads.',
+    throw businessBadRequest(
+      'BUSINESS_PLATFORM_CONVERT_ENDPOINT_REQUIRED',
+      'Use the business convert endpoint to convert leads.',
       { field: 'status' },
     );
   }
   if (currentStatus === 'converted' && status !== 'converted') {
-    throw crmBadRequest(
-      'INDUSTRY_CRM_CONVERTED_STATUS_IMMUTABLE',
-      'Converted CRM leads cannot be reopened by status update.',
+    throw businessBadRequest(
+      'BUSINESS_PLATFORM_CONVERTED_STATUS_IMMUTABLE',
+      'Converted business leads cannot be reopened by status update.',
       { field: 'status' },
     );
   }
@@ -2199,11 +2246,11 @@ function parseWritableLeadStatus(value: string, currentStatus?: CrmLeadStatus) {
 }
 
 function parseWritableCustomerStatus(value: string) {
-  const status = parseChoice(value, CRM_CUSTOMER_STATUSES, 'status');
+  const status = parseChoice(value, BUSINESS_CUSTOMER_STATUSES, 'status');
   if (status === 'archived') {
-    throw crmBadRequest(
-      'INDUSTRY_CRM_ARCHIVE_ENDPOINT_REQUIRED',
-      'Use the CRM archive endpoint to archive records.',
+    throw businessBadRequest(
+      'BUSINESS_PLATFORM_ARCHIVE_ENDPOINT_REQUIRED',
+      'Use the business archive endpoint to archive records.',
       { field: 'status' },
     );
   }
@@ -2213,16 +2260,16 @@ function parseWritableCustomerStatus(value: string) {
 
 function parseInitialOpportunityStage(
   value: string | undefined,
-): CrmOpportunityStage {
+): BusinessOpportunityStage {
   const stage = parseChoice(
     value ?? 'qualification',
-    CRM_OPPORTUNITY_STAGES,
+    BUSINESS_OPPORTUNITY_STAGES,
     'stage',
   );
   if (['won', 'lost'].includes(stage)) {
-    throw crmBadRequest(
-      'INDUSTRY_CRM_STAGE_ENDPOINT_REQUIRED',
-      'Use the CRM stage endpoint to close opportunities.',
+    throw businessBadRequest(
+      'BUSINESS_PLATFORM_STAGE_ENDPOINT_REQUIRED',
+      'Use the business stage endpoint to close opportunities.',
       { field: 'stage' },
     );
   }
@@ -2239,18 +2286,22 @@ function parseChoice<const T extends readonly string[]>(
     return value as T[number];
   }
 
-  throw crmBadRequest('INDUSTRY_CRM_FIELD_INVALID', 'CRM field is invalid.', {
-    field,
-    value,
-  });
+  throw businessBadRequest(
+    'BUSINESS_PLATFORM_FIELD_INVALID',
+    'business field is invalid.',
+    {
+      field,
+      value,
+    },
+  );
 }
 
 function requireText(value: string | undefined, field: string): string {
   const normalized = normalizeOptionalText(value);
   if (!normalized) {
-    throw crmBadRequest(
-      'INDUSTRY_CRM_FIELD_REQUIRED',
-      'CRM field is required.',
+    throw businessBadRequest(
+      'BUSINESS_PLATFORM_FIELD_REQUIRED',
+      'business field is required.',
       { field },
     );
   }
@@ -2277,9 +2328,9 @@ function normalizeStringArray(value: unknown): string[] {
     return [];
   }
   if (!Array.isArray(value)) {
-    throw crmBadRequest(
-      'INDUSTRY_CRM_TAGS_INVALID',
-      'CRM tags must be an array of strings.',
+    throw businessBadRequest(
+      'BUSINESS_PLATFORM_TAGS_INVALID',
+      'business tags must be an array of strings.',
     );
   }
 
@@ -2294,9 +2345,9 @@ function parseOptionalBoolean(value: string | undefined): boolean | undefined {
   }
   if (value === 'true') return true;
   if (value === 'false') return false;
-  throw crmBadRequest(
-    'INDUSTRY_CRM_BOOLEAN_INVALID',
-    'CRM boolean query value is invalid.',
+  throw businessBadRequest(
+    'BUSINESS_PLATFORM_BOOLEAN_INVALID',
+    'business boolean query value is invalid.',
     { value },
   );
 }
@@ -2323,10 +2374,14 @@ function parseNullableDate(value: string | null, field: string): Date | null {
 function parseDate(value: string, field: string): Date {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
-    throw crmBadRequest('INDUSTRY_CRM_DATE_INVALID', 'CRM date is invalid.', {
-      field,
-      value,
-    });
+    throw businessBadRequest(
+      'BUSINESS_PLATFORM_DATE_INVALID',
+      'business date is invalid.',
+      {
+        field,
+        value,
+      },
+    );
   }
 
   return date;
@@ -2341,17 +2396,21 @@ function parseMoney(value: string): Prisma.Decimal {
 
     return decimal;
   } catch {
-    throw crmBadRequest('INDUSTRY_CRM_MONEY_INVALID', 'CRM money is invalid.', {
-      value,
-    });
+    throw businessBadRequest(
+      'BUSINESS_PLATFORM_MONEY_INVALID',
+      'business money is invalid.',
+      {
+        value,
+      },
+    );
   }
 }
 
 function normalizeProbability(value: number): number {
   if (!Number.isInteger(value) || value < 0 || value > 100) {
-    throw crmBadRequest(
-      'INDUSTRY_CRM_PROBABILITY_INVALID',
-      'CRM opportunity probability is invalid.',
+    throw businessBadRequest(
+      'BUSINESS_PLATFORM_PROBABILITY_INVALID',
+      'business opportunity probability is invalid.',
       { value },
     );
   }
@@ -2361,9 +2420,13 @@ function normalizeProbability(value: number): number {
 
 function normalizePositiveInteger(value: number, field: string): number {
   if (!Number.isInteger(value) || value <= 0) {
-    throw crmBadRequest('INDUSTRY_CRM_FIELD_INVALID', 'CRM field is invalid.', {
-      field,
-    });
+    throw businessBadRequest(
+      'BUSINESS_PLATFORM_FIELD_INVALID',
+      'business field is invalid.',
+      {
+        field,
+      },
+    );
   }
 
   return value;
@@ -2381,7 +2444,7 @@ function createCsvExportPreview(
   filename: string,
   columns: readonly string[],
   rows: readonly (readonly string[])[],
-): CrmExportPreviewDto {
+): BusinessExportPreviewDto {
   const generatedAt = new Date().toISOString();
   const csv = [columns, ...rows]
     .map((row) => row.map(toCsvCell).join(','))
@@ -2430,7 +2493,7 @@ function toTagRecord(row: {
   enabled: boolean;
   createdAt: Date;
   updatedAt: Date;
-}): CrmTagDto {
+}): BusinessTagDto {
   return {
     id: row.id,
     tenantId: row.tenantId,
@@ -2466,7 +2529,7 @@ function toLeadRecord(row: {
   archivedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
-}): CrmLeadDto {
+}): BusinessLeadDto {
   return {
     id: row.id,
     tenantId: row.tenantId,
@@ -2476,7 +2539,7 @@ function toLeadRecord(row: {
     mobile: row.mobile ?? undefined,
     email: row.email ?? undefined,
     source: row.source,
-    status: parseChoice(row.status, CRM_LEAD_STATUSES, 'status'),
+    status: parseChoice(row.status, BUSINESS_LEAD_STATUSES, 'status'),
     rating: row.rating,
     owner: row.owner,
     tags: normalizeStoredTags(row.tags),
@@ -2492,14 +2555,14 @@ function toLeadRecord(row: {
   };
 }
 
-function toCustomerRecord(row: CrmCustomerRow): CrmCustomerDto {
+function toCustomerRecord(row: BusinessCustomerRow): BusinessCustomerDto {
   return {
     id: row.id,
     tenantId: row.tenantId,
     number: row.number,
     name: row.name,
     owner: row.owner,
-    status: parseChoice(row.status, CRM_CUSTOMER_STATUSES, 'status'),
+    status: parseChoice(row.status, BUSINESS_CUSTOMER_STATUSES, 'status'),
     level: row.level,
     source: row.source,
     industry: row.industry ?? undefined,
@@ -2520,7 +2583,7 @@ function toCustomerRecord(row: CrmCustomerRow): CrmCustomerDto {
   };
 }
 
-function toContactRecord(row: CrmContactRow): CrmContactDto {
+function toContactRecord(row: BusinessContactRow): BusinessContactDto {
   return {
     id: row.id,
     tenantId: row.tenantId,
@@ -2543,7 +2606,9 @@ function toContactRecord(row: CrmContactRow): CrmContactDto {
   };
 }
 
-function toOpportunityRecord(row: CrmOpportunityRow): CrmOpportunityDto {
+function toOpportunityRecord(
+  row: BusinessOpportunityRow,
+): BusinessOpportunityDto {
   return {
     id: row.id,
     tenantId: row.tenantId,
@@ -2552,7 +2617,7 @@ function toOpportunityRecord(row: CrmOpportunityRow): CrmOpportunityDto {
     number: row.number,
     name: row.name,
     owner: row.owner,
-    stage: parseChoice(row.stage, CRM_OPPORTUNITY_STAGES, 'stage'),
+    stage: parseChoice(row.stage, BUSINESS_OPPORTUNITY_STAGES, 'stage'),
     amount: row.amount.toFixed(2),
     probability: row.probability,
     expectedCloseAt: row.expectedCloseAt?.toISOString(),
@@ -2566,7 +2631,7 @@ function toOpportunityRecord(row: CrmOpportunityRow): CrmOpportunityDto {
   };
 }
 
-function toActivityRecord(row: CrmActivityRow): CrmActivityDto {
+function toActivityRecord(row: BusinessActivityRow): BusinessActivityDto {
   return {
     id: row.id,
     tenantId: row.tenantId,
@@ -2591,13 +2656,13 @@ function toFollowUpRecord(row: {
   createdBy: string;
   createdAt: Date;
   updatedAt: Date;
-}): CrmFollowUpDto {
+}): BusinessFollowUpDto {
   return {
     id: row.id,
     tenantId: row.tenantId,
     targetType: parseTargetType(row.targetType),
     targetId: row.targetId,
-    method: parseChoice(row.method, CRM_FOLLOW_UP_METHODS, 'method'),
+    method: parseChoice(row.method, BUSINESS_FOLLOW_UP_METHODS, 'method'),
     content: row.content,
     outcome: row.outcome ?? undefined,
     nextContactAt: row.nextContactAt?.toISOString(),
@@ -2622,7 +2687,7 @@ function toTaskRecord(row: {
   createdBy: string;
   createdAt: Date;
   updatedAt: Date;
-}): CrmTaskDto {
+}): BusinessTaskDto {
   return {
     id: row.id,
     tenantId: row.tenantId,
@@ -2630,8 +2695,8 @@ function toTaskRecord(row: {
     targetId: row.targetId,
     title: row.title,
     assignee: row.assignee,
-    status: parseChoice(row.status, CRM_TASK_STATUSES, 'status'),
-    priority: parseChoice(row.priority, CRM_TASK_PRIORITIES, 'priority'),
+    status: parseChoice(row.status, BUSINESS_TASK_STATUSES, 'status'),
+    priority: parseChoice(row.priority, BUSINESS_TASK_PRIORITIES, 'priority'),
     dueAt: row.dueAt?.toISOString(),
     completedAt: row.completedAt?.toISOString(),
     remark: row.remark ?? undefined,
@@ -2653,7 +2718,7 @@ function toAttachmentRecord(row: {
   uploadedBy: string;
   createdAt: Date;
   updatedAt: Date;
-}): CrmAttachmentDto {
+}): BusinessAttachmentDto {
   return {
     id: row.id,
     tenantId: row.tenantId,
@@ -2679,7 +2744,7 @@ function toOwnerTransferRecord(row: {
   actor: string;
   reason: string | null;
   createdAt: Date;
-}): CrmOwnerTransferDto {
+}): BusinessOwnerTransferDto {
   return {
     id: row.id,
     tenantId: row.tenantId,
@@ -2702,11 +2767,11 @@ function toAuditEventRecord(row: {
   actor: string;
   detail: Prisma.JsonValue;
   createdAt: Date;
-}): CrmAuditEventDto {
+}): BusinessAuditEventDto {
   return {
     id: row.id,
     tenantId: row.tenantId,
-    targetType: parseTargetType(row.targetType as CrmTargetType),
+    targetType: parseTargetType(row.targetType as BusinessTargetType),
     targetId: row.targetId,
     action: row.action,
     actor: row.actor,

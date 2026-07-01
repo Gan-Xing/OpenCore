@@ -286,7 +286,7 @@ for (const scanPath of forbiddenMarkerScanPaths) {
 checkRouteMenuKeys();
 checkCoreI18nKeys();
 checkRequiredLocaleKeys(
-  'CRM dynamic Admin i18n key',
+  'Business dynamic Admin i18n key',
   requiredBusinessDynamicLocaleKeys,
 );
 checkLocalizedAdminPageText();

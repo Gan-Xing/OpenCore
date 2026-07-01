@@ -1,13 +1,13 @@
 import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
 import { PageQueryDto } from '../../core/system-management/system-management.dto';
 
-export const CRM_TARGET_TYPES = [
+export const BUSINESS_TARGET_TYPES = [
   'lead',
   'customer',
   'contact',
   'opportunity',
 ] as const;
-export const CRM_LEAD_STATUSES = [
+export const BUSINESS_LEAD_STATUSES = [
   'new',
   'contacted',
   'qualified',
@@ -15,38 +15,43 @@ export const CRM_LEAD_STATUSES = [
   'lost',
   'archived',
 ] as const;
-export const CRM_WRITABLE_LEAD_STATUSES = [
+export const BUSINESS_WRITABLE_LEAD_STATUSES = [
   'new',
   'contacted',
   'qualified',
   'lost',
 ] as const;
-export const CRM_CUSTOMER_STATUSES = [
+export const BUSINESS_CUSTOMER_STATUSES = [
   'active',
   'inactive',
   'churned',
   'archived',
 ] as const;
-export const CRM_WRITABLE_CUSTOMER_STATUSES = [
+export const BUSINESS_WRITABLE_CUSTOMER_STATUSES = [
   'active',
   'inactive',
   'churned',
 ] as const;
-export const CRM_OPPORTUNITY_STAGES = [
+export const BUSINESS_OPPORTUNITY_STAGES = [
   'qualification',
   'proposal',
   'negotiation',
   'won',
   'lost',
 ] as const;
-export const CRM_OPEN_OPPORTUNITY_STAGES = [
+export const BUSINESS_OPEN_OPPORTUNITY_STAGES = [
   'qualification',
   'proposal',
   'negotiation',
 ] as const;
-export const CRM_TASK_STATUSES = ['open', 'done', 'canceled'] as const;
-export const CRM_TASK_PRIORITIES = ['low', 'medium', 'high', 'urgent'] as const;
-export const CRM_FOLLOW_UP_METHODS = [
+export const BUSINESS_TASK_STATUSES = ['open', 'done', 'canceled'] as const;
+export const BUSINESS_TASK_PRIORITIES = [
+  'low',
+  'medium',
+  'high',
+  'urgent',
+] as const;
+export const BUSINESS_FOLLOW_UP_METHODS = [
   'call',
   'email',
   'meeting',
@@ -54,20 +59,24 @@ export const CRM_FOLLOW_UP_METHODS = [
   'note',
 ] as const;
 
-export type CrmTargetType = (typeof CRM_TARGET_TYPES)[number];
-export type CrmLeadStatus = (typeof CRM_LEAD_STATUSES)[number];
-export type CrmWritableLeadStatus = (typeof CRM_WRITABLE_LEAD_STATUSES)[number];
-export type CrmCustomerStatus = (typeof CRM_CUSTOMER_STATUSES)[number];
-export type CrmWritableCustomerStatus =
-  (typeof CRM_WRITABLE_CUSTOMER_STATUSES)[number];
-export type CrmOpportunityStage = (typeof CRM_OPPORTUNITY_STAGES)[number];
-export type CrmOpenOpportunityStage =
-  (typeof CRM_OPEN_OPPORTUNITY_STAGES)[number];
-export type CrmTaskStatus = (typeof CRM_TASK_STATUSES)[number];
-export type CrmTaskPriority = (typeof CRM_TASK_PRIORITIES)[number];
-export type CrmFollowUpMethod = (typeof CRM_FOLLOW_UP_METHODS)[number];
+export type BusinessTargetType = (typeof BUSINESS_TARGET_TYPES)[number];
+export type BusinessLeadStatus = (typeof BUSINESS_LEAD_STATUSES)[number];
+export type BusinessWritableLeadStatus =
+  (typeof BUSINESS_WRITABLE_LEAD_STATUSES)[number];
+export type BusinessCustomerStatus =
+  (typeof BUSINESS_CUSTOMER_STATUSES)[number];
+export type BusinessWritableCustomerStatus =
+  (typeof BUSINESS_WRITABLE_CUSTOMER_STATUSES)[number];
+export type BusinessOpportunityStage =
+  (typeof BUSINESS_OPPORTUNITY_STAGES)[number];
+export type BusinessOpenOpportunityStage =
+  (typeof BUSINESS_OPEN_OPPORTUNITY_STAGES)[number];
+export type BusinessTaskStatus = (typeof BUSINESS_TASK_STATUSES)[number];
+export type BusinessTaskPriority = (typeof BUSINESS_TASK_PRIORITIES)[number];
+export type BusinessFollowUpMethod =
+  (typeof BUSINESS_FOLLOW_UP_METHODS)[number];
 
-export class CrmTagDto {
+export class BusinessTagDto {
   @ApiProperty()
   id!: string;
 
@@ -96,7 +105,7 @@ export class CrmTagDto {
   updatedAt!: string;
 }
 
-export class CrmLeadDto {
+export class BusinessLeadDto {
   @ApiProperty()
   id!: string;
 
@@ -121,8 +130,8 @@ export class CrmLeadDto {
   @ApiProperty()
   source!: string;
 
-  @ApiProperty({ enum: CRM_LEAD_STATUSES })
-  status!: CrmLeadStatus;
+  @ApiProperty({ enum: BUSINESS_LEAD_STATUSES })
+  status!: BusinessLeadStatus;
 
   @ApiProperty()
   rating!: string;
@@ -161,7 +170,7 @@ export class CrmLeadDto {
   updatedAt!: string;
 }
 
-export class CrmCustomerDto {
+export class BusinessCustomerDto {
   @ApiProperty()
   id!: string;
 
@@ -177,8 +186,8 @@ export class CrmCustomerDto {
   @ApiProperty()
   owner!: string;
 
-  @ApiProperty({ enum: CRM_CUSTOMER_STATUSES })
-  status!: CrmCustomerStatus;
+  @ApiProperty({ enum: BUSINESS_CUSTOMER_STATUSES })
+  status!: BusinessCustomerStatus;
 
   @ApiProperty()
   level!: string;
@@ -232,7 +241,7 @@ export class CrmCustomerDto {
   updatedAt!: string;
 }
 
-export class CrmContactDto {
+export class BusinessContactDto {
   @ApiProperty()
   id!: string;
 
@@ -288,7 +297,7 @@ export class CrmContactDto {
   updatedAt!: string;
 }
 
-export class CrmOpportunityDto {
+export class BusinessOpportunityDto {
   @ApiProperty()
   id!: string;
 
@@ -310,8 +319,8 @@ export class CrmOpportunityDto {
   @ApiProperty()
   owner!: string;
 
-  @ApiProperty({ enum: CRM_OPPORTUNITY_STAGES })
-  stage!: CrmOpportunityStage;
+  @ApiProperty({ enum: BUSINESS_OPPORTUNITY_STAGES })
+  stage!: BusinessOpportunityStage;
 
   @ApiProperty()
   amount!: string;
@@ -344,32 +353,32 @@ export class CrmOpportunityDto {
   updatedAt!: string;
 }
 
-export class ConvertCrmLeadResultDto {
-  @ApiProperty({ type: CrmLeadDto })
-  lead!: CrmLeadDto;
+export class ConvertBusinessLeadResultDto {
+  @ApiProperty({ type: BusinessLeadDto })
+  lead!: BusinessLeadDto;
 
-  @ApiProperty({ type: CrmCustomerDto })
-  customer!: CrmCustomerDto;
+  @ApiProperty({ type: BusinessCustomerDto })
+  customer!: BusinessCustomerDto;
 
-  @ApiProperty({ type: CrmOpportunityDto, required: false })
-  opportunity?: CrmOpportunityDto;
+  @ApiProperty({ type: BusinessOpportunityDto, required: false })
+  opportunity?: BusinessOpportunityDto;
 }
 
-export class CrmFollowUpDto {
+export class BusinessFollowUpDto {
   @ApiProperty()
   id!: string;
 
   @ApiProperty()
   tenantId!: string;
 
-  @ApiProperty({ enum: CRM_TARGET_TYPES })
-  targetType!: CrmTargetType;
+  @ApiProperty({ enum: BUSINESS_TARGET_TYPES })
+  targetType!: BusinessTargetType;
 
   @ApiProperty()
   targetId!: string;
 
-  @ApiProperty({ enum: CRM_FOLLOW_UP_METHODS })
-  method!: CrmFollowUpMethod;
+  @ApiProperty({ enum: BUSINESS_FOLLOW_UP_METHODS })
+  method!: BusinessFollowUpMethod;
 
   @ApiProperty()
   content!: string;
@@ -390,15 +399,15 @@ export class CrmFollowUpDto {
   updatedAt!: string;
 }
 
-export class CrmTaskDto {
+export class BusinessTaskDto {
   @ApiProperty()
   id!: string;
 
   @ApiProperty()
   tenantId!: string;
 
-  @ApiProperty({ enum: CRM_TARGET_TYPES })
-  targetType!: CrmTargetType;
+  @ApiProperty({ enum: BUSINESS_TARGET_TYPES })
+  targetType!: BusinessTargetType;
 
   @ApiProperty()
   targetId!: string;
@@ -409,11 +418,11 @@ export class CrmTaskDto {
   @ApiProperty()
   assignee!: string;
 
-  @ApiProperty({ enum: CRM_TASK_STATUSES })
-  status!: CrmTaskStatus;
+  @ApiProperty({ enum: BUSINESS_TASK_STATUSES })
+  status!: BusinessTaskStatus;
 
-  @ApiProperty({ enum: CRM_TASK_PRIORITIES })
-  priority!: CrmTaskPriority;
+  @ApiProperty({ enum: BUSINESS_TASK_PRIORITIES })
+  priority!: BusinessTaskPriority;
 
   @ApiProperty({ required: false })
   dueAt?: string;
@@ -434,15 +443,15 @@ export class CrmTaskDto {
   updatedAt!: string;
 }
 
-export class CrmAttachmentDto {
+export class BusinessAttachmentDto {
   @ApiProperty()
   id!: string;
 
   @ApiProperty()
   tenantId!: string;
 
-  @ApiProperty({ enum: CRM_TARGET_TYPES })
-  targetType!: CrmTargetType;
+  @ApiProperty({ enum: BUSINESS_TARGET_TYPES })
+  targetType!: BusinessTargetType;
 
   @ApiProperty()
   targetId!: string;
@@ -469,15 +478,15 @@ export class CrmAttachmentDto {
   updatedAt!: string;
 }
 
-export class CrmOwnerTransferDto {
+export class BusinessOwnerTransferDto {
   @ApiProperty()
   id!: string;
 
   @ApiProperty()
   tenantId!: string;
 
-  @ApiProperty({ enum: CRM_TARGET_TYPES })
-  targetType!: CrmTargetType;
+  @ApiProperty({ enum: BUSINESS_TARGET_TYPES })
+  targetType!: BusinessTargetType;
 
   @ApiProperty()
   targetId!: string;
@@ -498,15 +507,15 @@ export class CrmOwnerTransferDto {
   createdAt!: string;
 }
 
-export class CrmAuditEventDto {
+export class BusinessAuditEventDto {
   @ApiProperty()
   id!: string;
 
   @ApiProperty()
   tenantId!: string;
 
-  @ApiProperty({ enum: CRM_TARGET_TYPES })
-  targetType!: CrmTargetType;
+  @ApiProperty({ enum: BUSINESS_TARGET_TYPES })
+  targetType!: BusinessTargetType;
 
   @ApiProperty()
   targetId!: string;
@@ -524,7 +533,7 @@ export class CrmAuditEventDto {
   createdAt!: string;
 }
 
-export class CrmActivityDto {
+export class BusinessActivityDto {
   @ApiProperty()
   id!: string;
 
@@ -536,8 +545,8 @@ export class CrmActivityDto {
   })
   activityType!: 'follow-up' | 'attachment' | 'transfer' | 'audit';
 
-  @ApiProperty({ enum: CRM_TARGET_TYPES })
-  targetType!: CrmTargetType;
+  @ApiProperty({ enum: BUSINESS_TARGET_TYPES })
+  targetType!: BusinessTargetType;
 
   @ApiProperty()
   targetId!: string;
@@ -552,7 +561,7 @@ export class CrmActivityDto {
   createdAt!: string;
 }
 
-export class CrmPageDto<T> {
+export class BusinessPageDto<T> {
   @ApiProperty()
   items!: readonly T[];
 
@@ -569,62 +578,62 @@ export class CrmPageDto<T> {
   totalPages!: number;
 }
 
-export class CrmTagPageDto extends CrmPageDto<CrmTagDto> {
-  @ApiProperty({ type: [CrmTagDto] })
-  declare items: readonly CrmTagDto[];
+export class BusinessTagPageDto extends BusinessPageDto<BusinessTagDto> {
+  @ApiProperty({ type: [BusinessTagDto] })
+  declare items: readonly BusinessTagDto[];
 }
 
-export class CrmLeadPageDto extends CrmPageDto<CrmLeadDto> {
-  @ApiProperty({ type: [CrmLeadDto] })
-  declare items: readonly CrmLeadDto[];
+export class BusinessLeadPageDto extends BusinessPageDto<BusinessLeadDto> {
+  @ApiProperty({ type: [BusinessLeadDto] })
+  declare items: readonly BusinessLeadDto[];
 }
 
-export class CrmCustomerPageDto extends CrmPageDto<CrmCustomerDto> {
-  @ApiProperty({ type: [CrmCustomerDto] })
-  declare items: readonly CrmCustomerDto[];
+export class BusinessCustomerPageDto extends BusinessPageDto<BusinessCustomerDto> {
+  @ApiProperty({ type: [BusinessCustomerDto] })
+  declare items: readonly BusinessCustomerDto[];
 }
 
-export class CrmContactPageDto extends CrmPageDto<CrmContactDto> {
-  @ApiProperty({ type: [CrmContactDto] })
-  declare items: readonly CrmContactDto[];
+export class BusinessContactPageDto extends BusinessPageDto<BusinessContactDto> {
+  @ApiProperty({ type: [BusinessContactDto] })
+  declare items: readonly BusinessContactDto[];
 }
 
-export class CrmOpportunityPageDto extends CrmPageDto<CrmOpportunityDto> {
-  @ApiProperty({ type: [CrmOpportunityDto] })
-  declare items: readonly CrmOpportunityDto[];
+export class BusinessOpportunityPageDto extends BusinessPageDto<BusinessOpportunityDto> {
+  @ApiProperty({ type: [BusinessOpportunityDto] })
+  declare items: readonly BusinessOpportunityDto[];
 }
 
-export class CrmActivityPageDto extends CrmPageDto<CrmActivityDto> {
-  @ApiProperty({ type: [CrmActivityDto] })
-  declare items: readonly CrmActivityDto[];
+export class BusinessActivityPageDto extends BusinessPageDto<BusinessActivityDto> {
+  @ApiProperty({ type: [BusinessActivityDto] })
+  declare items: readonly BusinessActivityDto[];
 }
 
-export class CrmFollowUpPageDto extends CrmPageDto<CrmFollowUpDto> {
-  @ApiProperty({ type: [CrmFollowUpDto] })
-  declare items: readonly CrmFollowUpDto[];
+export class BusinessFollowUpPageDto extends BusinessPageDto<BusinessFollowUpDto> {
+  @ApiProperty({ type: [BusinessFollowUpDto] })
+  declare items: readonly BusinessFollowUpDto[];
 }
 
-export class CrmTaskPageDto extends CrmPageDto<CrmTaskDto> {
-  @ApiProperty({ type: [CrmTaskDto] })
-  declare items: readonly CrmTaskDto[];
+export class BusinessTaskPageDto extends BusinessPageDto<BusinessTaskDto> {
+  @ApiProperty({ type: [BusinessTaskDto] })
+  declare items: readonly BusinessTaskDto[];
 }
 
-export class CrmAttachmentPageDto extends CrmPageDto<CrmAttachmentDto> {
-  @ApiProperty({ type: [CrmAttachmentDto] })
-  declare items: readonly CrmAttachmentDto[];
+export class BusinessAttachmentPageDto extends BusinessPageDto<BusinessAttachmentDto> {
+  @ApiProperty({ type: [BusinessAttachmentDto] })
+  declare items: readonly BusinessAttachmentDto[];
 }
 
-export class CrmOwnerTransferPageDto extends CrmPageDto<CrmOwnerTransferDto> {
-  @ApiProperty({ type: [CrmOwnerTransferDto] })
-  declare items: readonly CrmOwnerTransferDto[];
+export class BusinessOwnerTransferPageDto extends BusinessPageDto<BusinessOwnerTransferDto> {
+  @ApiProperty({ type: [BusinessOwnerTransferDto] })
+  declare items: readonly BusinessOwnerTransferDto[];
 }
 
-export class CrmAuditEventPageDto extends CrmPageDto<CrmAuditEventDto> {
-  @ApiProperty({ type: [CrmAuditEventDto] })
-  declare items: readonly CrmAuditEventDto[];
+export class BusinessAuditEventPageDto extends BusinessPageDto<BusinessAuditEventDto> {
+  @ApiProperty({ type: [BusinessAuditEventDto] })
+  declare items: readonly BusinessAuditEventDto[];
 }
 
-export class CrmSummaryBucketDto {
+export class BusinessSummaryBucketDto {
   @ApiProperty()
   key!: string;
 
@@ -632,7 +641,7 @@ export class CrmSummaryBucketDto {
   count!: number;
 }
 
-export class CrmSummaryDto {
+export class BusinessSummaryDto {
   @ApiProperty()
   leads!: number;
 
@@ -654,17 +663,17 @@ export class CrmSummaryDto {
   @ApiProperty()
   openPipelineAmount!: string;
 
-  @ApiProperty({ type: [CrmSummaryBucketDto] })
-  leadsByStatus!: readonly CrmSummaryBucketDto[];
+  @ApiProperty({ type: [BusinessSummaryBucketDto] })
+  leadsByStatus!: readonly BusinessSummaryBucketDto[];
 
-  @ApiProperty({ type: [CrmSummaryBucketDto] })
-  customersByLevel!: readonly CrmSummaryBucketDto[];
+  @ApiProperty({ type: [BusinessSummaryBucketDto] })
+  customersByLevel!: readonly BusinessSummaryBucketDto[];
 
-  @ApiProperty({ type: [CrmSummaryBucketDto] })
-  opportunitiesByStage!: readonly CrmSummaryBucketDto[];
+  @ApiProperty({ type: [BusinessSummaryBucketDto] })
+  opportunitiesByStage!: readonly BusinessSummaryBucketDto[];
 }
 
-export class CrmExportPreviewDto {
+export class BusinessExportPreviewDto {
   @ApiProperty()
   filename!: string;
 
@@ -687,14 +696,14 @@ export class CrmExportPreviewDto {
   generatedAt!: string;
 }
 
-export class CrmTagQueryDto extends PageQueryDto {
+export class BusinessTagQueryDto extends PageQueryDto {
   @ApiProperty({ required: false })
   enabled?: string;
 }
 
-export class CrmLeadQueryDto extends PageQueryDto {
-  @ApiProperty({ enum: CRM_LEAD_STATUSES, required: false })
-  status?: CrmLeadStatus;
+export class BusinessLeadQueryDto extends PageQueryDto {
+  @ApiProperty({ enum: BUSINESS_LEAD_STATUSES, required: false })
+  status?: BusinessLeadStatus;
 
   @ApiProperty({ required: false })
   source?: string;
@@ -709,9 +718,9 @@ export class CrmLeadQueryDto extends PageQueryDto {
   includeArchived?: string;
 }
 
-export class CrmCustomerQueryDto extends PageQueryDto {
-  @ApiProperty({ enum: CRM_CUSTOMER_STATUSES, required: false })
-  status?: CrmCustomerStatus;
+export class BusinessCustomerQueryDto extends PageQueryDto {
+  @ApiProperty({ enum: BUSINESS_CUSTOMER_STATUSES, required: false })
+  status?: BusinessCustomerStatus;
 
   @ApiProperty({ required: false })
   level?: string;
@@ -729,7 +738,7 @@ export class CrmCustomerQueryDto extends PageQueryDto {
   includeArchived?: string;
 }
 
-export class CrmContactQueryDto extends PageQueryDto {
+export class BusinessContactQueryDto extends PageQueryDto {
   @ApiProperty({ required: false })
   customerId?: string;
 
@@ -743,12 +752,12 @@ export class CrmContactQueryDto extends PageQueryDto {
   includeArchived?: string;
 }
 
-export class CrmOpportunityQueryDto extends PageQueryDto {
+export class BusinessOpportunityQueryDto extends PageQueryDto {
   @ApiProperty({ required: false })
   customerId?: string;
 
-  @ApiProperty({ enum: CRM_OPPORTUNITY_STAGES, required: false })
-  stage?: CrmOpportunityStage;
+  @ApiProperty({ enum: BUSINESS_OPPORTUNITY_STAGES, required: false })
+  stage?: BusinessOpportunityStage;
 
   @ApiProperty({ required: false })
   owner?: string;
@@ -760,30 +769,30 @@ export class CrmOpportunityQueryDto extends PageQueryDto {
   includeArchived?: string;
 }
 
-export class CrmTargetQueryDto extends PageQueryDto {
-  @ApiProperty({ enum: CRM_TARGET_TYPES, required: false })
-  targetType?: CrmTargetType;
+export class BusinessTargetQueryDto extends PageQueryDto {
+  @ApiProperty({ enum: BUSINESS_TARGET_TYPES, required: false })
+  targetType?: BusinessTargetType;
 
   @ApiProperty({ required: false })
   targetId?: string;
 }
 
-export class CrmTaskQueryDto extends CrmTargetQueryDto {
-  @ApiProperty({ enum: CRM_TASK_STATUSES, required: false })
-  status?: CrmTaskStatus;
+export class BusinessTaskQueryDto extends BusinessTargetQueryDto {
+  @ApiProperty({ enum: BUSINESS_TASK_STATUSES, required: false })
+  status?: BusinessTaskStatus;
 
   @ApiProperty({ required: false })
   assignee?: string;
 }
 
-export class CrmExportQueryDto extends PageQueryDto {
+export class BusinessExportQueryDto extends PageQueryDto {
   @ApiProperty({
     enum: ['leads', 'customers', 'contacts', 'opportunities', 'tasks'],
   })
   resource!: 'leads' | 'customers' | 'contacts' | 'opportunities' | 'tasks';
 }
 
-export class CreateCrmTagDto {
+export class CreateBusinessTagDto {
   @ApiProperty()
   code!: string;
 
@@ -800,7 +809,7 @@ export class CreateCrmTagDto {
   enabled?: boolean;
 }
 
-export class UpdateCrmTagDto {
+export class UpdateBusinessTagDto {
   @ApiProperty({ required: false })
   code?: string;
 
@@ -817,7 +826,7 @@ export class UpdateCrmTagDto {
   enabled?: boolean;
 }
 
-export class CreateCrmLeadDto {
+export class CreateBusinessLeadDto {
   @ApiProperty()
   name!: string;
 
@@ -849,7 +858,7 @@ export class CreateCrmLeadDto {
   nextContactAt?: string;
 }
 
-export class UpdateCrmLeadDto {
+export class UpdateBusinessLeadDto {
   @ApiProperty({ required: false })
   name?: string;
 
@@ -865,8 +874,8 @@ export class UpdateCrmLeadDto {
   @ApiProperty({ required: false })
   source?: string;
 
-  @ApiProperty({ enum: CRM_WRITABLE_LEAD_STATUSES, required: false })
-  status?: CrmWritableLeadStatus;
+  @ApiProperty({ enum: BUSINESS_WRITABLE_LEAD_STATUSES, required: false })
+  status?: BusinessWritableLeadStatus;
 
   @ApiProperty({ required: false })
   rating?: string;
@@ -884,7 +893,7 @@ export class UpdateCrmLeadDto {
   nextContactAt?: string | null;
 }
 
-export class ConvertCrmLeadDto {
+export class ConvertBusinessLeadDto {
   @ApiProperty()
   actor!: string;
 
@@ -898,7 +907,7 @@ export class ConvertCrmLeadDto {
   amount?: string;
 }
 
-export class CreateCrmCustomerDto {
+export class CreateBusinessCustomerDto {
   @ApiProperty()
   name!: string;
 
@@ -911,8 +920,8 @@ export class CreateCrmCustomerDto {
   @ApiProperty()
   source!: string;
 
-  @ApiProperty({ enum: CRM_WRITABLE_CUSTOMER_STATUSES, required: false })
-  status?: CrmWritableCustomerStatus;
+  @ApiProperty({ enum: BUSINESS_WRITABLE_CUSTOMER_STATUSES, required: false })
+  status?: BusinessWritableCustomerStatus;
 
   @ApiProperty({ required: false })
   industry?: string;
@@ -942,15 +951,15 @@ export class CreateCrmCustomerDto {
   nextContactAt?: string;
 }
 
-export class UpdateCrmCustomerDto {
+export class UpdateBusinessCustomerDto {
   @ApiProperty({ required: false })
   name?: string;
 
   @ApiProperty({ required: false })
   owner?: string;
 
-  @ApiProperty({ enum: CRM_WRITABLE_CUSTOMER_STATUSES, required: false })
-  status?: CrmWritableCustomerStatus;
+  @ApiProperty({ enum: BUSINESS_WRITABLE_CUSTOMER_STATUSES, required: false })
+  status?: BusinessWritableCustomerStatus;
 
   @ApiProperty({ required: false })
   level?: string;
@@ -986,7 +995,7 @@ export class UpdateCrmCustomerDto {
   nextContactAt?: string | null;
 }
 
-export class CreateCrmContactDto {
+export class CreateBusinessContactDto {
   @ApiProperty()
   customerId!: string;
 
@@ -1021,7 +1030,7 @@ export class CreateCrmContactDto {
   nextContactAt?: string;
 }
 
-export class UpdateCrmContactDto {
+export class UpdateBusinessContactDto {
   @ApiProperty({ required: false })
   name?: string;
 
@@ -1053,7 +1062,7 @@ export class UpdateCrmContactDto {
   nextContactAt?: string | null;
 }
 
-export class CreateCrmOpportunityDto {
+export class CreateBusinessOpportunityDto {
   @ApiProperty()
   customerId!: string;
 
@@ -1063,8 +1072,8 @@ export class CreateCrmOpportunityDto {
   @ApiProperty()
   owner!: string;
 
-  @ApiProperty({ enum: CRM_OPEN_OPPORTUNITY_STAGES, required: false })
-  stage?: CrmOpenOpportunityStage;
+  @ApiProperty({ enum: BUSINESS_OPEN_OPPORTUNITY_STAGES, required: false })
+  stage?: BusinessOpenOpportunityStage;
 
   @ApiProperty({ required: false })
   amount?: string;
@@ -1082,7 +1091,7 @@ export class CreateCrmOpportunityDto {
   remark?: string;
 }
 
-export class UpdateCrmOpportunityDto {
+export class UpdateBusinessOpportunityDto {
   @ApiProperty({ required: false })
   customerId?: string;
 
@@ -1093,7 +1102,7 @@ export class UpdateCrmOpportunityDto {
   owner?: string;
 
   @ApiHideProperty()
-  stage?: CrmOpportunityStage;
+  stage?: BusinessOpportunityStage;
 
   @ApiProperty({ required: false })
   amount?: string;
@@ -1114,9 +1123,9 @@ export class UpdateCrmOpportunityDto {
   remark?: string | null;
 }
 
-export class ChangeCrmOpportunityStageDto {
-  @ApiProperty({ enum: CRM_OPPORTUNITY_STAGES })
-  stage!: CrmOpportunityStage;
+export class ChangeBusinessOpportunityStageDto {
+  @ApiProperty({ enum: BUSINESS_OPPORTUNITY_STAGES })
+  stage!: BusinessOpportunityStage;
 
   @ApiProperty()
   actor!: string;
@@ -1125,7 +1134,7 @@ export class ChangeCrmOpportunityStageDto {
   closeReason?: string;
 }
 
-export class TransferCrmOwnerDto {
+export class TransferBusinessOwnerDto {
   @ApiProperty()
   toOwner!: string;
 
@@ -1136,15 +1145,15 @@ export class TransferCrmOwnerDto {
   reason?: string;
 }
 
-export class CreateCrmFollowUpDto {
-  @ApiProperty({ enum: CRM_TARGET_TYPES })
-  targetType!: CrmTargetType;
+export class CreateBusinessFollowUpDto {
+  @ApiProperty({ enum: BUSINESS_TARGET_TYPES })
+  targetType!: BusinessTargetType;
 
   @ApiProperty()
   targetId!: string;
 
-  @ApiProperty({ enum: CRM_FOLLOW_UP_METHODS })
-  method!: CrmFollowUpMethod;
+  @ApiProperty({ enum: BUSINESS_FOLLOW_UP_METHODS })
+  method!: BusinessFollowUpMethod;
 
   @ApiProperty()
   content!: string;
@@ -1159,9 +1168,9 @@ export class CreateCrmFollowUpDto {
   createdBy!: string;
 }
 
-export class CreateCrmTaskDto {
-  @ApiProperty({ enum: CRM_TARGET_TYPES })
-  targetType!: CrmTargetType;
+export class CreateBusinessTaskDto {
+  @ApiProperty({ enum: BUSINESS_TARGET_TYPES })
+  targetType!: BusinessTargetType;
 
   @ApiProperty()
   targetId!: string;
@@ -1172,8 +1181,8 @@ export class CreateCrmTaskDto {
   @ApiProperty()
   assignee!: string;
 
-  @ApiProperty({ enum: CRM_TASK_PRIORITIES, required: false })
-  priority?: CrmTaskPriority;
+  @ApiProperty({ enum: BUSINESS_TASK_PRIORITIES, required: false })
+  priority?: BusinessTaskPriority;
 
   @ApiProperty({ required: false })
   dueAt?: string;
@@ -1185,14 +1194,14 @@ export class CreateCrmTaskDto {
   createdBy!: string;
 }
 
-export class CompleteCrmTaskDto {
+export class CompleteBusinessTaskDto {
   @ApiProperty()
   actor!: string;
 }
 
-export class CreateCrmAttachmentDto {
-  @ApiProperty({ enum: CRM_TARGET_TYPES })
-  targetType!: CrmTargetType;
+export class CreateBusinessAttachmentDto {
+  @ApiProperty({ enum: BUSINESS_TARGET_TYPES })
+  targetType!: BusinessTargetType;
 
   @ApiProperty()
   targetId!: string;

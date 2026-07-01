@@ -40,17 +40,17 @@ import {
   seedTickets,
 } from '../apps/api/src/modules/collaboration/ticket/ticket.seed';
 import {
-  seedCrmAttachments,
-  seedCrmAuditEvents,
-  seedCrmContacts,
-  seedCrmCustomers,
-  seedCrmFollowUps,
-  seedCrmLeads,
-  seedCrmOpportunities,
-  seedCrmOwnerTransfers,
-  seedCrmTags,
-  seedCrmTasks,
-} from '../apps/api/src/modules/business/core/crm.seed';
+  seedBusinessAttachments,
+  seedBusinessAuditEvents,
+  seedBusinessContacts,
+  seedBusinessCustomers,
+  seedBusinessFollowUps,
+  seedBusinessLeads,
+  seedBusinessOpportunities,
+  seedBusinessOwnerTransfers,
+  seedBusinessTags,
+  seedBusinessTasks,
+} from '../apps/api/src/modules/business/core/business.seed';
 import { seedReports } from '../apps/api/src/modules/monitor/operations/operations.seed';
 import {
   seedIntegrationOutbox,
@@ -118,7 +118,7 @@ async function main(): Promise<void> {
   const schedulerCount = await seedScheduler();
   const operationsCount = await seedOperations();
   const collaborationCount = await seedCollaboration();
-  const crmCount = await seedCrm();
+  const businessPlatformCount = await seedBusinessPlatform();
 
   console.log(
     JSON.stringify({
@@ -131,7 +131,7 @@ async function main(): Promise<void> {
         onlineUserSessions: onlineUserSessionCount,
         integrations: integrationCount,
         collaboration: collaborationCount,
-        crm: crmCount,
+        businessPlatform: businessPlatformCount,
         scheduler: schedulerCount,
         operations: operationsCount,
         systemManagement: systemManagementCount,
@@ -905,7 +905,7 @@ async function seedCollaboration(): Promise<{
   };
 }
 
-async function seedCrm(): Promise<{
+async function seedBusinessPlatform(): Promise<{
   attachments: number;
   auditEvents: number;
   contacts: number;
@@ -917,8 +917,8 @@ async function seedCrm(): Promise<{
   tags: number;
   tasks: number;
 }> {
-  for (const tag of seedCrmTags) {
-    await prisma.crmTag.upsert({
+  for (const tag of seedBusinessTags) {
+    await prisma.businessTag.upsert({
       where: { id: tag.id },
       update: {
         tenantId: tag.tenantId,
@@ -942,8 +942,8 @@ async function seedCrm(): Promise<{
     });
   }
 
-  for (const lead of seedCrmLeads) {
-    await prisma.crmLead.upsert({
+  for (const lead of seedBusinessLeads) {
+    await prisma.salesLead.upsert({
       where: { id: lead.id },
       update: {
         tenantId: lead.tenantId,
@@ -995,8 +995,8 @@ async function seedCrm(): Promise<{
     });
   }
 
-  for (const customer of seedCrmCustomers) {
-    await prisma.crmCustomer.upsert({
+  for (const customer of seedBusinessCustomers) {
+    await prisma.businessCustomer.upsert({
       where: { id: customer.id },
       update: {
         tenantId: customer.tenantId,
@@ -1052,8 +1052,8 @@ async function seedCrm(): Promise<{
     });
   }
 
-  for (const contact of seedCrmContacts) {
-    await prisma.crmContact.upsert({
+  for (const contact of seedBusinessContacts) {
+    await prisma.businessContact.upsert({
       where: { id: contact.id },
       update: {
         tenantId: contact.tenantId,
@@ -1101,8 +1101,8 @@ async function seedCrm(): Promise<{
     });
   }
 
-  for (const opportunity of seedCrmOpportunities) {
-    await prisma.crmOpportunity.upsert({
+  for (const opportunity of seedBusinessOpportunities) {
+    await prisma.salesOpportunity.upsert({
       where: { id: opportunity.id },
       update: {
         tenantId: opportunity.tenantId,
@@ -1150,8 +1150,8 @@ async function seedCrm(): Promise<{
     });
   }
 
-  for (const followUp of seedCrmFollowUps) {
-    await prisma.crmFollowUp.upsert({
+  for (const followUp of seedBusinessFollowUps) {
+    await prisma.businessFollowUp.upsert({
       where: { id: followUp.id },
       update: {
         tenantId: followUp.tenantId,
@@ -1183,8 +1183,8 @@ async function seedCrm(): Promise<{
     });
   }
 
-  for (const task of seedCrmTasks) {
-    await prisma.crmTask.upsert({
+  for (const task of seedBusinessTasks) {
+    await prisma.businessTask.upsert({
       where: { id: task.id },
       update: {
         tenantId: task.tenantId,
@@ -1218,8 +1218,8 @@ async function seedCrm(): Promise<{
     });
   }
 
-  for (const attachment of seedCrmAttachments) {
-    await prisma.crmAttachment.upsert({
+  for (const attachment of seedBusinessAttachments) {
+    await prisma.businessAttachment.upsert({
       where: { id: attachment.id },
       update: {
         tenantId: attachment.tenantId,
@@ -1247,8 +1247,8 @@ async function seedCrm(): Promise<{
     });
   }
 
-  for (const transfer of seedCrmOwnerTransfers) {
-    await prisma.crmOwnerTransfer.upsert({
+  for (const transfer of seedBusinessOwnerTransfers) {
+    await prisma.businessOwnerTransfer.upsert({
       where: { id: transfer.id },
       update: {
         tenantId: transfer.tenantId,
@@ -1274,8 +1274,8 @@ async function seedCrm(): Promise<{
     });
   }
 
-  for (const event of seedCrmAuditEvents) {
-    await prisma.crmAuditEvent.upsert({
+  for (const event of seedBusinessAuditEvents) {
+    await prisma.businessAuditEvent.upsert({
       where: { id: event.id },
       update: {
         tenantId: event.tenantId,
@@ -1300,16 +1300,16 @@ async function seedCrm(): Promise<{
   }
 
   return {
-    attachments: seedCrmAttachments.length,
-    auditEvents: seedCrmAuditEvents.length,
-    contacts: seedCrmContacts.length,
-    customers: seedCrmCustomers.length,
-    followUps: seedCrmFollowUps.length,
-    leads: seedCrmLeads.length,
-    opportunities: seedCrmOpportunities.length,
-    ownerTransfers: seedCrmOwnerTransfers.length,
-    tags: seedCrmTags.length,
-    tasks: seedCrmTasks.length,
+    attachments: seedBusinessAttachments.length,
+    auditEvents: seedBusinessAuditEvents.length,
+    contacts: seedBusinessContacts.length,
+    customers: seedBusinessCustomers.length,
+    followUps: seedBusinessFollowUps.length,
+    leads: seedBusinessLeads.length,
+    opportunities: seedBusinessOpportunities.length,
+    ownerTransfers: seedBusinessOwnerTransfers.length,
+    tags: seedBusinessTags.length,
+    tasks: seedBusinessTasks.length,
   };
 }
 

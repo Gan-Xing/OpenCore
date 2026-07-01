@@ -1,7 +1,6 @@
-import { Prisma } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { runWithRequestContext } from '@opencore/core';
-import { PrismaService } from '@opencore/database';
+import { Prisma, PrismaService } from '@opencore/database';
 import {
   SchedulerJobExecutor,
   sendTicketSlaRemindersForTenant,

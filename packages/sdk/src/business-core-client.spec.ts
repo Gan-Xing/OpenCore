@@ -10,9 +10,6 @@ describe('createBusinessCoreClient', () => {
     };
     const client = createBusinessCoreClient(request);
 
-    expect('exportCrm' in client).toBe(false);
-
-    await client.getSummary('token');
     await client.exportBusinessCore('token', {
       page: 1,
       pageSize: 20,
@@ -31,7 +28,6 @@ describe('createBusinessCoreClient', () => {
     });
 
     expect(calls).toEqual([
-      { path: '/business/core/summary' },
       { path: '/business/core/export?page=1&pageSize=20&resource=customers' },
       { path: '/business/core/follow-ups', method: 'POST' },
       {
