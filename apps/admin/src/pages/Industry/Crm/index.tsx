@@ -82,6 +82,7 @@ import {
   updateOpenCoreCrmOpportunity,
   updateOpenCoreCrmTag,
 } from '@/services/opencore/platform';
+import dayjs, { type Dayjs } from 'dayjs';
 import {
   CurrentPageExportButton,
   type CurrentPageExportColumn,
@@ -252,6 +253,27 @@ function dateText(
     return value.toISOString();
   }
   return undefined;
+}
+
+function datePickerValue(value: unknown): Dayjs | undefined {
+  if (!value) return undefined;
+  if (typeof value === 'string' || value instanceof Date) {
+    const parsed = dayjs(value);
+    return parsed.isValid() ? parsed : undefined;
+  }
+  if (dayjs.isDayjs(value)) {
+    return value;
+  }
+  return undefined;
+}
+
+function editableEntityValues(row: CrmRow): Record<string, unknown> {
+  return {
+    ...row,
+    expectedCloseAt: datePickerValue(row.expectedCloseAt),
+    nextContactAt: datePickerValue(row.nextContactAt),
+    tags: Array.isArray(row.tags) ? row.tags.join(', ') : undefined,
+  };
 }
 
 function pageNumber(value: unknown, fallback: number): number {
@@ -653,10 +675,7 @@ export default function CrmPage() {
 
   const openEdit = (kind: EntityKind, row: CrmRow) => {
     entityForm.resetFields();
-    entityForm.setFieldsValue({
-      ...row,
-      tags: Array.isArray(row.tags) ? row.tags.join(', ') : undefined,
-    });
+    entityForm.setFieldsValue(editableEntityValues(row));
     setEditing(row);
     setEntityKind(kind);
   };
