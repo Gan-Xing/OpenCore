@@ -101,6 +101,24 @@ async function main() {
   if (!redirectUri?.includes('/api/integrations/oauth/callback/github')) {
     throw new Error(`Unexpected social redirect_uri: ${redirectUri}`);
   }
+  if (redirectUri.includes('144.217.243.161')) {
+    throw new Error(
+      `GitHub social redirect_uri still points at the retired public IP: ${redirectUri}`,
+    );
+  }
+  const expectedRedirectOrigin =
+    process.env.OPENCORE_SMOKE_EXPECTED_GITHUB_REDIRECT_ORIGIN?.replace(
+      /\/+$/u,
+      '',
+    );
+  if (
+    expectedRedirectOrigin &&
+    new URL(redirectUri).origin !== expectedRedirectOrigin
+  ) {
+    throw new Error(
+      `GitHub social redirect_uri origin mismatch: expected ${expectedRedirectOrigin}, received ${redirectUri}`,
+    );
+  }
   checks.push('auth.social.github-flow');
 
   const providerAccountId = `github:social-smoke-${runId}`;
