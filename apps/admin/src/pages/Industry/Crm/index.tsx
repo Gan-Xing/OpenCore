@@ -137,6 +137,9 @@ const OPEN_OPPORTUNITY_STAGES = ['qualification', 'proposal', 'negotiation'];
 const TASK_STATUSES = ['open', 'done', 'canceled'];
 const TASK_PRIORITIES = ['low', 'medium', 'high', 'urgent'];
 const FOLLOW_UP_METHODS = ['call', 'email', 'meeting', 'wechat', 'note'];
+const DEFAULT_TABLE_SCROLL_X = 1180;
+const OPPORTUNITY_NAME_COLUMN_WIDTH = 260;
+const OPPORTUNITY_TABLE_SCROLL_X = 1420;
 
 function crmMessageId(suffix: string): string {
   return `pages.industry.crm.${suffix}`;
@@ -1087,6 +1090,8 @@ export default function CrmPage() {
           : formatMessage(crmMessageId('fields.name'), 'Name'),
       dataIndex: activeTab === 'tasks' ? 'title' : 'name',
       search: false,
+      width:
+        activeTab === 'opportunities' ? OPPORTUNITY_NAME_COLUMN_WIDTH : 220,
       render: (_, record) => (
         <Typography.Link onClick={() => setSelected(record)}>
           {getString(record, activeTab === 'tasks' ? 'title' : 'name') ??
@@ -1452,7 +1457,12 @@ export default function CrmPage() {
             ? false
             : { labelWidth: 'auto' }
         }
-        scroll={{ x: 1180 }}
+        scroll={{
+          x:
+            activeTab === 'opportunities'
+              ? OPPORTUNITY_TABLE_SCROLL_X
+              : DEFAULT_TABLE_SCROLL_X,
+        }}
         pagination={{ pageSize: 10, showSizeChanger: true }}
         toolbar={{
           menu: {
