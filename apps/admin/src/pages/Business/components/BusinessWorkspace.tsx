@@ -43,7 +43,6 @@ import {
   Select,
   Space,
   Statistic,
-  Tabs,
   Tag,
   Tooltip,
   Typography,
@@ -152,16 +151,16 @@ export const BUSINESS_ROUTE_PATHS: Record<BusinessRouteKey, string> = {
   tags: '/business/tags',
   tasks: '/business/tasks',
 };
-const BUSINESS_ROUTE_TABS: readonly BusinessRouteKey[] = [
-  'overview',
-  'leads',
-  'customers',
-  'contacts',
-  'opportunities',
-  'tasks',
-  'tags',
-  'activity',
-];
+const BUSINESS_ROUTE_TITLE_FALLBACKS: Record<BusinessRouteKey, string> = {
+  activity: 'Activity',
+  contacts: 'Contacts',
+  customers: 'Accounts',
+  leads: 'Leads',
+  opportunities: 'Opportunities',
+  overview: 'Customer Operations',
+  tags: 'Tags',
+  tasks: 'Tasks',
+};
 
 function crmMessageId(suffix: string): string {
   return `pages.business.core.${suffix}`;
@@ -213,6 +212,16 @@ function enumOptions(
     label: formatMessage(crmMessageId(`${scope}.${value}`), value),
     value,
   }));
+}
+
+function businessRouteTitle(
+  routeKey: BusinessRouteKey,
+  formatMessage: FormatMessage,
+): string {
+  return formatMessage(
+    crmMessageId(routeKey === 'overview' ? 'title' : `tabs.${routeKey}`),
+    BUSINESS_ROUTE_TITLE_FALLBACKS[routeKey],
+  );
 }
 
 function entityLabel(
@@ -1422,7 +1431,7 @@ export default function BusinessWorkspace({
 
   return (
     <PageContainer
-      title={formatMessage(crmMessageId('title'), 'Customer Operations')}
+      title={businessRouteTitle(activeTab, formatMessage)}
       subTitle={formatMessage(crmMessageId('section'), 'Business')}
     >
       {loadError ? (
@@ -1490,22 +1499,6 @@ export default function BusinessWorkspace({
           </Card>
         </Col>
       </Row>
-
-      <Tabs
-        activeKey={activeTab}
-        items={BUSINESS_ROUTE_TABS.map((key) => ({
-          key,
-          label: formatMessage(
-            crmMessageId(`tabs.${key}`),
-            key === 'overview' ? 'Overview' : key,
-          ),
-        }))}
-        onChange={(key) => {
-          const path = BUSINESS_ROUTE_PATHS[key as BusinessRouteKey];
-          if (path) history.push(path);
-        }}
-        style={{ marginBottom: 16 }}
-      />
 
       {activeTab === 'overview' ? (
         <Row gutter={[16, 16]}>
@@ -1624,9 +1617,9 @@ export default function BusinessWorkspace({
               access.canExportBusiness ? (
                 <CurrentPageExportButton<CrmRow>
                   columns={exportColumns}
-                  filename={`opencore-crm-${activeTab}.csv`}
+                  filename={`opencore-business-${activeTab}.csv`}
                   key="export"
-                  resource={`crm-${activeTab}`}
+                  resource={`business-${activeTab}`}
                   rows={tableRows}
                 />
               ) : null,

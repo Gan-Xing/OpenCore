@@ -41,7 +41,6 @@ const adminPasswordCandidates = [
 });
 
 const expectedChineseText = [
-  '客户经营',
   '通用业务',
   '线索',
   '往来单位',
@@ -151,6 +150,7 @@ true;
   const text = document.body.innerText;
   return {
     href: window.location.href,
+    hasBusinessTabs: Boolean(document.querySelector('.ant-tabs-nav')),
     missing: ${JSON.stringify(expectedChineseText)}.filter((value) => !text.includes(value)),
     forbidden: ${JSON.stringify(forbiddenEnglishText)}.filter((value) => text.includes(value)),
     text: text.slice(0, 2000),
@@ -179,6 +179,10 @@ true;
       );
     }
 
+    if (state.hasBusinessTabs === true) {
+      throw new Error('Admin business page still renders tab navigation.');
+    }
+
     console.log(
       JSON.stringify({
         status: 'pass',
@@ -187,7 +191,8 @@ true;
           'admin.public-crm.authenticated-access',
           'admin.public-crm.live-list-request',
           'admin.public-crm.zh-cn-summary',
-          'admin.public-crm.zh-cn-tabs',
+          'admin.public-crm.zh-cn-page-title',
+          'admin.public-crm.no-tab-shell',
           'admin.public-crm.zh-cn-table',
           'admin.public-crm.zh-cn-status-values',
           'admin.public-crm.no-raw-keys',

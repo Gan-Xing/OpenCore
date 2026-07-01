@@ -710,10 +710,10 @@ async function navigateBusinessPage(
   await waitForExpression(
     page,
     `(() => {
-      const active = document.querySelector('.ant-tabs-tab-active');
-      return Boolean(active && active.textContent && active.textContent.includes(${JSON.stringify(
-        label,
-      )}));
+      const text = document.body.innerText;
+      return window.location.pathname === ${JSON.stringify(path)}
+        && text.includes(${JSON.stringify(label)})
+        && !document.querySelector('.ant-tabs-nav');
     })()`,
     `active business page ${label}`,
   );
