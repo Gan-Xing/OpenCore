@@ -41,9 +41,10 @@ const adminPasswordCandidates = [
 });
 
 const expectedChineseText = [
-  '行业应用',
+  '客户经营',
+  '通用业务',
   '线索',
-  '客户',
+  '往来单位',
   '待办任务',
   '未结管道',
   '联系人',
@@ -61,6 +62,8 @@ const expectedChineseText = [
 ] as const;
 
 const forbiddenEnglishText = [
+  'CRM',
+  'Industry',
   'Open Tasks',
   'Open Pipeline',
   'Leads',
@@ -118,12 +121,12 @@ true;
 `,
     );
     await page.send('Page.navigate', {
-      url: `${adminBaseUrl}/industry/crm?admin-crm-i18n-smoke=${runId}`,
+      url: `${adminBaseUrl}/business/leads?admin-crm-i18n-smoke=${runId}`,
     });
     await waitForExpression(
       page,
       'document.readyState === "complete"',
-      'Admin CRM page load',
+      'Admin business leads page load',
     );
     await waitForCondition(
       () =>

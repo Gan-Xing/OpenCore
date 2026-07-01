@@ -26,7 +26,7 @@ import type {
   CrmWritableCustomerStatus,
   CrmWritableLeadStatus,
 } from '@opencore/sdk';
-import { useAccess, useIntl } from '@umijs/max';
+import { history, useAccess, useIntl } from '@umijs/max';
 import zhMessages from '@/locales/zh-CN';
 import {
   Alert,
@@ -43,6 +43,7 @@ import {
   Select,
   Space,
   Statistic,
+  Tabs,
   Tag,
   Tooltip,
   Typography,
@@ -97,6 +98,7 @@ type CrmTab =
   | 'opportunities'
   | 'tags'
   | 'tasks';
+export type BusinessRouteKey = 'overview' | CrmTab;
 type EntityKind = 'contact' | 'customer' | 'lead' | 'opportunity' | 'tag';
 type ActionKind =
   | 'attach'
@@ -140,6 +142,26 @@ const FOLLOW_UP_METHODS = ['call', 'email', 'meeting', 'wechat', 'note'];
 const DEFAULT_TABLE_SCROLL_X = 1180;
 const OPPORTUNITY_NAME_COLUMN_WIDTH = 260;
 const OPPORTUNITY_TABLE_SCROLL_X = 1420;
+export const BUSINESS_ROUTE_PATHS: Record<BusinessRouteKey, string> = {
+  activity: '/business/activity',
+  contacts: '/business/contacts',
+  customers: '/business/accounts',
+  leads: '/business/leads',
+  opportunities: '/business/opportunities',
+  overview: '/business/overview',
+  tags: '/business/tags',
+  tasks: '/business/tasks',
+};
+const BUSINESS_ROUTE_TABS: readonly BusinessRouteKey[] = [
+  'overview',
+  'leads',
+  'customers',
+  'contacts',
+  'opportunities',
+  'tasks',
+  'tags',
+  'activity',
+];
 
 function crmMessageId(suffix: string): string {
   return `pages.industry.crm.${suffix}`;
@@ -575,7 +597,11 @@ function createExportColumns(
   ];
 }
 
-export default function CrmPage() {
+export default function BusinessWorkspace({
+  activeTab,
+}: {
+  activeTab: BusinessRouteKey;
+}) {
   const intl = useIntl();
   const formatMessage: FormatMessage = useCallback(
     (id, defaultMessage, values) => {
@@ -605,7 +631,6 @@ export default function CrmPage() {
   const [entityForm] = Form.useForm<Record<string, unknown>>();
   const [actionForm] = Form.useForm<Record<string, unknown>>();
   const actionRef = useRef<ActionType | undefined>(undefined);
-  const [activeTab, setActiveTab] = useState<CrmTab>('leads');
   const [summary, setSummary] = useState<CrmSummary>();
   const [tags, setTags] = useState<readonly CrmTagSummary[]>([]);
   const [customers, setCustomers] = useState<readonly CrmCustomerSummary[]>([]);
@@ -645,6 +670,12 @@ export default function CrmPage() {
   useEffect(() => {
     void loadCrm();
   }, []);
+
+  useEffect(() => {
+    setSelected(undefined);
+    setTableRows([]);
+    actionRef.current?.reload();
+  }, [activeTab]);
 
   const reloadCrm = async () => {
     await loadCrm();
@@ -932,6 +963,11 @@ export default function CrmPage() {
   };
 
   const requestTable = async (params: Record<string, unknown>) => {
+    if (activeTab === 'overview') {
+      setTableRows([]);
+      return { data: [], success: true, total: 0 };
+    }
+
     const page = pageNumber(params.current, 1);
     const pageSize = pageNumber(params.pageSize, 10);
     const keyword = optionalText(params, 'keyword');
@@ -1371,14 +1407,17 @@ export default function CrmPage() {
   ];
 
   const exportColumns = useMemo(
-    () => createExportColumns(activeTab, formatMessage),
+    () =>
+      activeTab === 'overview'
+        ? []
+        : createExportColumns(activeTab, formatMessage),
     [activeTab, formatMessage],
   );
 
   return (
     <PageContainer
-      title={formatMessage(crmMessageId('title'), 'CRM')}
-      subTitle={formatMessage(crmMessageId('section'), 'Industry')}
+      title={formatMessage(crmMessageId('title'), 'Customer Operations')}
+      subTitle={formatMessage(crmMessageId('section'), 'Business')}
     >
       {loadError ? (
         <Alert
@@ -1446,115 +1485,149 @@ export default function CrmPage() {
         </Col>
       </Row>
 
-      <ProTable<CrmRow>
-        actionRef={actionRef}
-        columns={columns}
-        params={{ activeTab }}
-        request={requestTable}
-        rowKey="id"
-        search={
-          ['activity', 'tags'].includes(activeTab)
-            ? false
-            : { labelWidth: 'auto' }
-        }
-        scroll={{
-          x:
-            activeTab === 'opportunities'
-              ? OPPORTUNITY_TABLE_SCROLL_X
-              : DEFAULT_TABLE_SCROLL_X,
+      <Tabs
+        activeKey={activeTab}
+        items={BUSINESS_ROUTE_TABS.map((key) => ({
+          key,
+          label: formatMessage(
+            crmMessageId(`tabs.${key}`),
+            key === 'overview' ? 'Overview' : key,
+          ),
+        }))}
+        onChange={(key) => {
+          const path = BUSINESS_ROUTE_PATHS[key as BusinessRouteKey];
+          if (path) history.push(path);
         }}
-        pagination={{ pageSize: 10, showSizeChanger: true }}
-        toolbar={{
-          menu: {
-            activeKey: activeTab,
-            items: [
-              {
-                key: 'leads',
-                label: formatMessage(crmMessageId('tabs.leads'), 'Leads'),
-              },
-              {
-                key: 'customers',
-                label: formatMessage(
-                  crmMessageId('tabs.customers'),
-                  'Customers',
-                ),
-              },
-              {
-                key: 'contacts',
-                label: formatMessage(crmMessageId('tabs.contacts'), 'Contacts'),
-              },
-              {
-                key: 'opportunities',
-                label: formatMessage(
-                  crmMessageId('tabs.opportunities'),
-                  'Opportunities',
-                ),
-              },
-              {
-                key: 'tasks',
-                label: formatMessage(crmMessageId('tabs.tasks'), 'Tasks'),
-              },
-              {
-                key: 'tags',
-                label: formatMessage(crmMessageId('tabs.tags'), 'Tags'),
-              },
-              {
-                key: 'activity',
-                label: formatMessage(crmMessageId('tabs.activity'), 'Activity'),
-              },
-            ],
-            onChange: (key) => {
-              setActiveTab(key as CrmTab);
-              setSelected(undefined);
-              setTableRows([]);
-            },
-            type: 'tab',
-          },
-          actions: [
-            <Button
-              icon={<ReloadOutlined />}
-              key="reload"
-              onClick={() => void reloadCrm()}
-            >
-              {formatMessage(crmMessageId('actions.reload'), 'Reload')}
-            </Button>,
-            access.canCreateCrm &&
-            !['activity', 'tasks'].includes(activeTab) ? (
-              <Button
-                icon={<PlusOutlined />}
-                key="create"
-                onClick={() =>
-                  openCreate(
-                    activeTab === 'leads'
-                      ? 'lead'
-                      : activeTab === 'customers'
-                        ? 'customer'
-                        : activeTab === 'contacts'
-                          ? 'contact'
-                          : activeTab === 'opportunities'
-                            ? 'opportunity'
-                            : activeTab === 'tags'
-                              ? 'tag'
-                              : 'lead',
-                  )
-                }
-                type="primary"
-              >
-                {formatMessage(crmMessageId('actions.create'), 'Create')}
-              </Button>
-            ) : null,
-            access.canExportCrm ? (
-              <CurrentPageExportButton<CrmRow>
-                columns={exportColumns}
-                filename={`opencore-crm-${activeTab}.csv`}
-                key="export"
-                resource={`crm-${activeTab}`}
-                rows={tableRows}
-              />
-            ) : null,
-          ].filter(Boolean),
-        }}
+        style={{ marginBottom: 16 }}
       />
+
+      {activeTab === 'overview' ? (
+        <Row gutter={[16, 16]}>
+          <Col xs={24} md={12} xl={6}>
+            <Card
+              hoverable
+              onClick={() => history.push(BUSINESS_ROUTE_PATHS.leads)}
+              size="small"
+            >
+              <Statistic
+                loading={loading}
+                title={formatMessage(crmMessageId('tabs.leads'), 'Leads')}
+                value={summary?.leads}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} md={12} xl={6}>
+            <Card
+              hoverable
+              onClick={() => history.push(BUSINESS_ROUTE_PATHS.customers)}
+              size="small"
+            >
+              <Statistic
+                loading={loading}
+                title={formatMessage(
+                  crmMessageId('tabs.customers'),
+                  'Accounts',
+                )}
+                value={summary?.customers}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} md={12} xl={6}>
+            <Card
+              hoverable
+              onClick={() => history.push(BUSINESS_ROUTE_PATHS.tasks)}
+              size="small"
+            >
+              <Statistic
+                loading={loading}
+                title={formatMessage(crmMessageId('tabs.tasks'), 'Tasks')}
+                value={summary?.openTasks}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} md={12} xl={6}>
+            <Card
+              hoverable
+              onClick={() => history.push(BUSINESS_ROUTE_PATHS.opportunities)}
+              size="small"
+            >
+              <Statistic
+                loading={loading}
+                title={formatMessage(
+                  crmMessageId('stats.openPipeline'),
+                  'Open Pipeline',
+                )}
+                value={amountText(summary?.openPipelineAmount, intl.locale)}
+              />
+            </Card>
+          </Col>
+        </Row>
+      ) : (
+        <ProTable<CrmRow>
+          actionRef={actionRef}
+          columns={columns}
+          params={{ activeTab }}
+          request={requestTable}
+          rowKey="id"
+          search={
+            ['activity', 'tags'].includes(activeTab)
+              ? false
+              : { labelWidth: 'auto' }
+          }
+          scroll={{
+            x:
+              activeTab === 'opportunities'
+                ? OPPORTUNITY_TABLE_SCROLL_X
+                : DEFAULT_TABLE_SCROLL_X,
+          }}
+          pagination={{ pageSize: 10, showSizeChanger: true }}
+          toolbar={{
+            actions: [
+              <Button
+                icon={<ReloadOutlined />}
+                key="reload"
+                onClick={() => void reloadCrm()}
+              >
+                {formatMessage(crmMessageId('actions.reload'), 'Reload')}
+              </Button>,
+              access.canCreateCrm &&
+              !['activity', 'tasks'].includes(activeTab) ? (
+                <Button
+                  icon={<PlusOutlined />}
+                  key="create"
+                  onClick={() =>
+                    openCreate(
+                      activeTab === 'leads'
+                        ? 'lead'
+                        : activeTab === 'customers'
+                          ? 'customer'
+                          : activeTab === 'contacts'
+                            ? 'contact'
+                            : activeTab === 'opportunities'
+                              ? 'opportunity'
+                              : activeTab === 'tags'
+                                ? 'tag'
+                                : 'lead',
+                    )
+                  }
+                  type="primary"
+                >
+                  {formatMessage(crmMessageId('actions.create'), 'Create')}
+                </Button>
+              ) : null,
+              access.canExportCrm ? (
+                <CurrentPageExportButton<CrmRow>
+                  columns={exportColumns}
+                  filename={`opencore-crm-${activeTab}.csv`}
+                  key="export"
+                  resource={`crm-${activeTab}`}
+                  rows={tableRows}
+                />
+              ) : null,
+            ].filter(Boolean),
+          }}
+        />
+      )}
 
       <ReadOnlyDetailDrawer
         fields={[

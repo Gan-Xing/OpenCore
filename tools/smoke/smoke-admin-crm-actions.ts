@@ -118,12 +118,12 @@ true;
 `,
     );
     await page.send('Page.navigate', {
-      url: `${adminBaseUrl}/industry/crm?admin-crm-actions-smoke=${runId}`,
+      url: `${adminBaseUrl}/business/leads?admin-crm-actions-smoke=${runId}`,
     });
     await waitForExpression(
       page,
       'document.readyState === "complete"',
-      'Admin CRM page load',
+      'Admin business leads page load',
     );
     await waitForExpression(
       page,
@@ -147,6 +147,7 @@ true;
 
     await exerciseEntityTab(page, {
       create: true,
+      path: '/business/leads',
       rowText: fixtures.leadName,
       tabLabel: '线索',
       actions: [
@@ -165,8 +166,9 @@ true;
 
     await exerciseEntityTab(page, {
       create: true,
+      path: '/business/accounts',
       rowText: fixtures.customerName,
-      tabLabel: '客户',
+      tabLabel: '往来单位',
       actions: [
         { kind: 'drawer', label: 'customer detail', index: 0 },
         { kind: 'modal', label: 'customer edit', index: 1 },
@@ -182,6 +184,7 @@ true;
 
     await exerciseEntityTab(page, {
       create: true,
+      path: '/business/contacts',
       rowText: fixtures.contactName,
       tabLabel: '联系人',
       actions: [
@@ -198,6 +201,7 @@ true;
 
     await exerciseEntityTab(page, {
       create: true,
+      path: '/business/opportunities',
       rowText: fixtures.opportunityName,
       tabLabel: '商机',
       actions: [
@@ -214,7 +218,7 @@ true;
       networkFailures,
     });
 
-    await clickTab(page, '任务');
+    await navigateBusinessPage(page, '/business/tasks', '任务');
     await clickSearchButtonsIfPresent(page);
     await waitForRow(page, fixtures.taskTitle, 'task row');
     await openRowAction(page, fixtures.taskTitle, 0, 'task detail');
@@ -230,6 +234,7 @@ true;
 
     await exerciseEntityTab(page, {
       create: true,
+      path: '/business/tags',
       rowText: fixtures.tagName,
       tabLabel: '标签',
       actions: [
@@ -240,7 +245,7 @@ true;
       networkFailures,
     });
 
-    await clickTab(page, '动态');
+    await navigateBusinessPage(page, '/business/activity', '动态');
     await waitForExpression(
       page,
       `document.body.innerText.includes(${JSON.stringify(
@@ -310,11 +315,12 @@ async function exerciseEntityTab(
     browserFailures: string[];
     create: boolean;
     networkFailures: NetworkFailure[];
+    path: string;
     rowText: string;
     tabLabel: string;
   },
 ): Promise<void> {
-  await clickTab(page, options.tabLabel);
+  await navigateBusinessPage(page, options.path, options.tabLabel);
   await clickSearchButtonsIfPresent(page);
   await waitForRow(page, options.rowText, `${options.tabLabel} row`);
 
@@ -521,13 +527,20 @@ async function seedCrmFixtures(
 }
 
 async function cleanupCreatedCrm(created: CreatedCrmIds): Promise<void> {
-  const prisma = getSmokePrisma();
   const targetIds = [
     ...created.leads,
     ...created.customers,
     ...created.contacts,
     ...created.opportunities,
   ];
+  const hasCreatedRecords =
+    targetIds.length > 0 ||
+    created.tags.length > 0 ||
+    created.customers.length > 0;
+
+  if (!hasCreatedRecords) return;
+
+  const prisma = getSmokePrisma();
 
   if (targetIds.length > 0) {
     await prisma.crmAuditEvent.deleteMany({
@@ -677,8 +690,19 @@ async function fetchJson(
   }
 }
 
-async function clickTab(page: CdpPage, label: string): Promise<void> {
-  await clickElement(page, `.ant-tabs-tab-btn`, label, `tab ${label}`);
+async function navigateBusinessPage(
+  page: CdpPage,
+  path: string,
+  label: string,
+): Promise<void> {
+  await page.send('Page.navigate', {
+    url: `${adminBaseUrl}${path}?admin-crm-actions-smoke=${runId}`,
+  });
+  await waitForExpression(
+    page,
+    'document.readyState === "complete"',
+    `business page ${path} load`,
+  );
   await waitForExpression(
     page,
     `(() => {
@@ -687,7 +711,7 @@ async function clickTab(page: CdpPage, label: string): Promise<void> {
         label,
       )}));
     })()`,
-    `active tab ${label}`,
+    `active business page ${label}`,
   );
   await delay(500);
 }
@@ -873,7 +897,7 @@ async function closeModal(page: CdpPage): Promise<void> {
 async function waitForPopconfirm(page: CdpPage): Promise<void> {
   await waitForExpression(
     page,
-    `Boolean(document.querySelector('.ant-popover')) && document.body.innerText.includes('确认归档这条 CRM 记录？')`,
+    `Boolean(document.querySelector('.ant-popover')) && document.body.innerText.includes('确认归档这条业务记录？')`,
     'archive popconfirm',
   );
 }
@@ -891,7 +915,7 @@ async function cancelPopconfirm(page: CdpPage): Promise<void> {
   );
   await waitForExpression(
     page,
-    `!document.body.innerText.includes('确认归档这条 CRM 记录？')`,
+    `!document.body.innerText.includes('确认归档这条业务记录？')`,
     'popconfirm closed',
   );
 }
@@ -1237,9 +1261,18 @@ function readLogEntry(params: unknown): string | undefined {
     typeof entry.text === 'string' &&
     !entry.text.includes('favicon')
   ) {
+    if (isIgnorableBrowserLog(entry.text)) return undefined;
     return entry.text;
   }
   return undefined;
+}
+
+function isIgnorableBrowserLog(text: string): boolean {
+  return (
+    text.includes("The file at 'blob:http://") &&
+    text.includes('was loaded over an insecure connection') &&
+    text.includes('This file should be served over HTTPS')
+  );
 }
 
 function readMessageData(data: unknown): string {

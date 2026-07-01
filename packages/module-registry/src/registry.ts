@@ -54,6 +54,12 @@ const MENU_GROUPS = {
     icon: 'TeamOutlined',
     order: 590,
   },
+  business: {
+    title: 'Business',
+    path: '/business',
+    icon: 'ApartmentOutlined',
+    order: 640,
+  },
   optional: {
     title: 'Optional',
     path: '/optional',

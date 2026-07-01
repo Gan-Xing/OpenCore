@@ -139,7 +139,8 @@ const checks: Array<{
       "{ action: 'comment', title: 'Follow up' }",
       "{ action: 'export', title: 'Export' }",
       "{ action: 'delete', title: 'Archive', dangerous: true }",
-      "path: '/industry/crm'",
+      "path: '/business/overview'",
+      "path: '/business/accounts'",
     ],
   },
   {
@@ -180,8 +181,9 @@ const checks: Array<{
     ],
   },
   {
-    file: 'apps/admin/src/pages/Industry/Crm/index.tsx',
+    file: 'apps/admin/src/pages/Business/components/BusinessWorkspace.tsx',
     markers: [
+      'BUSINESS_ROUTE_PATHS',
       'getOpenCoreCrmSummary',
       'CurrentPageExportButton',
       'ReadOnlyDetailDrawer',
@@ -200,7 +202,11 @@ const checks: Array<{
   },
   {
     file: 'apps/admin/config/routes.ts',
-    markers: ["path: '/industry/crm'", 'canReadCrm'],
+    markers: [
+      "path: '/business/leads'",
+      "path: '/business/accounts'",
+      'canReadCrm',
+    ],
   },
   {
     file: 'apps/admin/src/access.ts',
