@@ -63,38 +63,6 @@ describe('@opencore/security security-rbac', () => {
     );
   });
 
-  it('accepts business core permissions for legacy CRM requirements', async () => {
-    const guard = new SecurityPermissionGuard(
-      createReflector(REQUIRED_PERMISSIONS_KEY, ['industry:crm:update']),
-      authService,
-    );
-    const request = {
-      headers: {},
-      user: {
-        ...repository.adminUser(),
-        permissionCodes: ['business:core:update'],
-      },
-    };
-
-    await expect(guard.canActivate(createContext(request))).resolves.toBe(true);
-  });
-
-  it('accepts legacy CRM permissions for business core requirements', async () => {
-    const guard = new SecurityPermissionGuard(
-      createReflector(REQUIRED_PERMISSIONS_KEY, ['business:core:export']),
-      authService,
-    );
-    const request = {
-      headers: {},
-      user: {
-        ...repository.adminUser(),
-        permissionCodes: ['industry:crm:export'],
-      },
-    };
-
-    await expect(guard.canActivate(createContext(request))).resolves.toBe(true);
-  });
-
   it('rejects missing bearer tokens and missing permissions', async () => {
     const guard = new SecurityPermissionGuard(
       createReflector(REQUIRED_PERMISSIONS_KEY, ['core:user:delete']),

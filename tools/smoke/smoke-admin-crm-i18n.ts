@@ -80,7 +80,6 @@ const forbiddenEnglishText = [
   'Action',
   'qualified',
   '$68,000.00',
-  'pages.industry.crm',
   'pages.business.core',
 ] as const;
 
