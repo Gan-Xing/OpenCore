@@ -1,5 +1,7 @@
 export * from './business-core-client';
 export * from './business-core-types';
+export * from './business-commerce-client';
+export * from './business-commerce-types';
 export * from './business-sales-client';
 export * from './business-sales-types';
 export * from './collaboration-client';

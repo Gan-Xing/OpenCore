@@ -1,5 +1,6 @@
 import {
   createCollaborationClient,
+  createBusinessCommerceClient,
   createBusinessCoreClient,
   createBusinessSalesClient,
   createIntegrationClient,
@@ -80,11 +81,15 @@ import {
   type CollaborationSummary,
   type CreateApprovalLiteRequest,
   type CreateBusinessAttachmentRequest,
+  type CreateBusinessContractRequest,
   type CreateBusinessContactRequest,
   type CreateBusinessCustomerRequest,
   type CreateBusinessFollowUpRequest,
   type CreateBusinessLeadRequest,
   type CreateBusinessOpportunityRequest,
+  type CreateBusinessProductRequest,
+  type CreateBusinessQuoteRequest,
+  type CreateBusinessReceivableRequest,
   type CreateBusinessTagRequest,
   type CreateBusinessTaskRequest,
   type CreateMessageRequest,
@@ -101,6 +106,12 @@ import {
   type BusinessAttachmentSummary,
   type BusinessAuditEventPage,
   type BusinessAuditEventSummary,
+  type BusinessCommerceExportPreview,
+  type BusinessCommerceExportQueryRequest,
+  type BusinessCommerceSummary,
+  type BusinessContractPage,
+  type BusinessContractQueryRequest,
+  type BusinessContractSummary,
   type BusinessContactPage,
   type BusinessContactQueryRequest,
   type BusinessContactSummary,
@@ -120,6 +131,15 @@ import {
   type BusinessOpportunitySummary,
   type BusinessOwnerTransferPage,
   type BusinessOwnerTransferSummary,
+  type BusinessProductPage,
+  type BusinessProductQueryRequest,
+  type BusinessProductSummary,
+  type BusinessQuotePage,
+  type BusinessQuoteQueryRequest,
+  type BusinessQuoteSummary,
+  type BusinessReceivablePage,
+  type BusinessReceivableQueryRequest,
+  type BusinessReceivableSummary,
   type BusinessSummary,
   type BusinessTagPage,
   type BusinessTagQueryRequest,
@@ -340,11 +360,16 @@ import {
   type UpdateTenantRequest,
   type UpdateUserRequest,
   type TransferBusinessOwnerRequest,
+  type RecordBusinessReceivablePaymentRequest,
   type UpdateTenantMemberAssignmentsRequest,
+  type UpdateBusinessContractRequest,
   type UpdateBusinessContactRequest,
   type UpdateBusinessCustomerRequest,
   type UpdateBusinessLeadRequest,
   type UpdateBusinessOpportunityRequest,
+  type UpdateBusinessProductRequest,
+  type UpdateBusinessQuoteRequest,
+  type UpdateBusinessReceivableRequest,
   type UpdateBusinessTagRequest,
   type UserImportResultSummary,
   type UserImportTemplateSummary,
@@ -353,6 +378,7 @@ import { getRequiredAdminToken, opencoreSdkRequest } from './client';
 
 const rbacClient = createRbacClient(opencoreSdkRequest);
 const collaborationClient = createCollaborationClient(opencoreSdkRequest);
+const businessCommerceClient = createBusinessCommerceClient(opencoreSdkRequest);
 const businessCoreClient = createBusinessCoreClient(opencoreSdkRequest);
 const businessSalesClient = createBusinessSalesClient(opencoreSdkRequest);
 const integrationClient = createIntegrationClient(opencoreSdkRequest);
@@ -1179,6 +1205,218 @@ export function exportOpenCoreBusiness(
   return businessCoreClient.exportBusinessCore(
     getRequiredAdminToken(),
     query as BusinessExportQueryRequest,
+  );
+}
+
+export function getOpenCoreBusinessCommerceSummary(): Promise<BusinessCommerceSummary> {
+  return businessCommerceClient.getSummary(getRequiredAdminToken());
+}
+
+export function pageOpenCoreBusinessProducts(
+  query?: BusinessProductQueryRequest,
+): Promise<BusinessProductPage> {
+  return businessCommerceClient.listProducts(getRequiredAdminToken(), {
+    page: 1,
+    pageSize: 100,
+    ...query,
+  });
+}
+
+export async function listOpenCoreBusinessProducts(
+  query?: BusinessProductQueryRequest,
+): Promise<BusinessProductSummary[]> {
+  const page = await pageOpenCoreBusinessProducts(query);
+  return [...page.items];
+}
+
+export function createOpenCoreBusinessProduct(
+  body: CreateBusinessProductRequest,
+): Promise<BusinessProductSummary> {
+  return businessCommerceClient.createProduct(getRequiredAdminToken(), body);
+}
+
+export function updateOpenCoreBusinessProduct(
+  id: string,
+  body: UpdateBusinessProductRequest,
+): Promise<BusinessProductSummary> {
+  return businessCommerceClient.updateProduct(
+    getRequiredAdminToken(),
+    id,
+    body,
+  );
+}
+
+export function archiveOpenCoreBusinessProduct(
+  id: string,
+): Promise<BusinessDeleteResult> {
+  return businessCommerceClient.archiveProduct(getRequiredAdminToken(), id);
+}
+
+export function pageOpenCoreBusinessQuotes(
+  query?: BusinessQuoteQueryRequest,
+): Promise<BusinessQuotePage> {
+  return businessCommerceClient.listQuotes(getRequiredAdminToken(), {
+    page: 1,
+    pageSize: 100,
+    ...query,
+  });
+}
+
+export async function listOpenCoreBusinessQuotes(
+  query?: BusinessQuoteQueryRequest,
+): Promise<BusinessQuoteSummary[]> {
+  const page = await pageOpenCoreBusinessQuotes(query);
+  return [...page.items];
+}
+
+export function createOpenCoreBusinessQuote(
+  body: CreateBusinessQuoteRequest,
+): Promise<BusinessQuoteSummary> {
+  return businessCommerceClient.createQuote(getRequiredAdminToken(), body);
+}
+
+export function updateOpenCoreBusinessQuote(
+  id: string,
+  body: UpdateBusinessQuoteRequest,
+): Promise<BusinessQuoteSummary> {
+  return businessCommerceClient.updateQuote(getRequiredAdminToken(), id, body);
+}
+
+export function submitOpenCoreBusinessQuote(
+  id: string,
+): Promise<BusinessQuoteSummary> {
+  return businessCommerceClient.submitQuote(getRequiredAdminToken(), id, {
+    actor: 'admin',
+  });
+}
+
+export function acceptOpenCoreBusinessQuote(
+  id: string,
+): Promise<BusinessQuoteSummary> {
+  return businessCommerceClient.acceptQuote(getRequiredAdminToken(), id, {
+    actor: 'admin',
+  });
+}
+
+export function archiveOpenCoreBusinessQuote(
+  id: string,
+): Promise<BusinessDeleteResult> {
+  return businessCommerceClient.archiveQuote(getRequiredAdminToken(), id);
+}
+
+export function pageOpenCoreBusinessContracts(
+  query?: BusinessContractQueryRequest,
+): Promise<BusinessContractPage> {
+  return businessCommerceClient.listContracts(getRequiredAdminToken(), {
+    page: 1,
+    pageSize: 100,
+    ...query,
+  });
+}
+
+export async function listOpenCoreBusinessContracts(
+  query?: BusinessContractQueryRequest,
+): Promise<BusinessContractSummary[]> {
+  const page = await pageOpenCoreBusinessContracts(query);
+  return [...page.items];
+}
+
+export function createOpenCoreBusinessContract(
+  body: CreateBusinessContractRequest,
+): Promise<BusinessContractSummary> {
+  return businessCommerceClient.createContract(getRequiredAdminToken(), body);
+}
+
+export function updateOpenCoreBusinessContract(
+  id: string,
+  body: UpdateBusinessContractRequest,
+): Promise<BusinessContractSummary> {
+  return businessCommerceClient.updateContract(
+    getRequiredAdminToken(),
+    id,
+    body,
+  );
+}
+
+export function activateOpenCoreBusinessContract(
+  id: string,
+): Promise<BusinessContractSummary> {
+  return businessCommerceClient.activateContract(getRequiredAdminToken(), id, {
+    actor: 'admin',
+  });
+}
+
+export function completeOpenCoreBusinessContract(
+  id: string,
+): Promise<BusinessContractSummary> {
+  return businessCommerceClient.completeContract(getRequiredAdminToken(), id, {
+    actor: 'admin',
+  });
+}
+
+export function archiveOpenCoreBusinessContract(
+  id: string,
+): Promise<BusinessDeleteResult> {
+  return businessCommerceClient.archiveContract(getRequiredAdminToken(), id);
+}
+
+export function pageOpenCoreBusinessReceivables(
+  query?: BusinessReceivableQueryRequest,
+): Promise<BusinessReceivablePage> {
+  return businessCommerceClient.listReceivables(getRequiredAdminToken(), {
+    page: 1,
+    pageSize: 100,
+    ...query,
+  });
+}
+
+export async function listOpenCoreBusinessReceivables(
+  query?: BusinessReceivableQueryRequest,
+): Promise<BusinessReceivableSummary[]> {
+  const page = await pageOpenCoreBusinessReceivables(query);
+  return [...page.items];
+}
+
+export function createOpenCoreBusinessReceivable(
+  body: CreateBusinessReceivableRequest,
+): Promise<BusinessReceivableSummary> {
+  return businessCommerceClient.createReceivable(getRequiredAdminToken(), body);
+}
+
+export function updateOpenCoreBusinessReceivable(
+  id: string,
+  body: UpdateBusinessReceivableRequest,
+): Promise<BusinessReceivableSummary> {
+  return businessCommerceClient.updateReceivable(
+    getRequiredAdminToken(),
+    id,
+    body,
+  );
+}
+
+export function recordOpenCoreBusinessReceivablePayment(
+  id: string,
+  body: RecordBusinessReceivablePaymentRequest,
+): Promise<BusinessReceivableSummary> {
+  return businessCommerceClient.recordReceivablePayment(
+    getRequiredAdminToken(),
+    id,
+    body,
+  );
+}
+
+export function cancelOpenCoreBusinessReceivable(
+  id: string,
+): Promise<BusinessDeleteResult> {
+  return businessCommerceClient.cancelReceivable(getRequiredAdminToken(), id);
+}
+
+export function exportOpenCoreBusinessCommerce(
+  query: BusinessCommerceExportQueryRequest,
+): Promise<BusinessCommerceExportPreview> {
+  return businessCommerceClient.exportBusinessCommerce(
+    getRequiredAdminToken(),
+    query,
   );
 }
 

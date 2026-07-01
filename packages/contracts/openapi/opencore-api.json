@@ -11608,6 +11608,955 @@
         "tags": ["Business Sales"]
       }
     },
+    "/api/business/commerce/summary": {
+      "get": {
+        "operationId": "BusinessCommerceController_getSummary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessCommerceSummaryDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Commerce"]
+      }
+    },
+    "/api/business/commerce/export": {
+      "get": {
+        "operationId": "BusinessCommerceController_exportCommerce",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "resource",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessCommerceExportPreviewDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Commerce"]
+      }
+    },
+    "/api/business/commerce/products": {
+      "get": {
+        "operationId": "BusinessCommerceController_listProducts",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "keyword",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["active", "inactive", "archived"]
+            }
+          },
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessProductPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Commerce"]
+      },
+      "post": {
+        "operationId": "BusinessCommerceController_createProduct",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBusinessProductDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BusinessProductDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Commerce"]
+      }
+    },
+    "/api/business/commerce/products/{id}": {
+      "get": {
+        "operationId": "BusinessCommerceController_getProduct",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BusinessProductDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Commerce"]
+      },
+      "patch": {
+        "operationId": "BusinessCommerceController_updateProduct",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBusinessProductDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BusinessProductDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Commerce"]
+      },
+      "delete": {
+        "operationId": "BusinessCommerceController_archiveProduct",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessCommerceDeleteResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Commerce"]
+      }
+    },
+    "/api/business/commerce/quotes": {
+      "get": {
+        "operationId": "BusinessCommerceController_listQuotes",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "keyword",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "draft",
+                "sent",
+                "accepted",
+                "rejected",
+                "expired",
+                "archived"
+              ]
+            }
+          },
+          {
+            "name": "owner",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessQuotePageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Commerce"]
+      },
+      "post": {
+        "operationId": "BusinessCommerceController_createQuote",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBusinessQuoteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BusinessQuoteDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Commerce"]
+      }
+    },
+    "/api/business/commerce/quotes/{id}": {
+      "get": {
+        "operationId": "BusinessCommerceController_getQuote",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BusinessQuoteDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Commerce"]
+      },
+      "patch": {
+        "operationId": "BusinessCommerceController_updateQuote",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBusinessQuoteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BusinessQuoteDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Commerce"]
+      },
+      "delete": {
+        "operationId": "BusinessCommerceController_archiveQuote",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessCommerceDeleteResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Commerce"]
+      }
+    },
+    "/api/business/commerce/quotes/{id}/submit": {
+      "patch": {
+        "operationId": "BusinessCommerceController_submitQuote",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusinessCommerceActionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BusinessQuoteDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Commerce"]
+      }
+    },
+    "/api/business/commerce/quotes/{id}/accept": {
+      "patch": {
+        "operationId": "BusinessCommerceController_acceptQuote",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusinessCommerceActionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BusinessQuoteDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Commerce"]
+      }
+    },
+    "/api/business/commerce/contracts": {
+      "get": {
+        "operationId": "BusinessCommerceController_listContracts",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "keyword",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["draft", "active", "completed", "terminated", "archived"]
+            }
+          },
+          {
+            "name": "owner",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessContractPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Commerce"]
+      },
+      "post": {
+        "operationId": "BusinessCommerceController_createContract",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBusinessContractDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BusinessContractDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Commerce"]
+      }
+    },
+    "/api/business/commerce/contracts/{id}": {
+      "get": {
+        "operationId": "BusinessCommerceController_getContract",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BusinessContractDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Commerce"]
+      },
+      "patch": {
+        "operationId": "BusinessCommerceController_updateContract",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBusinessContractDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BusinessContractDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Commerce"]
+      },
+      "delete": {
+        "operationId": "BusinessCommerceController_archiveContract",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessCommerceDeleteResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Commerce"]
+      }
+    },
+    "/api/business/commerce/contracts/{id}/activate": {
+      "patch": {
+        "operationId": "BusinessCommerceController_activateContract",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusinessCommerceActionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BusinessContractDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Commerce"]
+      }
+    },
+    "/api/business/commerce/contracts/{id}/complete": {
+      "patch": {
+        "operationId": "BusinessCommerceController_completeContract",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusinessCommerceActionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BusinessContractDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Commerce"]
+      }
+    },
+    "/api/business/commerce/receivables": {
+      "get": {
+        "operationId": "BusinessCommerceController_listReceivables",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "keyword",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["pending", "partial", "paid", "overdue", "canceled"]
+            }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "contractId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessReceivablePageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Commerce"]
+      },
+      "post": {
+        "operationId": "BusinessCommerceController_createReceivable",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBusinessReceivableDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessReceivableDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Commerce"]
+      }
+    },
+    "/api/business/commerce/receivables/{id}": {
+      "get": {
+        "operationId": "BusinessCommerceController_getReceivable",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessReceivableDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Commerce"]
+      },
+      "patch": {
+        "operationId": "BusinessCommerceController_updateReceivable",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBusinessReceivableDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessReceivableDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Commerce"]
+      },
+      "delete": {
+        "operationId": "BusinessCommerceController_cancelReceivable",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessCommerceDeleteResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Commerce"]
+      }
+    },
+    "/api/business/commerce/receivables/{id}/pay": {
+      "patch": {
+        "operationId": "BusinessCommerceController_recordReceivablePayment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordBusinessReceivablePaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessReceivableDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Commerce"]
+      }
+    },
     "/api/monitor/status": {
       "get": {
         "operationId": "MonitoringController_getStatus",
@@ -13261,6 +14210,10 @@
     "contact": {}
   },
   "tags": [
+    {
+      "name": "Business Commerce",
+      "description": "business.commerce: Business Commerce"
+    },
     { "name": "Business Core", "description": "business.core: Business Core" },
     {
       "name": "Business Sales",
@@ -19300,6 +20253,463 @@
           "closeReason": { "type": "string" }
         },
         "required": ["stage", "actor"]
+      },
+      "BusinessCommerceSummaryDto": {
+        "type": "object",
+        "properties": {
+          "products": { "type": "number" },
+          "openQuotes": { "type": "number" },
+          "acceptedQuoteAmount": { "type": "string" },
+          "activeContracts": { "type": "number" },
+          "activeContractAmount": { "type": "string" },
+          "openReceivables": { "type": "number" },
+          "receivableBalance": { "type": "string" }
+        },
+        "required": [
+          "products",
+          "openQuotes",
+          "acceptedQuoteAmount",
+          "activeContracts",
+          "activeContractAmount",
+          "openReceivables",
+          "receivableBalance"
+        ]
+      },
+      "BusinessCommerceExportPreviewDto": {
+        "type": "object",
+        "properties": {
+          "filename": { "type": "string" },
+          "contentType": { "type": "string" },
+          "contentBase64": { "type": "string" },
+          "scope": { "type": "string", "example": "current-page" },
+          "columns": { "type": "array", "items": { "type": "string" } },
+          "rowCount": { "type": "number" },
+          "generatedAt": { "type": "string" }
+        },
+        "required": [
+          "filename",
+          "contentType",
+          "contentBase64",
+          "scope",
+          "columns",
+          "rowCount",
+          "generatedAt"
+        ]
+      },
+      "BusinessProductDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "sku": { "type": "string" },
+          "name": { "type": "string" },
+          "category": { "type": "string" },
+          "unit": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["active", "inactive", "archived"]
+          },
+          "listPrice": { "type": "string" },
+          "currency": { "type": "string" },
+          "taxRate": { "type": "string" },
+          "description": { "type": "string" },
+          "archivedAt": { "type": "string" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "sku",
+          "name",
+          "unit",
+          "status",
+          "listPrice",
+          "currency",
+          "taxRate",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "BusinessProductPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/BusinessProductDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "CreateBusinessProductDto": {
+        "type": "object",
+        "properties": {
+          "sku": { "type": "string" },
+          "name": { "type": "string" },
+          "category": { "type": "string" },
+          "unit": { "type": "string" },
+          "listPrice": { "type": "string" },
+          "currency": { "type": "string" },
+          "taxRate": { "type": "string" },
+          "description": { "type": "string" }
+        },
+        "required": ["sku", "name"]
+      },
+      "UpdateBusinessProductDto": {
+        "type": "object",
+        "properties": {
+          "sku": { "type": "string" },
+          "name": { "type": "string" },
+          "category": { "type": "object" },
+          "unit": { "type": "string" },
+          "status": { "type": "string", "enum": ["active", "inactive"] },
+          "listPrice": { "type": "string" },
+          "currency": { "type": "string" },
+          "taxRate": { "type": "string" },
+          "description": { "type": "object" }
+        }
+      },
+      "BusinessCommerceDeleteResultDto": {
+        "type": "object",
+        "properties": { "deleted": { "type": "boolean" } },
+        "required": ["deleted"]
+      },
+      "BusinessQuoteLineDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "quoteId": { "type": "string" },
+          "productId": { "type": "string" },
+          "productSku": { "type": "string" },
+          "productName": { "type": "string" },
+          "unit": { "type": "string" },
+          "quantity": { "type": "string" },
+          "unitPrice": { "type": "string" },
+          "discountRate": { "type": "string" },
+          "taxRate": { "type": "string" },
+          "lineAmount": { "type": "string" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "quoteId",
+          "productName",
+          "unit",
+          "quantity",
+          "unitPrice",
+          "discountRate",
+          "taxRate",
+          "lineAmount",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "BusinessQuoteDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "customerId": { "type": "string" },
+          "customerName": { "type": "string" },
+          "opportunityId": { "type": "string" },
+          "number": { "type": "string" },
+          "name": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "sent",
+              "accepted",
+              "rejected",
+              "expired",
+              "archived"
+            ]
+          },
+          "owner": { "type": "string" },
+          "currency": { "type": "string" },
+          "subtotalAmount": { "type": "string" },
+          "discountAmount": { "type": "string" },
+          "taxAmount": { "type": "string" },
+          "totalAmount": { "type": "string" },
+          "validUntil": { "type": "string" },
+          "issuedAt": { "type": "string" },
+          "acceptedAt": { "type": "string" },
+          "rejectedAt": { "type": "string" },
+          "archivedAt": { "type": "string" },
+          "remark": { "type": "string" },
+          "lines": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/BusinessQuoteLineDto" }
+          },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "customerId",
+          "number",
+          "name",
+          "status",
+          "owner",
+          "currency",
+          "subtotalAmount",
+          "discountAmount",
+          "taxAmount",
+          "totalAmount",
+          "lines",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "BusinessQuotePageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/BusinessQuoteDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "CreateBusinessQuoteLineDto": {
+        "type": "object",
+        "properties": {
+          "productId": { "type": "string" },
+          "productSku": { "type": "string" },
+          "productName": { "type": "string" },
+          "unit": { "type": "string" },
+          "quantity": { "type": "string" },
+          "unitPrice": { "type": "string" },
+          "discountRate": { "type": "string" },
+          "taxRate": { "type": "string" }
+        },
+        "required": ["productName"]
+      },
+      "CreateBusinessQuoteDto": {
+        "type": "object",
+        "properties": {
+          "customerId": { "type": "string" },
+          "opportunityId": { "type": "string" },
+          "name": { "type": "string" },
+          "owner": { "type": "string" },
+          "currency": { "type": "string" },
+          "validUntil": { "type": "string" },
+          "remark": { "type": "string" },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateBusinessQuoteLineDto"
+            }
+          }
+        },
+        "required": ["customerId", "name", "owner", "lines"]
+      },
+      "UpdateBusinessQuoteDto": {
+        "type": "object",
+        "properties": {
+          "customerId": { "type": "string" },
+          "opportunityId": { "type": "object" },
+          "name": { "type": "string" },
+          "owner": { "type": "string" },
+          "currency": { "type": "string" },
+          "validUntil": { "type": "object" },
+          "remark": { "type": "object" },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateBusinessQuoteLineDto"
+            }
+          }
+        }
+      },
+      "BusinessCommerceActionDto": {
+        "type": "object",
+        "properties": { "actor": { "type": "string" } }
+      },
+      "BusinessContractDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "customerId": { "type": "string" },
+          "customerName": { "type": "string" },
+          "quoteId": { "type": "string" },
+          "opportunityId": { "type": "string" },
+          "number": { "type": "string" },
+          "name": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["draft", "active", "completed", "terminated", "archived"]
+          },
+          "owner": { "type": "string" },
+          "currency": { "type": "string" },
+          "amount": { "type": "string" },
+          "signedAt": { "type": "string" },
+          "effectiveFrom": { "type": "string" },
+          "effectiveTo": { "type": "string" },
+          "terminatedAt": { "type": "string" },
+          "archivedAt": { "type": "string" },
+          "remark": { "type": "string" },
+          "receivableCount": { "type": "number" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "customerId",
+          "number",
+          "name",
+          "status",
+          "owner",
+          "currency",
+          "amount",
+          "receivableCount",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "BusinessContractPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/BusinessContractDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "CreateBusinessContractDto": {
+        "type": "object",
+        "properties": {
+          "customerId": { "type": "string" },
+          "quoteId": { "type": "string" },
+          "opportunityId": { "type": "string" },
+          "name": { "type": "string" },
+          "owner": { "type": "string" },
+          "currency": { "type": "string" },
+          "amount": { "type": "string" },
+          "signedAt": { "type": "string" },
+          "effectiveFrom": { "type": "string" },
+          "effectiveTo": { "type": "string" },
+          "remark": { "type": "string" }
+        },
+        "required": ["customerId", "name", "owner"]
+      },
+      "UpdateBusinessContractDto": {
+        "type": "object",
+        "properties": {
+          "customerId": { "type": "string" },
+          "quoteId": { "type": "object" },
+          "opportunityId": { "type": "object" },
+          "name": { "type": "string" },
+          "owner": { "type": "string" },
+          "currency": { "type": "string" },
+          "amount": { "type": "string" },
+          "signedAt": { "type": "object" },
+          "effectiveFrom": { "type": "object" },
+          "effectiveTo": { "type": "object" },
+          "remark": { "type": "object" }
+        }
+      },
+      "BusinessReceivableDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "contractId": { "type": "string" },
+          "contractName": { "type": "string" },
+          "customerId": { "type": "string" },
+          "customerName": { "type": "string" },
+          "number": { "type": "string" },
+          "name": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "partial", "paid", "overdue", "canceled"]
+          },
+          "currency": { "type": "string" },
+          "amount": { "type": "string" },
+          "paidAmount": { "type": "string" },
+          "dueAt": { "type": "string" },
+          "paidAt": { "type": "string" },
+          "canceledAt": { "type": "string" },
+          "remark": { "type": "string" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "contractId",
+          "customerId",
+          "number",
+          "name",
+          "status",
+          "currency",
+          "amount",
+          "paidAmount",
+          "dueAt",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "BusinessReceivablePageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/BusinessReceivableDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "CreateBusinessReceivableDto": {
+        "type": "object",
+        "properties": {
+          "contractId": { "type": "string" },
+          "name": { "type": "string" },
+          "amount": { "type": "string" },
+          "dueAt": { "type": "string" },
+          "remark": { "type": "string" }
+        },
+        "required": ["contractId", "name", "dueAt"]
+      },
+      "UpdateBusinessReceivableDto": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "amount": { "type": "string" },
+          "dueAt": { "type": "string" },
+          "remark": { "type": "object" }
+        }
+      },
+      "RecordBusinessReceivablePaymentDto": {
+        "type": "object",
+        "properties": {
+          "amount": { "type": "string" },
+          "actor": { "type": "string" }
+        },
+        "required": ["amount"]
       },
       "RuntimeProcessStatusDto": {
         "type": "object",

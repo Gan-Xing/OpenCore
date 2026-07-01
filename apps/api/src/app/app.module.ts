@@ -7,6 +7,7 @@ import {
 import { DatabaseModule } from '@opencore/database';
 import { CollaborationModule } from '../modules/collaboration/collaboration/collaboration.module';
 import { TicketModule } from '../modules/collaboration/ticket/ticket.module';
+import { BusinessCommerceModule } from '../modules/business/commerce/commerce.module';
 import { BusinessCoreModule } from '../modules/business/core/business-core.module';
 import { SalesModule } from '../modules/business/sales/sales.module';
 import { IntegrationModule } from '../modules/integration/integration/integration.module';
@@ -29,6 +30,7 @@ import { HealthController } from './health.controller';
     TicketModule,
     BusinessCoreModule,
     SalesModule,
+    BusinessCommerceModule,
     IntegrationModule,
     MonitoringModule,
     OperationsModule,

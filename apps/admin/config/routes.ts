@@ -304,6 +304,30 @@ export default [
         component: './Business/activity',
         access: 'canReadBusiness',
       },
+      {
+        name: 'products',
+        path: '/business/products',
+        component: './Business/products',
+        access: 'canReadBusiness',
+      },
+      {
+        name: 'quotes',
+        path: '/business/quotes',
+        component: './Business/quotes',
+        access: 'canReadBusiness',
+      },
+      {
+        name: 'contracts',
+        path: '/business/contracts',
+        component: './Business/contracts',
+        access: 'canReadBusiness',
+      },
+      {
+        name: 'receivables',
+        path: '/business/receivables',
+        component: './Business/receivables',
+        access: 'canReadBusiness',
+      },
     ],
   },
   {

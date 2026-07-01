@@ -115,6 +115,11 @@ model Tenant {
   businessCustomers      BusinessCustomer[]
   businessContacts       BusinessContact[]
   salesOpportunities     SalesOpportunity[]
+  businessProducts       BusinessProduct[]
+  businessQuotes         BusinessQuote[]
+  businessQuoteLines     BusinessQuoteLine[]
+  businessContracts      BusinessContract[]
+  businessReceivables    BusinessReceivable[]
   businessFollowUps      BusinessFollowUp[]
   businessTasks          BusinessTask[]
   businessAttachments    BusinessAttachment[]
@@ -867,14 +872,14 @@ model SalesLead {
 }
 
 model BusinessCustomer {
-  id             String             @id @default(cuid())
-  tenantId       String             @default("tenant_root")
-  tenant         Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  id             String               @id @default(cuid())
+  tenantId       String               @default("tenant_root")
+  tenant         Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   number         String
   name           String
   owner          String
-  status         String             @default("active")
-  level          String             @default("standard")
+  status         String               @default("active")
+  level          String               @default("standard")
   source         String
   industry       String?
   region         String?
@@ -882,15 +887,18 @@ model BusinessCustomer {
   phone          String?
   email          String?
   address        String?
-  tags           Json               @default("[]")
+  tags           Json                 @default("[]")
   remark         String?
   nextContactAt  DateTime?
   lastFollowedAt DateTime?
   archivedAt     DateTime?
   contacts       BusinessContact[]
   opportunities  SalesOpportunity[]
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
+  quotes         BusinessQuote[]
+  contracts      BusinessContract[]
+  receivables    BusinessReceivable[]
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
 
   @@unique([tenantId, number])
   @@unique([tenantId, id])
@@ -955,6 +963,149 @@ model SalesOpportunity {
   @@index([tenantId, owner, stage, createdAt])
   @@index([tenantId, expectedCloseAt])
   @@index([tenantId, archivedAt])
+}
+
+model BusinessProduct {
+  id          String    @id @default(cuid())
+  tenantId    String    @default("tenant_root")
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sku         String
+  name        String
+  category    String?
+  unit        String    @default("unit")
+  status      String    @default("active")
+  listPrice   Decimal   @default(0) @db.Decimal(18, 2)
+  currency    String    @default("USD")
+  taxRate     Decimal   @default(0) @db.Decimal(5, 2)
+  description String?
+  archivedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([tenantId, sku])
+  @@unique([tenantId, id])
+  @@index([tenantId, status, category, createdAt])
+  @@index([tenantId, archivedAt])
+}
+
+model BusinessQuote {
+  id             String              @id @default(cuid())
+  tenantId       String              @default("tenant_root")
+  tenant         Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customerId     String
+  customer       BusinessCustomer    @relation(fields: [tenantId, customerId], references: [tenantId, id], onDelete: Cascade)
+  opportunityId  String?
+  number         String
+  name           String
+  status         String              @default("draft")
+  owner          String
+  currency       String              @default("USD")
+  subtotalAmount Decimal             @default(0) @db.Decimal(18, 2)
+  discountAmount Decimal             @default(0) @db.Decimal(18, 2)
+  taxAmount      Decimal             @default(0) @db.Decimal(18, 2)
+  totalAmount    Decimal             @default(0) @db.Decimal(18, 2)
+  validUntil     DateTime?
+  issuedAt       DateTime?
+  acceptedAt     DateTime?
+  rejectedAt     DateTime?
+  archivedAt     DateTime?
+  remark         String?
+  lines          BusinessQuoteLine[]
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@unique([tenantId, number])
+  @@unique([tenantId, id])
+  @@index([tenantId, customerId, status])
+  @@index([tenantId, owner, status, createdAt])
+  @@index([tenantId, opportunityId])
+  @@index([tenantId, validUntil])
+  @@index([tenantId, archivedAt])
+}
+
+model BusinessQuoteLine {
+  id           String        @id @default(cuid())
+  tenantId     String        @default("tenant_root")
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  quoteId      String
+  quote        BusinessQuote @relation(fields: [tenantId, quoteId], references: [tenantId, id], onDelete: Cascade)
+  productId    String?
+  productSku   String?
+  productName  String
+  unit         String        @default("unit")
+  quantity     Decimal       @default(1) @db.Decimal(18, 2)
+  unitPrice    Decimal       @default(0) @db.Decimal(18, 2)
+  discountRate Decimal       @default(0) @db.Decimal(5, 2)
+  taxRate      Decimal       @default(0) @db.Decimal(5, 2)
+  lineAmount   Decimal       @default(0) @db.Decimal(18, 2)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@unique([tenantId, id])
+  @@index([tenantId, quoteId, createdAt])
+  @@index([tenantId, productId])
+}
+
+model BusinessContract {
+  id            String               @id @default(cuid())
+  tenantId      String               @default("tenant_root")
+  tenant        Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customerId    String
+  customer      BusinessCustomer     @relation(fields: [tenantId, customerId], references: [tenantId, id], onDelete: Cascade)
+  quoteId       String?
+  opportunityId String?
+  number        String
+  name          String
+  status        String               @default("draft")
+  owner         String
+  currency      String               @default("USD")
+  amount        Decimal              @default(0) @db.Decimal(18, 2)
+  signedAt      DateTime?
+  effectiveFrom DateTime?
+  effectiveTo   DateTime?
+  terminatedAt  DateTime?
+  archivedAt    DateTime?
+  remark        String?
+  receivables   BusinessReceivable[]
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  @@unique([tenantId, number])
+  @@unique([tenantId, id])
+  @@index([tenantId, customerId, status])
+  @@index([tenantId, owner, status, createdAt])
+  @@index([tenantId, quoteId])
+  @@index([tenantId, opportunityId])
+  @@index([tenantId, effectiveTo])
+  @@index([tenantId, archivedAt])
+}
+
+model BusinessReceivable {
+  id         String           @id @default(cuid())
+  tenantId   String           @default("tenant_root")
+  tenant     Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contractId String
+  contract   BusinessContract @relation(fields: [tenantId, contractId], references: [tenantId, id], onDelete: Cascade)
+  customerId String
+  customer   BusinessCustomer @relation(fields: [tenantId, customerId], references: [tenantId, id], onDelete: Cascade)
+  number     String
+  name       String
+  status     String           @default("pending")
+  currency   String           @default("USD")
+  amount     Decimal          @default(0) @db.Decimal(18, 2)
+  paidAmount Decimal          @default(0) @db.Decimal(18, 2)
+  dueAt      DateTime
+  paidAt     DateTime?
+  canceledAt DateTime?
+  remark     String?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@unique([tenantId, number])
+  @@unique([tenantId, id])
+  @@index([tenantId, contractId, status])
+  @@index([tenantId, customerId, status])
+  @@index([tenantId, status, dueAt])
 }
 
 model BusinessFollowUp {

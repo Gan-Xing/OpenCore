@@ -70,14 +70,17 @@ export default function access(initialState: InitialState = {}) {
     canReadApprovalLite: hasPermission('collaboration:approval-lite:read'),
     canReadBusiness: hasAnyPermission(
       'business:core:read',
+      'business:commerce:read',
       'business:sales:read',
     ),
     canCreateBusiness: hasAnyPermission(
       'business:core:create',
+      'business:commerce:create',
       'business:sales:create',
     ),
     canUpdateBusiness: hasAnyPermission(
       'business:core:update',
+      'business:commerce:update',
       'business:sales:update',
     ),
     canAssignBusiness: hasAnyPermission(
@@ -87,10 +90,12 @@ export default function access(initialState: InitialState = {}) {
     canCommentBusiness: hasPermission('business:core:comment'),
     canExportBusiness: hasAnyPermission(
       'business:core:export',
+      'business:commerce:export',
       'business:sales:export',
     ),
     canDeleteBusiness: hasAnyPermission(
       'business:core:delete',
+      'business:commerce:delete',
       'business:sales:delete',
     ),
     canReadJobs: hasPermission('monitor:job:read'),

@@ -85,15 +85,18 @@ function collectAccessBindings(sourceText: string): Map<string, string> {
       ts.isPropertyAssignment(node) &&
       ts.isCallExpression(node.initializer) &&
       ts.isIdentifier(node.initializer.expression) &&
-      node.initializer.expression.text === 'hasPermission' &&
-      node.initializer.arguments.length === 1 &&
-      ts.isStringLiteral(node.initializer.arguments[0])
+      ['hasAnyPermission', 'hasPermission'].includes(
+        node.initializer.expression.text,
+      )
     ) {
       const accessKey = getPropertyName(node.name);
-      const permissionCode = node.initializer.arguments[0].text;
 
-      if (accessKey && !bindings.has(permissionCode)) {
-        bindings.set(permissionCode, accessKey);
+      if (accessKey) {
+        for (const argument of node.initializer.arguments) {
+          if (ts.isStringLiteral(argument) && !bindings.has(argument.text)) {
+            bindings.set(argument.text, accessKey);
+          }
+        }
       }
     }
 

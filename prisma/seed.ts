@@ -51,6 +51,12 @@ import {
   seedBusinessTags,
   seedBusinessTasks,
 } from '../apps/api/src/modules/business/core/business.seed';
+import {
+  seedBusinessContracts,
+  seedBusinessProducts,
+  seedBusinessQuotes,
+  seedBusinessReceivables,
+} from '../apps/api/src/modules/business/commerce/commerce.seed';
 import { seedReports } from '../apps/api/src/modules/monitor/operations/operations.seed';
 import {
   seedIntegrationOutbox,
@@ -119,6 +125,7 @@ async function main(): Promise<void> {
   const operationsCount = await seedOperations();
   const collaborationCount = await seedCollaboration();
   const businessPlatformCount = await seedBusinessPlatform();
+  const businessCommerceCount = await seedBusinessCommerce();
 
   console.log(
     JSON.stringify({
@@ -131,6 +138,7 @@ async function main(): Promise<void> {
         onlineUserSessions: onlineUserSessionCount,
         integrations: integrationCount,
         collaboration: collaborationCount,
+        businessCommerce: businessCommerceCount,
         businessPlatform: businessPlatformCount,
         scheduler: schedulerCount,
         operations: operationsCount,
@@ -1310,6 +1318,244 @@ async function seedBusinessPlatform(): Promise<{
     ownerTransfers: seedBusinessOwnerTransfers.length,
     tags: seedBusinessTags.length,
     tasks: seedBusinessTasks.length,
+  };
+}
+
+async function seedBusinessCommerce(): Promise<{
+  contracts: number;
+  products: number;
+  quoteLines: number;
+  quotes: number;
+  receivables: number;
+}> {
+  for (const product of seedBusinessProducts) {
+    await prisma.businessProduct.upsert({
+      where: { id: product.id },
+      update: {
+        tenantId: product.tenantId,
+        sku: product.sku,
+        name: product.name,
+        category: product.category ?? null,
+        unit: product.unit,
+        status: product.status,
+        listPrice: new Prisma.Decimal(product.listPrice),
+        currency: product.currency,
+        taxRate: new Prisma.Decimal(product.taxRate),
+        description: product.description ?? null,
+        archivedAt: product.archivedAt ? new Date(product.archivedAt) : null,
+        createdAt: new Date(product.createdAt),
+      },
+      create: {
+        id: product.id,
+        tenantId: product.tenantId,
+        sku: product.sku,
+        name: product.name,
+        category: product.category ?? null,
+        unit: product.unit,
+        status: product.status,
+        listPrice: new Prisma.Decimal(product.listPrice),
+        currency: product.currency,
+        taxRate: new Prisma.Decimal(product.taxRate),
+        description: product.description ?? null,
+        archivedAt: product.archivedAt ? new Date(product.archivedAt) : null,
+        createdAt: new Date(product.createdAt),
+      },
+    });
+  }
+
+  for (const quote of seedBusinessQuotes) {
+    await prisma.businessQuote.upsert({
+      where: { id: quote.id },
+      update: {
+        tenantId: quote.tenantId,
+        customerId: quote.customerId,
+        opportunityId: quote.opportunityId ?? null,
+        number: quote.number,
+        name: quote.name,
+        status: quote.status,
+        owner: quote.owner,
+        currency: quote.currency,
+        subtotalAmount: new Prisma.Decimal(quote.subtotalAmount),
+        discountAmount: new Prisma.Decimal(quote.discountAmount),
+        taxAmount: new Prisma.Decimal(quote.taxAmount),
+        totalAmount: new Prisma.Decimal(quote.totalAmount),
+        validUntil: quote.validUntil ? new Date(quote.validUntil) : null,
+        issuedAt: quote.issuedAt ? new Date(quote.issuedAt) : null,
+        acceptedAt: quote.acceptedAt ? new Date(quote.acceptedAt) : null,
+        rejectedAt: quote.rejectedAt ? new Date(quote.rejectedAt) : null,
+        archivedAt: quote.archivedAt ? new Date(quote.archivedAt) : null,
+        remark: quote.remark ?? null,
+        createdAt: new Date(quote.createdAt),
+      },
+      create: {
+        id: quote.id,
+        tenantId: quote.tenantId,
+        customerId: quote.customerId,
+        opportunityId: quote.opportunityId ?? null,
+        number: quote.number,
+        name: quote.name,
+        status: quote.status,
+        owner: quote.owner,
+        currency: quote.currency,
+        subtotalAmount: new Prisma.Decimal(quote.subtotalAmount),
+        discountAmount: new Prisma.Decimal(quote.discountAmount),
+        taxAmount: new Prisma.Decimal(quote.taxAmount),
+        totalAmount: new Prisma.Decimal(quote.totalAmount),
+        validUntil: quote.validUntil ? new Date(quote.validUntil) : null,
+        issuedAt: quote.issuedAt ? new Date(quote.issuedAt) : null,
+        acceptedAt: quote.acceptedAt ? new Date(quote.acceptedAt) : null,
+        rejectedAt: quote.rejectedAt ? new Date(quote.rejectedAt) : null,
+        archivedAt: quote.archivedAt ? new Date(quote.archivedAt) : null,
+        remark: quote.remark ?? null,
+        createdAt: new Date(quote.createdAt),
+      },
+    });
+
+    for (const line of quote.lines) {
+      await prisma.businessQuoteLine.upsert({
+        where: { id: line.id },
+        update: {
+          tenantId: line.tenantId,
+          quoteId: line.quoteId,
+          productId: line.productId ?? null,
+          productSku: line.productSku ?? null,
+          productName: line.productName,
+          unit: line.unit,
+          quantity: new Prisma.Decimal(line.quantity),
+          unitPrice: new Prisma.Decimal(line.unitPrice),
+          discountRate: new Prisma.Decimal(line.discountRate),
+          taxRate: new Prisma.Decimal(line.taxRate),
+          lineAmount: new Prisma.Decimal(line.lineAmount),
+          createdAt: new Date(line.createdAt),
+        },
+        create: {
+          id: line.id,
+          tenantId: line.tenantId,
+          quoteId: line.quoteId,
+          productId: line.productId ?? null,
+          productSku: line.productSku ?? null,
+          productName: line.productName,
+          unit: line.unit,
+          quantity: new Prisma.Decimal(line.quantity),
+          unitPrice: new Prisma.Decimal(line.unitPrice),
+          discountRate: new Prisma.Decimal(line.discountRate),
+          taxRate: new Prisma.Decimal(line.taxRate),
+          lineAmount: new Prisma.Decimal(line.lineAmount),
+          createdAt: new Date(line.createdAt),
+        },
+      });
+    }
+  }
+
+  for (const contract of seedBusinessContracts) {
+    await prisma.businessContract.upsert({
+      where: { id: contract.id },
+      update: {
+        tenantId: contract.tenantId,
+        customerId: contract.customerId,
+        quoteId: contract.quoteId ?? null,
+        opportunityId: contract.opportunityId ?? null,
+        number: contract.number,
+        name: contract.name,
+        status: contract.status,
+        owner: contract.owner,
+        currency: contract.currency,
+        amount: new Prisma.Decimal(contract.amount),
+        signedAt: contract.signedAt ? new Date(contract.signedAt) : null,
+        effectiveFrom: contract.effectiveFrom
+          ? new Date(contract.effectiveFrom)
+          : null,
+        effectiveTo: contract.effectiveTo
+          ? new Date(contract.effectiveTo)
+          : null,
+        terminatedAt: contract.terminatedAt
+          ? new Date(contract.terminatedAt)
+          : null,
+        archivedAt: contract.archivedAt ? new Date(contract.archivedAt) : null,
+        remark: contract.remark ?? null,
+        createdAt: new Date(contract.createdAt),
+      },
+      create: {
+        id: contract.id,
+        tenantId: contract.tenantId,
+        customerId: contract.customerId,
+        quoteId: contract.quoteId ?? null,
+        opportunityId: contract.opportunityId ?? null,
+        number: contract.number,
+        name: contract.name,
+        status: contract.status,
+        owner: contract.owner,
+        currency: contract.currency,
+        amount: new Prisma.Decimal(contract.amount),
+        signedAt: contract.signedAt ? new Date(contract.signedAt) : null,
+        effectiveFrom: contract.effectiveFrom
+          ? new Date(contract.effectiveFrom)
+          : null,
+        effectiveTo: contract.effectiveTo
+          ? new Date(contract.effectiveTo)
+          : null,
+        terminatedAt: contract.terminatedAt
+          ? new Date(contract.terminatedAt)
+          : null,
+        archivedAt: contract.archivedAt ? new Date(contract.archivedAt) : null,
+        remark: contract.remark ?? null,
+        createdAt: new Date(contract.createdAt),
+      },
+    });
+  }
+
+  for (const receivable of seedBusinessReceivables) {
+    await prisma.businessReceivable.upsert({
+      where: { id: receivable.id },
+      update: {
+        tenantId: receivable.tenantId,
+        contractId: receivable.contractId,
+        customerId: receivable.customerId,
+        number: receivable.number,
+        name: receivable.name,
+        status: receivable.status,
+        currency: receivable.currency,
+        amount: new Prisma.Decimal(receivable.amount),
+        paidAmount: new Prisma.Decimal(receivable.paidAmount),
+        dueAt: new Date(receivable.dueAt),
+        paidAt: receivable.paidAt ? new Date(receivable.paidAt) : null,
+        canceledAt: receivable.canceledAt
+          ? new Date(receivable.canceledAt)
+          : null,
+        remark: receivable.remark ?? null,
+        createdAt: new Date(receivable.createdAt),
+      },
+      create: {
+        id: receivable.id,
+        tenantId: receivable.tenantId,
+        contractId: receivable.contractId,
+        customerId: receivable.customerId,
+        number: receivable.number,
+        name: receivable.name,
+        status: receivable.status,
+        currency: receivable.currency,
+        amount: new Prisma.Decimal(receivable.amount),
+        paidAmount: new Prisma.Decimal(receivable.paidAmount),
+        dueAt: new Date(receivable.dueAt),
+        paidAt: receivable.paidAt ? new Date(receivable.paidAt) : null,
+        canceledAt: receivable.canceledAt
+          ? new Date(receivable.canceledAt)
+          : null,
+        remark: receivable.remark ?? null,
+        createdAt: new Date(receivable.createdAt),
+      },
+    });
+  }
+
+  return {
+    contracts: seedBusinessContracts.length,
+    products: seedBusinessProducts.length,
+    quoteLines: seedBusinessQuotes.reduce(
+      (total, quote) => total + quote.lines.length,
+      0,
+    ),
+    quotes: seedBusinessQuotes.length,
+    receivables: seedBusinessReceivables.length,
   };
 }
 

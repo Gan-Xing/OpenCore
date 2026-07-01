@@ -98,6 +98,7 @@
     "smoke:core-collaboration-tickets": "pnpm scripts:ts tools/scripts/run-typed-smoke.ts tools/smoke/smoke-core-collaboration-tickets.ts",
     "smoke:core-collaboration-approvals": "pnpm scripts:ts tools/scripts/run-typed-smoke.ts tools/smoke/smoke-core-collaboration-approvals.ts",
     "smoke:business-core-sales": "pnpm scripts:ts tools/scripts/run-typed-smoke.ts tools/smoke/smoke-business-core-sales.ts",
+    "smoke:business-commerce": "pnpm scripts:ts tools/scripts/run-typed-smoke.ts tools/smoke/smoke-business-commerce.ts",
     "smoke:core-operations-reports": "pnpm scripts:ts tools/scripts/run-typed-smoke.ts tools/smoke/smoke-core-operations-reports.ts",
     "smoke:core-monitor-jobs": "pnpm scripts:ts tools/scripts/run-typed-smoke.ts tools/smoke/smoke-core-monitor-jobs.ts",
     "smoke:monitor-status": "pnpm scripts:ts tools/scripts/run-typed-smoke.ts tools/smoke/smoke-monitor-status.ts",
