@@ -65,73 +65,76 @@ model TenantPlanModule {
 }
 
 model Tenant {
-  id                     String                             @id @default(cuid())
-  code                   String                             @unique
-  slug                   String                             @unique
-  name                   String
-  status                 String                             @default("active")
-  planId                 String?
-  plan                   TenantPlan?                        @relation(fields: [planId], references: [id], onDelete: SetNull)
-  contactName            String?
-  contactMobile          String?
-  accountLimit           Int?
-  expiresAt              DateTime?
-  createdByUserId        String?
-  createdBy              User?                              @relation("TenantCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
-  memberships            TenantMembership[]
-  membershipRoles        TenantMembershipRole[]
-  membershipPosts        TenantMembershipPost[]
-  roles                  Role[]
-  systemConfigs          SystemConfig[]
-  dictTypes              DictType[]
-  depts                  SystemDept[]
-  posts                  SystemPost[]
-  fileAssets             FileAsset[]
-  systemNotices          SystemNotice[]
-  noticeTemplates        SystemNoticeTemplate[]
-  noticeReceipts         SystemNoticeReadReceipt[]
-  noticeDeliveries       SystemNoticeDelivery[]
-  schedulerJobs          JobDefinition[]
-  schedulerRuns          JobRunLog[]
-  integrationProviders   IntegrationProvider[]
-  integrationAuditLogs   IntegrationProviderAuditLog[]
-  integrationTemplates   IntegrationTemplate[]
-  integrationOutbox      IntegrationOutbox[]
-  integrationOAuthTokens IntegrationOAuthToken[]
-  integrationOAuthFlows  IntegrationOAuthFlow[]
-  integrationOAuthAudits IntegrationOAuthCallbackAudit[]
-  webSocketRuntimeEvents IntegrationWebSocketRuntimeEvent[]
-  collaborationMessages  CollaborationMessage[]
-  collaborationNotices   CollaborationNotice[]
-  collaborationTodos     CollaborationTodo[]
-  collaborationApprovals CollaborationApprovalLite[]
-  ticketCategories       TicketCategory[]
-  tickets                Ticket[]
-  ticketComments         TicketComment[]
-  ticketTransitions      TicketTransition[]
-  ticketAttachments      TicketAttachment[]
-  businessTags           BusinessTag[]
-  salesLeads             SalesLead[]
-  businessCustomers      BusinessCustomer[]
-  businessContacts       BusinessContact[]
-  salesOpportunities     SalesOpportunity[]
-  businessProducts       BusinessProduct[]
-  businessQuotes         BusinessQuote[]
-  businessQuoteLines     BusinessQuoteLine[]
-  businessContracts      BusinessContract[]
-  businessReceivables    BusinessReceivable[]
-  businessFollowUps      BusinessFollowUp[]
-  businessTasks          BusinessTask[]
-  businessAttachments    BusinessAttachment[]
-  businessOwnerTransfers BusinessOwnerTransfer[]
-  businessAuditEvents    BusinessAuditEvent[]
-  reportDefinitions      ReportDefinition[]
-  auditLogs              AuditLog[]
-  loginLogs              LoginLog[]
-  loginLockouts          LoginLockout[]
-  onlineSessions         OnlineUserSession[]
-  createdAt              DateTime                           @default(now())
-  updatedAt              DateTime                           @updatedAt
+  id                       String                             @id @default(cuid())
+  code                     String                             @unique
+  slug                     String                             @unique
+  name                     String
+  status                   String                             @default("active")
+  planId                   String?
+  plan                     TenantPlan?                        @relation(fields: [planId], references: [id], onDelete: SetNull)
+  contactName              String?
+  contactMobile            String?
+  accountLimit             Int?
+  expiresAt                DateTime?
+  createdByUserId          String?
+  createdBy                User?                              @relation("TenantCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  memberships              TenantMembership[]
+  membershipRoles          TenantMembershipRole[]
+  membershipPosts          TenantMembershipPost[]
+  roles                    Role[]
+  systemConfigs            SystemConfig[]
+  dictTypes                DictType[]
+  depts                    SystemDept[]
+  posts                    SystemPost[]
+  fileAssets               FileAsset[]
+  systemNotices            SystemNotice[]
+  noticeTemplates          SystemNoticeTemplate[]
+  noticeReceipts           SystemNoticeReadReceipt[]
+  noticeDeliveries         SystemNoticeDelivery[]
+  schedulerJobs            JobDefinition[]
+  schedulerRuns            JobRunLog[]
+  integrationProviders     IntegrationProvider[]
+  integrationAuditLogs     IntegrationProviderAuditLog[]
+  integrationTemplates     IntegrationTemplate[]
+  integrationOutbox        IntegrationOutbox[]
+  integrationOAuthTokens   IntegrationOAuthToken[]
+  integrationOAuthFlows    IntegrationOAuthFlow[]
+  integrationOAuthAudits   IntegrationOAuthCallbackAudit[]
+  webSocketRuntimeEvents   IntegrationWebSocketRuntimeEvent[]
+  collaborationMessages    CollaborationMessage[]
+  collaborationNotices     CollaborationNotice[]
+  collaborationTodos       CollaborationTodo[]
+  collaborationApprovals   CollaborationApprovalLite[]
+  ticketCategories         TicketCategory[]
+  tickets                  Ticket[]
+  ticketComments           TicketComment[]
+  ticketTransitions        TicketTransition[]
+  ticketAttachments        TicketAttachment[]
+  businessTags             BusinessTag[]
+  salesLeads               SalesLead[]
+  businessCustomers        BusinessCustomer[]
+  businessContacts         BusinessContact[]
+  salesOpportunities       SalesOpportunity[]
+  businessProducts         BusinessProduct[]
+  businessQuotes           BusinessQuote[]
+  businessQuoteLines       BusinessQuoteLine[]
+  businessContracts        BusinessContract[]
+  businessReceivables      BusinessReceivable[]
+  businessFollowUps        BusinessFollowUp[]
+  businessTasks            BusinessTask[]
+  businessAttachments      BusinessAttachment[]
+  businessOwnerTransfers   BusinessOwnerTransfer[]
+  businessAuditEvents      BusinessAuditEvent[]
+  businessPoolEntries      BusinessPoolEntry[]
+  businessAssignmentEvents BusinessAssignmentEvent[]
+  businessLifecycleEvents  BusinessLifecycleEvent[]
+  reportDefinitions        ReportDefinition[]
+  auditLogs                AuditLog[]
+  loginLogs                LoginLog[]
+  loginLockouts            LoginLockout[]
+  onlineSessions           OnlineUserSession[]
+  createdAt                DateTime                           @default(now())
+  updatedAt                DateTime                           @updatedAt
 
   @@index([planId])
   @@index([status, expiresAt])
@@ -872,38 +875,43 @@ model SalesLead {
 }
 
 model BusinessCustomer {
-  id             String               @id @default(cuid())
-  tenantId       String               @default("tenant_root")
-  tenant         Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  number         String
-  name           String
-  owner          String
-  status         String               @default("active")
-  level          String               @default("standard")
-  source         String
-  industry       String?
-  region         String?
-  website        String?
-  phone          String?
-  email          String?
-  address        String?
-  tags           Json                 @default("[]")
-  remark         String?
-  nextContactAt  DateTime?
-  lastFollowedAt DateTime?
-  archivedAt     DateTime?
-  contacts       BusinessContact[]
-  opportunities  SalesOpportunity[]
-  quotes         BusinessQuote[]
-  contracts      BusinessContract[]
-  receivables    BusinessReceivable[]
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
+  id                 String                   @id @default(cuid())
+  tenantId           String                   @default("tenant_root")
+  tenant             Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  number             String
+  name               String
+  owner              String
+  status             String                   @default("active")
+  level              String                   @default("standard")
+  source             String
+  industry           String?
+  region             String?
+  website            String?
+  phone              String?
+  email              String?
+  address            String?
+  tags               Json                     @default("[]")
+  remark             String?
+  nextContactAt      DateTime?
+  lastFollowedAt     DateTime?
+  lifecycleStage     String                   @default("potential")
+  lifecycleReason    String?
+  lifecycleChangedAt DateTime?
+  archivedAt         DateTime?
+  contacts           BusinessContact[]
+  opportunities      SalesOpportunity[]
+  quotes             BusinessQuote[]
+  contracts          BusinessContract[]
+  receivables        BusinessReceivable[]
+  lifecycleEvents    BusinessLifecycleEvent[]
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
 
   @@unique([tenantId, number])
   @@unique([tenantId, id])
   @@index([tenantId, status, owner, createdAt])
   @@index([tenantId, level, source, createdAt])
+  @@index([tenantId, lifecycleStage, lifecycleChangedAt])
   @@index([tenantId, nextContactAt])
   @@index([tenantId, archivedAt])
 }
@@ -1202,6 +1210,75 @@ model BusinessAuditEvent {
   @@index([tenantId, targetType, targetId, createdAt])
   @@index([tenantId, actor, createdAt])
   @@index([tenantId, action, createdAt])
+}
+
+model BusinessPoolEntry {
+  id           String    @id @default(cuid())
+  tenantId     String    @default("tenant_root")
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  targetType   String
+  targetId     String
+  displayName  String
+  source       String
+  status       String    @default("available")
+  owner        String?
+  claimedBy    String?
+  claimedAt    DateTime?
+  assignedTo   String?
+  assignedBy   String?
+  assignedAt   DateTime?
+  recycledAt   DateTime?
+  archivedAt   DateTime?
+  reason       String?
+  duplicateKey String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([tenantId, id])
+  @@index([tenantId, status, createdAt])
+  @@index([tenantId, targetType, targetId])
+  @@index([tenantId, duplicateKey])
+  @@index([tenantId, assignedTo, status])
+}
+
+model BusinessAssignmentEvent {
+  id          String   @id @default(cuid())
+  tenantId    String   @default("tenant_root")
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  targetType  String
+  targetId    String
+  action      String
+  fromOwner   String?
+  toOwner     String?
+  actor       String
+  reason      String?
+  poolEntryId String?
+  createdAt   DateTime @default(now())
+
+  @@unique([tenantId, id])
+  @@index([tenantId, targetType, targetId, createdAt])
+  @@index([tenantId, action, createdAt])
+  @@index([tenantId, toOwner, createdAt])
+  @@index([tenantId, poolEntryId])
+}
+
+model BusinessLifecycleEvent {
+  id         String           @id @default(cuid())
+  tenantId   String           @default("tenant_root")
+  tenant     Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customerId String
+  customer   BusinessCustomer @relation(fields: [tenantId, customerId], references: [tenantId, id], onDelete: Cascade)
+  fromStage  String?
+  toStage    String
+  reason     String?
+  actor      String
+  detail     Json             @default("{}")
+  createdAt  DateTime         @default(now())
+
+  @@unique([tenantId, id])
+  @@index([tenantId, customerId, createdAt])
+  @@index([tenantId, toStage, createdAt])
+  @@index([tenantId, actor, createdAt])
 }
 
 model JobDefinition {

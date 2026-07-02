@@ -1341,6 +1341,64 @@ export const moduleRegistry = [
     },
   },
   {
+    code: 'business.lifecycle',
+    title: 'Business Lifecycle',
+    layer: 'business',
+    priority: 'P3',
+    status: 'active',
+    stage: 'S12',
+    enabledByDefault: true,
+    description:
+      'Assignment pool and customer lifecycle operations for claim, assignment, recycling, duplicate detection, stage transitions, and lifecycle timeline review.',
+    apiTags: ['Business Lifecycle'],
+    permissions: definePermissions(
+      'business',
+      'lifecycle',
+      'business lifecycle',
+      'S12',
+      [
+        { action: 'read', title: 'Read' },
+        { action: 'create', title: 'Enter assignment pool' },
+        { action: 'update', title: 'Update lifecycle' },
+        { action: 'assign', title: 'Assign owner for' },
+        { action: 'export', title: 'Export' },
+      ],
+    ),
+    menus: [
+      defineMenu(
+        'business.pool',
+        'Assignment Pool',
+        '/business/pool',
+        'business:lifecycle:read',
+        905,
+        'S12',
+      ),
+      defineMenu(
+        'business.lifecycle',
+        'Customer Lifecycle',
+        '/business/lifecycle',
+        'business:lifecycle:read',
+        935,
+        'S12',
+      ),
+    ],
+    admin: {
+      basePath: '/business',
+      routes: [
+        {
+          path: '/business/pool',
+          title: 'Assignment Pool',
+          permissionCode: 'business:lifecycle:read',
+        },
+        {
+          path: '/business/lifecycle',
+          title: 'Customer Lifecycle',
+          permissionCode: 'business:lifecycle:read',
+        },
+      ],
+    },
+  },
+  {
     code: 'monitor.job',
     title: 'Jobs',
     layer: 'monitor',

@@ -1,6 +1,7 @@
 import {
   createBusinessCommerceClient,
   createBusinessCoreClient,
+  createBusinessLifecycleClient,
   createBusinessSalesClient,
   createCollaborationClient,
   createIntegrationClient,
@@ -12,6 +13,7 @@ import {
   createToolingClient,
   type BusinessCommerceClient,
   type BusinessCoreClient,
+  type BusinessLifecycleClient,
   type BusinessSalesClient,
   type CollaborationClient,
   type IntegrationClient,
@@ -79,6 +81,9 @@ export function createTypedSmokeRuntime() {
     businessCore: createBusinessCoreClient(
       sdkRequest,
     ) satisfies BusinessCoreClient,
+    businessLifecycle: createBusinessLifecycleClient(
+      sdkRequest,
+    ) satisfies BusinessLifecycleClient,
     businessSales: createBusinessSalesClient(
       sdkRequest,
     ) satisfies BusinessSalesClient,

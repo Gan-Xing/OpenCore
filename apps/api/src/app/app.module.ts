@@ -9,6 +9,7 @@ import { CollaborationModule } from '../modules/collaboration/collaboration/coll
 import { TicketModule } from '../modules/collaboration/ticket/ticket.module';
 import { BusinessCommerceModule } from '../modules/business/commerce/commerce.module';
 import { BusinessCoreModule } from '../modules/business/core/business-core.module';
+import { BusinessLifecycleModule } from '../modules/business/lifecycle/lifecycle.module';
 import { SalesModule } from '../modules/business/sales/sales.module';
 import { IntegrationModule } from '../modules/integration/integration/integration.module';
 import { MonitoringModule } from '../modules/monitor/monitoring/monitoring.module';
@@ -31,6 +32,7 @@ import { HealthController } from './health.controller';
     BusinessCoreModule,
     SalesModule,
     BusinessCommerceModule,
+    BusinessLifecycleModule,
     IntegrationModule,
     MonitoringModule,
     OperationsModule,

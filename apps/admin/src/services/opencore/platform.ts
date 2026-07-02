@@ -2,6 +2,7 @@ import {
   createCollaborationClient,
   createBusinessCommerceClient,
   createBusinessCoreClient,
+  createBusinessLifecycleClient,
   createBusinessSalesClient,
   createIntegrationClient,
   createMonitoringClient,
@@ -14,6 +15,7 @@ import {
   type ApprovalLiteSummary,
   type AssignRoleMenusRequest,
   type AssignRoleUsersRequest,
+  type AssignBusinessPoolEntryRequest,
   type AreaDatasetActivationResultSummary,
   type AreaDatasetImportRequest,
   type AreaDatasetImportResultSummary,
@@ -58,7 +60,9 @@ import {
   type CacheValueSummary,
   type CleanAuditLogsRequest,
   type ClaimQueuedJobsRequest,
+  type ClaimBusinessPoolEntryRequest,
   type ChangeTicketStatusRequest,
+  type ChangeBusinessLifecycleStageRequest,
   type ChangeBusinessOpportunityStageRequest,
   type CompleteBusinessTaskRequest,
   type ConvertBusinessLeadRequest,
@@ -92,6 +96,7 @@ import {
   type CreateBusinessReceivableRequest,
   type CreateBusinessTagRequest,
   type CreateBusinessTaskRequest,
+  type EnterBusinessPoolRequest,
   type CreateMessageRequest,
   type CreateNoticeRequest,
   type CreateTicketAttachmentRequest,
@@ -126,11 +131,23 @@ import {
   type BusinessLeadPage,
   type BusinessLeadQueryRequest,
   type BusinessLeadSummary,
+  type BusinessLifecycleCustomerPage,
+  type BusinessLifecycleCustomerQueryRequest,
+  type BusinessLifecycleCustomerSummary,
+  type BusinessLifecycleEventPage,
+  type BusinessLifecycleEventQueryRequest,
+  type BusinessLifecycleExportPreview,
+  type BusinessLifecycleExportQueryRequest,
+  type BusinessLifecycleSummary,
+  type BusinessLifecycleTimelinePage,
   type BusinessOpportunityPage,
   type BusinessOpportunityQueryRequest,
   type BusinessOpportunitySummary,
   type BusinessOwnerTransferPage,
   type BusinessOwnerTransferSummary,
+  type BusinessPoolEntryPage,
+  type BusinessPoolEntryQueryRequest,
+  type BusinessPoolEntrySummary,
   type BusinessProductPage,
   type BusinessProductQueryRequest,
   type BusinessProductSummary,
@@ -148,6 +165,9 @@ import {
   type BusinessTaskPage,
   type BusinessTaskQueryRequest,
   type BusinessTaskSummary,
+  type BusinessAssignmentEventPage,
+  type BusinessAssignmentEventQueryRequest,
+  type BusinessDuplicateGroupPage,
   type SalesExportPreview,
   type SalesExportQueryRequest,
   type OpenForgeApplyDryRunRequest,
@@ -361,6 +381,7 @@ import {
   type UpdateUserRequest,
   type TransferBusinessOwnerRequest,
   type RecordBusinessReceivablePaymentRequest,
+  type RecycleBusinessPoolEntryRequest,
   type UpdateTenantMemberAssignmentsRequest,
   type UpdateBusinessContractRequest,
   type UpdateBusinessContactRequest,
@@ -380,6 +401,8 @@ const rbacClient = createRbacClient(opencoreSdkRequest);
 const collaborationClient = createCollaborationClient(opencoreSdkRequest);
 const businessCommerceClient = createBusinessCommerceClient(opencoreSdkRequest);
 const businessCoreClient = createBusinessCoreClient(opencoreSdkRequest);
+const businessLifecycleClient =
+  createBusinessLifecycleClient(opencoreSdkRequest);
 const businessSalesClient = createBusinessSalesClient(opencoreSdkRequest);
 const integrationClient = createIntegrationClient(opencoreSdkRequest);
 const monitoringClient = createMonitoringClient(opencoreSdkRequest);
@@ -1205,6 +1228,141 @@ export function exportOpenCoreBusiness(
   return businessCoreClient.exportBusinessCore(
     getRequiredAdminToken(),
     query as BusinessExportQueryRequest,
+  );
+}
+
+export function getOpenCoreBusinessLifecycleSummary(): Promise<BusinessLifecycleSummary> {
+  return businessLifecycleClient.getSummary(getRequiredAdminToken());
+}
+
+export function pageOpenCoreBusinessPoolEntries(
+  query?: BusinessPoolEntryQueryRequest,
+): Promise<BusinessPoolEntryPage> {
+  return businessLifecycleClient.listPoolEntries(getRequiredAdminToken(), {
+    page: 1,
+    pageSize: 100,
+    ...query,
+  });
+}
+
+export function enterOpenCoreBusinessPool(
+  body: EnterBusinessPoolRequest,
+): Promise<BusinessPoolEntrySummary> {
+  return businessLifecycleClient.enterPool(getRequiredAdminToken(), body);
+}
+
+export function claimOpenCoreBusinessPoolEntry(
+  id: string,
+  body: ClaimBusinessPoolEntryRequest,
+): Promise<BusinessPoolEntrySummary> {
+  return businessLifecycleClient.claimPoolEntry(
+    getRequiredAdminToken(),
+    id,
+    body,
+  );
+}
+
+export function assignOpenCoreBusinessPoolEntry(
+  id: string,
+  body: AssignBusinessPoolEntryRequest,
+): Promise<BusinessPoolEntrySummary> {
+  return businessLifecycleClient.assignPoolEntry(
+    getRequiredAdminToken(),
+    id,
+    body,
+  );
+}
+
+export function transferOpenCoreBusinessPoolEntry(
+  id: string,
+  body: AssignBusinessPoolEntryRequest,
+): Promise<BusinessPoolEntrySummary> {
+  return businessLifecycleClient.transferPoolEntry(
+    getRequiredAdminToken(),
+    id,
+    body,
+  );
+}
+
+export function recycleOpenCoreBusinessPoolEntry(
+  id: string,
+  body: RecycleBusinessPoolEntryRequest,
+): Promise<BusinessPoolEntrySummary> {
+  return businessLifecycleClient.recyclePoolEntry(
+    getRequiredAdminToken(),
+    id,
+    body,
+  );
+}
+
+export function pageOpenCoreBusinessLifecycleCustomers(
+  query?: BusinessLifecycleCustomerQueryRequest,
+): Promise<BusinessLifecycleCustomerPage> {
+  return businessLifecycleClient.listCustomers(getRequiredAdminToken(), {
+    page: 1,
+    pageSize: 100,
+    ...query,
+  });
+}
+
+export function changeOpenCoreBusinessCustomerLifecycleStage(
+  id: string,
+  body: ChangeBusinessLifecycleStageRequest,
+): Promise<BusinessLifecycleCustomerSummary> {
+  return businessLifecycleClient.changeCustomerStage(
+    getRequiredAdminToken(),
+    id,
+    body,
+  );
+}
+
+export function pageOpenCoreBusinessCustomerTimeline(
+  id: string,
+  query?: BusinessLifecycleEventQueryRequest,
+): Promise<BusinessLifecycleTimelinePage> {
+  return businessLifecycleClient.listCustomerTimeline(
+    getRequiredAdminToken(),
+    id,
+    query,
+  );
+}
+
+export function pageOpenCoreBusinessAssignmentEvents(
+  query?: BusinessAssignmentEventQueryRequest,
+): Promise<BusinessAssignmentEventPage> {
+  return businessLifecycleClient.listAssignmentEvents(getRequiredAdminToken(), {
+    page: 1,
+    pageSize: 100,
+    ...query,
+  });
+}
+
+export function pageOpenCoreBusinessLifecycleEvents(
+  query?: BusinessLifecycleEventQueryRequest,
+): Promise<BusinessLifecycleEventPage> {
+  return businessLifecycleClient.listLifecycleEvents(getRequiredAdminToken(), {
+    page: 1,
+    pageSize: 100,
+    ...query,
+  });
+}
+
+export function pageOpenCoreBusinessDuplicateGroups(
+  query?: BusinessPoolEntryQueryRequest,
+): Promise<BusinessDuplicateGroupPage> {
+  return businessLifecycleClient.listDuplicateGroups(getRequiredAdminToken(), {
+    page: 1,
+    pageSize: 100,
+    ...query,
+  });
+}
+
+export function exportOpenCoreBusinessLifecycle(
+  query: BusinessLifecycleExportQueryRequest,
+): Promise<BusinessLifecycleExportPreview> {
+  return businessLifecycleClient.exportBusinessLifecycle(
+    getRequiredAdminToken(),
+    query,
   );
 }
 

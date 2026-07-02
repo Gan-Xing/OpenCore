@@ -12,6 +12,15 @@ export type BusinessCustomerStatus =
   | 'archived'
   | 'churned'
   | 'inactive';
+export type BusinessCustomerLifecycleStage =
+  | 'archived'
+  | 'assigned'
+  | 'fulfillment'
+  | 'in_progress'
+  | 'lost'
+  | 'potential'
+  | 'renewal'
+  | 'won';
 export type BusinessWritableCustomerStatus = Exclude<
   BusinessCustomerStatus,
   'archived'
@@ -58,6 +67,9 @@ export type BusinessCustomerSummary = {
   remark?: string;
   nextContactAt?: string;
   lastFollowedAt?: string;
+  lifecycleStage: BusinessCustomerLifecycleStage;
+  lifecycleReason?: string;
+  lifecycleChangedAt?: string;
   archivedAt?: string;
   contactCount: number;
   opportunityCount: number;

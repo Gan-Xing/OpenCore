@@ -12557,6 +12557,724 @@
         "tags": ["Business Commerce"]
       }
     },
+    "/api/business/lifecycle/summary": {
+      "get": {
+        "operationId": "BusinessLifecycleController_getSummary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessLifecycleSummaryDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Lifecycle"]
+      }
+    },
+    "/api/business/lifecycle/export": {
+      "get": {
+        "operationId": "BusinessLifecycleController_exportLifecycle",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "resource",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessLifecycleExportPreviewDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Lifecycle"]
+      }
+    },
+    "/api/business/lifecycle/pool": {
+      "get": {
+        "operationId": "BusinessLifecycleController_listPoolEntries",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "targetType",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string", "enum": ["lead", "customer"] }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "available",
+                "claimed",
+                "assigned",
+                "recycled",
+                "archived"
+              ]
+            }
+          },
+          {
+            "name": "owner",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "assignedTo",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "keyword",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessPoolEntryPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Lifecycle"]
+      },
+      "post": {
+        "operationId": "BusinessLifecycleController_enterPool",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EnterBusinessPoolDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessPoolEntryDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Lifecycle"]
+      }
+    },
+    "/api/business/lifecycle/pool/{id}/claim": {
+      "patch": {
+        "operationId": "BusinessLifecycleController_claimPoolEntry",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClaimBusinessPoolEntryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessPoolEntryDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Lifecycle"]
+      }
+    },
+    "/api/business/lifecycle/pool/{id}/assign": {
+      "patch": {
+        "operationId": "BusinessLifecycleController_assignPoolEntry",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignBusinessPoolEntryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessPoolEntryDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Lifecycle"]
+      }
+    },
+    "/api/business/lifecycle/pool/{id}/transfer": {
+      "patch": {
+        "operationId": "BusinessLifecycleController_transferPoolEntry",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignBusinessPoolEntryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessPoolEntryDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Lifecycle"]
+      }
+    },
+    "/api/business/lifecycle/pool/{id}/recycle": {
+      "patch": {
+        "operationId": "BusinessLifecycleController_recyclePoolEntry",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecycleBusinessPoolEntryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessPoolEntryDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Lifecycle"]
+      }
+    },
+    "/api/business/lifecycle/customers": {
+      "get": {
+        "operationId": "BusinessLifecycleController_listCustomers",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "lifecycleStage",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "potential",
+                "assigned",
+                "in_progress",
+                "won",
+                "fulfillment",
+                "renewal",
+                "lost",
+                "archived"
+              ]
+            }
+          },
+          {
+            "name": "owner",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "keyword",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessLifecycleCustomerPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Lifecycle"]
+      }
+    },
+    "/api/business/lifecycle/customers/{id}/stage": {
+      "patch": {
+        "operationId": "BusinessLifecycleController_changeCustomerStage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeBusinessLifecycleStageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessLifecycleCustomerDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Lifecycle"]
+      }
+    },
+    "/api/business/lifecycle/customers/{id}/timeline": {
+      "get": {
+        "operationId": "BusinessLifecycleController_listCustomerTimeline",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "toStage",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "potential",
+                "assigned",
+                "in_progress",
+                "won",
+                "fulfillment",
+                "renewal",
+                "lost",
+                "archived"
+              ]
+            }
+          },
+          {
+            "name": "actor",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessLifecycleTimelinePageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Lifecycle"]
+      }
+    },
+    "/api/business/lifecycle/assignment-events": {
+      "get": {
+        "operationId": "BusinessLifecycleController_listAssignmentEvents",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "targetType",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string", "enum": ["lead", "customer"] }
+          },
+          {
+            "name": "targetId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "action",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "enter_pool",
+                "claim",
+                "assign",
+                "transfer",
+                "recycle",
+                "archive"
+              ]
+            }
+          },
+          {
+            "name": "actor",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAssignmentEventPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Lifecycle"]
+      }
+    },
+    "/api/business/lifecycle/events": {
+      "get": {
+        "operationId": "BusinessLifecycleController_listLifecycleEvents",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "toStage",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "potential",
+                "assigned",
+                "in_progress",
+                "won",
+                "fulfillment",
+                "renewal",
+                "lost",
+                "archived"
+              ]
+            }
+          },
+          {
+            "name": "actor",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessLifecycleEventPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Lifecycle"]
+      }
+    },
+    "/api/business/lifecycle/duplicates": {
+      "get": {
+        "operationId": "BusinessLifecycleController_listDuplicateGroups",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "targetType",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string", "enum": ["lead", "customer"] }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "available",
+                "claimed",
+                "assigned",
+                "recycled",
+                "archived"
+              ]
+            }
+          },
+          {
+            "name": "owner",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "assignedTo",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "keyword",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessDuplicateGroupPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Business Lifecycle"]
+      }
+    },
     "/api/monitor/status": {
       "get": {
         "operationId": "MonitoringController_getStatus",
@@ -14215,6 +14933,10 @@
       "description": "business.commerce: Business Commerce"
     },
     { "name": "Business Core", "description": "business.core: Business Core" },
+    {
+      "name": "Business Lifecycle",
+      "description": "business.lifecycle: Business Lifecycle"
+    },
     {
       "name": "Business Sales",
       "description": "business.sales: Business Sales"
@@ -19481,6 +20203,21 @@
           "remark": { "type": "string" },
           "nextContactAt": { "type": "string" },
           "lastFollowedAt": { "type": "string" },
+          "lifecycleStage": {
+            "type": "string",
+            "enum": [
+              "potential",
+              "assigned",
+              "in_progress",
+              "won",
+              "fulfillment",
+              "renewal",
+              "lost",
+              "archived"
+            ]
+          },
+          "lifecycleReason": { "type": "string" },
+          "lifecycleChangedAt": { "type": "string" },
           "archivedAt": { "type": "string" },
           "contactCount": { "type": "number" },
           "opportunityCount": { "type": "number" },
@@ -19497,6 +20234,7 @@
           "level",
           "source",
           "tags",
+          "lifecycleStage",
           "contactCount",
           "opportunityCount",
           "createdAt",
@@ -20710,6 +21448,416 @@
           "actor": { "type": "string" }
         },
         "required": ["amount"]
+      },
+      "BusinessLifecycleBucketDto": {
+        "type": "object",
+        "properties": {
+          "key": { "type": "string" },
+          "count": { "type": "number" }
+        },
+        "required": ["key", "count"]
+      },
+      "BusinessLifecycleSummaryDto": {
+        "type": "object",
+        "properties": {
+          "availablePool": { "type": "number" },
+          "claimedPool": { "type": "number" },
+          "assignedPool": { "type": "number" },
+          "recycledPool": { "type": "number" },
+          "customers": { "type": "number" },
+          "lifecycleByStage": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BusinessLifecycleBucketDto"
+            }
+          },
+          "openOpportunities": { "type": "number" },
+          "activeContracts": { "type": "number" },
+          "receivableBalance": { "type": "string" },
+          "duplicateWarnings": { "type": "number" }
+        },
+        "required": [
+          "availablePool",
+          "claimedPool",
+          "assignedPool",
+          "recycledPool",
+          "customers",
+          "lifecycleByStage",
+          "openOpportunities",
+          "activeContracts",
+          "receivableBalance",
+          "duplicateWarnings"
+        ]
+      },
+      "BusinessLifecycleExportPreviewDto": {
+        "type": "object",
+        "properties": {
+          "filename": { "type": "string" },
+          "contentType": { "type": "string" },
+          "contentBase64": { "type": "string" },
+          "scope": { "type": "string", "example": "current-page" },
+          "columns": { "type": "array", "items": { "type": "string" } },
+          "rowCount": { "type": "number" },
+          "generatedAt": { "type": "string" }
+        },
+        "required": [
+          "filename",
+          "contentType",
+          "contentBase64",
+          "scope",
+          "columns",
+          "rowCount",
+          "generatedAt"
+        ]
+      },
+      "BusinessPoolEntryDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "targetType": { "type": "string", "enum": ["lead", "customer"] },
+          "targetId": { "type": "string" },
+          "displayName": { "type": "string" },
+          "source": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["available", "claimed", "assigned", "recycled", "archived"]
+          },
+          "owner": { "type": "string" },
+          "claimedBy": { "type": "string" },
+          "claimedAt": { "type": "string" },
+          "assignedTo": { "type": "string" },
+          "assignedBy": { "type": "string" },
+          "assignedAt": { "type": "string" },
+          "recycledAt": { "type": "string" },
+          "archivedAt": { "type": "string" },
+          "reason": { "type": "string" },
+          "duplicateKey": { "type": "string" },
+          "duplicateCount": { "type": "number" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "targetType",
+          "targetId",
+          "displayName",
+          "source",
+          "status",
+          "duplicateCount",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "BusinessPoolEntryPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/BusinessPoolEntryDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "EnterBusinessPoolDto": {
+        "type": "object",
+        "properties": {
+          "targetType": { "type": "string", "enum": ["lead", "customer"] },
+          "targetId": { "type": "string" },
+          "actor": { "type": "string" },
+          "reason": { "type": "string" },
+          "source": { "type": "string" }
+        },
+        "required": ["targetType", "targetId", "actor"]
+      },
+      "ClaimBusinessPoolEntryDto": {
+        "type": "object",
+        "properties": {
+          "actor": { "type": "string" },
+          "reason": { "type": "string" }
+        },
+        "required": ["actor"]
+      },
+      "AssignBusinessPoolEntryDto": {
+        "type": "object",
+        "properties": {
+          "toOwner": { "type": "string" },
+          "actor": { "type": "string" },
+          "reason": { "type": "string" }
+        },
+        "required": ["toOwner", "actor"]
+      },
+      "RecycleBusinessPoolEntryDto": {
+        "type": "object",
+        "properties": {
+          "actor": { "type": "string" },
+          "reason": { "type": "string" }
+        },
+        "required": ["actor"]
+      },
+      "BusinessLifecycleCustomerDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "number": { "type": "string" },
+          "name": { "type": "string" },
+          "owner": { "type": "string" },
+          "status": { "type": "string" },
+          "level": { "type": "string" },
+          "source": { "type": "string" },
+          "lifecycleStage": {
+            "type": "string",
+            "enum": [
+              "potential",
+              "assigned",
+              "in_progress",
+              "won",
+              "fulfillment",
+              "renewal",
+              "lost",
+              "archived"
+            ]
+          },
+          "lifecycleReason": { "type": "string" },
+          "lifecycleChangedAt": { "type": "string" },
+          "contactCount": { "type": "number" },
+          "opportunityCount": { "type": "number" },
+          "quoteCount": { "type": "number" },
+          "contractCount": { "type": "number" },
+          "receivableCount": { "type": "number" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "number",
+          "name",
+          "owner",
+          "status",
+          "level",
+          "source",
+          "lifecycleStage",
+          "contactCount",
+          "opportunityCount",
+          "quoteCount",
+          "contractCount",
+          "receivableCount",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "BusinessLifecycleCustomerPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BusinessLifecycleCustomerDto"
+            }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "ChangeBusinessLifecycleStageDto": {
+        "type": "object",
+        "properties": {
+          "toStage": {
+            "type": "string",
+            "enum": [
+              "potential",
+              "assigned",
+              "in_progress",
+              "won",
+              "fulfillment",
+              "renewal",
+              "lost",
+              "archived"
+            ]
+          },
+          "actor": { "type": "string" },
+          "reason": { "type": "string" }
+        },
+        "required": ["toStage", "actor"]
+      },
+      "BusinessLifecycleTimelineEventDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "eventType": {
+            "type": "string",
+            "enum": [
+              "assignment",
+              "audit",
+              "follow_up",
+              "lifecycle",
+              "owner_transfer"
+            ]
+          },
+          "title": { "type": "string" },
+          "actor": { "type": "string" },
+          "fromValue": { "type": "string" },
+          "toValue": { "type": "string" },
+          "reason": { "type": "string" },
+          "createdAt": { "type": "string" }
+        },
+        "required": ["id", "eventType", "title", "createdAt"]
+      },
+      "BusinessLifecycleTimelinePageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BusinessLifecycleTimelineEventDto"
+            }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "BusinessAssignmentEventDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "targetType": { "type": "string", "enum": ["lead", "customer"] },
+          "targetId": { "type": "string" },
+          "action": {
+            "type": "string",
+            "enum": [
+              "enter_pool",
+              "claim",
+              "assign",
+              "transfer",
+              "recycle",
+              "archive"
+            ]
+          },
+          "fromOwner": { "type": "string" },
+          "toOwner": { "type": "string" },
+          "actor": { "type": "string" },
+          "reason": { "type": "string" },
+          "poolEntryId": { "type": "string" },
+          "createdAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "targetType",
+          "targetId",
+          "action",
+          "actor",
+          "createdAt"
+        ]
+      },
+      "BusinessAssignmentEventPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BusinessAssignmentEventDto"
+            }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "BusinessLifecycleEventDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "customerId": { "type": "string" },
+          "fromStage": { "type": "string" },
+          "toStage": {
+            "type": "string",
+            "enum": [
+              "potential",
+              "assigned",
+              "in_progress",
+              "won",
+              "fulfillment",
+              "renewal",
+              "lost",
+              "archived"
+            ]
+          },
+          "reason": { "type": "string" },
+          "actor": { "type": "string" },
+          "detail": { "type": "object" },
+          "createdAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "customerId",
+          "toStage",
+          "actor",
+          "detail",
+          "createdAt"
+        ]
+      },
+      "BusinessLifecycleEventPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BusinessLifecycleEventDto"
+            }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "BusinessDuplicateGroupDto": {
+        "type": "object",
+        "properties": {
+          "duplicateKey": { "type": "string" },
+          "count": { "type": "number" },
+          "entries": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/BusinessPoolEntryDto" }
+          }
+        },
+        "required": ["duplicateKey", "count", "entries"]
+      },
+      "BusinessDuplicateGroupPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BusinessDuplicateGroupDto"
+            }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
       },
       "RuntimeProcessStatusDto": {
         "type": "object",

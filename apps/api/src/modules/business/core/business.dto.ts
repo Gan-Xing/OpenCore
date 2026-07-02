@@ -27,6 +27,16 @@ export const BUSINESS_CUSTOMER_STATUSES = [
   'churned',
   'archived',
 ] as const;
+export const BUSINESS_CUSTOMER_LIFECYCLE_STAGES = [
+  'potential',
+  'assigned',
+  'in_progress',
+  'won',
+  'fulfillment',
+  'renewal',
+  'lost',
+  'archived',
+] as const;
 export const BUSINESS_WRITABLE_CUSTOMER_STATUSES = [
   'active',
   'inactive',
@@ -65,6 +75,8 @@ export type BusinessWritableLeadStatus =
   (typeof BUSINESS_WRITABLE_LEAD_STATUSES)[number];
 export type BusinessCustomerStatus =
   (typeof BUSINESS_CUSTOMER_STATUSES)[number];
+export type BusinessCustomerLifecycleStage =
+  (typeof BUSINESS_CUSTOMER_LIFECYCLE_STAGES)[number];
 export type BusinessWritableCustomerStatus =
   (typeof BUSINESS_WRITABLE_CUSTOMER_STATUSES)[number];
 export type BusinessOpportunityStage =
@@ -224,6 +236,15 @@ export class BusinessCustomerDto {
 
   @ApiProperty({ required: false })
   lastFollowedAt?: string;
+
+  @ApiProperty({ enum: BUSINESS_CUSTOMER_LIFECYCLE_STAGES })
+  lifecycleStage!: BusinessCustomerLifecycleStage;
+
+  @ApiProperty({ required: false })
+  lifecycleReason?: string;
+
+  @ApiProperty({ required: false })
+  lifecycleChangedAt?: string;
 
   @ApiProperty({ required: false })
   archivedAt?: string;

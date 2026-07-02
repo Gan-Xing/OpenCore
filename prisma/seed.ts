@@ -57,6 +57,11 @@ import {
   seedBusinessQuotes,
   seedBusinessReceivables,
 } from '../apps/api/src/modules/business/commerce/commerce.seed';
+import {
+  seedBusinessAssignmentEvents,
+  seedBusinessLifecycleEvents,
+  seedBusinessPoolEntries,
+} from '../apps/api/src/modules/business/lifecycle/lifecycle.seed';
 import { seedReports } from '../apps/api/src/modules/monitor/operations/operations.seed';
 import {
   seedIntegrationOutbox,
@@ -126,6 +131,7 @@ async function main(): Promise<void> {
   const collaborationCount = await seedCollaboration();
   const businessPlatformCount = await seedBusinessPlatform();
   const businessCommerceCount = await seedBusinessCommerce();
+  const businessLifecycleCount = await seedBusinessLifecycle();
 
   console.log(
     JSON.stringify({
@@ -139,6 +145,7 @@ async function main(): Promise<void> {
         integrations: integrationCount,
         collaboration: collaborationCount,
         businessCommerce: businessCommerceCount,
+        businessLifecycle: businessLifecycleCount,
         businessPlatform: businessPlatformCount,
         scheduler: schedulerCount,
         operations: operationsCount,
@@ -1028,6 +1035,11 @@ async function seedBusinessPlatform(): Promise<{
         lastFollowedAt: customer.lastFollowedAt
           ? new Date(customer.lastFollowedAt)
           : null,
+        lifecycleStage: customer.lifecycleStage,
+        lifecycleReason: customer.lifecycleReason ?? null,
+        lifecycleChangedAt: customer.lifecycleChangedAt
+          ? new Date(customer.lifecycleChangedAt)
+          : null,
         archivedAt: customer.archivedAt ? new Date(customer.archivedAt) : null,
         createdAt: new Date(customer.createdAt),
       },
@@ -1053,6 +1065,11 @@ async function seedBusinessPlatform(): Promise<{
           : null,
         lastFollowedAt: customer.lastFollowedAt
           ? new Date(customer.lastFollowedAt)
+          : null,
+        lifecycleStage: customer.lifecycleStage,
+        lifecycleReason: customer.lifecycleReason ?? null,
+        lifecycleChangedAt: customer.lifecycleChangedAt
+          ? new Date(customer.lifecycleChangedAt)
           : null,
         archivedAt: customer.archivedAt ? new Date(customer.archivedAt) : null,
         createdAt: new Date(customer.createdAt),
@@ -1556,6 +1573,121 @@ async function seedBusinessCommerce(): Promise<{
     ),
     quotes: seedBusinessQuotes.length,
     receivables: seedBusinessReceivables.length,
+  };
+}
+
+async function seedBusinessLifecycle(): Promise<{
+  assignmentEvents: number;
+  lifecycleEvents: number;
+  poolEntries: number;
+}> {
+  for (const entry of seedBusinessPoolEntries) {
+    await prisma.businessPoolEntry.upsert({
+      where: { id: entry.id },
+      update: {
+        tenantId: entry.tenantId,
+        targetType: entry.targetType,
+        targetId: entry.targetId,
+        displayName: entry.displayName,
+        source: entry.source,
+        status: entry.status,
+        owner: entry.owner ?? null,
+        claimedBy: entry.claimedBy ?? null,
+        claimedAt: entry.claimedAt ? new Date(entry.claimedAt) : null,
+        assignedTo: entry.assignedTo ?? null,
+        assignedBy: entry.assignedBy ?? null,
+        assignedAt: entry.assignedAt ? new Date(entry.assignedAt) : null,
+        recycledAt: entry.recycledAt ? new Date(entry.recycledAt) : null,
+        archivedAt: entry.archivedAt ? new Date(entry.archivedAt) : null,
+        reason: entry.reason ?? null,
+        duplicateKey: entry.duplicateKey ?? null,
+        createdAt: new Date(entry.createdAt),
+      },
+      create: {
+        id: entry.id,
+        tenantId: entry.tenantId,
+        targetType: entry.targetType,
+        targetId: entry.targetId,
+        displayName: entry.displayName,
+        source: entry.source,
+        status: entry.status,
+        owner: entry.owner ?? null,
+        claimedBy: entry.claimedBy ?? null,
+        claimedAt: entry.claimedAt ? new Date(entry.claimedAt) : null,
+        assignedTo: entry.assignedTo ?? null,
+        assignedBy: entry.assignedBy ?? null,
+        assignedAt: entry.assignedAt ? new Date(entry.assignedAt) : null,
+        recycledAt: entry.recycledAt ? new Date(entry.recycledAt) : null,
+        archivedAt: entry.archivedAt ? new Date(entry.archivedAt) : null,
+        reason: entry.reason ?? null,
+        duplicateKey: entry.duplicateKey ?? null,
+        createdAt: new Date(entry.createdAt),
+      },
+    });
+  }
+
+  for (const event of seedBusinessAssignmentEvents) {
+    await prisma.businessAssignmentEvent.upsert({
+      where: { id: event.id },
+      update: {
+        tenantId: event.tenantId,
+        targetType: event.targetType,
+        targetId: event.targetId,
+        action: event.action,
+        fromOwner: event.fromOwner ?? null,
+        toOwner: event.toOwner ?? null,
+        actor: event.actor,
+        reason: event.reason ?? null,
+        poolEntryId: event.poolEntryId ?? null,
+        createdAt: new Date(event.createdAt),
+      },
+      create: {
+        id: event.id,
+        tenantId: event.tenantId,
+        targetType: event.targetType,
+        targetId: event.targetId,
+        action: event.action,
+        fromOwner: event.fromOwner ?? null,
+        toOwner: event.toOwner ?? null,
+        actor: event.actor,
+        reason: event.reason ?? null,
+        poolEntryId: event.poolEntryId ?? null,
+        createdAt: new Date(event.createdAt),
+      },
+    });
+  }
+
+  for (const event of seedBusinessLifecycleEvents) {
+    await prisma.businessLifecycleEvent.upsert({
+      where: { id: event.id },
+      update: {
+        tenantId: event.tenantId,
+        customerId: event.customerId,
+        fromStage: event.fromStage ?? null,
+        toStage: event.toStage,
+        reason: event.reason ?? null,
+        actor: event.actor,
+        detail: toInputJson(event.detail),
+        createdAt: new Date(event.createdAt),
+      },
+      create: {
+        id: event.id,
+        tenantId: event.tenantId,
+        customerId: event.customerId,
+        fromStage: event.fromStage ?? null,
+        toStage: event.toStage,
+        reason: event.reason ?? null,
+        actor: event.actor,
+        detail: toInputJson(event.detail),
+        createdAt: new Date(event.createdAt),
+      },
+    });
+  }
+
+  return {
+    assignmentEvents: seedBusinessAssignmentEvents.length,
+    lifecycleEvents: seedBusinessLifecycleEvents.length,
+    poolEntries: seedBusinessPoolEntries.length,
   };
 }
 

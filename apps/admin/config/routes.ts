@@ -269,6 +269,12 @@ export default [
         access: 'canReadBusiness',
       },
       {
+        name: 'pool',
+        path: '/business/pool',
+        component: './Business/pool',
+        access: 'canReadBusiness',
+      },
+      {
         name: 'accounts',
         path: '/business/accounts',
         component: './Business/accounts',
@@ -284,6 +290,12 @@ export default [
         name: 'opportunities',
         path: '/business/opportunities',
         component: './Business/opportunities',
+        access: 'canReadBusiness',
+      },
+      {
+        name: 'lifecycle',
+        path: '/business/lifecycle',
+        component: './Business/lifecycle',
         access: 'canReadBusiness',
       },
       {

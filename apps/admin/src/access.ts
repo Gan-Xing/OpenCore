@@ -71,26 +71,31 @@ export default function access(initialState: InitialState = {}) {
     canReadBusiness: hasAnyPermission(
       'business:core:read',
       'business:commerce:read',
+      'business:lifecycle:read',
       'business:sales:read',
     ),
     canCreateBusiness: hasAnyPermission(
       'business:core:create',
       'business:commerce:create',
+      'business:lifecycle:create',
       'business:sales:create',
     ),
     canUpdateBusiness: hasAnyPermission(
       'business:core:update',
       'business:commerce:update',
+      'business:lifecycle:update',
       'business:sales:update',
     ),
     canAssignBusiness: hasAnyPermission(
       'business:core:assign',
+      'business:lifecycle:assign',
       'business:sales:assign',
     ),
     canCommentBusiness: hasPermission('business:core:comment'),
     canExportBusiness: hasAnyPermission(
       'business:core:export',
       'business:commerce:export',
+      'business:lifecycle:export',
       'business:sales:export',
     ),
     canDeleteBusiness: hasAnyPermission(

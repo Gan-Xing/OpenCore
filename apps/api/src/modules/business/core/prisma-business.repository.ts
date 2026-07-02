@@ -63,6 +63,7 @@ import type {
 } from './business.dto';
 import {
   BUSINESS_CUSTOMER_STATUSES,
+  BUSINESS_CUSTOMER_LIFECYCLE_STAGES,
   BUSINESS_FOLLOW_UP_METHODS,
   BUSINESS_LEAD_STATUSES,
   BUSINESS_OPPORTUNITY_STAGES,
@@ -534,6 +535,7 @@ export class PrismaBusinessRepository extends BusinessRepository {
           );
         }
 
+        const lifecycleChangedAt = new Date();
         const customer = await tx.businessCustomer.create({
           data: {
             tenantId,
@@ -552,8 +554,23 @@ export class PrismaBusinessRepository extends BusinessRepository {
             remark: lead.remark,
             nextContactAt: lead.nextContactAt,
             lastFollowedAt: lead.lastFollowedAt,
+            lifecycleStage: 'assigned',
+            lifecycleReason: 'Converted from lead.',
+            lifecycleChangedAt,
           },
           include: CUSTOMER_INCLUDE,
+        });
+        await tx.businessLifecycleEvent.create({
+          data: {
+            tenantId,
+            customerId: customer.id,
+            fromStage: 'potential',
+            toStage: 'assigned',
+            reason: 'Converted from lead.',
+            actor,
+            detail: toInputJson({ leadId: id }),
+            createdAt: lifecycleChangedAt,
+          },
         });
         await tx.businessContact.create({
           data: {
@@ -709,6 +726,7 @@ export class PrismaBusinessRepository extends BusinessRepository {
     const tags = await this.normalizeTags(tenantId, body.tags);
     const customer = await retryBusinessNumberConflicts(() =>
       this.prisma.$transaction(async (tx) => {
+        const lifecycleChangedAt = new Date();
         const created = await tx.businessCustomer.create({
           data: {
             tenantId,
@@ -730,8 +748,23 @@ export class PrismaBusinessRepository extends BusinessRepository {
               body.nextContactAt,
               'nextContactAt',
             ),
+            lifecycleStage: 'assigned',
+            lifecycleReason: 'Created customer record.',
+            lifecycleChangedAt,
           },
           include: CUSTOMER_INCLUDE,
+        });
+        await tx.businessLifecycleEvent.create({
+          data: {
+            tenantId,
+            customerId: created.id,
+            fromStage: 'potential',
+            toStage: 'assigned',
+            reason: 'Created customer record.',
+            actor: created.owner,
+            detail: toInputJson({ source: 'customer-create' }),
+            createdAt: lifecycleChangedAt,
+          },
         });
         await tx.businessAuditEvent.create({
           data: {
@@ -2575,6 +2608,13 @@ function toCustomerRecord(row: BusinessCustomerRow): BusinessCustomerDto {
     remark: row.remark ?? undefined,
     nextContactAt: row.nextContactAt?.toISOString(),
     lastFollowedAt: row.lastFollowedAt?.toISOString(),
+    lifecycleStage: parseChoice(
+      row.lifecycleStage,
+      BUSINESS_CUSTOMER_LIFECYCLE_STAGES,
+      'lifecycleStage',
+    ),
+    lifecycleReason: row.lifecycleReason ?? undefined,
+    lifecycleChangedAt: row.lifecycleChangedAt?.toISOString(),
     archivedAt: row.archivedAt?.toISOString(),
     contactCount: row._count.contacts,
     opportunityCount: row._count.opportunities,
